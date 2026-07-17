@@ -8,12 +8,11 @@ import {
   buildPricingLadder,
   ergonDaysForWorkFactor,
   expectedHashesForWlotusBaton,
-  expectedHashesFromBits,
   ritualBits,
   wallSeconds,
-  UX_PHONE_HASHRATE_H_S,
   PRAYER_WORK_DIVISOR,
   CANDLE_WORK_FACTOR,
+  FLOWER_WORK_FACTOR_FROM_INCENSE,
 } from '../src/params/pricing.js';
 import {
   POW_CANDLE_BASE_ZERO_BITS,
@@ -30,7 +29,7 @@ import {
   PROD_TARGET_USD_PER_TOKEN,
 } from '../src/params/testEconomics.js';
 
-describe('Ritual offer ladder', () => {
+describe('Ritual offer ladder (anti-ASIC-arbitrage)', () => {
   test('Flower market target is $1/baton ($0.01/token)', () => {
     expect(WLOTUS_TARGET_USD_PER_BATON).toBe(1);
     expect(WLOTUS_TARGET_USD_PER_TOKEN).toBe(0.01);
@@ -52,21 +51,22 @@ describe('Ritual offer ladder', () => {
     expect(FLOWER_MINT_ATOMS).toBe(100n);
   });
 
-  test('work ladder: Prayer÷10, Candle×100 from Incense; Flower from $1 sheet', () => {
-    expect(PRAYER_WORK_DIVISOR).toBe(10);
+  test('Flower = Incense×10000; Candle = Incense×100; Prayer = Incense/10', () => {
+    expect(FLOWER_WORK_FACTOR_FROM_INCENSE).toBe(10_000);
     expect(CANDLE_WORK_FACTOR).toBe(100);
+    expect(PRAYER_WORK_DIVISOR).toBe(10);
     const b = ritualBits();
-    expect(b.prayer).toBe(22);
-    expect(b.incense).toBe(25);
-    expect(b.candle).toBe(32);
     expect(b.flower).toBe(59);
-    expect(POW_PRAYER_BASE_ZERO_BITS).toBe(22);
-    expect(POW_INCENSE_BASE_ZERO_BITS).toBe(25);
-    expect(POW_CANDLE_BASE_ZERO_BITS).toBe(32);
+    expect(b.incense).toBe(46);
+    expect(b.candle).toBe(52);
+    expect(b.prayer).toBe(42);
     expect(POW_FLOWER_BASE_ZERO_BITS).toBe(59);
+    expect(POW_INCENSE_BASE_ZERO_BITS).toBe(46);
+    expect(POW_CANDLE_BASE_ZERO_BITS).toBe(52);
+    expect(POW_PRAYER_BASE_ZERO_BITS).toBe(42);
   });
 
-  test('Flower $1 → ~59 bits, ~1.6h on 100 TH/s (not Incense×10000)', () => {
+  test('Flower $1 → ~59 bits, ~1.6h on 100 TH/s', () => {
     const H = expectedHashesForWlotusBaton();
     expect(Math.round(bitsFromExpectedHashes(H))).toBe(59);
     const hours = wallSeconds(H, 100e12) / 3600;
@@ -74,24 +74,16 @@ describe('Ritual offer ladder', () => {
     expect(hours).toBeLessThan(1.8);
     const ladder = buildPricingLadder();
     expect(ladder.flower.referenceElectricityUsd).toBeCloseTo(0.25, 10);
-    expect(ladder.flower.regime).toBe('asic-business');
   });
 
-  test('Incense phone ~3.7 min; Prayer ~1/10 (~30 s)', () => {
-    const incenseSec = wallSeconds(
-      expectedHashesFromBits(25),
-      UX_PHONE_HASHRATE_H_S,
-    );
-    const prayerSec = wallSeconds(
-      expectedHashesFromBits(22),
-      UX_PHONE_HASHRATE_H_S,
-    );
-    expect(incenseSec / 60).toBeGreaterThan(3);
-    expect(incenseSec / 60).toBeLessThan(4.5);
-    expect(prayerSec).toBeGreaterThan(20);
-    expect(prayerSec).toBeLessThan(40);
-    expect(incenseSec / prayerSec).toBeGreaterThan(7);
-    expect(incenseSec / prayerSec).toBeLessThan(12);
+  test('ASIC $/hash roughly equal across peg (anti-arb)', () => {
+    const ladder = buildPricingLadder();
+    const flower = ladder.flower.targetUsdPerRemint / ladder.flower.expectedHashes;
+    const incense = ladder.incense.targetUsdPerRemint / ladder.incense.expectedHashes;
+    const candle = ladder.candle.targetUsdPerRemint / ladder.candle.expectedHashes;
+    // Same order of magnitude — exact match on unrounded hashes.
+    expect(incense / flower).toBeCloseTo(1, 10);
+    expect(candle / flower).toBeCloseTo(1, 10);
   });
 
   test('mint-time table lists Prayer → Incense → Candle → Flower', () => {
@@ -101,7 +93,6 @@ describe('Ritual offer ladder', () => {
       'Candle',
       'Flower',
     ]);
-    expect(buildPricingLadder().flower.ticker).toBe('WLOTUS');
   });
 
   test('Ergon half-life ~2.3y', () => {

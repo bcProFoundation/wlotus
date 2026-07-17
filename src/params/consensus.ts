@@ -45,19 +45,18 @@ export const PROD_TOKEN_DECIMALS = 0;
  */
 export const POW_LEADING_ZERO_BYTES = 1;
 
-/** Prayer genesis bits — ~1/10 Incense (~30 s phone). */
-export const POW_PRAYER_BASE_ZERO_BITS = 22;
+/** Prayer genesis bits — Incense/10 (anti-arb ladder from Flower $1). */
+export const POW_PRAYER_BASE_ZERO_BITS = 42;
 
-/** Incense genesis bits — phone ~3.7 min (ex-nWLotus). */
-export const POW_INCENSE_BASE_ZERO_BITS = 25;
+/** Incense genesis bits — Flower/10000 work (ex-nWLotus UX@25 abandoned for anti-arb). */
+export const POW_INCENSE_BASE_ZERO_BITS = 46;
 
-/** Candle genesis bits — Incense × 100 work (ex-mWLotus). */
-export const POW_CANDLE_BASE_ZERO_BITS = 32;
+/** Candle genesis bits — Incense × 100 work. */
+export const POW_CANDLE_BASE_ZERO_BITS = 52;
 
 /**
- * Flower (WLotus) genesis bits — sized so reference ASIC **electricity ≈ 25%**
- * of **$1/baton market price** (rest = HW/space/labor + ~40% risk margin).
- * Independent of the Incense×100 UX ladder. See pricing.ts.
+ * Flower (WLotus) genesis bits — $1/baton × 25% electricity on ref. ASIC.
+ * Also = Incense × 10_000 so ASICs are indifferent across the peg.
  */
 export const POW_FLOWER_BASE_ZERO_BITS = 59;
 

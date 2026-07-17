@@ -99,9 +99,9 @@ describe('Ritual offer economics', () => {
     expect(econ.CANDLE_MINT_ATOMS).toBe(10n);
     expect(econ.INCENSE_MINT_ATOMS).toBe(1n);
     expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
-    expect(econ.TEST_BASE_ZERO_BITS).toBe(32); // Candle
+    expect(econ.TEST_BASE_ZERO_BITS).toBe(52); // Candle
     expect(econ.PROD_BASE_ZERO_BITS).toBe(59); // Flower $1 sheet
-    expect(econ.NWLPOW_BASE_ZERO_BITS).toBe(25); // Incense
+    expect(econ.NWLPOW_BASE_ZERO_BITS).toBe(46); // Incense = Flower/10000
     expect(econ.TOKENS_PER_REMINT).toBe(100);
     expect(econ.TEST_POW_BATON_COUNT).toBeGreaterThanOrEqual(2);
     expect(econ.TEST_INITIAL_MINT_ATOMS).toBe(1_000_000n);
