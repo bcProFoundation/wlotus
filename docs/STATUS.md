@@ -49,4 +49,4 @@ Economics: always **100**/baton @ **0** decimals. **Start with nWLotus.** Parall
 
 1. Temple / burn app against mWLPOW  
 2. Harden Moore (shared clock / anti-past-locktime) for production  
-3. WLOTUS genesis (~1000× difficulty) + conversion UX  
+3. WLotus genesis (~59 bits, $1/baton market) + conversion UX 

@@ -21,7 +21,7 @@ See also **[ECONOMICS.md](./ECONOMICS.md)** for hash work, energy, and price det
 | `POW_LEADING_ZERO_BYTES` (`D`) | **`1`** | First byte of hash must be `0x00` |
 | **Expected hashes / remint** | **\(256^{D} = 256\)** | Geometric; mean attempts ≈ 256 |
 | Expected hashes / token | **≈ 2.56** | 256 / 100 |
-| Target market price | **~$0.00001 / token** | All-in (not pure joules) — see ECONOMICS |
+| Target market price | **~$0.00001 / token** | Soft UX-tier market intent — see ECONOMICS |
 | Target / remint | **~$0.001** | 100 × per-token target |
 | Moore / Koomey | On **work**, not mint size | `δ = 99918/100000` |
 | Host 1-mint/block CLTV | **disabled** | Frequency elasticity |
@@ -38,12 +38,11 @@ E[hashes]/tok  = 256^D / 100
 
 | `D` (bytes) | E[hashes] / remint | vs D=1 |
 |-------------|--------------------|--------|
-| 1 (live) | 256 | 1× |
+| 1 (live dogfood) | 256 | 1× |
 | 2 | 65_536 | 256× |
-| ~2 + bit tweaks | ~2.56×10⁵ | **~1000×** (WLOTUS aim) |
 | 3 | 16_777_216 | 65_536× |
 
-At **D = 1**, PoW joules are negligible; **XEC fees** dominate on-chain cost. The **~$0.00001/token** figure is the intended **market** price once burns create demand — not a claim that 256 hashes cost that much electricity today.
+At **D = 1**, PoW joules are negligible; **XEC fees** dominate on-chain cost. Production WLotus difficulty is **bit-based (~59 bits)**, not “~1000× dogfood bytes” — see ECONOMICS.
 
 ## Parallel batons
 
@@ -73,14 +72,16 @@ k = floor(elapsed_days since genesis)
 
 Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D (bit/target) plus Agora-style eMPP announcement ships with a later genesis/handoff — see [research/alp-empp-difficulty-state.md](./research/alp-empp-difficulty-state.md).
 
-## Future WLOTUS
+## Future WLOTUS (production)
 
 | Param | Value |
 |-------|-------|
-| Target price | ~$0.01/token (~$1/remint) |
+| **Target market price** | **$0.01/token = $1/baton** (business clearing price, not energy-only) |
 | Mint | Still **100** |
-| Difficulty | ~**1000×** mWLPOW `E[hashes]` |
-| Conversion | **1000 mWLPOW ≈ 1 WLOTUS** (live + burned) |
+| Difficulty | **~59 bits** — ref. ASIC electricity ≈ **35%** of $1; rest = HW / space / labor / margin |
+| Conversion peg | **1000 mWLotus ≈ 1 WLotus** (nominal; live + burned) |
+
+Ergon-style remint is a **for-profit business** (no NGU subsidy): mine when market proceeds cover all-in opex + margin. See [ECONOMICS.md](./ECONOMICS.md).
 
 ## Explicit non-goals (v0.3)
 

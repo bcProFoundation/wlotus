@@ -14,15 +14,16 @@ Mint is always **100 tokens / baton** @ **0** decimals. Moore δ adjusts **work*
 
 ## Energy cost vs token (market) price
 
-These are **not** the same:
+**Verdict for WLotus:** the **$1 / baton** figure is the **target market (token) price**, not energy cost.
 
-| Term | Meaning |
-|------|---------|
-| **Energy cost** | Electricity (kWh) to find one PoW solution on a given machine |
-| **All-in operating cost** | Electricity + hardware amortization + space/facility + labor/ops |
-| **Target market price** | What the baton / token is meant to clear at in the market |
+| Term | Meaning | WLotus number |
+|------|---------|---------------|
+| **Energy cost** | Electricity (kWh) only for one PoW solution | ≈ **$0.35** / baton on the ref. ASIC sheet |
+| **All-in operating cost** | Electricity + hardware + space/facility + labor/ops | ≈ **$0.90** / baton (illustrative stack) |
+| **Target market price** | What the baton clears at (business revenue) | **$1.00** / baton (= **$0.01** / token) |
+| **Profit margin** | Market − all-in | ≈ **$0.10** / baton (10%) |
 
-**Ergon-style mining is a normal business:** remint when expected **market proceeds ≥ all-in cost + margin**. There is no NGU speculative subsidy assumed — difficulty must leave room for profit after real opex, not set “electricity alone = sticker price.”
+**Ergon-style mining is a normal business for profit**, not speculative NGU: operators remint when expected **market proceeds ≥ all-in cost + margin**. They cannot rely on “number go up” to subsidize unprofitable work, so difficulty must leave room for real opex — **not** set “electricity alone = sticker price.”
 
 ---
 
