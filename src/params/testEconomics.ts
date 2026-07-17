@@ -1,6 +1,6 @@
 /**
  * Offer-tier economics (market intents).
- * Difficulty bits: see consensus.ts + pricing.ts / docs/ECONOMICS.md.
+ * See consensus.ts + pricing.ts / docs/ECONOMICS.md.
  */
 
 import {
@@ -16,9 +16,9 @@ import {
 import {
   WLOTUS_TARGET_USD_PER_TOKEN,
   WLOTUS_TARGET_USD_PER_BATON,
+  pegTokenPricesUsd,
 } from './pricing.js';
 
-/** @deprecated Flower mint; prefer FLOWER_MINT_ATOMS */
 export const TOKENS_PER_REMINT = Number(FLOWER_MINT_ATOMS);
 
 export const PRAYER_BASE_ZERO_BITS = POW_PRAYER_BASE_ZERO_BITS;
@@ -26,29 +26,27 @@ export const INCENSE_BASE_ZERO_BITS = POW_INCENSE_BASE_ZERO_BITS;
 export const CANDLE_BASE_ZERO_BITS = POW_CANDLE_BASE_ZERO_BITS;
 export const FLOWER_BASE_ZERO_BITS = POW_FLOWER_BASE_ZERO_BITS;
 
-/** @deprecated use INCENSE_BASE_ZERO_BITS */
+/** @deprecated */
 export const NWLPOW_BASE_ZERO_BITS = INCENSE_BASE_ZERO_BITS;
-/** @deprecated use CANDLE_BASE_ZERO_BITS */
+/** @deprecated */
 export const TEST_BASE_ZERO_BITS = CANDLE_BASE_ZERO_BITS;
-/** @deprecated use FLOWER_BASE_ZERO_BITS */
+/** @deprecated */
 export const PROD_BASE_ZERO_BITS = FLOWER_BASE_ZERO_BITS;
 
-/** Soft market intents from Flower $0.01 and 100∶1 peg. */
 export const PROD_TARGET_USD_PER_TOKEN = WLOTUS_TARGET_USD_PER_TOKEN;
 export const PROD_TARGET_USD_PER_REMINT = WLOTUS_TARGET_USD_PER_BATON;
 
-export const CANDLE_TARGET_USD_PER_TOKEN = PROD_TARGET_USD_PER_TOKEN / 100;
-export const INCENSE_TARGET_USD_PER_TOKEN = CANDLE_TARGET_USD_PER_TOKEN / 100;
-export const PRAYER_TARGET_USD_PER_TOKEN = INCENSE_TARGET_USD_PER_TOKEN / 10;
+const peg = pegTokenPricesUsd();
+export const CANDLE_TARGET_USD_PER_TOKEN = peg.candle;
+export const INCENSE_TARGET_USD_PER_TOKEN = peg.incense;
+export const PRAYER_TARGET_USD_PER_TOKEN = peg.prayer;
 
 /** @deprecated */
 export const TEST_TARGET_USD_PER_TOKEN = CANDLE_TARGET_USD_PER_TOKEN;
 /** @deprecated */
 export const NWLPOW_TARGET_USD_PER_TOKEN = INCENSE_TARGET_USD_PER_TOKEN;
 
-/** @deprecated dogfood fixed-D byte difficulty */
 export const TEST_POW_LEADING_ZERO_BYTES = 1;
-
 export const TEST_INITIAL_MINT_ATOMS = 1_000_000n;
 export const TEST_POW_BATON_COUNT = 4;
 

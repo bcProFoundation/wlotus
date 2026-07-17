@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Print Prayer / Incense / Candle / Flower (WLotus) mint-time matrix.
+ * Print Prayer / Incense / Candle / Flower matrix (fee floor + PoW).
  */
 import {
   buildMintTimeTable,
@@ -11,16 +11,13 @@ import {
 const ladder = buildPricingLadder();
 const table = buildMintTimeTable();
 
-console.log('=== Ritual offer ladder ===');
+console.log('=== Fee floor + ritual ladder ===');
 console.log({
+  fee: ladder.fee,
   workLadder: ladder.workLadder,
   peg: ladder.peg,
   flowerMarketUsdPerBaton: ladder.wlotusBusiness.marketUsdPerBaton,
-  flowerMarketUsdPerToken: ladder.wlotusBusiness.marketUsdPerToken,
-  electricityShare: ladder.wlotusBusiness.electricityShare,
   costStack: ladder.wlotusBusiness.costStack,
-  asicSheetBitsIfPricedFromElecShare:
-    ladder.wlotusBusiness.asicSheetBitsIfPricedFromElecShare,
   asicSheet: ladder.asic,
 });
 
@@ -36,7 +33,9 @@ for (const r of table.rows) {
       r.tokensPerBaton,
       r.marketUsdPerToken,
       r.marketUsdPerBaton,
+      r.feeUsd.toExponential(2),
       r.electricityUsd.toExponential(2),
+      r.allInUsd.toExponential(2),
       r.phone,
       r.pc,
       r.asic100THs,

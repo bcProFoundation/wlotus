@@ -27,17 +27,14 @@ npm run create-moore-pow-token && npm run mine-moore-once
 npm run create-ergon-pow-token && npm run mine-ergon-once
 ```
 
-Economics: ritual **offer** ladder (Prayer → Incense → Candle → Flower). Mint atoms **1 / 1 / 10 / 100**. **Start with Incense** (or Prayer). Parallel OK.
+Economics: **fee floor** (~5.46 XEC) + offer ladder. Phones **pray**; buy Incense/Candle/Flower to offer. Mint **1 / 100 / 100 / 100**. Peg **1000∶1**. Flower **$1 → 59 bits**.
 
-**Flower (WLotus) = $1/baton market** + **40%** new-market risk margin. Work: Prayer≈Incense/10 · Candle=Incense×100 · Flower=Candle×100.
-
-| Product | Bits | Tokens/baton | Phone | PC | Market $/baton |
-|---------|------|--------------|-------|-----|----------------|
-| **Prayer** | 22 | 1 | **~28 s** | ~5 s | ~$10⁻⁷ |
-| **Incense** | 25 | 1 | **~3.7 min** | ~40 s | ~$10⁻⁶ |
-| **Candle** | 32 | 10 | **~8 h** | ~1.4 h | ~$10⁻³ |
-| **Flower** | **59** | 100 | — | — | **$1** (~1.6 h @ 100 TH/s) |
-
+| Product | Bits | Mint | Phone | ASIC | Prices the remint |
+|---------|------|------|-------|------|-------------------|
+| Prayer | 22 | 1 | ~28 s | &lt;1 ms | **fee** |
+| Incense | 25 | 100 | ~3.7 min | &lt;1 ms | **fee** |
+| Candle | 49 | 100 | — | ~5.6 s | PoW |
+| Flower | **59** | 100 | — | **~1.6 h** | PoW ($1) |
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
@@ -49,7 +46,7 @@ Economics: ritual **offer** ladder (Prayer → Incense → Candle → Flower). M
 
 ## Next
 
-1. Temple / burn app against mWLPOW  
+1. Temple / burn app against offer tokens  
 2. Harden Moore (shared clock / anti-past-locktime) for production  
-3. Flower (WLotus) genesis (~59 bits, $1/baton) + conversion UX
-4. Incense/Candle/Prayer genesis on anti-arb ladder (46 / 52 / 42 bits) 
+3. Flower genesis (~59 bits, $1/baton) + market UX for buying offers  
+4. Prayer @ 22 bits for phone ritual

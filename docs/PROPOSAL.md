@@ -57,8 +57,10 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 **Canonical model:** see [ECONOMICS.md](./ECONOMICS.md).
 
 - **Offer tiers** (prestige high → low): **Flower (WLotus)** → **Candle** → **Incense** → **Prayer**
-- **Mint atoms / baton:** Flower **100** · Candle **10** · Incense **1** · Prayer **1**
-- **Work (anti-arb):** Prayer ≈ Incense/10 · Candle = Incense×100 · **Flower = Incense×10 000 = $1 ASIC sheet (~59 bits)**
+- **Mint atoms / baton:** Prayer **1** · Incense/Candle/Flower **100**
+- **Peg:** 1000 Prayer ≈ 1 Incense; 1000 Incense ≈ 1 Candle; 1000 Candle ≈ 1 Flower
+- **Fee floor (~5.46 XEC):** prices Prayer/Incense UX; phones pray, buy higher tiers to offer
+- **Work:** Prayer/Incense UX bits · Candle ~49 · **Flower = $1 ASIC sheet (~59 bits)**
 - **Moore / Koomey (`δ = 99918/100000`)** adjusts **required work / difficulty**
 - **Many remints per eCash block** + **N ≥ 2 batons** ⇒ coins/time ∝ hashrate
 - Burn / **offer** destroys supply; remint = pure PoW rebirth

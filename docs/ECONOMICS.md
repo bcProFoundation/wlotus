@@ -1,72 +1,67 @@
-# Economics — Prayer → Incense → Candle → Flower (WLotus)
+# Economics — Prayer → Incense → Candle → Flower (fee floor)
 
-## Ritual loop
+## Product intent
 
-| Action | Meaning | Supply |
-|--------|---------|--------|
-| **Offer / burn** | Ritual offering | Destroys tokens |
-| **Remint** | Pure PoW rebirth | Creates tokens |
+| Who | Does |
+|-----|------|
+| **Phone users** | Mine **Prayer** only (~30 s) — ritual gesture |
+| **Everyone offering** | **Buys** Incense / Candle / Flower on the market |
 
-**Offer** is the product verb. Prestige: **Flower > Candle > Incense > Prayer**.
+## Mint + peg
 
----
+| Product | Ticker | Tokens / baton | Token peg |
+|---------|--------|----------------|-----------|
+| Prayer | `PRAYER` | **1** | 1000 Prayer ≈ 1 Incense |
+| Incense | `INCENSE` | **100** | 1000 Incense ≈ 1 Candle |
+| Candle | `CANDLE` | **100** | 1000 Candle ≈ 1 Flower |
+| Flower | `WLOTUS` | **100** | **$1 / baton** ($0.01 / token) |
 
-## Why Flower work = Incense × 10 000
-
-If Flower is hard ($1 → ~59 bits) but Incense stays phone-easy (~25 bits), **nothing stops ASICs from mining Incense/Candle** whenever those tokens clear anywhere near the peg — Flower is ignored.
-
-So work must track value:
-
-| Baton | Work vs Incense | Soft market vs Flower $1 |
-|-------|-----------------|--------------------------|
-| Prayer | ÷ 10 | $1 / 100 000 |
-| Incense | 1× | $1 / 10 000 |
-| Candle | × 100 | $1 / 100 |
-| **Flower** | **× 10 000** | **$1** |
-
-**Anchor:** Flower **$1/baton** on the ASIC sheet (25% electricity → ~59 bits). Lower tiers are **derived downward**. Phone-minute Incense is **incompatible** with both $1 Flower and anti-arbitrage.
-
-Mint atoms: Prayer **1** · Incense **1** · Candle **10** · Flower **100**.  
-Peg: **100 Incense ≈ 1 Candle**; **100 Candle ≈ 1 Flower**.
+Soft baton markets from peg: Incense ~$10⁻⁶ · Candle ~$10⁻³ · Flower **$1**.
 
 ---
 
-## Energy cost vs market price (Flower)
+## XEC fee floor (~5.46 XEC / remint)
 
-| Term | Flower |
-|------|--------|
-| Target market price | **$1 / baton** ($0.01 / token) |
-| Ref. electricity (25%) | **~$0.25** |
-| Risk margin | **40%** |
-| Genesis bits | **~59** (~1.6 h @ 100 TH/s) |
+At ~$8×10⁻⁶ / XEC, fee ≈ **$4.4×10⁻⁵** per remint.
 
-### $1 cost stack
+| Tier | Soft baton market | Fee / market | What prices the remint |
+|------|-------------------|--------------|------------------------|
+| Prayer | ~$10⁻¹¹ | ≫ 1 (millions×) | **Fee** (PoW negligible) |
+| Incense | ~$10⁻⁶ | ~**44×** | **Fee** (100 mint amortizes → ~fee/100 per token) |
+| Candle | ~$10⁻³ | ~4% | **PoW** (+ small fee) |
+| Flower | **$1** | ~0.004% | **PoW / business stack** |
 
-| Component | Share | ≈ USD |
-|-----------|-------|-------|
-| Electricity | 25% | $0.25 |
-| Hardware | 15% | $0.15 |
-| Facility | 10% | $0.10 |
-| Labor | 10% | $0.10 |
-| Risk margin | 40% | $0.40 |
+### Fee vs Prayer / Incense proportion
+
+With mint **1** vs **100**, fee-floor unit costs are:
+
+- Prayer token ≈ **fee** ≈ $4.4×10⁻⁵  
+- Incense token ≈ **fee / 100** ≈ $4.4×10⁻⁷  
+- → **~100 Prayer ≈ 1 Incense** at the fee floor (not 1000)
+
+The **1000∶1 peg** is the brand/conversion peg. Mining Prayer is an intentionally **worse** deal than buying Incense — phones pray; markets supply offer tokens. ASICs do not undercut Flower by printing Prayer/Incense near the soft peg: fee keeps those floors far above soft peg until demand lifts price.
+
+---
+
+## Flower business ($1 / baton)
+
+Still Ergon-style for-profit (25% elec · 40% risk margin) → **~59 bits** · ~1.6 h @ 100 TH/s. Fee is noise.
+
+Candle PoW tracks baton value (~$0.001 → **~49 bits**).
+
+---
+
+## Mint-time matrix
+
+| Product | Bits | Mint | Market $/baton | Fee $ | Elec $ | All-in $ | Phone | ASIC 100 TH/s |
+|---------|------|------|----------------|-------|--------|----------|-------|---------------|
+| **Prayer** | **22** | 1 | ~$10⁻¹¹ | ~$4.4e-5 | ~0 | ~**fee** | **~28 s** | &lt;1 ms |
+| **Incense** | **25** | 100 | ~$10⁻⁶ | ~$4.4e-5 | ~0 | ~**fee** | **~3.7 min** | &lt;1 ms |
+| **Candle** | **49** | 100 | ~$10⁻³ | ~$4.4e-5 | ~$2.5e-4 | ~$3e-4 | — | **~5.6 s** |
+| **Flower** | **59** | 100 | **$1** | ~$4.4e-5 | **~$0.25** | ~$0.25 | — | **~1.6 h** |
 
 Recompute: `npm run pricing`.
 
----
-
-## Mint-time matrix (expected)
-
-| Product | Ticker | Bits | Tokens/baton | Market $/baton | ASIC elec. $ | Phone | PC | ASIC 100 TH/s |
-|---------|--------|------|--------------|----------------|--------------|-------|-----|---------------|
-| **Prayer** | `PRAYER` | **42** | 1 | ~$10⁻⁵ | ~$2.5×10⁻⁶ | ~1.2 y | — | **~56 ms** |
-| **Incense** | `INCENSE` | **46** | 1 | ~$10⁻⁴ | ~$2.5×10⁻⁵ | ~12 y | — | **~0.6 s** |
-| **Candle** | `CANDLE` | **52** | 10 | ~$10⁻² | ~$2.5×10⁻³ | — | — | **~56 s** |
-| **Flower** | `WLOTUS` | **59** | 100 | **$1** | **~$0.25** | — | — | **~1.6 h** |
-
-## Live dogfood
-
-Toy-D mWLPOW tokens are unrelated to this sheet. Production genesis follows the table above.
-
 ## Parameters
 
-- `src/params/pricing.ts` · `src/params/consensus.ts` · `npm run pricing`
+`src/params/pricing.ts` · `src/params/consensus.ts`
