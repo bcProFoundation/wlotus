@@ -30,25 +30,28 @@ describe('WLotus market price vs energy cost', () => {
     expect(PROD_TARGET_USD_PER_REMINT).toBe(1);
   });
 
-  test('cost stack sums to 100% with electricity at 35%', () => {
+  test('cost stack sums to 100% with ~40% new-market risk margin', () => {
     const sum = Object.values(WLOTUS_COST_STACK).reduce((a, b) => a + b, 0);
     expect(sum).toBeCloseTo(1, 10);
-    expect(WLOTUS_ELECTRICITY_SHARE_OF_PRICE).toBe(0.35);
-    expect(WLOTUS_COST_STACK.profitMargin).toBeGreaterThan(0);
+    expect(WLOTUS_ELECTRICITY_SHARE_OF_PRICE).toBe(0.25);
+    expect(WLOTUS_COST_STACK.profitMargin).toBe(0.4);
+    // New/illiquid markets: plan in the ~30–50% band, not thin ~10% commodity nets.
+    expect(WLOTUS_COST_STACK.profitMargin).toBeGreaterThanOrEqual(0.3);
+    expect(WLOTUS_COST_STACK.profitMargin).toBeLessThanOrEqual(0.5);
   });
 
-  test('D sized from electricity share → ~59 bits, ~2h on 100 TH/s', () => {
+  test('D sized from electricity share → ~59 bits, ~1.6h on 100 TH/s', () => {
     const H = expectedHashesForWlotusBaton();
     expect(Math.round(bitsFromExpectedHashes(H))).toBe(59);
     expect(POW_W_BASE_ZERO_BITS).toBe(59);
     const hours = wallSeconds(H, 100e12) / 3600;
-    expect(hours).toBeGreaterThan(2);
-    expect(hours).toBeLessThan(2.5);
+    expect(hours).toBeGreaterThan(1.4);
+    expect(hours).toBeLessThan(1.8);
   });
 
   test('reference electricity is well below $1 market baton price', () => {
     const ladder = buildPricingLadder();
-    expect(ladder.wlotus.referenceElectricityUsd).toBeCloseTo(0.35, 10);
+    expect(ladder.wlotus.referenceElectricityUsd).toBeCloseTo(0.25, 10);
     expect(ladder.wlotus.referenceElectricityUsd).toBeLessThan(
       ladder.wlotus.targetUsdPerRemint,
     );

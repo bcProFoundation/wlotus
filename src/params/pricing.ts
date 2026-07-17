@@ -37,18 +37,27 @@ export const WLOTUS_TARGET_USD_PER_TOKEN =
 
 /**
  * Share of baton market price attributed to **electricity** when sizing D.
- * Remainder ≈ hardware amortization + facility/space + labor + profit margin.
+ * Remainder ≈ hardware + facility/space + labor + risk margin.
  * Ergon-style: mining is a normal business, not NGU speculation.
+ *
+ * New / illiquid markets typically need a **~30–50%** risk margin (vs ~10%
+ * thin commodity nets). We use **40%** — see WLOTUS_COST_STACK.
  */
-export const WLOTUS_ELECTRICITY_SHARE_OF_PRICE = 0.35;
+export const WLOTUS_ELECTRICITY_SHARE_OF_PRICE = 0.25;
 
-/** Illustrative all-in cost stack as shares of $1 baton market price. */
+/**
+ * Illustrative $1 baton cost stack (business, not oracle).
+ *
+ * Margin rationale: mature liquid mining often clears ~30–45% mining margin
+ * in good times; a **new** token market has thinner books and demand risk,
+ * so target the upper half of the early-market **30–50%** band → **40%**.
+ */
 export const WLOTUS_COST_STACK = {
-  electricity: 0.35,
-  hardwareAmortization: 0.25,
-  facilitySpaceCooling: 0.15,
-  laborOps: 0.15,
-  profitMargin: 0.1,
+  electricity: 0.25,
+  hardwareAmortization: 0.15,
+  facilitySpaceCooling: 0.1,
+  laborOps: 0.1,
+  profitMargin: 0.4,
 } as const;
 
 export function asicUsdPerHash(
@@ -181,7 +190,7 @@ export function buildPricingLadder(): {
       targetUsdPerRemint: marketBaton,
       referenceElectricityUsd: elecUsd,
       notes:
-        'Production — $1/baton market price; D sized so ~35% is electricity on reference ASIC (rest = HW/space/labor/margin).',
+        'Production — $1/baton market price; D sized so ~25% is electricity on reference ASIC; ~40% risk margin for new-market demand risk.',
     },
   };
 }

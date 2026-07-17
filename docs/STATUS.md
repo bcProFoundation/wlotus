@@ -29,13 +29,13 @@ npm run create-ergon-pow-token && npm run mine-ergon-once
 
 Economics: always **100**/baton @ **0** decimals. **Start with nWLotus.** Parallel OK.
 
-**WLotus = $1/baton market price** (business), not “$1 of electricity.” D sized so ref. ASIC electricity ≈ **35%** (~$0.35); rest = HW/space/labor/margin.
+**WLotus = $1/baton market price** (business), not “$1 of electricity.” Ref. ASIC electricity ≈ **25%** (~$0.25); all-in opex ≈ 60%; **~40% new-market risk margin** (10% is too thin for illiquid demand).
 
 | Product | Bits | Phone | PC | ASIC 100 TH/s | Market $/baton | Ref. elec. $ |
 |---------|------|-------|-----|---------------|----------------|--------------|
 | **nWLotus** | 25 | ~3.7 min | ~40 s | &lt;1 ms | ~$10⁻⁶ | ~$0 |
 | **mWLotus** | 30 | ~2 h | ~21 min | &lt;1 ms | ~$10⁻³ | ~$0 |
-| **WLotus** | 59 | — | — | **~2.2 h** | **$1** | **~$0.35** |
+| **WLotus** | 59 | — | — | **~1.6 h** | **$1** | **~$0.25** |
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 

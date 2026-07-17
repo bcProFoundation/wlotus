@@ -78,10 +78,10 @@ Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D (bit
 |-------|-------|
 | **Target market price** | **$0.01/token = $1/baton** (business clearing price, not energy-only) |
 | Mint | Still **100** |
-| Difficulty | **~59 bits** — ref. ASIC electricity ≈ **35%** of $1; rest = HW / space / labor / margin |
+| Difficulty | **~59 bits** — ref. ASIC electricity ≈ **25%** of $1; all-in opex ≈ 60%; **~40%** new-market risk margin |
 | Conversion peg | **1000 mWLotus ≈ 1 WLotus** (nominal; live + burned) |
 
-Ergon-style remint is a **for-profit business** (no NGU subsidy): mine when market proceeds cover all-in opex + margin. See [ECONOMICS.md](./ECONOMICS.md).
+Ergon-style remint is a **for-profit business** (no NGU subsidy): mine when market proceeds cover all-in opex + risk margin. New/illiquid markets typically need **~30–50%** margin buffer — WLotus uses **40%**. See [ECONOMICS.md](./ECONOMICS.md).
 
 ## Explicit non-goals (v0.3)
 

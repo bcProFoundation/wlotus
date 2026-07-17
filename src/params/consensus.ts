@@ -36,8 +36,9 @@ export const POW_N_BASE_ZERO_BITS = 25;
 export const POW_M_BASE_ZERO_BITS = 30;
 
 /**
- * WLotus genesis bits — sized so reference ASIC **electricity ≈ 35%** of
- * **$1/baton market price** (rest = hardware/space/labor/margin). See pricing.ts.
+ * WLotus genesis bits — sized so reference ASIC **electricity ≈ 25%** of
+ * **$1/baton market price** (rest = HW/space/labor + ~40% new-market risk
+ * margin). See pricing.ts.
  */
 export const POW_W_BASE_ZERO_BITS = 59;
 
