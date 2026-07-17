@@ -17,7 +17,7 @@ import {
   type PowRemintMooreContract,
 } from '../covenant/powRemintMooreScript.js';
 import { minePowBits } from '../covenant/minePow.js';
-import { expectedMintOpReturnScript } from '../covenant/powRemintOutputs.js';
+import { expectedMooreMintOpReturnScript } from '../covenant/powRemintMooreOutputs.js';
 import {
   computeMooreBits,
   type MooreBitsState,
@@ -45,6 +45,9 @@ export interface FuelUtxo {
 /** Activate nLockTime: at least one input sequence must be < 0xffffffff. */
 export const LOCKTIME_ENABLE_SEQUENCE = 0xfffffffe;
 
+/** BIP143 scriptCode after the covenant's OP_CODESEPARATOR (index 0). */
+export const MOORE_CODESEP_INDEX = 0;
+
 export function mooreMinerBanner(contract: PowRemintMooreContract): string {
   const p = contract.params;
   return [
@@ -53,13 +56,13 @@ export function mooreMinerBanner(contract: PowRemintMooreContract): string {
     `secondsPerExtraBit=${p.secondsPerExtraBit}`,
     `genesisUnix=${p.genesisUnix}`,
     `mintAtoms=${BASE_MINT_ATOMS} (always 100 @ 0 decimals)`,
-    'covenant: WlotusPowRemintMoore (locktime bits; ALP MINT OP_RETURN)',
+    'covenant: WlotusPowRemintMoore + eMPP WLDF (CODESEPARATOR)',
   ].join(' | ');
 }
 
 /**
  * Build + mine + sign one Moore remint.
- * Sets nLockTime and input sequences so locktime-derived bits are active.
+ * Dual EMPP: WLDF (difficulty) + ALP MINT. nLockTime derives bits; WLDF must match.
  */
 export async function buildMinedMooreRemintTx(opts: {
   contract: PowRemintMooreContract;
@@ -85,12 +88,14 @@ export async function buildMinedMooreRemintTx(opts: {
       Math.floor(Date.now() / 1000) - 600,
     );
   const moore = computeMooreBits(locktime, contract.params);
-  const opReturn = expectedMintOpReturnScript(
+  const opReturn = expectedMooreMintOpReturnScript(
     contract.params.tokenId,
     contract.params.mintAtoms,
+    moore,
   );
   const minerP2pkh = Script.p2pkh(shaRmd160(miner.pk));
   const ecc = new Ecc();
+  const batonHash = Buffer.from(contract.scriptHash);
 
   let minedNonce: Uint8Array | undefined;
   let minedAttempts = 0;
@@ -113,12 +118,14 @@ export async function buildMinedMooreRemintTx(opts: {
       ds: Buffer.from(ds64),
       minerPk: Buffer.from(miner.pk),
       preimage: Buffer.from(preimage),
+      batonHash,
     }) as Buffer;
     return new Script(new Uint8Array(scriptSigBuf));
   };
 
   const batonSignatory: Signatory = (eccCtx, input) => {
-    const pre = input.sigHashPreimage(ALL_BIP143);
+    // nCodesep=0 → BIP143 scriptCode is only the suffix after CODESEPARATOR.
+    const pre = input.sigHashPreimage(ALL_BIP143, MOORE_CODESEP_INDEX);
     const preimage = pre.bytes;
     if (!minedNonce) {
       const mined = minePowBits({

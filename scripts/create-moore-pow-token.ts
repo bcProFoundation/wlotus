@@ -176,7 +176,7 @@ async function main(): Promise<void> {
     baseZeroBits,
     secondsPerExtraBit,
     difficultyNote:
-      'bits = baseZeroBits + floor((nLockTime - genesisUnix) / secondsPerExtraBit); capped +8; redeem size-capped (preimage < 520B) so OP_RETURN is ALP MINT only (WLDF announcement deferred)',
+      'bits from nLockTime; eMPP WLDF announces bits beside ALP MINT; CODESEPARATOR keeps BIP143 preimage small',
     mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
     tokensPerRemint: Number(BASE_MINT_ATOMS),
     targetUsdPerToken: TEST_TARGET_USD_PER_TOKEN,
@@ -192,9 +192,10 @@ async function main(): Promise<void> {
     cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
     notes: [
       'Moore-bit mWLPOW dogfood: fine-grain D from nLockTime (+1 bit/day).',
+      'eMPP WLDF push stores difficulty beside ALP MINT (Agora dual-push).',
       'Mint always 100 @ 0 decimals. P2SH address stable across Moore steps.',
-      'Redeem kept ≤356B so BIP143 preimage push stays under 520B.',
-      'WLDF dual-EMPP deferred until a smaller encoding fits; bits still on-chain.',
+      'OP_CODESEPARATOR shrinks BIP143 scriptCode so preimage stays under 520B.',
+      'Baton out uses miner-supplied hash160(redeem) (rational miners keep the tip).',
       'Cheat note: miner may choose past locktime for easier bits (test OK).',
       'Miner uses median-time-past for nLockTime finality.',
       'See docs/research/alp-empp-difficulty-state.md and docs/ECONOMICS.md.',

@@ -1,7 +1,9 @@
 // mWLPOW Moore-bit PoW remint (eCash / XEC)
-// Size-constrained: BIP143 preimage stack push must be < 520 bytes
-// (redeem ≲ 356). Fine-grain bits from nLockTime; ALP MINT OP_RETURN.
+// Fine-grain bits from nLockTime; difficulty announced in eMPP WLDF
+// beside ALP MINT (Agora dual-push). Ends with CODESEPARATOR + CHECKSIG so
+// BIP143 scriptCode is tiny (preimage ≪ 520B) despite a large redeem.
 // bits = baseZeroBits + floor((locktime - genesisUnix) / secondsPerExtraBit)
+// Mint always 100. Baton returns to batonHash (miner passes hash160(redeem)).
 
 contract WlotusPowRemintMoore(
     [byte;32] tokenIdRev,
@@ -15,11 +17,9 @@ contract WlotusPowRemintMoore(
         Sig s,
         DataSig ds,
         PubKey minerPk,
-        [byte] preimage
+        [byte] preimage,
+        [byte;20] batonHash
     ) {
-        verify checkSig(s, minerPk);
-        verify checkDataSig(ds, sha256(preimage), minerPk);
-
         (_, [byte] tail8) = preimage @ (size(preimage) - 8);
         ([byte] locktimeBin, _) = tail8 @ 4;
         int locktime = bin2num(locktimeBin);
@@ -29,8 +29,6 @@ contract WlotusPowRemintMoore(
         int bits = baseZeroBits + extraBits;
         verify bits <= baseZeroBits + 8;
 
-        // PoW over sha256(preimage)||nonce — not preimage||nonce — so the
-        // OP_CAT result stays ≪ 520 bytes when preimage is ~500B.
         [byte] solhash = hash256(sha256(preimage) . nonce);
         int zeroBytes = bits / 8;
         int remBits = bits % 8;
@@ -39,14 +37,13 @@ contract WlotusPowRemintMoore(
         verify bin2num(prefix) == 0;
 
         // remBits 1..7 ⇒ next byte < 2^(8-remBits).
-        // Cannot encode limit 128 as a Script byte (0x80 ⇒ bin2num -128).
+        // Limit 128 cannot be a Script byte (0x80 ⇒ bin2num -128).
         if (remBits == 1) {
             ([byte] nextByte, _) = rest @ 1;
             verify bin2num(nextByte) < 128;
         } else {
             if (remBits != 0) {
                 ([byte] nextByte, _) = rest @ 1;
-                // remBits 2..7 → 64,32,16,8,4,2 (all < 0x80)
                 [byte] limits = 0x402010080402;
                 (_, [byte] limTail) = limits @ (remBits - 2);
                 ([byte] limB, _) = limTail @ 1;
@@ -57,10 +54,12 @@ contract WlotusPowRemintMoore(
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
-        ([byte] head, _) = preimage @ (size(preimage) - 52);
-        (_, [byte] scriptCodePrefixed) = head @ 104;
-        // Redeem ≥253 ⇒ CompactSize is 0xfd || u16le (3 bytes), not a 1-byte length.
-        (_, [byte] redeemScript) = scriptCodePrefixed @ 3;
+        [byte] wldf =
+            0x574c4446 .
+            0x01 .
+            num2bin(bits, 2) .
+            num2bin(extraBits, 4) .
+            num2bin(locktime, 4);
 
         [byte] mintSection =
             0x534c5032 .
@@ -73,13 +72,20 @@ contract WlotusPowRemintMoore(
 
         [byte] opReturnScript =
             0x6a50 .
+            num2bin(size(wldf), 1) .
+            wldf .
             num2bin(size(mintSection), 1) .
             mintSection;
 
         [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
         [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
-        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(redeemScript) . 0x87;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . batonHash . 0x87;
 
         verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+
+        // BIP143 scriptCode = only what follows → tiny preimage push.
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
     }
 }

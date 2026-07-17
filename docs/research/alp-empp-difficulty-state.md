@@ -107,29 +107,24 @@ Moore step options (either is Ergon-closer than +1 **byte**):
 
 ## Live mWLPOW today
 
-| Item | Fixed-D (archived) | Moore-bit dogfood (**live**) |
+| Item | Fixed-D (archived) | Moore-bit + WLDF (**live**) |
 |------|-------------------|-------------------|
-| Token | `cc2ee91c…494f` | [`edb72730…3dfe`](https://explorer.e.cash/tx/edb727306f7dfbbf051eacfebf29fe3fd6f27b3ee8bc3598bd4a70884ca43dfe) |
-| EMPP | Single push: ALP `MINT` | Same (ALP `MINT` only) |
-| Difficulty | Fixed **1** leading zero **byte** | Locktime-derived **bits** (fine grain) |
-| Proven remint | yes | [`8ef4607d…`](https://explorer.e.cash/tx/8ef4607dbbe6ed88894d65a36a86ed66a48df41cb5ae072ec45db30811f3c7aa) at **bits=9** |
+| Token | `cc2ee91c…` / `edb72730…` | [`c7fe2bf2…77dc`](https://explorer.e.cash/tx/c7fe2bf272c9d8ab08e17202a33397294a24ec96e47b06d849f998972d5a77dc) |
+| EMPP | Single push: ALP `MINT` | Dual: **WLDF** + ALP `MINT` |
+| Difficulty | Fixed **1** leading zero **byte** | Locktime-derived **bits**; WLDF must match |
+| Proven remint | yes | [`a5180012…`](https://explorer.e.cash/tx/a51800126256ac7249f25377b3a0b9149d5ef37aa848555a504849ddab0bdbfa) WLDF bits=9 |
+| Preimage size | Full redeem in scriptCode | **CODESEPARATOR** → tiny scriptCode |
 | Scripts | `create-pow-token` / `mine-once` | `create-moore-pow-token` / `mine-moore-once` |
 
-### Size constraints (Mist preimage)
-
-1. Stack push ≤ **520B** → BIP143 preimage (incl. redeem) must fit; redeem ≲ 356B.
-2. `OP_CAT` also ≤ 520B → Moore PoW uses `hash256(sha256(preimage) ‖ nonce)` not `preimage ‖ nonce`.
-3. Dual-EMPP WLDF construction deferred; fine-grain `remBits` is on-chain.
-
-### WLDF layout (v1, 15 bytes) — for a future smaller redeem / alternate design
+### WLDF layout (v1, 15 bytes)
 
 ```
 WLDF | ver=1 | zeroBits u16 LE | extraBits u32 LE | locktime u32 LE
 ```
 
-Consensus bits already come from **nLockTime** in the redeem. When WLDF fits, it must match byte-exact or `hashOutputs` fails.
+Consensus bits come from **nLockTime**; the covenant rebuilds WLDF and requires OP_RETURN = `emppScript([wldf, alpMint(100)])` byte-exact.
 
-Cheat surface for dogfood: miner can pick a **past** locktime for fewer bits. Acceptable for testing; production needs MTP floor / height clock / stateful tip. Miner already chooses locktime ≤ MTP for mempool finality.
+Cheat surface for dogfood: miner can pick a **past** locktime for fewer bits. Acceptable for testing; production needs MTP floor / height clock / stateful tip. Miner already chooses locktime ≤ MTP for mempool finality. Baton P2SH hash is miner-supplied (rational miners keep their tip).
 
 ---
 

@@ -1,15 +1,15 @@
 {
-  "tokenId": "edb727306f7dfbbf051eacfebf29fe3fd6f27b3ee8bc3598bd4a70884ca43dfe",
-  "txid": "8ef4607dbbe6ed88894d65a36a86ed66a48df41cb5ae072ec45db30811f3c7aa",
-  "powAttempts": 387,
-  "nonceHex": "83010000",
+  "tokenId": "c7fe2bf272c9d8ab08e17202a33397294a24ec96e47b06d849f998972d5a77dc",
+  "txid": "a51800126256ac7249f25377b3a0b9149d5ef37aa848555a504849ddab0bdbfa",
+  "powAttempts": 371,
+  "nonceHex": "73010000",
   "mintAtoms": "100",
   "moore": {
-    "locktime": 1784291622,
+    "locktime": 1784292974,
     "extraBits": 1,
     "bits": 9
   },
-  "locktime": 1784291622,
-  "minedAt": "2026-07-17T13:19:47.765Z",
-  "explorer": "https://explorer.e.cash/tx/8ef4607dbbe6ed88894d65a36a86ed66a48df41cb5ae072ec45db30811f3c7aa"
+  "locktime": 1784292974,
+  "minedAt": "2026-07-17T13:39:31.726Z",
+  "explorer": "https://explorer.e.cash/tx/a51800126256ac7249f25377b3a0b9149d5ef37aa848555a504849ddab0bdbfa"
 }
