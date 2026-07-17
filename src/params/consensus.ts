@@ -36,10 +36,10 @@ export const POW_N_BASE_ZERO_BITS = 25;
 export const POW_M_BASE_ZERO_BITS = 30;
 
 /**
- * WLotus genesis bits — ASIC electricity floor ≈ $0.01/token ($1/baton)
- * at 20 J/TH, $0.08/kWh (see pricing.ts). ~6.3h on 100 TH/s.
+ * WLotus genesis bits — sized so reference ASIC **electricity ≈ 35%** of
+ * **$1/baton market price** (rest = hardware/space/labor/margin). See pricing.ts.
  */
-export const POW_W_BASE_ZERO_BITS = 61;
+export const POW_W_BASE_ZERO_BITS = 59;
 
 /** @deprecated alias — prefer POW_M_BASE_ZERO_BITS for real incubation. */
 export const POW_BASE_ZERO_BITS = POW_LEADING_ZERO_BYTES * 8;

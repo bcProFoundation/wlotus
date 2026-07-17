@@ -1,9 +1,13 @@
 import {
+  WLOTUS_COST_STACK,
+  WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
+  WLOTUS_TARGET_USD_PER_BATON,
+  WLOTUS_TARGET_USD_PER_TOKEN,
   bitsFromExpectedHashes,
   buildMintTimeTable,
   buildPricingLadder,
   ergonDaysForWorkFactor,
-  expectedHashesForAsicUsd,
+  expectedHashesForWlotusBaton,
   expectedHashesFromBits,
   wallSeconds,
   UX_PC_HASHRATE_H_S,
@@ -16,54 +20,59 @@ import {
 import {
   PROD_TARGET_USD_PER_REMINT,
   PROD_TARGET_USD_PER_TOKEN,
-  TEST_TARGET_USD_PER_TOKEN,
 } from '../src/params/testEconomics.js';
 
-describe('pricing ladder (nWLotus / mWLotus / WLotus)', () => {
-  test('WLotus standard is $0.01/token = $1/baton → ~61 bits', () => {
+describe('WLotus market price vs energy cost', () => {
+  test('market target is $1/baton ($0.01/token), not pure electricity', () => {
+    expect(WLOTUS_TARGET_USD_PER_BATON).toBe(1);
+    expect(WLOTUS_TARGET_USD_PER_TOKEN).toBe(0.01);
     expect(PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
     expect(PROD_TARGET_USD_PER_REMINT).toBe(1);
-    const H = expectedHashesForAsicUsd(1);
-    expect(Math.round(bitsFromExpectedHashes(H))).toBe(61);
-    expect(POW_W_BASE_ZERO_BITS).toBe(61);
   });
 
-  test('100 TH/s mints $1 baton in about 6–7 hours', () => {
-    const H = expectedHashesForAsicUsd(1);
+  test('cost stack sums to 100% with electricity at 35%', () => {
+    const sum = Object.values(WLOTUS_COST_STACK).reduce((a, b) => a + b, 0);
+    expect(sum).toBeCloseTo(1, 10);
+    expect(WLOTUS_ELECTRICITY_SHARE_OF_PRICE).toBe(0.35);
+    expect(WLOTUS_COST_STACK.profitMargin).toBeGreaterThan(0);
+  });
+
+  test('D sized from electricity share → ~59 bits, ~2h on 100 TH/s', () => {
+    const H = expectedHashesForWlotusBaton();
+    expect(Math.round(bitsFromExpectedHashes(H))).toBe(59);
+    expect(POW_W_BASE_ZERO_BITS).toBe(59);
     const hours = wallSeconds(H, 100e12) / 3600;
-    expect(hours).toBeGreaterThan(6);
-    expect(hours).toBeLessThan(7);
+    expect(hours).toBeGreaterThan(2);
+    expect(hours).toBeLessThan(2.5);
   });
 
-  test('mint-time table has three parallel tiers', () => {
-    const table = buildMintTimeTable();
-    expect(table.rows).toHaveLength(3);
-    expect(table.rows.map(r => r.product)).toEqual([
+  test('reference electricity is well below $1 market baton price', () => {
+    const ladder = buildPricingLadder();
+    expect(ladder.wlotus.referenceElectricityUsd).toBeCloseTo(0.35, 10);
+    expect(ladder.wlotus.referenceElectricityUsd).toBeLessThan(
+      ladder.wlotus.targetUsdPerRemint,
+    );
+  });
+
+  test('mint-time table lists three parallel products', () => {
+    expect(buildMintTimeTable().rows.map(r => r.product)).toEqual([
       'nWLotus',
       'mWLotus',
       'WLotus',
     ]);
   });
 
-  test('mWLotus 30 bits is tens of minutes on a PC', () => {
-    const sec = wallSeconds(
-      expectedHashesFromBits(POW_M_BASE_ZERO_BITS),
-      UX_PC_HASHRATE_H_S,
-    );
-    expect(sec).toBeGreaterThan(10 * 60);
-    expect(sec).toBeLessThan(60 * 60);
-  });
-
-  test('nWLotus 25 bits is the launch tier', () => {
+  test('n/m UX bits unchanged', () => {
     expect(POW_N_BASE_ZERO_BITS).toBe(25);
-    const ladder = buildPricingLadder();
-    expect(ladder.nwlotus.ticker).toBe('nWLOTUS');
-    expect(TEST_TARGET_USD_PER_TOKEN).toBe(1e-5);
+    expect(POW_M_BASE_ZERO_BITS).toBe(30);
+    expect(
+      wallSeconds(expectedHashesFromBits(30), UX_PC_HASHRATE_H_S),
+    ).toBeGreaterThan(10 * 60);
   });
 
-  test('Ergon half-life ~2.3y for 2× work', () => {
-    const years = ergonDaysForWorkFactor(2) / 365.25;
-    expect(years).toBeGreaterThan(2.2);
-    expect(years).toBeLessThan(2.4);
+  test('Ergon half-life ~2.3y', () => {
+    const y = ergonDaysForWorkFactor(2) / 365.25;
+    expect(y).toBeGreaterThan(2.2);
+    expect(y).toBeLessThan(2.4);
   });
 });

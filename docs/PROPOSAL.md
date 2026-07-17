@@ -65,7 +65,7 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × 100
 ```
 
-**nWLotus / mWLotus** are UX-timed (phone/PC). **WLotus** uses ASIC electricity for **$0.01/token = $1/baton** (~6.3 h on 100 TH/s). Launch starts with **nWLotus**; all tiers may run in parallel. See [ECONOMICS.md](./ECONOMICS.md). Peg: **1_000_000 n ≈ 1_000 m ≈ 1 W**.
+**nWLotus / mWLotus** are UX-timed. **WLotus** target **market** price is **$1/baton** ($0.01/token): Ergon-style business remint (electricity + hardware + space + labor + margin). Difficulty uses ~**35%** of that $1 as reference ASIC electricity (~59 bits, ~2.2 h on 100 TH/s). Launch with **nWLotus**; tiers may run in parallel. See [ECONOMICS.md](./ECONOMICS.md).
 
 #### Moore / Koomey — Ergon **post-launch** constant only
 

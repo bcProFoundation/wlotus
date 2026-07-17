@@ -20,7 +20,8 @@ export const TEST_TARGET_USD_PER_TOKEN = 1e-5;
 export const TEST_BASE_ZERO_BITS = POW_M_BASE_ZERO_BITS;
 
 /**
- * WLotus — ASIC energy floor ≈ $0.01/token = $1/baton (reference sheet).
+ * WLotus — target **market** $0.01/token = $1/baton (business price).
+ * Difficulty uses electricity share of that price — see pricing.ts.
  */
 export const PROD_TARGET_USD_PER_TOKEN = 0.01;
 export const PROD_BASE_ZERO_BITS = POW_W_BASE_ZERO_BITS;

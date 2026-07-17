@@ -99,7 +99,7 @@ describe('mWLotus incubation economics', () => {
     expect(econ.TEST_TARGET_USD_PER_TOKEN).toBe(1e-5);
     expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
     expect(econ.TEST_BASE_ZERO_BITS).toBe(30);
-    expect(econ.PROD_BASE_ZERO_BITS).toBe(61);
+    expect(econ.PROD_BASE_ZERO_BITS).toBe(59);
     expect(econ.NWLPOW_BASE_ZERO_BITS).toBe(25);
     expect(econ.TOKENS_PER_REMINT).toBe(100);
     expect(econ.TEST_POW_BATON_COUNT).toBeGreaterThanOrEqual(2);

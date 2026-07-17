@@ -27,15 +27,17 @@ npm run create-moore-pow-token && npm run mine-moore-once
 npm run create-ergon-pow-token && npm run mine-ergon-once
 ```
 
-Economics: always **100**/baton @ **0** decimals. **Start with nWLotus.** All three can run in parallel.
+Economics: always **100**/baton @ **0** decimals. **Start with nWLotus.** Parallel OK.
 
-| Product | Bits | Phone | PC | ASIC 100 TH/s | $/baton |
-|---------|------|-------|-----|---------------|---------|
-| **nWLotus** | 25 | ~3.7 min | ~40 s | &lt;1 ms | ~$10⁻⁶ |
-| **mWLotus** | 30 | ~2 h | ~21 min | &lt;1 ms | ~$10⁻³ |
-| **WLotus** | 61 | — | — | **~6.3 h** | **$1** |
+**WLotus = $1/baton market price** (business), not “$1 of electricity.” D sized so ref. ASIC electricity ≈ **35%** (~$0.35); rest = HW/space/labor/margin.
 
-WLotus standard = **$0.01/token**. Live dogfood mWLPOW tokens are still toy-D. Details: [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
+| Product | Bits | Phone | PC | ASIC 100 TH/s | Market $/baton | Ref. elec. $ |
+|---------|------|-------|-----|---------------|----------------|--------------|
+| **nWLotus** | 25 | ~3.7 min | ~40 s | &lt;1 ms | ~$10⁻⁶ | ~$0 |
+| **mWLotus** | 30 | ~2 h | ~21 min | &lt;1 ms | ~$10⁻³ | ~$0 |
+| **WLotus** | 59 | — | — | **~2.2 h** | **$1** | **~$0.35** |
+
+[ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
 ## Covenant notes (eCash)
 

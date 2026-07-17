@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Print nWLotus / mWLotus / WLotus mint-time matrix.
+ * Print nWLotus / mWLotus / WLotus matrix (market price vs electricity).
  */
 import {
   buildMintTimeTable,
@@ -11,9 +11,18 @@ import {
 const ladder = buildPricingLadder();
 const table = buildMintTimeTable();
 
-console.log('ASIC sheet', ladder.asic);
-console.log('Peg:', ladder.peg);
-console.log('');
+console.log('=== Energy cost vs market price ===');
+console.log({
+  wlotusMarketUsdPerBaton: ladder.wlotusBusiness.marketUsdPerBaton,
+  wlotusMarketUsdPerToken: ladder.wlotusBusiness.marketUsdPerToken,
+  electricityShare: ladder.wlotusBusiness.electricityShare,
+  electricityUsdAtReference: ladder.wlotusBusiness.electricityUsdAtReference,
+  costStack: ladder.wlotusBusiness.costStack,
+  asicSheet: ladder.asic,
+  peg: ladder.peg,
+});
+
+console.log('\n=== Mint-time matrix ===');
 console.log(table.headers.join(' | '));
 console.log(table.headers.map(() => '---').join(' | '));
 for (const r of table.rows) {
@@ -22,16 +31,18 @@ for (const r of table.rows) {
       r.product,
       r.ticker,
       r.bits,
-      r.usdPerToken,
-      r.usdPerBaton,
+      r.marketUsdPerToken,
+      r.marketUsdPerBaton,
+      r.electricityUsd.toExponential(2),
       r.phone,
       r.pc,
       r.asic100THs,
     ].join(' | '),
   );
 }
-console.log('');
+
 console.log(
+  '\n',
   JSON.stringify(
     {
       ergonYearsToDoubleWork: ergonDaysForWorkFactor(2) / 365.25,
