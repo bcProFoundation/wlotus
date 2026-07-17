@@ -107,16 +107,19 @@ Moore step options (either is Ergon-closer than +1 **byte**):
 
 ## Live mWLPOW today
 
-| Item | Fixed-D (earlier) | Moore-bit dogfood |
+| Item | Fixed-D (archived) | Moore-bit dogfood (**live**) |
 |------|-------------------|-------------------|
+| Token | `cc2ee91c…494f` | [`edb72730…3dfe`](https://explorer.e.cash/tx/edb727306f7dfbbf051eacfebf29fe3fd6f27b3ee8bc3598bd4a70884ca43dfe) |
 | EMPP | Single push: ALP `MINT` | Same (ALP `MINT` only) |
 | Difficulty | Fixed **1** leading zero **byte** | Locktime-derived **bits** (fine grain) |
-| Moore on-chain | Lib-only | `WlotusPowRemintMoore` (+1 bit/day test) |
+| Proven remint | yes | [`8ef4607d…`](https://explorer.e.cash/tx/8ef4607dbbe6ed88894d65a36a86ed66a48df41cb5ae072ec45db30811f3c7aa) at **bits=9** |
 | Scripts | `create-pow-token` / `mine-once` | `create-moore-pow-token` / `mine-moore-once` |
 
-### Size constraint (why no on-chain WLDF yet)
+### Size constraints (Mist preimage)
 
-Mist-style covenants push the full BIP143 **preimage** (includes redeem as `scriptCode`). Stack pushes are capped at **520 bytes**, so redeem must stay ≲ **356 bytes**. Dual-EMPP WLDF construction blew past that; fine-grain `remBits` stays, WLDF announcement is deferred.
+1. Stack push ≤ **520B** → BIP143 preimage (incl. redeem) must fit; redeem ≲ 356B.
+2. `OP_CAT` also ≤ 520B → Moore PoW uses `hash256(sha256(preimage) ‖ nonce)` not `preimage ‖ nonce`.
+3. Dual-EMPP WLDF construction deferred; fine-grain `remBits` is on-chain.
 
 ### WLDF layout (v1, 15 bytes) — for a future smaller redeem / alternate design
 

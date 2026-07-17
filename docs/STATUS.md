@@ -2,18 +2,21 @@
 
 Canonical home: **https://github.com/bcProFoundation/wlotus**
 
-## Live incubation — **mWLPOW**
+## Live incubation — **mWLPOW** (Moore-bit dogfood)
 
 | | |
 |--|--|
 | Role | Cheap PoW token so anyone can mine & burn before the app |
-| Economics | Always **100**/remint @ **0** decimals; ~**$0.00001**/token; 1-byte PoW |
+| Economics | Always **100**/remint @ **0** decimals; ~**$0.00001**/token |
+| Difficulty | Locktime-derived **bits** (+1 bit/day test); proven remint at **bits=9** |
 | Peg | **1000 mWLPOW ≈ 1 WLOTUS** (later launch @ ~$0.01/token) |
+| Token | [`edb72730…3dfe`](https://explorer.e.cash/tx/edb727306f7dfbbf051eacfebf29fe3fd6f27b3ee8bc3598bd4a70884ca43dfe) |
+| Remint | [`8ef4607d…c7aa`](https://explorer.e.cash/tx/8ef4607dbbe6ed88894d65a36a86ed66a48df41cb5ae072ec45db30811f3c7aa) (387 attempts) |
 | Docs | [ECONOMICS.md](./ECONOMICS.md) · [TEST_TOKEN.md](./TEST_TOKEN.md) |
 
 ```bash
-npm run create-pow-token && npm run mine-once
-# or: npm run wait-create-mwlotus
+npm run create-moore-pow-token && npm run mine-moore-once
+# fixed-D legacy: npm run create-pow-token && npm run mine-once
 ```
 
 ## Covenant notes (eCash)
