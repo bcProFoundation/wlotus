@@ -24,22 +24,27 @@ See [docs/SPEC.md](./docs/SPEC.md) and [docs/PROPOSAL.md](./docs/PROPOSAL.md).
 
 ## Status
 
-Scaffold for covenant + miner. **Mainnet test token `WLTEST` is live** —
-see [docs/TEST_TOKEN.md](./docs/TEST_TOKEN.md) and
-[deployments/mainnet-test-token.json](./deployments/mainnet-test-token.json).
-PoW covenant audit and `$0.01` `WLOTUS` launch are TODO.
-See [docs/STATUS.md](./docs/STATUS.md).
-## Layout
+**PoW-mineable mainnet token `WLPOW` is live** (Spedn BIP143 preimage covenant).
+Custodial `WLTEST` also exists but is **not** for mining tests.
+
+See [docs/TEST_TOKEN.md](./docs/TEST_TOKEN.md) and [docs/STATUS.md](./docs/STATUS.md).
+
+```bash
+npm run mine-once          # remint against WLPOW batons
+npm run create-pow-token   # recreate PoW genesis + baton handoff
+```
 
 ```
-contracts/          # CashScript remint covenant
+contracts/          # Spedn PoW remint covenant (BIP143 preimage)
 docs/               # Consensus / product spec + research
 src/params/         # Consensus constants (Moore, batons, …)
-src/lib/            # Moore math, ALP helpers
-src/genesis/        # GENESIS + baton handoff tooling
+src/lib/            # Moore math
+src/covenant/       # Contract loader, PoW mine, output templates
+src/genesis/        # ALP GENESIS tooling
 src/miner/          # PoW remint miner (Chronik + ecash-lib)
-scripts/            # Utilities
+scripts/            # create-pow-token, mine-once, …
 tests/              # Unit tests
+deployments/        # Live mainnet records
 ```
 
 ## Quick start
@@ -62,8 +67,13 @@ npm run new-wallet            # writes .env + deployments/pending-funding.json
 npm run create-test-token     # ALP GENESIS → deployments/mainnet-test-token.json
 ```
 
-Ticker for this dogfood deployment: `WLTEST` (keeps `WLOTUS` for the later $0.01 launch).
-Mint batons are custodial on the genesis wallet until the PoW covenant is live.
+Ticker for this dogfood deployment: `WLPOW` (PoW) / `WLTEST` (custodial only).
+Keep `WLOTUS` for the later $0.01 launch.
+
+```bash
+npm run create-pow-token   # PoW genesis + handoff to covenant P2SH
+npm run mine-once          # one permissionless remint
+```
 
 ## License
 

@@ -11,12 +11,17 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "new-wallet": "tsx scripts/new-wallet.ts",
     "create-test-token": "tsx scripts/create-test-token.ts",
-    "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts"
+    "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
+    "mine-once": "tsx scripts/mine-once.ts",
+    "create-pow-token": "tsx scripts/create-pow-token.ts"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@spedn/rts": "^5.0.0",
+    "@spedn/rts-bchjs": "^5.0.0",
+    "@spedn/sdk": "^5.0.0",
     "chronik-client": "^4.3.0",
     "dotenv": "^16.4.7",
     "ecash-lib": "^4.13.0",

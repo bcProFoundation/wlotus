@@ -29,4 +29,12 @@ export {
 } from './genesis/broadcastGenesis.js';
 export { createChronik } from './network/createChronik.js';
 export { MAINNET_CHRONIK_URLS } from './network/chronikUrls.js';
-export { expectedMintAtoms, minerBanner } from './miner/remint.js';
+export {
+  contractForToken,
+  createPowRemintContract,
+  defaultPowParams,
+  meetsPowDifficulty,
+} from './covenant/powRemintScript.js';
+export { expectedMintOpReturnScript } from './covenant/powRemintOutputs.js';
+export { minePow } from './covenant/minePow.js';
+export { buildMinedRemintTx, minerBanner } from './miner/remint.js';
