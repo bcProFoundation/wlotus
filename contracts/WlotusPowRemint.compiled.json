@@ -1,0 +1,1846 @@
+{
+  "templates": {
+    "WlotusPowRemint": {
+      "asm": [
+        {
+          "contents": "tokenIdRev",
+          "tag": "OP_PUSH"
+        },
+        {
+          "contents": "mintAtomsLe",
+          "tag": "OP_PUSH"
+        },
+        {
+          "contents": "difficultyLeadingZeroBytes",
+          "tag": "OP_PUSH"
+        },
+        {
+          "contents": 6,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "contents": 5,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_CHECKSIGVERIFY"
+        },
+        {
+          "contents": 5,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "contents": 4,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_SHA256"
+        },
+        {
+          "contents": 6,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_CHECKDATASIGVERIFY"
+        },
+        {
+          "contents": 3,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "contents": 8,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_HASH256"
+        },
+        {
+          "tag": "OP_DUP"
+        },
+        {
+          "contents": 2,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_SPLIT"
+        },
+        {
+          "tag": "OP_DROP"
+        },
+        {
+          "tag": "OP_DUP"
+        },
+        {
+          "tag": "OP_BIN2NUM"
+        },
+        {
+          "tag": "OP_FALSE"
+        },
+        {
+          "tag": "OP_EQUALVERIFY"
+        },
+        {
+          "contents": 5,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_SIZE"
+        },
+        {
+          "contents": [
+            1,
+            [
+              40
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_SUB"
+        },
+        {
+          "tag": "OP_SPLIT"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_DUP"
+        },
+        {
+          "contents": [
+            1,
+            [
+              32
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_SPLIT"
+        },
+        {
+          "tag": "OP_DROP"
+        },
+        {
+          "contents": 7,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_SIZE"
+        },
+        {
+          "contents": [
+            1,
+            [
+              52
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_SUB"
+        },
+        {
+          "tag": "OP_SPLIT"
+        },
+        {
+          "tag": "OP_DROP"
+        },
+        {
+          "tag": "OP_DUP"
+        },
+        {
+          "contents": [
+            1,
+            [
+              104
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_SPLIT"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_DUP"
+        },
+        {
+          "tag": "OP_TRUE"
+        },
+        {
+          "tag": "OP_SPLIT"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "contents": [
+            4,
+            [
+              83,
+              76,
+              80,
+              50
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_FALSE"
+        },
+        {
+          "tag": "OP_TRUE"
+        },
+        {
+          "tag": "OP_NUM2BIN"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": 4,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            4,
+            [
+              77,
+              73,
+              78,
+              84
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": 10,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_TRUE"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": 9,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_TRUE"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            2,
+            [
+              106,
+              80
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_OVER"
+        },
+        {
+          "tag": "OP_SIZE"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_TRUE"
+        },
+        {
+          "tag": "OP_NUM2BIN"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_OVER"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            8,
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_OVER"
+        },
+        {
+          "tag": "OP_SIZE"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_TRUE"
+        },
+        {
+          "tag": "OP_NUM2BIN"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_OVER"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            8,
+            [
+              34,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "contents": [
+            1,
+            [
+              25
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            3,
+            [
+              118,
+              169,
+              20
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": 15,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_HASH160"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            2,
+            [
+              136,
+              172
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            8,
+            [
+              34,
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "contents": [
+            1,
+            [
+              23
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            2,
+            [
+              169,
+              20
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": 5,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_HASH160"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": [
+            1,
+            [
+              135
+            ]
+          ],
+          "tag": "OP_PUSHDATA0"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "contents": 2,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "contents": 2,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_OVER"
+        },
+        {
+          "tag": "OP_CAT"
+        },
+        {
+          "tag": "OP_HASH256"
+        },
+        {
+          "contents": 9,
+          "tag": "OP_N"
+        },
+        {
+          "tag": "OP_PICK"
+        },
+        {
+          "tag": "OP_EQUAL"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        },
+        {
+          "tag": "OP_NIP"
+        }
+      ],
+      "ast": {
+        "contractAnnotation": "<inline>:7:1",
+        "contractChallenges": [
+          [
+            "remint",
+            [
+              [
+                {
+                  "contents": [
+                    "byte",
+                    4
+                  ],
+                  "tag": "Array"
+                },
+                "nonce",
+                "<inline>:13:9"
+              ],
+              [
+                "Sig",
+                "s",
+                "<inline>:14:9"
+              ],
+              [
+                "DataSig",
+                "ds",
+                "<inline>:15:9"
+              ],
+              [
+                "PubKey",
+                "minerPk",
+                "<inline>:16:9"
+              ],
+              [
+                {
+                  "contents": "byte",
+                  "tag": "List"
+                },
+                "preimage",
+                "<inline>:17:9"
+              ]
+            ],
+            {
+              "contents": [
+                [
+                  {
+                    "contents": [
+                      {
+                        "contents": [
+                          "checkSig",
+                          [
+                            {
+                              "contents": [
+                                "s",
+                                "<inline>:19:25"
+                              ],
+                              "tag": "Var"
+                            },
+                            {
+                              "contents": [
+                                "minerPk",
+                                "<inline>:19:28"
+                              ],
+                              "tag": "Var"
+                            }
+                          ],
+                          "<inline>:19:16"
+                        ],
+                        "tag": "Call"
+                      },
+                      "<inline>:19:9"
+                    ],
+                    "tag": "Verify"
+                  },
+                  {
+                    "contents": [
+                      {
+                        "contents": [
+                          "checkDataSig",
+                          [
+                            {
+                              "contents": [
+                                "ds",
+                                "<inline>:20:29"
+                              ],
+                              "tag": "Var"
+                            },
+                            {
+                              "contents": [
+                                "sha256",
+                                [
+                                  {
+                                    "contents": [
+                                      "preimage",
+                                      "<inline>:20:40"
+                                    ],
+                                    "tag": "Var"
+                                  }
+                                ],
+                                "<inline>:20:33"
+                              ],
+                              "tag": "Call"
+                            },
+                            {
+                              "contents": [
+                                "minerPk",
+                                "<inline>:20:51"
+                              ],
+                              "tag": "Var"
+                            }
+                          ],
+                          "<inline>:20:16"
+                        ],
+                        "tag": "Call"
+                      },
+                      "<inline>:20:9"
+                    ],
+                    "tag": "Verify"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "byte",
+                          "tag": "List"
+                        },
+                        "solhash",
+                        "<inline>:22:9"
+                      ],
+                      {
+                        "contents": [
+                          "hash256",
+                          [
+                            {
+                              "contents": [
+                                "Cat",
+                                {
+                                  "contents": [
+                                    "preimage",
+                                    "<inline>:22:34"
+                                  ],
+                                  "tag": "Var"
+                                },
+                                {
+                                  "contents": [
+                                    "nonce",
+                                    "<inline>:22:45"
+                                  ],
+                                  "tag": "Var"
+                                },
+                                "<inline>:22:43"
+                              ],
+                              "tag": "BinaryExpr"
+                            }
+                          ],
+                          "<inline>:22:26"
+                        ],
+                        "tag": "Call"
+                      },
+                      "<inline>:22:9"
+                    ],
+                    "tag": "Assign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": [
+                            {
+                              "contents": "byte",
+                              "tag": "List"
+                            },
+                            "work",
+                            "<inline>:23:10"
+                          ],
+                          "tag": "TupleVarDecl"
+                        },
+                        {
+                          "contents": "<inline>:23:23",
+                          "tag": "Gap"
+                        }
+                      ],
+                      {
+                        "contents": [
+                          "Split",
+                          {
+                            "contents": [
+                              "solhash",
+                              "<inline>:23:28"
+                            ],
+                            "tag": "Var"
+                          },
+                          {
+                            "contents": [
+                              "difficultyLeadingZeroBytes",
+                              "<inline>:23:38"
+                            ],
+                            "tag": "Var"
+                          },
+                          "<inline>:23:36"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:23:9"
+                    ],
+                    "tag": "SplitAssign"
+                  },
+                  {
+                    "contents": [
+                      {
+                        "contents": [
+                          "Eq",
+                          {
+                            "contents": [
+                              "bin2num",
+                              [
+                                {
+                                  "contents": [
+                                    "work",
+                                    "<inline>:24:24"
+                                  ],
+                                  "tag": "Var"
+                                }
+                              ],
+                              "<inline>:24:16"
+                            ],
+                            "tag": "Call"
+                          },
+                          {
+                            "contents": [
+                              0,
+                              "<inline>:24:33"
+                            ],
+                            "tag": "NumConst"
+                          },
+                          "<inline>:24:30"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:24:9"
+                    ],
+                    "tag": "Verify"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "<inline>:26:10",
+                          "tag": "Gap"
+                        },
+                        {
+                          "contents": [
+                            {
+                              "contents": "byte",
+                              "tag": "List"
+                            },
+                            "tail40",
+                            "<inline>:26:13"
+                          ],
+                          "tag": "TupleVarDecl"
+                        }
+                      ],
+                      {
+                        "contents": [
+                          "Split",
+                          {
+                            "contents": [
+                              "preimage",
+                              "<inline>:26:30"
+                            ],
+                            "tag": "Var"
+                          },
+                          {
+                            "contents": [
+                              "Sub",
+                              {
+                                "contents": [
+                                  "size",
+                                  [
+                                    {
+                                      "contents": [
+                                        "preimage",
+                                        "<inline>:26:47"
+                                      ],
+                                      "tag": "Var"
+                                    }
+                                  ],
+                                  "<inline>:26:42"
+                                ],
+                                "tag": "Call"
+                              },
+                              {
+                                "contents": [
+                                  40,
+                                  "<inline>:26:59"
+                                ],
+                                "tag": "NumConst"
+                              },
+                              "<inline>:26:57"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          "<inline>:26:39"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:26:9"
+                    ],
+                    "tag": "SplitAssign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": [
+                            {
+                              "contents": "byte",
+                              "tag": "List"
+                            },
+                            "hashOutputs",
+                            "<inline>:27:10"
+                          ],
+                          "tag": "TupleVarDecl"
+                        },
+                        {
+                          "contents": "<inline>:27:30",
+                          "tag": "Gap"
+                        }
+                      ],
+                      {
+                        "contents": [
+                          "Split",
+                          {
+                            "contents": [
+                              "tail40",
+                              "<inline>:27:35"
+                            ],
+                            "tag": "Var"
+                          },
+                          {
+                            "contents": [
+                              32,
+                              "<inline>:27:44"
+                            ],
+                            "tag": "NumConst"
+                          },
+                          "<inline>:27:42"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:27:9"
+                    ],
+                    "tag": "SplitAssign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": [
+                            {
+                              "contents": "byte",
+                              "tag": "List"
+                            },
+                            "head",
+                            "<inline>:31:10"
+                          ],
+                          "tag": "TupleVarDecl"
+                        },
+                        {
+                          "contents": "<inline>:31:23",
+                          "tag": "Gap"
+                        }
+                      ],
+                      {
+                        "contents": [
+                          "Split",
+                          {
+                            "contents": [
+                              "preimage",
+                              "<inline>:31:28"
+                            ],
+                            "tag": "Var"
+                          },
+                          {
+                            "contents": [
+                              "Sub",
+                              {
+                                "contents": [
+                                  "size",
+                                  [
+                                    {
+                                      "contents": [
+                                        "preimage",
+                                        "<inline>:31:45"
+                                      ],
+                                      "tag": "Var"
+                                    }
+                                  ],
+                                  "<inline>:31:40"
+                                ],
+                                "tag": "Call"
+                              },
+                              {
+                                "contents": [
+                                  52,
+                                  "<inline>:31:57"
+                                ],
+                                "tag": "NumConst"
+                              },
+                              "<inline>:31:55"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          "<inline>:31:37"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:31:9"
+                    ],
+                    "tag": "SplitAssign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "<inline>:32:10",
+                          "tag": "Gap"
+                        },
+                        {
+                          "contents": [
+                            {
+                              "contents": "byte",
+                              "tag": "List"
+                            },
+                            "scriptCodePrefixed",
+                            "<inline>:32:13"
+                          ],
+                          "tag": "TupleVarDecl"
+                        }
+                      ],
+                      {
+                        "contents": [
+                          "Split",
+                          {
+                            "contents": [
+                              "head",
+                              "<inline>:32:42"
+                            ],
+                            "tag": "Var"
+                          },
+                          {
+                            "contents": [
+                              104,
+                              "<inline>:32:49"
+                            ],
+                            "tag": "NumConst"
+                          },
+                          "<inline>:32:47"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:32:9"
+                    ],
+                    "tag": "SplitAssign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "<inline>:33:10",
+                          "tag": "Gap"
+                        },
+                        {
+                          "contents": [
+                            {
+                              "contents": "byte",
+                              "tag": "List"
+                            },
+                            "redeemScript",
+                            "<inline>:33:13"
+                          ],
+                          "tag": "TupleVarDecl"
+                        }
+                      ],
+                      {
+                        "contents": [
+                          "Split",
+                          {
+                            "contents": [
+                              "scriptCodePrefixed",
+                              "<inline>:33:36"
+                            ],
+                            "tag": "Var"
+                          },
+                          {
+                            "contents": [
+                              1,
+                              "<inline>:33:57"
+                            ],
+                            "tag": "NumConst"
+                          },
+                          "<inline>:33:55"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:33:9"
+                    ],
+                    "tag": "SplitAssign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "byte",
+                          "tag": "List"
+                        },
+                        "mintSection",
+                        "<inline>:36:9"
+                      ],
+                      {
+                        "contents": [
+                          "Cat",
+                          {
+                            "contents": [
+                              "Cat",
+                              {
+                                "contents": [
+                                  "Cat",
+                                  {
+                                    "contents": [
+                                      "Cat",
+                                      {
+                                        "contents": [
+                                          "Cat",
+                                          {
+                                            "contents": [
+                                              "Cat",
+                                              {
+                                                "contents": [
+                                                  "Cat",
+                                                  {
+                                                    "contents": [
+                                                      [
+                                                        83,
+                                                        76,
+                                                        80,
+                                                        50
+                                                      ],
+                                                      "<inline>:37:13"
+                                                    ],
+                                                    "tag": "HexConst"
+                                                  },
+                                                  {
+                                                    "contents": [
+                                                      "num2bin",
+                                                      [
+                                                        {
+                                                          "contents": [
+                                                            0,
+                                                            "<inline>:38:21"
+                                                          ],
+                                                          "tag": "NumConst"
+                                                        },
+                                                        {
+                                                          "contents": [
+                                                            1,
+                                                            "<inline>:38:24"
+                                                          ],
+                                                          "tag": "NumConst"
+                                                        }
+                                                      ],
+                                                      "<inline>:38:13"
+                                                    ],
+                                                    "tag": "Call"
+                                                  },
+                                                  "<inline>:37:24"
+                                                ],
+                                                "tag": "BinaryExpr"
+                                              },
+                                              {
+                                                "contents": [
+                                                  [
+                                                    4
+                                                  ],
+                                                  "<inline>:39:13"
+                                                ],
+                                                "tag": "HexConst"
+                                              },
+                                              "<inline>:38:27"
+                                            ],
+                                            "tag": "BinaryExpr"
+                                          },
+                                          {
+                                            "contents": [
+                                              [
+                                                77,
+                                                73,
+                                                78,
+                                                84
+                                              ],
+                                              "<inline>:39:20"
+                                            ],
+                                            "tag": "HexConst"
+                                          },
+                                          "<inline>:39:18"
+                                        ],
+                                        "tag": "BinaryExpr"
+                                      },
+                                      {
+                                        "contents": [
+                                          "tokenIdRev",
+                                          "<inline>:40:13"
+                                        ],
+                                        "tag": "Var"
+                                      },
+                                      "<inline>:39:31"
+                                    ],
+                                    "tag": "BinaryExpr"
+                                  },
+                                  {
+                                    "contents": [
+                                      [
+                                        1
+                                      ],
+                                      "<inline>:41:13"
+                                    ],
+                                    "tag": "HexConst"
+                                  },
+                                  "<inline>:40:24"
+                                ],
+                                "tag": "BinaryExpr"
+                              },
+                              {
+                                "contents": [
+                                  "mintAtomsLe",
+                                  "<inline>:42:13"
+                                ],
+                                "tag": "Var"
+                              },
+                              "<inline>:41:18"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          {
+                            "contents": [
+                              [
+                                1
+                              ],
+                              "<inline>:43:13"
+                            ],
+                            "tag": "HexConst"
+                          },
+                          "<inline>:42:25"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:36:9"
+                    ],
+                    "tag": "Assign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "byte",
+                          "tag": "List"
+                        },
+                        "opReturnScript",
+                        "<inline>:45:9"
+                      ],
+                      {
+                        "contents": [
+                          "Cat",
+                          {
+                            "contents": [
+                              "Cat",
+                              {
+                                "contents": [
+                                  [
+                                    106,
+                                    80
+                                  ],
+                                  "<inline>:45:33"
+                                ],
+                                "tag": "HexConst"
+                              },
+                              {
+                                "contents": [
+                                  "num2bin",
+                                  [
+                                    {
+                                      "contents": [
+                                        "size",
+                                        [
+                                          {
+                                            "contents": [
+                                              "mintSection",
+                                              "<inline>:45:55"
+                                            ],
+                                            "tag": "Var"
+                                          }
+                                        ],
+                                        "<inline>:45:50"
+                                      ],
+                                      "tag": "Call"
+                                    },
+                                    {
+                                      "contents": [
+                                        1,
+                                        "<inline>:45:69"
+                                      ],
+                                      "tag": "NumConst"
+                                    }
+                                  ],
+                                  "<inline>:45:42"
+                                ],
+                                "tag": "Call"
+                              },
+                              "<inline>:45:40"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          {
+                            "contents": [
+                              "mintSection",
+                              "<inline>:45:74"
+                            ],
+                            "tag": "Var"
+                          },
+                          "<inline>:45:72"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:45:9"
+                    ],
+                    "tag": "Assign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "byte",
+                          "tag": "List"
+                        },
+                        "out0",
+                        "<inline>:47:9"
+                      ],
+                      {
+                        "contents": [
+                          "Cat",
+                          {
+                            "contents": [
+                              "Cat",
+                              {
+                                "contents": [
+                                  [
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    0
+                                  ],
+                                  "<inline>:47:23"
+                                ],
+                                "tag": "HexConst"
+                              },
+                              {
+                                "contents": [
+                                  "num2bin",
+                                  [
+                                    {
+                                      "contents": [
+                                        "size",
+                                        [
+                                          {
+                                            "contents": [
+                                              "opReturnScript",
+                                              "<inline>:47:57"
+                                            ],
+                                            "tag": "Var"
+                                          }
+                                        ],
+                                        "<inline>:47:52"
+                                      ],
+                                      "tag": "Call"
+                                    },
+                                    {
+                                      "contents": [
+                                        1,
+                                        "<inline>:47:74"
+                                      ],
+                                      "tag": "NumConst"
+                                    }
+                                  ],
+                                  "<inline>:47:44"
+                                ],
+                                "tag": "Call"
+                              },
+                              "<inline>:47:42"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          {
+                            "contents": [
+                              "opReturnScript",
+                              "<inline>:47:79"
+                            ],
+                            "tag": "Var"
+                          },
+                          "<inline>:47:77"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:47:9"
+                    ],
+                    "tag": "Assign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "byte",
+                          "tag": "List"
+                        },
+                        "out1",
+                        "<inline>:48:9"
+                      ],
+                      {
+                        "contents": [
+                          "Cat",
+                          {
+                            "contents": [
+                              "Cat",
+                              {
+                                "contents": [
+                                  "Cat",
+                                  {
+                                    "contents": [
+                                      "Cat",
+                                      {
+                                        "contents": [
+                                          [
+                                            34,
+                                            2,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0
+                                          ],
+                                          "<inline>:48:23"
+                                        ],
+                                        "tag": "HexConst"
+                                      },
+                                      {
+                                        "contents": [
+                                          [
+                                            25
+                                          ],
+                                          "<inline>:48:44"
+                                        ],
+                                        "tag": "HexConst"
+                                      },
+                                      "<inline>:48:42"
+                                    ],
+                                    "tag": "BinaryExpr"
+                                  },
+                                  {
+                                    "contents": [
+                                      [
+                                        118,
+                                        169,
+                                        20
+                                      ],
+                                      "<inline>:48:51"
+                                    ],
+                                    "tag": "HexConst"
+                                  },
+                                  "<inline>:48:49"
+                                ],
+                                "tag": "BinaryExpr"
+                              },
+                              {
+                                "contents": [
+                                  "hash160",
+                                  [
+                                    {
+                                      "contents": [
+                                        "minerPk",
+                                        "<inline>:48:70"
+                                      ],
+                                      "tag": "Var"
+                                    }
+                                  ],
+                                  "<inline>:48:62"
+                                ],
+                                "tag": "Call"
+                              },
+                              "<inline>:48:60"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          {
+                            "contents": [
+                              [
+                                136,
+                                172
+                              ],
+                              "<inline>:48:81"
+                            ],
+                            "tag": "HexConst"
+                          },
+                          "<inline>:48:79"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:48:9"
+                    ],
+                    "tag": "Assign"
+                  },
+                  {
+                    "contents": [
+                      [
+                        {
+                          "contents": "byte",
+                          "tag": "List"
+                        },
+                        "out2",
+                        "<inline>:49:9"
+                      ],
+                      {
+                        "contents": [
+                          "Cat",
+                          {
+                            "contents": [
+                              "Cat",
+                              {
+                                "contents": [
+                                  "Cat",
+                                  {
+                                    "contents": [
+                                      "Cat",
+                                      {
+                                        "contents": [
+                                          [
+                                            34,
+                                            2,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0
+                                          ],
+                                          "<inline>:49:23"
+                                        ],
+                                        "tag": "HexConst"
+                                      },
+                                      {
+                                        "contents": [
+                                          [
+                                            23
+                                          ],
+                                          "<inline>:49:44"
+                                        ],
+                                        "tag": "HexConst"
+                                      },
+                                      "<inline>:49:42"
+                                    ],
+                                    "tag": "BinaryExpr"
+                                  },
+                                  {
+                                    "contents": [
+                                      [
+                                        169,
+                                        20
+                                      ],
+                                      "<inline>:49:51"
+                                    ],
+                                    "tag": "HexConst"
+                                  },
+                                  "<inline>:49:49"
+                                ],
+                                "tag": "BinaryExpr"
+                              },
+                              {
+                                "contents": [
+                                  "hash160",
+                                  [
+                                    {
+                                      "contents": [
+                                        "redeemScript",
+                                        "<inline>:49:68"
+                                      ],
+                                      "tag": "Var"
+                                    }
+                                  ],
+                                  "<inline>:49:60"
+                                ],
+                                "tag": "Call"
+                              },
+                              "<inline>:49:58"
+                            ],
+                            "tag": "BinaryExpr"
+                          },
+                          {
+                            "contents": [
+                              [
+                                135
+                              ],
+                              "<inline>:49:84"
+                            ],
+                            "tag": "HexConst"
+                          },
+                          "<inline>:49:82"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:49:9"
+                    ],
+                    "tag": "Assign"
+                  },
+                  {
+                    "contents": [
+                      {
+                        "contents": [
+                          "Eq",
+                          {
+                            "contents": [
+                              "hash256",
+                              [
+                                {
+                                  "contents": [
+                                    "Cat",
+                                    {
+                                      "contents": [
+                                        "Cat",
+                                        {
+                                          "contents": [
+                                            "out0",
+                                            "<inline>:51:24"
+                                          ],
+                                          "tag": "Var"
+                                        },
+                                        {
+                                          "contents": [
+                                            "out1",
+                                            "<inline>:51:31"
+                                          ],
+                                          "tag": "Var"
+                                        },
+                                        "<inline>:51:29"
+                                      ],
+                                      "tag": "BinaryExpr"
+                                    },
+                                    {
+                                      "contents": [
+                                        "out2",
+                                        "<inline>:51:38"
+                                      ],
+                                      "tag": "Var"
+                                    },
+                                    "<inline>:51:36"
+                                  ],
+                                  "tag": "BinaryExpr"
+                                }
+                              ],
+                              "<inline>:51:16"
+                            ],
+                            "tag": "Call"
+                          },
+                          {
+                            "contents": [
+                              "Sha256",
+                              [
+                                {
+                                  "contents": [
+                                    "hashOutputs",
+                                    "<inline>:51:54"
+                                  ],
+                                  "tag": "Var"
+                                }
+                              ],
+                              "<inline>:51:47"
+                            ],
+                            "tag": "Call"
+                          },
+                          "<inline>:51:44"
+                        ],
+                        "tag": "BinaryExpr"
+                      },
+                      "<inline>:51:9"
+                    ],
+                    "tag": "Verify"
+                  }
+                ],
+                "<inline>:18:7"
+              ],
+              "tag": "Block"
+            },
+            "<inline>:12:5"
+          ]
+        ],
+        "contractName": "WlotusPowRemint",
+        "contractParams": [
+          [
+            {
+              "contents": [
+                "byte",
+                32
+              ],
+              "tag": "Array"
+            },
+            "tokenIdRev",
+            "<inline>:8:5"
+          ],
+          [
+            {
+              "contents": [
+                "byte",
+                6
+              ],
+              "tag": "Array"
+            },
+            "mintAtomsLe",
+            "<inline>:9:5"
+          ],
+          [
+            "int",
+            "difficultyLeadingZeroBytes",
+            "<inline>:10:5"
+          ]
+        ]
+      }
+    }
+  },
+  "types": {
+    "DataSig": {
+      "contents": [
+        "byte",
+        64
+      ],
+      "tag": "Array"
+    },
+    "NLocktime": {
+      "contents": [
+        "byte",
+        4
+      ],
+      "tag": "Array"
+    },
+    "NSequence": {
+      "contents": [
+        "byte",
+        4
+      ],
+      "tag": "Array"
+    },
+    "NVersion": {
+      "contents": [
+        "byte",
+        4
+      ],
+      "tag": "Array"
+    },
+    "Outpoint": {
+      "contents": [
+        "byte",
+        36
+      ],
+      "tag": "Array"
+    },
+    "Preimage": {
+      "contents": "byte",
+      "tag": "List"
+    },
+    "PubKey": {
+      "contents": [
+        "byte",
+        33
+      ],
+      "tag": "Array"
+    },
+    "Ripemd160": {
+      "contents": [
+        "byte",
+        20
+      ],
+      "tag": "Array"
+    },
+    "ScriptCode": {
+      "contents": "byte",
+      "tag": "List"
+    },
+    "Sha1": {
+      "contents": [
+        "byte",
+        16
+      ],
+      "tag": "Array"
+    },
+    "Sha256": {
+      "contents": [
+        "byte",
+        32
+      ],
+      "tag": "Array"
+    },
+    "Sig": {
+      "contents": [
+        "byte",
+        65
+      ],
+      "tag": "Array"
+    },
+    "Sighash": {
+      "contents": [
+        "byte",
+        4
+      ],
+      "tag": "Array"
+    },
+    "Time": "int",
+    "TimeSpan": "int",
+    "TxState": {
+      "contents": [
+        "NVersion",
+        "Sha256",
+        "Sha256",
+        "Outpoint",
+        "ScriptCode",
+        "Value",
+        "NSequence",
+        "Sha256",
+        "NLocktime",
+        "Sighash"
+      ],
+      "tag": "Tuple"
+    },
+    "Value": {
+      "contents": [
+        "byte",
+        8
+      ],
+      "tag": "Array"
+    }
+  }
+}

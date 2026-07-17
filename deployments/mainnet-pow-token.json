@@ -1,0 +1,35 @@
+{
+  "ticker": "mWLPOW",
+  "name": "milli White Lotus PoW",
+  "tokenId": "cc2ee91c0ed43da44fc115283ec4b5e523da9f1549f27eacc06b0a3e7dc1494f",
+  "mode": "pow",
+  "role": "incubation",
+  "decimals": 0,
+  "powAddress": "ecash:pqplpsn4x8hqgjmycujrekspwxt748e4ju6qqs9lmg",
+  "redeemScriptHex": "204f49c17d3e0a6bc0ac7ef249159fda23e5b5c43e2815c14fa43dd40e1ce92ecc066400000000005156795579ad55795479a85679bb537958797eaa7652797f75768100885579820128947f777601207f755779820134947f757601687f7776517f7704534c50320051807e547e044d494e547e5a797e517e59797e517e026a5078827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e5f79a97e0288ac7e08220200000000000001177e02a9147e5579a97e01877e527952797e787eaa5979877777777777777777777777777777777777777777",
+  "difficultyLeadingZeroBytes": 1,
+  "mintAtomsPerRemint": "100",
+  "tokensPerRemint": 100,
+  "targetUsdPerToken": 0.00001,
+  "mwlpowPerWlotus": 1000,
+  "initialMintAtoms": "1000000",
+  "powBatonCount": 4,
+  "genesisTxid": "cc2ee91c0ed43da44fc115283ec4b5e523da9f1549f27eacc06b0a3e7dc1494f",
+  "handoffTxids": [
+    "06ea875f3e06abef4764c212d9545097854a0e42da796478d83fb6af5775d4f9",
+    "d5ea88a7a87492d844ceda68624316809150aeed8113cc09e6d0f86dd46f1d3b",
+    "eafc782b541efee85815fd2ec2ea17127143564309a025bf2db6305bd4a78dd3",
+    "07336e0123efd689dd6eec574f8fdb30b44203d739d964535e60e45733d6f302"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-17T06:09:55.666Z",
+  "explorer": "https://explorer.e.cash/tx/cc2ee91c0ed43da44fc115283ec4b5e523da9f1549f27eacc06b0a3e7dc1494f",
+  "cashtab": "https://cashtab.com/#/token/cc2ee91c0ed43da44fc115283ec4b5e523da9f1549f27eacc06b0a3e7dc1494f",
+  "notes": [
+    "mWLPOW incubation: always 100/remint, 0 decimals, 1-byte PoW.",
+    "Target ~$0.00001/token (~1/1000 of future WLOTUS at ~$0.01).",
+    "Moore δ=99918/100000 applies to work schedule (lib); mint size fixed.",
+    "Burn = sacrifice; remint = pure PoW. See docs/ECONOMICS.md."
+  ]
+}

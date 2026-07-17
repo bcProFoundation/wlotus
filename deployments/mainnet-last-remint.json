@@ -1,0 +1,9 @@
+{
+  "tokenId": "cc2ee91c0ed43da44fc115283ec4b5e523da9f1549f27eacc06b0a3e7dc1494f",
+  "txid": "3e9a04f1219d68b85e5f1a521f927e8909d8cb59411367ec1e380515f3afaf55",
+  "powAttempts": 210,
+  "nonceHex": "d2000000",
+  "mintAtoms": "100",
+  "minedAt": "2026-07-17T06:10:08.115Z",
+  "explorer": "https://explorer.e.cash/tx/3e9a04f1219d68b85e5f1a521f927e8909d8cb59411367ec1e380515f3afaf55"
+}

@@ -1,0 +1,53 @@
+// mWLPOW / WLOTUS PoW remint covenant (eCash / XEC)
+// Mist-style BIP143 preimage (eCash has no native introspection opcodes).
+// Mint atoms are FIXED (always 100 @ 0 decimals for mWLPOW).
+// Difficulty leading-zero bytes are a constructor param (incubation: 1).
+// `s` signs hash256(preimage); `ds` is toDataSig(s).
+
+contract WlotusPowRemint(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    int difficultyLeadingZeroBytes
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage
+    ) {
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+
+        [byte] solhash = hash256(preimage . nonce);
+        ([byte] work, _) = solhash @ difficultyLeadingZeroBytes;
+        verify bin2num(work) == 0;
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        // BIP143 trailer after scriptCode: value(8)+nSequence(4)+hashOutputs(32)+
+        // nLockTime(4)+sighashType(4) = 52 bytes (not 56).
+        ([byte] head, _) = preimage @ (size(preimage) - 52);
+        (_, [byte] scriptCodePrefixed) = head @ 104;
+        (_, [byte] redeemScript) = scriptCodePrefixed @ 1;
+
+        // Plain 0x00 is the empty push in Spedn; use num2bin(0, 1) for a 0x00 byte.
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x01;
+
+        [byte] opReturnScript = 0x6a50 . num2bin(size(mintSection), 1) . mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(redeemScript) . 0x87;
+
+        verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+    }
+}

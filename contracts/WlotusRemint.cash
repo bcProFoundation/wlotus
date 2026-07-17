@@ -1,0 +1,75 @@
+/**
+ * WLOTUS PoW remint covenant (CashScript draft).
+ *
+ * Intent (enforce on every remint):
+ * 1. PoW: hash256(txPreimage || nonce) has `difficultyLeadingZeroBytes` leading zero bytes
+ * 2. Mint atoms == Moore-adjusted M(k) from host time (δ = 99918/100000 per day-step)
+ * 3. Outputs include ALP MINT for `tokenId` paying `mintAtoms` to miner
+ * 4. Exactly one mint baton returned to this covenant (cardinality conserved per tip)
+ *
+ * Parallelism: genesis creates N independent UTXOs locked to this same redeem template
+ * (possibly with a batonIndex constructor arg). Miners race each tip separately.
+ *
+ * NOT production-ready: needs chipnet testing, CashScript version pin, and audit.
+ * ALP OP_RETURN bytes must match Chronik / ecash-lib `alpMint` encoding exactly.
+ *
+ * Moore clock MUST use host median time / block height — never token-mint height.
+ */
+
+pragma cashscript ^0.10.0;
+
+contract WlotusRemint(
+    bytes32 tokenId,
+    int difficultyLeadingZeroBytes,
+    int baseMintAtoms,
+    int genesisHostHeight,
+    int mooreDayBlocks,      // 144
+    int mooreNum,            // 99918 — Ergon post-fix only
+    int mooreDen,            // 100000
+    int batonIndex           // 0 .. N-1, binds this tip in a multi-baton set
+) {
+    /**
+     * Permissionless remint: solve PoW, mint M(k), pass baton forward.
+     *
+     * Unlocking args are illustrative — final sighash / introspection wiring
+     * will follow ecash-lib / Agora patterns on chipnet.
+     */
+    function remint(
+        bytes nonce,
+        pubkey minerPk,
+        sig minerSig,
+        int hostHeight
+    ) {
+        // Host height must not precede genesis.
+        require(hostHeight >= genesisHostHeight);
+
+        // k = floor((hostHeight - genesisHostHeight) / mooreDayBlocks)
+        int k = (hostHeight - genesisHostHeight) / mooreDayBlocks;
+
+        // M(k) via repeated (x * 99918) / 100000 — forbid obsolete 99826.
+        require(mooreNum == 99918);
+        require(mooreDen == 100000);
+        int mintAtoms = baseMintAtoms;
+        // Bounded loop: cashscript needs a fixed max iterations in practice.
+        // Implementation plan: precompute mintAtoms off-chain and verify with
+        // a covenant-friendly proof, OR unroll with a max-k cap for early years.
+        // Placeholder verification hook:
+        require(mintAtoms == baseMintAtoms || k >= 0);
+
+        // PoW over preimage||nonce — exact preimage source TBD (native introspection).
+        // require(tx.preimage matches BIP143 / covenant pattern);
+        // bytes32 h = hash256(preimage + nonce);
+        // require(leadingZeroBytes(h) >= difficultyLeadingZeroBytes);
+
+        require(checkSig(minerSig, minerPk));
+
+        // Outputs (conceptual):
+        //  out0: OP_RETURN eMPP + ALP MINT(tokenId, [mintAtoms], numBatons=1)
+        //  out1: P2PKH(minerPk) colored with mintAtoms
+        //  out2: P2SH(this contract) mint baton (same constructors, batonIndex unchanged)
+
+        // Enforce baton conservation and ALP byte template in a follow-up diff
+        // once introspection output locks are pinned to ecash-lib encodings.
+        require(batonIndex >= 0);
+    }
+}

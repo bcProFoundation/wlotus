@@ -1,0 +1,44 @@
+{
+  "name": "wlotus",
+  "version": "0.1.0",
+  "description": "mWLOTUS / WLOTUS: Ergon-like ALP PoW remint on eCash (incubation milli-token first)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "moore": "tsx scripts/compute-moore.ts",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "new-wallet": "tsx scripts/new-wallet.ts",
+    "create-test-token": "tsx scripts/create-test-token.ts",
+    "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
+    "mine-once": "tsx scripts/mine-once.ts",
+    "create-pow-token": "tsx scripts/create-pow-token.ts",
+    "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@spedn/rts": "^5.0.0",
+    "@spedn/rts-bchjs": "^5.0.0",
+    "@spedn/sdk": "^5.0.0",
+    "chronik-client": "^4.3.0",
+    "dotenv": "^16.4.7",
+    "ecash-lib": "^4.13.0",
+    "ecash-wallet": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bcProFoundation/wlotus.git"
+  },
+  "license": "MIT"
+}

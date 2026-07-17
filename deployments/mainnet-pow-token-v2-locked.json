@@ -1,0 +1,31 @@
+{
+  "ticker": "WLPOW",
+  "name": "White Lotus PoW Test",
+  "tokenId": "93a35619d079115ac7604044fa7e390cd67cd4d40d62528491d1008c1091ad38",
+  "mode": "pow",
+  "powAddress": "ecash:pzqhr4yuhk6a880t0nu8zr45lnyueqrgdgxjylryvm",
+  "redeemScriptHex": "2038ad91108c00d1918452620dd4d47cd60c397efa444060c75a1179d01956a3930600e1f50500005156795579ad55795479a85679bb537958797eaa7652797f75768100885579820128947f777601207f755779820134947f757601687f7776517f7704534c5032007e547e044d494e547e5a797e517e59797e517e026a5078827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e5f79a97e0288ac7e08220200000000000001177e02a9147e5579a97e01877e527952797e787eaa5979877777777777777777777777777777777777777777",
+  "difficultyLeadingZeroBytes": 1,
+  "mintAtomsPerRemint": "100000000",
+  "initialMintAtoms": "1000000000000",
+  "powBatonCount": 4,
+  "genesisTxid": "93a35619d079115ac7604044fa7e390cd67cd4d40d62528491d1008c1091ad38",
+  "handoffTxids": [
+    "3c8288e9cde983fef38f323c39f5f5cc8cd1a8c0907f2b6a3df11f3f695d6b5b",
+    "459e35f82de1a3ed2bccda8c77cdaa4e662fbabbb88c8fe86e680a189450debb",
+    "5da5b7ffc5eb3e64c03cb010d3c38292dd16ed9c8e5a6a26b27f16185c0904fe",
+    "4d12cb5b1b8dd78bc5c680fbe6d4a3ea1472ab46fdd777603a32f775d0ad3574"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-17T04:27:01.361Z",
+  "explorer": "https://explorer.e.cash/tx/93a35619d079115ac7604044fa7e390cd67cd4d40d62528491d1008c1091ad38",
+  "cashtab": "https://cashtab.com/#/token/93a35619d079115ac7604044fa7e390cd67cd4d40d62528491d1008c1091ad38",
+  "notes": [
+    "PoW covenant is Spedn Mist-style (BIP143 preimage). eCash has no native introspection.",
+    "Prior WLTEST introspection P2SH batons are permanently locked.",
+    "v1 WLPOW covenant (size-56 trailer bug) batons are locked; see mainnet-pow-token-v1-locked.json.",
+    "LOCKED: Spedn 0x00 compiled to empty push; mintSection missing ALP type byte. Superseded."
+  ],
+  "status": "locked"
+}
