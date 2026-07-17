@@ -57,11 +57,12 @@ describe('moore decay (Ergon 99918/100000) on work', () => {
     expect(years).toBeLessThan(2.4);
   });
 
-  test('after ~2.3y work scale is near half (not zero)', () => {
+  test('after ~2.3y large work scale is near half (not zero)', () => {
+    const work0 = 100_000_000n; // not mint atoms — work scale must stay large
     const days = Math.round(approxHalfLifeYears() * 365.25);
-    const half = mooreAfterDays(days, BASE_MINT_ATOMS);
-    expect(half).toBeGreaterThan(BASE_MINT_ATOMS / 3n);
-    expect(half).toBeLessThan((BASE_MINT_ATOMS * 2n) / 3n);
+    const half = mooreAfterDays(days, work0);
+    expect(half).toBeGreaterThan(work0 / 3n);
+    expect(half).toBeLessThan((work0 * 2n) / 3n);
   });
 
   test('required zero bits grow with Moore day schedule', () => {
@@ -89,17 +90,17 @@ describe('genesis multi-baton', () => {
   });
 });
 
-describe('mWLOTUS incubation economics', () => {
-  test('cheap target, fixed 100.00 mint, 2 decimals', async () => {
+describe('mWLPOW incubation economics', () => {
+  test('cheap target, fixed 100 mint, 0 decimals', async () => {
     const econ = await import('../src/params/testEconomics.js');
-    expect(TOKEN_TICKER).toBe('mWLOTUS');
-    expect(TOKEN_DECIMALS).toBe(2);
-    expect(BASE_MINT_ATOMS).toBe(10_000n);
+    expect(TOKEN_TICKER).toBe('mWLPOW');
+    expect(TOKEN_DECIMALS).toBe(0);
+    expect(BASE_MINT_ATOMS).toBe(100n);
     expect(econ.TEST_POW_LEADING_ZERO_BYTES).toBe(1);
     expect(econ.TEST_TARGET_USD_PER_TOKEN).toBe(0.00001);
     expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
     expect(econ.TOKENS_PER_REMINT).toBe(100);
     expect(econ.TEST_POW_BATON_COUNT).toBeGreaterThanOrEqual(2);
-    expect(econ.TEST_INITIAL_MINT_ATOMS).toBe(100_000_000n);
+    expect(econ.TEST_INITIAL_MINT_ATOMS).toBe(1_000_000n);
   });
 });

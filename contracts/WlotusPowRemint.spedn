@@ -1,6 +1,6 @@
-// mWLOTUS / WLOTUS PoW remint covenant (eCash / XEC)
+// mWLPOW / WLOTUS PoW remint covenant (eCash / XEC)
 // Mist-style BIP143 preimage (eCash has no native introspection opcodes).
-// Mint atoms are FIXED (always 100.00 @ 2 decimals for mWLOTUS).
+// Mint atoms are FIXED (always 100 @ 0 decimals for mWLPOW).
 // Difficulty leading-zero bytes are a constructor param (incubation: 1).
 // `s` signs hash256(preimage); `ds` is toDataSig(s).
 

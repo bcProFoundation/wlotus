@@ -1,4 +1,4 @@
-# Economics — mWLOTUS → WLOTUS
+# Economics — mWLPOW → WLOTUS
 
 ## Ritual loop
 
@@ -9,40 +9,38 @@
 
 Burn does **not** cancel remint. Burns tighten float → support price → incentivise miners to remint again.
 
-## Incubation: mWLOTUS
+## Incubation: mWLPOW
 
 | Knob | Value |
 |------|-------|
-| Ticker | `mWLOTUS` (milli White Lotus) |
-| Decimals | **2** |
-| Tokens / remint | **Always 100.00** (fixed) |
+| Ticker | `mWLPOW` |
+| Decimals | **0** (whole tokens) |
+| Tokens / remint | **Always 100** (fixed) |
 | PoW | Leading zero bytes on `hash256(preimage ‖ nonce)` |
-| Genesis difficulty | **1** leading zero byte (~1/256) — anyone can mine |
+| Genesis difficulty | **1** leading zero byte (~1/256) |
 | Target market price | **~$0.00001 / token** (~$0.001 / remint) |
 | vs WLOTUS | **~1/1000** energy / price |
 
-Moore / Koomey (`δ = 99918/100000`, ~2.3y half-life) adjusts **required work**, not the 100-token mint. Incubation genesis uses a **fixed** cheap difficulty so the network can be dogfooded immediately; the same δ is used in `src/lib/moore.ts` to schedule how work should grow (library + future stateful covenant). Full on-chain Moore-on-difficulty (time-derived or baton-state) lands with the WLOTUS upgrade path — Script cannot read “now”, so a naïve locktime day-index is cheatable with old timestamps.
+Moore / Koomey (`δ = 99918/100000`, ~2.3y half-life) adjusts **required work**, not the 100-token mint. Incubation genesis uses **fixed** cheap difficulty; the same δ is in `src/lib/moore.ts` for the work schedule.
 
 ## Production: WLOTUS (later)
 
 | Knob | Value |
 |------|-------|
 | Ticker | `WLOTUS` |
-| Tokens / remint | **Always 100.00** |
+| Tokens / remint | **Always 100** |
 | Target market price | **~$0.01 / token** (~$1 / remint) |
-| Difficulty | ~**1000×** mWLOTUS genesis work (retune `D₀`; then Moore on work) |
+| Difficulty | ~**1000×** mWLPOW genesis work |
 
-`$0.01` is a **market** target: energy + XEC fees + hardware subsidy + miner profit — not a pure joule oracle.
+`$0.01` is a **market** target (energy + fees + hardware + miner margin), not a USD oracle.
 
 ## Energy peg / conversion
 
-Because both tokens use the same fixed-100 + Moore-on-work family:
-
 ```
-1000 mWLOTUS  ≈  1 WLOTUS
+1000 mWLPOW  ≈  1 WLOTUS
 ```
 
-for **circulating and burned** balances when the app matures (conversion / memorial ledger). Exact redemption UX is app-layer; consensus only needs compatible issuance physics.
+for circulating and burned balances when the app matures.
 
 ## Elasticity
 
@@ -51,3 +49,7 @@ coins/time ≈ N_batons × (hashrate / hashes_per_solution) × 100
 ```
 
 Many remints per eCash block, N ≥ 2 batons, no Mist 1-mint/block CLTV.
+
+## Miner note
+
+The remint covenant commits to exactly **3 outputs** (mint OP_RETURN + miner P2PKH + baton P2SH). Excess fuel is fee — `mine-once` splits a ~30 XEC fuel UTXO first.

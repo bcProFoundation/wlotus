@@ -6,16 +6,16 @@ See also [ECONOMICS.md](./ECONOMICS.md).
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| Ticker | `mWLOTUS` | milli White Lotus (~1/1000 of future WLOTUS) |
-| Name | `milli White Lotus` | |
+| Ticker | `mWLPOW` | milli White Lotus PoW (~1/1000 of future WLOTUS) |
+| Name | `milli White Lotus PoW` | |
 | Protocol | ALP standard (`SLP2`) | eCash |
-| Decimals | `2` | Fixed mint size — no Moore on atoms |
+| Decimals | `0` | Whole tokens; fixed mint size |
 
 ## PoW remint
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| Tokens / remint | **Always 100.00** | `BASE_MINT_ATOMS = 10_000` |
+| Tokens / remint | **Always 100** | `BASE_MINT_ATOMS = 100` |
 | `POW_LEADING_ZERO_BYTES` (genesis) | `1` | Cheap incubation (~$1e-5/token target) |
 | Moore / Koomey | On **work**, not mint size | `δ = 99918/100000` |
 | Host 1-mint/block CLTV | **disabled** | Frequency elasticity |

@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 /**
- * Create mWLOTUS (incubation) PoW token and lock batons to the Spedn covenant.
+ * Create mWLPOW (incubation) PoW token and lock batons to the Spedn covenant.
  *
- * Economics: always 100.00 / remint @ 2 decimals, ~$1e-5/token target,
+ * Economics: always 100 / remint @ 0 decimals, ~$1e-5/token target,
  * 1 leading zero byte PoW. See docs/ECONOMICS.md.
  */
 import { resolve } from 'node:path';
@@ -27,7 +27,7 @@ import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintContract } from '../src/covenant/powRemintScript.js';
 import {
   BASE_MINT_ATOMS,
-  MWLOTUS_PER_WLOTUS,
+  MWLPOW_PER_WLOTUS,
   POW_LEADING_ZERO_BYTES,
   TOKEN_DECIMALS,
   TOKEN_NAME,
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
         balanceXec: Number(wallet.balanceSats) / 100,
         ticker: TOKEN_TICKER,
         decimals: TOKEN_DECIMALS,
-        mintPerRemint: Number(BASE_MINT_ATOMS) / 10 ** TOKEN_DECIMALS,
+        mintPerRemint: Number(BASE_MINT_ATOMS),
         targetUsdPerToken: TEST_TARGET_USD_PER_TOKEN,
       },
       null,
@@ -141,9 +141,9 @@ async function main(): Promise<void> {
     redeemScriptHex: contract.redeemHex,
     difficultyLeadingZeroBytes: POW_LEADING_ZERO_BYTES,
     mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
-    tokensPerRemint: Number(BASE_MINT_ATOMS) / 10 ** TOKEN_DECIMALS,
+    tokensPerRemint: Number(BASE_MINT_ATOMS),
     targetUsdPerToken: TEST_TARGET_USD_PER_TOKEN,
-    mwlotusPerWlotus: Number(MWLOTUS_PER_WLOTUS),
+    mwlpowPerWlotus: Number(MWLPOW_PER_WLOTUS),
     initialMintAtoms: TEST_INITIAL_MINT_ATOMS.toString(),
     powBatonCount: TEST_POW_BATON_COUNT,
     genesisTxid: genesis.tokenId,
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
     explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
     cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
     notes: [
-      'mWLOTUS incubation: always 100.00/remint, 2 decimals, 1-byte PoW.',
+      'mWLPOW incubation: always 100/remint, 0 decimals, 1-byte PoW.',
       'Target ~$0.00001/token (~1/1000 of future WLOTUS at ~$0.01).',
       'Moore δ=99918/100000 applies to work schedule (lib); mint size fixed.',
       'Burn = sacrifice; remint = pure PoW. See docs/ECONOMICS.md.',
@@ -163,10 +163,10 @@ async function main(): Promise<void> {
 
   writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
   writeFileSync(
-    resolve(depDir, 'mainnet-mwlotus.json'),
+    resolve(depDir, 'mainnet-mwlpow.json'),
     `${JSON.stringify(record, null, 2)}\n`,
   );
-  console.log('\nmWLOTUS PoW token ready');
+  console.log('\nmWLPOW PoW token ready');
   console.log(JSON.stringify(record, null, 2));
 }
 

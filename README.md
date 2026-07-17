@@ -24,7 +24,7 @@ See [docs/SPEC.md](./docs/SPEC.md) and [docs/PROPOSAL.md](./docs/PROPOSAL.md).
 
 ## Status
 
-**Incubation PoW token `mWLOTUS` is the mining target** — always 100.00/remint @ 2 decimals,
+**Incubation PoW token `mWLPOW`** — always 100/remint @ 0 decimals,
 ~$0.00001/token (~1/1000 of future `WLOTUS` @ ~$0.01). See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
 
 ```bash
@@ -65,12 +65,12 @@ npm run new-wallet            # writes .env + deployments/pending-funding.json
 npm run create-test-token     # ALP GENESIS → deployments/mainnet-test-token.json
 ```
 
-Ticker for this dogfood deployment: **`mWLOTUS`**. Keep **`WLOTUS`** for the later ~$0.01 launch
+Ticker for this dogfood deployment: **`mWLPOW`**. Keep **`WLOTUS`** for the later ~$0.01 launch
 (1000:1 energy peg). See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
 
 ```bash
-npm run create-pow-token   # mWLOTUS genesis + handoff to covenant P2SH
-npm run mine-once          # one permissionless remint (100.00 tokens)
+npm run create-pow-token   # mWLPOW genesis + handoff to covenant P2SH
+npm run mine-once          # one permissionless remint (100 tokens)
 ```
 
 ## License

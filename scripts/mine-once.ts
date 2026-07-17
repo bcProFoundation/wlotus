@@ -1,12 +1,15 @@
 #!/usr/bin/env tsx
 /**
- * Mine one PoW remint against WLPOW batons in the Spedn covenant.
+ * Mine one PoW remint against mWLPOW batons.
+ *
+ * The covenant fixes exactly 3 outputs (OP_RETURN + miner mint + baton), so
+ * excess fuel becomes fee. We therefore split a small pure-XEC UTXO first.
  */
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 import { Wallet } from 'ecash-wallet';
-import { fromHex, toHex } from 'ecash-lib';
+import { fromHex, payment, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import {
   buildMinedRemintTx,
@@ -15,6 +18,43 @@ import {
 } from '../src/miner/remint.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
+
+/** Small fuel for remint — keeps covenant fee sane (no change output allowed). */
+const REMINT_FUEL_SATS = 3_000n;
+
+async function ensureSmallFuel(wallet: Wallet): Promise<void> {
+  await wallet.sync();
+  const small = wallet.utxos.find(
+    u =>
+      !u.token &&
+      u.sats >= REMINT_FUEL_SATS &&
+      u.sats <= REMINT_FUEL_SATS + 2_000n,
+  );
+  if (small) return;
+
+  const big = wallet.utxos
+    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 5_000n)
+    .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
+  if (!big) {
+    throw new Error(
+      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS + 5_000n} sats to split remint fuel`,
+    );
+  }
+
+  console.log(
+    `Splitting fuel: ${big.sats} → ${REMINT_FUEL_SATS} + change at ${wallet.address}`,
+  );
+  // Pure XEC tx — no blank OP_RETURN (wallet forbids it on non-token txs).
+  const action: payment.Action = {
+    outputs: [{ sats: REMINT_FUEL_SATS, script: wallet.script }],
+  };
+  const resp = await wallet.action(action).build().broadcast();
+  if (!resp.success || !resp.broadcasted?.length) {
+    throw new Error(`Fuel split failed: ${JSON.stringify(resp)}`);
+  }
+  console.log('Fuel split tx', resp.broadcasted[0]);
+  await wallet.sync();
+}
 
 async function main(): Promise<void> {
   console.log(minerBanner());
@@ -25,16 +65,18 @@ async function main(): Promise<void> {
 
   const depPath = resolve(process.cwd(), 'deployments/mainnet-pow-token.json');
   if (!existsSync(depPath)) {
-    throw new Error('Missing deployments/mainnet-pow-token.json — run npm run create-pow-token');
+    throw new Error(
+      'Missing deployments/mainnet-pow-token.json — run npm run create-pow-token',
+    );
   }
   const dep = JSON.parse(readFileSync(depPath, 'utf8'));
   const tokenId = process.env.TOKEN_ID?.trim() || dep.tokenId;
 
   const chronik = await createChronik('closest');
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
-  await wallet.sync();
-  const contract = await contractForToken(tokenId);
+  await ensureSmallFuel(wallet);
 
+  const contract = await contractForToken(tokenId);
   if (dep.powAddress && dep.powAddress !== contract.address) {
     throw new Error(
       `Address mismatch: dep=${dep.powAddress} computed=${contract.address}`,
@@ -62,9 +104,11 @@ async function main(): Promise<void> {
     vout: b.outpoint.outIdx as number,
   };
 
-  const fuelUtxo = wallet.utxos.find(u => !u.token && u.sats >= 2_000n);
+  const fuelUtxo = wallet.utxos
+    .filter(u => !u.token && u.sats >= REMINT_FUEL_SATS)
+    .sort((a, b) => (a.sats < b.sats ? -1 : 1))[0];
   if (!fuelUtxo) {
-    throw new Error('Need a ≥20 XEC pure XEC UTXO for fees');
+    throw new Error(`Need a ≥${REMINT_FUEL_SATS} pure XEC UTXO for fees`);
   }
 
   console.log(
