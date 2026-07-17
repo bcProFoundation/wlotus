@@ -11,8 +11,8 @@ import { WLDF_LOKAD } from './wldf.js';
 
 export const WLDF_VERSION_ERGON = 2;
 
-/** Dogfood window: targets precomputed for days 0..ERGON_MAX_DAYS inclusive. */
-export const ERGON_MAX_DAYS = 4;
+/** Dogfood window: targets for days 0..ERGON_MAX_DAYS (inclusive). */
+export const ERGON_MAX_DAYS = 1;
 
 /**
  * Genesis compact target: bin2num(hash[0:4]) ∈ [0, 2^31) must be < target.

@@ -55,9 +55,9 @@ async function main(): Promise<void> {
   const daySeconds = Number(
     process.env.ERGON_DAY_SECONDS?.trim() || ERGON_DAY_SECONDS_DEFAULT,
   );
-  // Backdate one Moore day so first remint exercises δ^1 (not only genesis T0).
+  // Backdate two Moore days so MTP-lagged locktime still lands on days≥1.
   const genesisUnix = Number(
-    process.env.ERGON_GENESIS_UNIX?.trim() || nowUnix - daySeconds,
+    process.env.ERGON_GENESIS_UNIX?.trim() || nowUnix - 2 * daySeconds,
   );
   const genesisTarget = Number(
     process.env.ERGON_GENESIS_TARGET?.trim() || ERGON_GENESIS_TARGET,
@@ -184,7 +184,7 @@ async function main(): Promise<void> {
     notes: [
       'Ergon-like daily Moore δ=99918/100000 on compact PoW target (not +1 bit/day).',
       'eMPP WLDF v2 announces dayIndex + target beside ALP MINT.',
-      'Dogfood window days 0..4 (precomputed table; Spedn has no Mul).',
+      'Dogfood window days 0..1 (opcode budget; Spedn has no Mul).',
       'Half-life ~2.3y; +1 bit ≈ every 840 days at this δ.',
     ],
   };

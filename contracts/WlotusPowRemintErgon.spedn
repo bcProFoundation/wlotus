@@ -1,15 +1,14 @@
 // mWLPOW Ergon-like daily Moore δ remint (eCash / XEC)
-// target_d = floor(genesisTarget * 99918^d / 100000^d), d = 0..4 (table).
-// Spedn has no integer Mul — create script precomputes targetTable.
-// eMPP WLDF v2: dayIndex + target + locktime beside ALP MINT.
-// CODESEPARATOR keeps BIP143 scriptCode tiny. Redeem must stay ≤520B.
+// target_d = floor(T0 * 99918^d / 100000^d) for d ∈ {0,1} (2-slot table).
+// Kept tiny for MAX_OPS; create script precomputes targets (Spedn has no Mul).
+// eMPP WLDF v2 + ALP MINT. CODESEPARATOR for small BIP143 scriptCode.
 
 contract WlotusPowRemintErgon(
     [byte;32] tokenIdRev,
     [byte;6] mintAtomsLe,
     int genesisUnix,
     int daySeconds,
-    [byte;20] targetTable
+    [byte;8] targetTable
 ) {
     challenge remint(
         [byte;4] nonce,
@@ -26,19 +25,15 @@ contract WlotusPowRemintErgon(
         verify locktime >= genesisUnix;
 
         int days = (locktime - genesisUnix) / daySeconds;
-        verify days <= 4;
+        verify days <= 1;
 
         ([byte] t0b, [byte] r0) = targetTable @ 4;
-        ([byte] t1b, [byte] r1) = r0 @ 4;
-        ([byte] t2b, [byte] r2) = r1 @ 4;
-        ([byte] t3b, [byte] r3) = r2 @ 4;
-        ([byte] t4b, _) = r3 @ 4;
-
-        if (days == 0) { verify target == bin2num(t0b); }
-        else if (days == 1) { verify target == bin2num(t1b); }
-        else if (days == 2) { verify target == bin2num(t2b); }
-        else if (days == 3) { verify target == bin2num(t3b); }
-        else { verify target == bin2num(t4b); }
+        ([byte] t1b, _) = r0 @ 4;
+        if (days == 0) {
+            verify target == bin2num(t0b);
+        } else {
+            verify target == bin2num(t1b);
+        }
 
         [byte] solhash = hash256(sha256(preimage) . nonce);
         ([byte] head, _) = solhash @ 4;
