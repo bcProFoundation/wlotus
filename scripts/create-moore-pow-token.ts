@@ -51,10 +51,11 @@ async function main(): Promise<void> {
   }
 
   const nowUnix = Math.floor(Date.now() / 1000);
-  // Start one Moore step into the schedule so first remint proves fine-grain
-  // (bits = 9 = 1 byte + 1 bit) without waiting a day.
+  // Backdate two Moore steps so first remint can use tip−buffer locktime and
+  // still land on bits=9 (fine-grain remBits path) despite MTP lag.
   const genesisUnix = Number(
-    process.env.MOORE_GENESIS_UNIX?.trim() || nowUnix - TEST_MOORE_SECONDS_PER_EXTRA_BIT,
+    process.env.MOORE_GENESIS_UNIX?.trim() ||
+      nowUnix - 2 * TEST_MOORE_SECONDS_PER_EXTRA_BIT,
   );
   const secondsPerExtraBit = Number(
     process.env.MOORE_SECONDS_PER_EXTRA_BIT?.trim() ||
@@ -175,7 +176,7 @@ async function main(): Promise<void> {
     baseZeroBits,
     secondsPerExtraBit,
     difficultyNote:
-      'bits = baseZeroBits + floor((nLockTime - genesisUnix) / secondsPerExtraBit); capped +8',
+      'bits = baseZeroBits + floor((nLockTime - genesisUnix) / secondsPerExtraBit); capped +8; redeem size-capped (preimage < 520B) so OP_RETURN is ALP MINT only (WLDF announcement deferred)',
     mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
     tokensPerRemint: Number(BASE_MINT_ATOMS),
     targetUsdPerToken: TEST_TARGET_USD_PER_TOKEN,
@@ -191,9 +192,11 @@ async function main(): Promise<void> {
     cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
     notes: [
       'Moore-bit mWLPOW dogfood: fine-grain D from nLockTime (+1 bit/day).',
-      'eMPP WLDF announces bits beside ALP MINT (Agora dual-push pattern).',
       'Mint always 100 @ 0 decimals. P2SH address stable across Moore steps.',
+      'Redeem kept ≤356B so BIP143 preimage push stays under 520B.',
+      'WLDF dual-EMPP deferred until a smaller encoding fits; bits still on-chain.',
       'Cheat note: miner may choose past locktime for easier bits (test OK).',
+      'Miner uses median-time-past for nLockTime finality.',
       'See docs/research/alp-empp-difficulty-state.md and docs/ECONOMICS.md.',
     ],
   };

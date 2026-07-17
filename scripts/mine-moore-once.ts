@@ -11,6 +11,7 @@ import { config as loadEnv } from 'dotenv';
 import { Wallet } from 'ecash-wallet';
 import { fromHex, payment, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
+import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createPowRemintMooreContract } from '../src/covenant/powRemintMooreScript.js';
 import { computeMooreBits } from '../src/covenant/wldf.js';
 import {
@@ -154,11 +155,16 @@ async function main(): Promise<void> {
     throw new Error(`Need a ≥${REMINT_FUEL_SATS} pure XEC UTXO for fees`);
   }
 
-  // Slightly behind wall clock so nLockTime ≤ MTP / tip time.
+  // nLockTime (unix) must be ≤ median-time-past of the tip.
+  const { tipUnix, mtp, tipHeight } = await getMedianTimePast(chronik);
   const locktime = Number(
-    process.env.MOORE_LOCKTIME?.trim() ||
-      Math.max(genesisUnix, Math.floor(Date.now() / 1000) - 60),
+    process.env.MOORE_LOCKTIME?.trim() || Math.max(genesisUnix, mtp - 60),
   );
+  if (locktime > mtp) {
+    throw new Error(
+      `locktime ${locktime} > MTP ${mtp} (tip ${tipHeight} @ ${tipUnix}) — non-final`,
+    );
+  }
   const preview = computeMooreBits(locktime, contract.params);
 
   console.log(

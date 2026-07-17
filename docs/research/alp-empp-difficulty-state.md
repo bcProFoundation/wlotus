@@ -109,20 +109,24 @@ Moore step options (either is Ergon-closer than +1 **byte**):
 
 | Item | Fixed-D (earlier) | Moore-bit dogfood |
 |------|-------------------|-------------------|
-| EMPP | Single push: ALP `MINT` | Dual: **WLDF** + ALP `MINT` |
-| Difficulty | Fixed **1** leading zero **byte** | Locktime-derived **bits** |
+| EMPP | Single push: ALP `MINT` | Same (ALP `MINT` only) |
+| Difficulty | Fixed **1** leading zero **byte** | Locktime-derived **bits** (fine grain) |
 | Moore on-chain | Lib-only | `WlotusPowRemintMoore` (+1 bit/day test) |
 | Scripts | `create-pow-token` / `mine-once` | `create-moore-pow-token` / `mine-moore-once` |
 
-### WLDF layout (v1, 15 bytes)
+### Size constraint (why no on-chain WLDF yet)
+
+Mist-style covenants push the full BIP143 **preimage** (includes redeem as `scriptCode`). Stack pushes are capped at **520 bytes**, so redeem must stay ≲ **356 bytes**. Dual-EMPP WLDF construction blew past that; fine-grain `remBits` stays, WLDF announcement is deferred.
+
+### WLDF layout (v1, 15 bytes) — for a future smaller redeem / alternate design
 
 ```
 WLDF | ver=1 | zeroBits u16 LE | extraBits u32 LE | locktime u32 LE
 ```
 
-Consensus bits still come from **nLockTime** in the redeem (same formula). WLDF must match byte-exact or `hashOutputs` fails.
+Consensus bits already come from **nLockTime** in the redeem. When WLDF fits, it must match byte-exact or `hashOutputs` fails.
 
-Cheat surface for dogfood: miner can pick a **past** locktime for fewer bits. Acceptable for testing; production needs MTP floor / height clock / stateful tip.
+Cheat surface for dogfood: miner can pick a **past** locktime for fewer bits. Acceptable for testing; production needs MTP floor / height clock / stateful tip. Miner already chooses locktime ≤ MTP for mempool finality.
 
 ---
 

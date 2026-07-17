@@ -1,4 +1,4 @@
-import { sha256d } from 'ecash-lib';
+import { sha256, sha256d } from 'ecash-lib';
 import { meetsPowDifficulty } from './powRemintScript.js';
 import { meetsPowBits } from './wldf.js';
 
@@ -23,35 +23,43 @@ export function minePow(opts: {
     bits: opts.difficultyLeadingZeroBytes * 8,
     nonceLength: opts.nonceLength,
     maxAttempts: opts.maxAttempts,
+    commit: 'preimage',
   });
 }
 
+export type PowCommit = 'preimage' | 'sha256-preimage';
+
 /**
  * Fine-grain PoW: leading zero *bits* (Moore schedule).
- * Byte-only D is `bits = 8 * difficultyLeadingZeroBytes`.
+ * - commit 'preimage': hash256(preimage || nonce) — fixed-D Mist (small redeem)
+ * - commit 'sha256-preimage': hash256(sha256(preimage) || nonce) — Moore
+ *   (avoids OP_CAT of ~500B preimage past the 520B element limit)
  */
 export function minePowBits(opts: {
   preimage: Uint8Array;
   bits: number;
   nonceLength?: number;
   maxAttempts?: number;
+  commit?: PowCommit;
 }): MinePowResult {
   const nonceLen = opts.nonceLength ?? 4;
   const max = opts.maxAttempts ?? 5_000_000;
   const nonce = new Uint8Array(nonceLen);
   const bits = opts.bits;
+  const commit = opts.commit ?? 'preimage';
+  const prefix =
+    commit === 'sha256-preimage' ? sha256(opts.preimage) : opts.preimage;
 
   for (let attempts = 1; attempts <= max; attempts++) {
     for (let i = 0; i < nonceLen; i++) {
       nonce[i] = (nonce[i] + 1) & 0xff;
       if (nonce[i] !== 0) break;
     }
-    const buf = new Uint8Array(opts.preimage.length + nonceLen);
-    buf.set(opts.preimage, 0);
-    buf.set(nonce, opts.preimage.length);
+    const buf = new Uint8Array(prefix.length + nonceLen);
+    buf.set(prefix, 0);
+    buf.set(nonce, prefix.length);
     const hash = sha256d(buf);
     if (meetsPowBits(hash, bits)) {
-      // Keep byte helper honest for whole-byte difficulties.
       if (bits % 8 === 0 && !meetsPowDifficulty(hash, bits / 8)) {
         continue;
       }

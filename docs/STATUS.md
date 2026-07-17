@@ -30,8 +30,8 @@ npm run create-moore-pow-token && npm run mine-moore-once
 
 - Contract: `WlotusPowRemintMoore` — `bits = base + floor((nLockTime − genesis) / secondsPerExtraBit)`
 - Test schedule: **+1 bit / day** (prod ≈ +1 bit / ~845 days)
-- eMPP **WLDF** push beside ALP MINT (Agora dual-push pattern)
-- P2SH address stays stable; D comes from locktime, not redeem mutation
+- Redeem size-capped (BIP143 preimage push < 520B) → OP_RETURN is ALP MINT only; WLDF dual-EMPP deferred
+- P2SH address stays stable; D comes from locktime; miner sets locktime ≤ MTP
 
 ## Next
 

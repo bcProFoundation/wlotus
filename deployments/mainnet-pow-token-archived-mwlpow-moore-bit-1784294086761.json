@@ -1,0 +1,39 @@
+{
+  "ticker": "mWLPOW",
+  "name": "milli White Lotus PoW (Moore)",
+  "tokenId": "6916e2dd6fceec70387af23dd8372b4d0753314e72fc13c266ba1349c2dd8b96",
+  "mode": "moore-bit",
+  "role": "incubation-moore-test",
+  "decimals": 0,
+  "powAddress": "ecash:pp5p3gx92gp7pgg4af3uq6zs2svzhuacayv8k0w70h",
+  "redeemScriptHex": "20968bddc24913ba66c213fc724e3153074d2b37d83df27a3870ecce6fdde21669066400000000000419d9586a580380510158795779ad57795679a85879bb55798258947f7776547f757681765679a269765679947655799656797893765879a2697658795893a1695b7960797eaa78589652795897527952797f78810088527900876351696776517f7576815479518763760280009f696754795287637601409f696754795387637601209f6967547954876376609f6967547955876376589f6967547956876376549f6967547957876376529f69670069686868686868686d68607901117982770128947f777601207f7501127901137982770134947f757601687f7776517f7704574c4446517e5b7952807e5c7954807e5e7954807e04534c50320051807e547e044d494e547e0116797e517e0115797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011b79a97e0288ac7e08220200000000000001177e02a9147e5679a97e01877e527952797e787eaa5a79877777777777777777777777777777777777777777777777777777777777777777",
+  "genesisUnix": 1784207641,
+  "baseZeroBits": 8,
+  "secondsPerExtraBit": 86400,
+  "difficultyNote": "bits = baseZeroBits + floor((nLockTime - genesisUnix) / secondsPerExtraBit); capped +8",
+  "mintAtomsPerRemint": "100",
+  "tokensPerRemint": 100,
+  "targetUsdPerToken": 0.00001,
+  "mwlpowPerWlotus": 1000,
+  "initialMintAtoms": "1000000",
+  "powBatonCount": 4,
+  "genesisTxid": "6916e2dd6fceec70387af23dd8372b4d0753314e72fc13c266ba1349c2dd8b96",
+  "handoffTxids": [
+    "cd23edadf515fd702531fb2fa74a59aa788270764dfd578f64996be6fff11da0",
+    "4b4240c0e756dc3d3ae25dc1299aa4bf18d626cf9a41d0551a894944a050d2e1",
+    "3b333bd5e26e80e31b7c36d348ce8892e052a28628e0c13c2d8ec3929aac9bdb",
+    "5beb74378fea2caf9356c56cd7fd2b781eb17e0d987a373ff9f62bbe3596dc39"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-17T13:14:05.496Z",
+  "explorer": "https://explorer.e.cash/tx/6916e2dd6fceec70387af23dd8372b4d0753314e72fc13c266ba1349c2dd8b96",
+  "cashtab": "https://cashtab.com/#/token/6916e2dd6fceec70387af23dd8372b4d0753314e72fc13c266ba1349c2dd8b96",
+  "notes": [
+    "Moore-bit mWLPOW dogfood: fine-grain D from nLockTime (+1 bit/day).",
+    "eMPP WLDF announces bits beside ALP MINT (Agora dual-push pattern).",
+    "Mint always 100 @ 0 decimals. P2SH address stable across Moore steps.",
+    "Cheat note: miner may choose past locktime for easier bits (test OK).",
+    "See docs/research/alp-empp-difficulty-state.md and docs/ECONOMICS.md."
+  ]
+}

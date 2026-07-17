@@ -17,7 +17,7 @@ import {
   type PowRemintMooreContract,
 } from '../covenant/powRemintMooreScript.js';
 import { minePowBits } from '../covenant/minePow.js';
-import { expectedMooreMintOpReturnScript } from '../covenant/powRemintMooreOutputs.js';
+import { expectedMintOpReturnScript } from '../covenant/powRemintOutputs.js';
 import {
   computeMooreBits,
   type MooreBitsState,
@@ -53,7 +53,7 @@ export function mooreMinerBanner(contract: PowRemintMooreContract): string {
     `secondsPerExtraBit=${p.secondsPerExtraBit}`,
     `genesisUnix=${p.genesisUnix}`,
     `mintAtoms=${BASE_MINT_ATOMS} (always 100 @ 0 decimals)`,
-    'covenant: WlotusPowRemintMoore + eMPP WLDF',
+    'covenant: WlotusPowRemintMoore (locktime bits; ALP MINT OP_RETURN)',
   ].join(' | ');
 }
 
@@ -80,12 +80,14 @@ export async function buildMinedMooreRemintTx(opts: {
   const dust = DEFAULT_DUST_SATS;
   const locktime =
     opts.locktime ??
-    Math.max(contract.params.genesisUnix, Math.floor(Date.now() / 1000));
+    Math.max(
+      contract.params.genesisUnix,
+      Math.floor(Date.now() / 1000) - 600,
+    );
   const moore = computeMooreBits(locktime, contract.params);
-  const opReturn = expectedMooreMintOpReturnScript(
+  const opReturn = expectedMintOpReturnScript(
     contract.params.tokenId,
     contract.params.mintAtoms,
-    moore,
   );
   const minerP2pkh = Script.p2pkh(shaRmd160(miner.pk));
   const ecc = new Ecc();
@@ -122,6 +124,7 @@ export async function buildMinedMooreRemintTx(opts: {
       const mined = minePowBits({
         preimage,
         bits: moore.bits,
+        commit: 'sha256-preimage',
       });
       minedNonce = mined.nonce;
       minedAttempts = mined.attempts;

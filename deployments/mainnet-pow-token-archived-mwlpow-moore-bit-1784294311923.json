@@ -1,0 +1,41 @@
+{
+  "ticker": "mWLPOW",
+  "name": "milli White Lotus PoW (Moore)",
+  "tokenId": "7057fb285d2f922d95a400ff94cae065fa15f5e86b3f0147f98e1f73499ecb88",
+  "mode": "moore-bit",
+  "role": "incubation-moore-test",
+  "decimals": 0,
+  "powAddress": "ecash:prh9sattnxvuwhhly9r4rehqgxfljvml3c4u8rlmc3",
+  "redeemScriptHex": "2088cb9e49731f8ef947013f6be8f515fa65e0ca94ff00a4952d922f5d28fb577006640000000000048388576a580380510158795779ad57795679a85879bb55798258947f7776547f757681765679a26976567994547996557978937657795893a1695a795f797eaa78589652795897527952797f788100885279926376517f7507804020100804027655798c7f7776517f7553798178819f696d6d685f79820128947f777601207f7501117901127982770134947f757601687f7776537f7704534c50320051807e547e044d494e547e0114797e517e0113797e517e026a5078827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011979a97e0288ac7e08220200000000000001177e02a9147e5579a97e01877e527952797e787eaa597987777777777777777777777777777777777777777777777777777777777777",
+  "genesisUnix": 1784121475,
+  "baseZeroBits": 8,
+  "secondsPerExtraBit": 86400,
+  "difficultyNote": "bits = baseZeroBits + floor((nLockTime - genesisUnix) / secondsPerExtraBit); capped +8; redeem size-capped (preimage < 520B) so OP_RETURN is ALP MINT only (WLDF announcement deferred)",
+  "mintAtomsPerRemint": "100",
+  "tokensPerRemint": 100,
+  "targetUsdPerToken": 0.00001,
+  "mwlpowPerWlotus": 1000,
+  "initialMintAtoms": "1000000",
+  "powBatonCount": 4,
+  "genesisTxid": "7057fb285d2f922d95a400ff94cae065fa15f5e86b3f0147f98e1f73499ecb88",
+  "handoffTxids": [
+    "14459fe222b365fce007c596e8418bdb337f5368a9865fd38b15a0aa97e84310",
+    "6e988647c73727cbf14fcdef562f41f21a7179d02d7d14a7c6f31371e1463962",
+    "182fb5a9f2ad8f512cbb923f98601b0203601c1da9024b7ab448f02ce1b3b296",
+    "08d0e37834f85daf40d2452307055bb3323bc77034044d20e9f1f6585c1239ab"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-17T13:17:58.943Z",
+  "explorer": "https://explorer.e.cash/tx/7057fb285d2f922d95a400ff94cae065fa15f5e86b3f0147f98e1f73499ecb88",
+  "cashtab": "https://cashtab.com/#/token/7057fb285d2f922d95a400ff94cae065fa15f5e86b3f0147f98e1f73499ecb88",
+  "notes": [
+    "Moore-bit mWLPOW dogfood: fine-grain D from nLockTime (+1 bit/day).",
+    "Mint always 100 @ 0 decimals. P2SH address stable across Moore steps.",
+    "Redeem kept ≤356B so BIP143 preimage push stays under 520B.",
+    "WLDF dual-EMPP deferred until a smaller encoding fits; bits still on-chain.",
+    "Cheat note: miner may choose past locktime for easier bits (test OK).",
+    "Miner uses median-time-past for nLockTime finality.",
+    "See docs/research/alp-empp-difficulty-state.md and docs/ECONOMICS.md."
+  ]
+}
