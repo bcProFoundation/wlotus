@@ -51,5 +51,5 @@ Economics: ritual **offer** ladder (Prayer → Incense → Candle → Flower). M
 
 1. Temple / burn app against mWLPOW  
 2. Harden Moore (shared clock / anti-past-locktime) for production  
-3. Flower (WLotus) genesis (~59 bits, $1/baton market) + conversion UX
-4. Optional Prayer @ 22 bits for ~30 s offers 
+3. Flower (WLotus) genesis (~59 bits, $1/baton) + conversion UX
+4. Incense/Candle/Prayer genesis on anti-arb ladder (46 / 52 / 42 bits) 
