@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "moore": "tsx scripts/compute-moore.ts",
+    "pricing": "tsx scripts/compute-pricing.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
     "new-wallet": "tsx scripts/new-wallet.ts",
     "create-test-token": "tsx scripts/create-test-token.ts",

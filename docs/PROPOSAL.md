@@ -65,7 +65,7 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × 100
 ```
 
-mWLOTUS targets ~$0.00001/token (~1/1000 of future WLOTUS ~$0.01). Conversion: **1000 mWLOTUS ≈ 1 WLOTUS**.
+mWLOTUS / nWLPOW are **UX-timed** incubation tiers (phone/PC minutes). **WLOTUS** difficulty is set from **ASIC electricity** (~$1/token floor), not “1000× dogfood.” See [ECONOMICS.md](./ECONOMICS.md). Conversion peg: **1_000_000 nWLPOW ≈ 1_000 mWLPOW ≈ 1 WLOTUS**.
 
 #### Moore / Koomey — Ergon **post-launch** constant only
 

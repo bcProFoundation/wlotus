@@ -91,14 +91,16 @@ describe('genesis multi-baton', () => {
 });
 
 describe('mWLPOW incubation economics', () => {
-  test('cheap target, fixed 100 mint, 0 decimals', async () => {
+  test('UX-timed m tier + ASIC-priced WLOTUS ladder', async () => {
     const econ = await import('../src/params/testEconomics.js');
     expect(TOKEN_TICKER).toBe('mWLPOW');
     expect(TOKEN_DECIMALS).toBe(0);
     expect(BASE_MINT_ATOMS).toBe(100n);
-    expect(econ.TEST_POW_LEADING_ZERO_BYTES).toBe(1);
-    expect(econ.TEST_TARGET_USD_PER_TOKEN).toBe(0.00001);
-    expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
+    expect(econ.TEST_TARGET_USD_PER_TOKEN).toBe(1e-3);
+    expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(1);
+    expect(econ.TEST_BASE_ZERO_BITS).toBe(30);
+    expect(econ.PROD_BASE_ZERO_BITS).toBe(68);
+    expect(econ.NWLPOW_BASE_ZERO_BITS).toBe(25);
     expect(econ.TOKENS_PER_REMINT).toBe(100);
     expect(econ.TEST_POW_BATON_COUNT).toBeGreaterThanOrEqual(2);
     expect(econ.TEST_INITIAL_MINT_ATOMS).toBe(1_000_000n);
