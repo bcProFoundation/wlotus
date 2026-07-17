@@ -1,51 +1,84 @@
 /**
  * WLOTUS family consensus parameters.
  *
- * Pricing ladder (n → m → W): see `pricing.ts` and docs/ECONOMICS.md.
- * Live dogfood tokens may still use toy difficulty; **next genesis** should
- * follow the UX / ASIC bits below.
+ * Ritual offer ladder (prestige high → low):
+ *   Flower (WLotus) → Candle → Incense → Prayer
+ *
+ * See `pricing.ts` and docs/ECONOMICS.md.
+ * Live dogfood tokens may still use toy difficulty / old tickers.
  */
 
-/** Launch tier — phone / PC minutes. Start here. */
-export const NWLPOW_TICKER = 'nWLOTUS';
-export const NWLPOW_NAME = 'nWLotus';
+/** Quick offer — ~1/10 Incense wall-clock. */
+export const PRAYER_TICKER = 'PRAYER';
+export const PRAYER_NAME = 'Prayer';
 
-/** Incubation tier — normal PC tens of minutes+. */
-export const TOKEN_TICKER = 'mWLOTUS';
-export const TOKEN_NAME = 'mWLotus';
+/** Launch offer (ex-nWLotus). */
+export const INCENSE_TICKER = 'INCENSE';
+export const INCENSE_NAME = 'Incense';
+
+/** Mid offer (ex-mWLotus). */
+export const CANDLE_TICKER = 'CANDLE';
+export const CANDLE_NAME = 'Candle';
+
+/** Prestige Flower — product brand WLotus. */
+export const PROD_TOKEN_TICKER = 'WLOTUS';
+export const PROD_TOKEN_NAME = 'WLotus';
+export const FLOWER_TICKER = PROD_TOKEN_TICKER;
+export const FLOWER_NAME = 'Flower';
+
+/** @deprecated use INCENSE_* */
+export const NWLPOW_TICKER = INCENSE_TICKER;
+export const NWLPOW_NAME = INCENSE_NAME;
+
+/** @deprecated use CANDLE_* */
+export const TOKEN_TICKER = CANDLE_TICKER;
+export const TOKEN_NAME = CANDLE_NAME;
 
 /** @deprecated dogfood ticker still on some live test tokens */
 export const DOGFOOD_TICKER_MWLPOW = 'mWLPOW';
-
-export const PROD_TOKEN_TICKER = 'WLOTUS';
-export const PROD_TOKEN_NAME = 'WLotus';
 
 export const TOKEN_DECIMALS = 0;
 export const PROD_TOKEN_DECIMALS = 0;
 
 /**
- * @deprecated Dogfood only. Next mWLPOW genesis: POW_M_BASE_ZERO_BITS (30).
- * Leading zero *bytes* used by early fixed-D covenants.
+ * @deprecated Dogfood only. Leading zero *bytes* used by early fixed-D covenants.
  */
 export const POW_LEADING_ZERO_BYTES = 1;
 
-/** nWLPOW genesis bits — phone ~minutes, PC <1 min @ ~1 MH/s. */
-export const POW_N_BASE_ZERO_BITS = 25;
+/** Prayer genesis bits — ~1/10 Incense (~30 s phone). */
+export const POW_PRAYER_BASE_ZERO_BITS = 22;
 
-/** mWLPOW genesis bits — normal PC ~tens of minutes @ ~1 MH/s. */
-export const POW_M_BASE_ZERO_BITS = 30;
+/** Incense genesis bits — phone ~3.7 min (ex-nWLotus). */
+export const POW_INCENSE_BASE_ZERO_BITS = 25;
+
+/** Candle genesis bits — Incense × 100 work (ex-mWLotus). */
+export const POW_CANDLE_BASE_ZERO_BITS = 32;
 
 /**
- * WLotus genesis bits — sized so reference ASIC **electricity ≈ 25%** of
- * **$1/baton market price** (rest = HW/space/labor + ~40% new-market risk
- * margin). See pricing.ts.
+ * Flower (WLotus) genesis bits — Candle × 100 work.
+ * Market target remains $1/baton with business cost stack — see pricing.ts.
  */
-export const POW_W_BASE_ZERO_BITS = 59;
+export const POW_FLOWER_BASE_ZERO_BITS = 38;
 
-/** @deprecated alias — prefer POW_M_BASE_ZERO_BITS for real incubation. */
+/** @deprecated use POW_INCENSE_BASE_ZERO_BITS */
+export const POW_N_BASE_ZERO_BITS = POW_INCENSE_BASE_ZERO_BITS;
+
+/** @deprecated use POW_CANDLE_BASE_ZERO_BITS */
+export const POW_M_BASE_ZERO_BITS = POW_CANDLE_BASE_ZERO_BITS;
+
+/** @deprecated use POW_FLOWER_BASE_ZERO_BITS */
+export const POW_W_BASE_ZERO_BITS = POW_FLOWER_BASE_ZERO_BITS;
+
+/** @deprecated alias — dogfood fixed-D. */
 export const POW_BASE_ZERO_BITS = POW_LEADING_ZERO_BYTES * 8;
 
+/** Default mint atoms (Flower). Prefer per-tier constants below. */
 export const BASE_MINT_ATOMS = 100n;
+
+export const PRAYER_MINT_ATOMS = 1n;
+export const INCENSE_MINT_ATOMS = 1n;
+export const CANDLE_MINT_ATOMS = 10n;
+export const FLOWER_MINT_ATOMS = 100n;
 
 export const POW_BATON_COUNT = 4;
 
@@ -57,10 +90,21 @@ export const MOORE_DAY_BLOCKS = 144;
 export const MOORE_DAY_SECONDS = 86_400;
 export const MOORE_DAYS_PER_EXTRA_BIT = 840;
 
-/** Nominal peg: 1000 m ≈ 1 W; 1000 n ≈ 1 m. */
-export const MWLOTUS_PER_WLOTUS = 1000n;
+/**
+ * Nominal token peg (offer units):
+ *   10 Prayer ≈ 1 Incense (work-ish)
+ *   100 Incense ≈ 1 Candle
+ *   100 Candle ≈ 1 Flower (WLotus)
+ */
+export const PRAYER_PER_INCENSE = 10n;
+export const INCENSE_PER_CANDLE = 100n;
+export const CANDLE_PER_FLOWER = 100n;
+export const INCENSE_PER_FLOWER = INCENSE_PER_CANDLE * CANDLE_PER_FLOWER;
+
+/** @deprecated old milli peg — Candle fills that slot now */
+export const MWLOTUS_PER_WLOTUS = CANDLE_PER_FLOWER;
 export const MWLPOW_PER_WLOTUS = MWLOTUS_PER_WLOTUS;
-export const NWLPOW_PER_MWLPOW = 1000n;
-export const NWLPOW_PER_WLOTUS = NWLPOW_PER_MWLPOW * MWLPOW_PER_WLOTUS;
+export const NWLPOW_PER_MWLPOW = INCENSE_PER_CANDLE;
+export const NWLPOW_PER_WLOTUS = INCENSE_PER_FLOWER;
 
 export const TOKEN_URL = 'https://github.com/bcProFoundation/wlotus';

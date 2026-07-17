@@ -1,30 +1,50 @@
 /**
- * Incubation vs production economics (market intents).
+ * Offer-tier economics (market intents).
  * Difficulty bits: see consensus.ts + pricing.ts / docs/ECONOMICS.md.
  */
 
 import {
-  POW_M_BASE_ZERO_BITS,
-  POW_N_BASE_ZERO_BITS,
-  POW_W_BASE_ZERO_BITS,
+  CANDLE_MINT_ATOMS,
+  FLOWER_MINT_ATOMS,
+  INCENSE_MINT_ATOMS,
+  POW_CANDLE_BASE_ZERO_BITS,
+  POW_FLOWER_BASE_ZERO_BITS,
+  POW_INCENSE_BASE_ZERO_BITS,
+  POW_PRAYER_BASE_ZERO_BITS,
+  PRAYER_MINT_ATOMS,
 } from './consensus.js';
+import {
+  WLOTUS_TARGET_USD_PER_TOKEN,
+  WLOTUS_TARGET_USD_PER_BATON,
+} from './pricing.js';
 
-export const TOKENS_PER_REMINT = 100;
+/** @deprecated Flower mint; prefer FLOWER_MINT_ATOMS */
+export const TOKENS_PER_REMINT = Number(FLOWER_MINT_ATOMS);
 
-/** nWLotus — launch / phone. Soft market price. */
-export const NWLPOW_TARGET_USD_PER_TOKEN = 1e-8;
-export const NWLPOW_BASE_ZERO_BITS = POW_N_BASE_ZERO_BITS;
+export const PRAYER_BASE_ZERO_BITS = POW_PRAYER_BASE_ZERO_BITS;
+export const INCENSE_BASE_ZERO_BITS = POW_INCENSE_BASE_ZERO_BITS;
+export const CANDLE_BASE_ZERO_BITS = POW_CANDLE_BASE_ZERO_BITS;
+export const FLOWER_BASE_ZERO_BITS = POW_FLOWER_BASE_ZERO_BITS;
 
-/** mWLotus — PC incubation. Soft market price (not ASIC joule peg). */
-export const TEST_TARGET_USD_PER_TOKEN = 1e-5;
-export const TEST_BASE_ZERO_BITS = POW_M_BASE_ZERO_BITS;
+/** @deprecated use INCENSE_BASE_ZERO_BITS */
+export const NWLPOW_BASE_ZERO_BITS = INCENSE_BASE_ZERO_BITS;
+/** @deprecated use CANDLE_BASE_ZERO_BITS */
+export const TEST_BASE_ZERO_BITS = CANDLE_BASE_ZERO_BITS;
+/** @deprecated use FLOWER_BASE_ZERO_BITS */
+export const PROD_BASE_ZERO_BITS = FLOWER_BASE_ZERO_BITS;
 
-/**
- * WLotus — target **market** $0.01/token = $1/baton (business price).
- * Difficulty uses electricity share of that price — see pricing.ts.
- */
-export const PROD_TARGET_USD_PER_TOKEN = 0.01;
-export const PROD_BASE_ZERO_BITS = POW_W_BASE_ZERO_BITS;
+/** Soft market intents from Flower $0.01 and 100∶1 peg. */
+export const PROD_TARGET_USD_PER_TOKEN = WLOTUS_TARGET_USD_PER_TOKEN;
+export const PROD_TARGET_USD_PER_REMINT = WLOTUS_TARGET_USD_PER_BATON;
+
+export const CANDLE_TARGET_USD_PER_TOKEN = PROD_TARGET_USD_PER_TOKEN / 100;
+export const INCENSE_TARGET_USD_PER_TOKEN = CANDLE_TARGET_USD_PER_TOKEN / 100;
+export const PRAYER_TARGET_USD_PER_TOKEN = INCENSE_TARGET_USD_PER_TOKEN / 10;
+
+/** @deprecated */
+export const TEST_TARGET_USD_PER_TOKEN = CANDLE_TARGET_USD_PER_TOKEN;
+/** @deprecated */
+export const NWLPOW_TARGET_USD_PER_TOKEN = INCENSE_TARGET_USD_PER_TOKEN;
 
 /** @deprecated dogfood fixed-D byte difficulty */
 export const TEST_POW_LEADING_ZERO_BYTES = 1;
@@ -32,14 +52,23 @@ export const TEST_POW_LEADING_ZERO_BYTES = 1;
 export const TEST_INITIAL_MINT_ATOMS = 1_000_000n;
 export const TEST_POW_BATON_COUNT = 4;
 
-export const TEST_TOKEN_TICKER = 'mWLOTUS';
-export const TEST_TOKEN_NAME = 'mWLotus';
-export const NWLPOW_TOKEN_TICKER = 'nWLOTUS';
-export const NWLPOW_TOKEN_NAME = 'nWLotus';
+export const TEST_TOKEN_TICKER = 'CANDLE';
+export const TEST_TOKEN_NAME = 'Candle';
+export const NWLPOW_TOKEN_TICKER = 'INCENSE';
+export const NWLPOW_TOKEN_NAME = 'Incense';
+export const PRAYER_TOKEN_TICKER = 'PRAYER';
+export const PRAYER_TOKEN_NAME = 'Prayer';
 
 export const TEST_TARGET_USD_PER_REMINT =
-  TEST_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;
-export const PROD_TARGET_USD_PER_REMINT =
-  PROD_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;
+  CANDLE_TARGET_USD_PER_TOKEN * Number(CANDLE_MINT_ATOMS);
 export const NWLPOW_TARGET_USD_PER_REMINT =
-  NWLPOW_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;
+  INCENSE_TARGET_USD_PER_TOKEN * Number(INCENSE_MINT_ATOMS);
+export const PRAYER_TARGET_USD_PER_REMINT =
+  PRAYER_TARGET_USD_PER_TOKEN * Number(PRAYER_MINT_ATOMS);
+
+export {
+  PRAYER_MINT_ATOMS,
+  INCENSE_MINT_ATOMS,
+  CANDLE_MINT_ATOMS,
+  FLOWER_MINT_ATOMS,
+};

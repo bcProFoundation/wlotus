@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Print nWLotus / mWLotus / WLotus matrix (market price vs electricity).
+ * Print Prayer / Incense / Candle / Flower (WLotus) mint-time matrix.
  */
 import {
   buildMintTimeTable,
@@ -11,15 +11,17 @@ import {
 const ladder = buildPricingLadder();
 const table = buildMintTimeTable();
 
-console.log('=== Energy cost vs market price ===');
+console.log('=== Ritual offer ladder ===');
 console.log({
-  wlotusMarketUsdPerBaton: ladder.wlotusBusiness.marketUsdPerBaton,
-  wlotusMarketUsdPerToken: ladder.wlotusBusiness.marketUsdPerToken,
-  electricityShare: ladder.wlotusBusiness.electricityShare,
-  electricityUsdAtReference: ladder.wlotusBusiness.electricityUsdAtReference,
-  costStack: ladder.wlotusBusiness.costStack,
-  asicSheet: ladder.asic,
+  workLadder: ladder.workLadder,
   peg: ladder.peg,
+  flowerMarketUsdPerBaton: ladder.wlotusBusiness.marketUsdPerBaton,
+  flowerMarketUsdPerToken: ladder.wlotusBusiness.marketUsdPerToken,
+  electricityShare: ladder.wlotusBusiness.electricityShare,
+  costStack: ladder.wlotusBusiness.costStack,
+  asicSheetBitsIfPricedFromElecShare:
+    ladder.wlotusBusiness.asicSheetBitsIfPricedFromElecShare,
+  asicSheet: ladder.asic,
 });
 
 console.log('\n=== Mint-time matrix ===');
@@ -31,6 +33,7 @@ for (const r of table.rows) {
       r.product,
       r.ticker,
       r.bits,
+      r.tokensPerBaton,
       r.marketUsdPerToken,
       r.marketUsdPerBaton,
       r.electricityUsd.toExponential(2),

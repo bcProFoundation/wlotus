@@ -52,20 +52,22 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 | Indexer | Chronik |
 | Liquidity | Agora + optional temple desk (XEC ↔ token) |
 
-### 3.3 Issuance — fixed 100 / remint + Moore on work
+### 3.3 Issuance — ritual offer ladder + Moore on work
 
-**Canonical incubation model (mWLOTUS):** see [ECONOMICS.md](./ECONOMICS.md).
+**Canonical model:** see [ECONOMICS.md](./ECONOMICS.md).
 
-- **Always 100 tokens per remint** (not Moore-decaying mint size)
+- **Offer tiers** (prestige high → low): **Flower (WLotus)** → **Candle** → **Incense** → **Prayer**
+- **Mint atoms / baton:** Flower **100** · Candle **10** · Incense **1** · Prayer **1**
+- **Work ladder:** Prayer ≈ Incense/10 · Candle = Incense×100 · Flower = Candle×100
 - **Moore / Koomey (`δ = 99918/100000`)** adjusts **required work / difficulty**
 - **Many remints per eCash block** + **N ≥ 2 batons** ⇒ coins/time ∝ hashrate
-- Burn = sacrifice; remint = pure PoW rebirth (not ritual inverses)
+- Burn / **offer** destroys supply; remint = pure PoW rebirth
 
 ```
-coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × 100
+coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × mint_atoms_tier
 ```
 
-**nWLotus / mWLotus** are UX-timed. **WLotus** target **market** price is **$1/baton** ($0.01/token): Ergon-style business remint (electricity + hardware + space + labor + **~40% new-market risk margin**). Difficulty uses ~**25%** of that $1 as reference ASIC electricity (~59 bits, ~1.6 h on 100 TH/s). Launch with **nWLotus**; tiers may run in parallel. See [ECONOMICS.md](./ECONOMICS.md).
+**Flower** target **market** price is **$1/baton** ($0.01/token) with Ergon-style business stack (**~40%** new-market risk margin). Launch with **Incense** (or **Prayer**); tiers may run in parallel. See [ECONOMICS.md](./ECONOMICS.md).
 
 #### Moore / Koomey — Ergon **post-launch** constant only
 

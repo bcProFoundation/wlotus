@@ -72,16 +72,18 @@ k = floor(elapsed_days since genesis)
 
 Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D (bit/target) plus Agora-style eMPP announcement ships with a later genesis/handoff — see [research/alp-empp-difficulty-state.md](./research/alp-empp-difficulty-state.md).
 
-## Future WLOTUS (production)
+## Future Flower (WLotus) + offer ladder
 
 | Param | Value |
 |-------|-------|
-| **Target market price** | **$0.01/token = $1/baton** (business clearing price, not energy-only) |
-| Mint | Still **100** |
-| Difficulty | **~59 bits** — ref. ASIC electricity ≈ **25%** of $1; all-in opex ≈ 60%; **~40%** new-market risk margin |
-| Conversion peg | **1000 mWLotus ≈ 1 WLotus** (nominal; live + burned) |
+| **Flower market price** | **$0.01/token = $1/baton** (business clearing price) |
+| Flower mint | **100** / baton |
+| Candle mint | **10** / baton |
+| Incense / Prayer mint | **1** / baton |
+| Difficulty | Ritual ladder: Prayer **22** · Incense **25** · Candle **32** · Flower **38** |
+| Peg | **100 Incense ≈ 1 Candle**; **100 Candle ≈ 1 Flower** |
 
-Ergon-style remint is a **for-profit business** (no NGU subsidy): mine when market proceeds cover all-in opex + risk margin. New/illiquid markets typically need **~30–50%** margin buffer — WLotus uses **40%**. See [ECONOMICS.md](./ECONOMICS.md).
+Prestige: **Flower > Candle > Incense > Prayer** (Flower is highest — unlike Lotus Temple’s amount tiers). Ergon-style remint is for-profit; **~40%** new-market risk margin on Flower. See [ECONOMICS.md](./ECONOMICS.md).
 
 ## Explicit non-goals (v0.3)
 

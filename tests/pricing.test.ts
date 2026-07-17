@@ -3,27 +3,34 @@ import {
   WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
   WLOTUS_TARGET_USD_PER_BATON,
   WLOTUS_TARGET_USD_PER_TOKEN,
-  bitsFromExpectedHashes,
   buildMintTimeTable,
   buildPricingLadder,
   ergonDaysForWorkFactor,
-  expectedHashesForWlotusBaton,
   expectedHashesFromBits,
+  ritualBits,
   wallSeconds,
-  UX_PC_HASHRATE_H_S,
+  UX_PHONE_HASHRATE_H_S,
+  PRAYER_WORK_DIVISOR,
+  CANDLE_WORK_FACTOR,
+  FLOWER_WORK_FACTOR_FROM_CANDLE,
 } from '../src/params/pricing.js';
 import {
-  POW_M_BASE_ZERO_BITS,
-  POW_N_BASE_ZERO_BITS,
-  POW_W_BASE_ZERO_BITS,
+  POW_CANDLE_BASE_ZERO_BITS,
+  POW_FLOWER_BASE_ZERO_BITS,
+  POW_INCENSE_BASE_ZERO_BITS,
+  POW_PRAYER_BASE_ZERO_BITS,
+  CANDLE_MINT_ATOMS,
+  FLOWER_MINT_ATOMS,
+  INCENSE_MINT_ATOMS,
+  PRAYER_MINT_ATOMS,
 } from '../src/params/consensus.js';
 import {
   PROD_TARGET_USD_PER_REMINT,
   PROD_TARGET_USD_PER_TOKEN,
 } from '../src/params/testEconomics.js';
 
-describe('WLotus market price vs energy cost', () => {
-  test('market target is $1/baton ($0.01/token), not pure electricity', () => {
+describe('Ritual offer ladder', () => {
+  test('Flower market target is $1/baton ($0.01/token)', () => {
     expect(WLOTUS_TARGET_USD_PER_BATON).toBe(1);
     expect(WLOTUS_TARGET_USD_PER_TOKEN).toBe(0.01);
     expect(PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
@@ -35,42 +42,55 @@ describe('WLotus market price vs energy cost', () => {
     expect(sum).toBeCloseTo(1, 10);
     expect(WLOTUS_ELECTRICITY_SHARE_OF_PRICE).toBe(0.25);
     expect(WLOTUS_COST_STACK.profitMargin).toBe(0.4);
-    // New/illiquid markets: plan in the ~30–50% band, not thin ~10% commodity nets.
-    expect(WLOTUS_COST_STACK.profitMargin).toBeGreaterThanOrEqual(0.3);
-    expect(WLOTUS_COST_STACK.profitMargin).toBeLessThanOrEqual(0.5);
   });
 
-  test('D sized from electricity share → ~59 bits, ~1.6h on 100 TH/s', () => {
-    const H = expectedHashesForWlotusBaton();
-    expect(Math.round(bitsFromExpectedHashes(H))).toBe(59);
-    expect(POW_W_BASE_ZERO_BITS).toBe(59);
-    const hours = wallSeconds(H, 100e12) / 3600;
-    expect(hours).toBeGreaterThan(1.4);
-    expect(hours).toBeLessThan(1.8);
+  test('mint atoms: Prayer 1, Incense 1, Candle 10, Flower 100', () => {
+    expect(PRAYER_MINT_ATOMS).toBe(1n);
+    expect(INCENSE_MINT_ATOMS).toBe(1n);
+    expect(CANDLE_MINT_ATOMS).toBe(10n);
+    expect(FLOWER_MINT_ATOMS).toBe(100n);
   });
 
-  test('reference electricity is well below $1 market baton price', () => {
-    const ladder = buildPricingLadder();
-    expect(ladder.wlotus.referenceElectricityUsd).toBeCloseTo(0.25, 10);
-    expect(ladder.wlotus.referenceElectricityUsd).toBeLessThan(
-      ladder.wlotus.targetUsdPerRemint,
+  test('work ladder: Prayer÷10, Candle×100, Flower×100 from Incense', () => {
+    expect(PRAYER_WORK_DIVISOR).toBe(10);
+    expect(CANDLE_WORK_FACTOR).toBe(100);
+    expect(FLOWER_WORK_FACTOR_FROM_CANDLE).toBe(100);
+    const b = ritualBits();
+    expect(b.prayer).toBe(22);
+    expect(b.incense).toBe(25);
+    expect(b.candle).toBe(32);
+    expect(b.flower).toBe(38);
+    expect(POW_PRAYER_BASE_ZERO_BITS).toBe(22);
+    expect(POW_INCENSE_BASE_ZERO_BITS).toBe(25);
+    expect(POW_CANDLE_BASE_ZERO_BITS).toBe(32);
+    expect(POW_FLOWER_BASE_ZERO_BITS).toBe(38);
+  });
+
+  test('Incense phone ~3.7 min; Prayer ~1/10 (~30 s)', () => {
+    const incenseSec = wallSeconds(
+      expectedHashesFromBits(25),
+      UX_PHONE_HASHRATE_H_S,
     );
+    const prayerSec = wallSeconds(
+      expectedHashesFromBits(22),
+      UX_PHONE_HASHRATE_H_S,
+    );
+    expect(incenseSec / 60).toBeGreaterThan(3);
+    expect(incenseSec / 60).toBeLessThan(4.5);
+    expect(prayerSec).toBeGreaterThan(20);
+    expect(prayerSec).toBeLessThan(40);
+    expect(incenseSec / prayerSec).toBeGreaterThan(7);
+    expect(incenseSec / prayerSec).toBeLessThan(12);
   });
 
-  test('mint-time table lists three parallel products', () => {
+  test('mint-time table lists Prayer → Incense → Candle → Flower', () => {
     expect(buildMintTimeTable().rows.map(r => r.product)).toEqual([
-      'nWLotus',
-      'mWLotus',
-      'WLotus',
+      'Prayer',
+      'Incense',
+      'Candle',
+      'Flower',
     ]);
-  });
-
-  test('n/m UX bits unchanged', () => {
-    expect(POW_N_BASE_ZERO_BITS).toBe(25);
-    expect(POW_M_BASE_ZERO_BITS).toBe(30);
-    expect(
-      wallSeconds(expectedHashesFromBits(30), UX_PC_HASHRATE_H_S),
-    ).toBeGreaterThan(10 * 60);
+    expect(buildPricingLadder().flower.ticker).toBe('WLOTUS');
   });
 
   test('Ergon half-life ~2.3y', () => {

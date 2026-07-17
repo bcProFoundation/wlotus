@@ -90,17 +90,18 @@ describe('genesis multi-baton', () => {
   });
 });
 
-describe('mWLotus incubation economics', () => {
-  test('UX-timed m tier + ASIC-priced WLotus ladder', async () => {
+describe('Ritual offer economics', () => {
+  test('Candle / Incense / Flower ladder + Flower $1 market', async () => {
     const econ = await import('../src/params/testEconomics.js');
-    expect(TOKEN_TICKER).toBe('mWLOTUS');
+    expect(TOKEN_TICKER).toBe('CANDLE');
     expect(TOKEN_DECIMALS).toBe(0);
-    expect(BASE_MINT_ATOMS).toBe(100n);
-    expect(econ.TEST_TARGET_USD_PER_TOKEN).toBe(1e-5);
+    expect(BASE_MINT_ATOMS).toBe(100n); // Flower default
+    expect(econ.CANDLE_MINT_ATOMS).toBe(10n);
+    expect(econ.INCENSE_MINT_ATOMS).toBe(1n);
     expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
-    expect(econ.TEST_BASE_ZERO_BITS).toBe(30);
-    expect(econ.PROD_BASE_ZERO_BITS).toBe(59);
-    expect(econ.NWLPOW_BASE_ZERO_BITS).toBe(25);
+    expect(econ.TEST_BASE_ZERO_BITS).toBe(32); // Candle
+    expect(econ.PROD_BASE_ZERO_BITS).toBe(38); // Flower
+    expect(econ.NWLPOW_BASE_ZERO_BITS).toBe(25); // Incense
     expect(econ.TOKENS_PER_REMINT).toBe(100);
     expect(econ.TEST_POW_BATON_COUNT).toBeGreaterThanOrEqual(2);
     expect(econ.TEST_INITIAL_MINT_ATOMS).toBe(1_000_000n);

@@ -1,18 +1,44 @@
 /**
- * Pricing / difficulty ladder.
+ * Pricing / difficulty ladder — ritual offer tiers.
  *
- * WLotus **target market price** = $1 / baton ($0.01 / token).
- * That is a business revenue target (Ergon-style: mine for operating profit),
- * NOT “electricity alone = $1”. Difficulty is set so reference-ASIC
- * **electricity** is only a share of that $1; the rest covers hardware,
- * space, labor, and margin.
+ * Prestige (high → low): Flower (WLotus) → Candle → Incense → Prayer.
+ * (Unlike Lotus Temple burn amounts, where flower is the cheapest offer.)
+ *
+ * Work ladder (from Incense baseline @ phone ~3.7 min):
+ *   Prayer  ≈ Incense / 10
+ *   Incense ≈ 1× (phone ~3.7 min)
+ *   Candle  = Incense × 100
+ *   Flower  = Candle × 100
+ *
+ * Mint atoms / baton: Prayer 1 · Incense 1 · Candle 10 · Flower 100
+ * so token peg intent: 100 Incense ≈ 1 Candle; 100 Candle ≈ 1 Flower.
+ * PoW **cost per baton** is set by the work ladder (mint size does not
+ * cheapen the baton).
+ *
+ * Flower (WLotus) target **market** price = $1 / baton ($0.01 / token) with
+ * Ergon-style business cost stack (not electricity-alone).
  *
  * See docs/ECONOMICS.md. Recompute: `npm run pricing`.
  */
 
 import { MOORE_NUM, MOORE_DEN } from './consensus.js';
 
-export const TOKENS_PER_REMINT = 100;
+/** Flower (WLotus) mint atoms — prestige tier. */
+export const FLOWER_TOKENS_PER_BATON = 100;
+/** @deprecated use FLOWER_TOKENS_PER_BATON */
+export const TOKENS_PER_REMINT = FLOWER_TOKENS_PER_BATON;
+
+export const CANDLE_TOKENS_PER_BATON = 10;
+export const INCENSE_TOKENS_PER_BATON = 1;
+export const PRAYER_TOKENS_PER_BATON = 1;
+
+/** Incense baseline bits — phone ~3.7 min @ 0.15 MH/s. */
+export const INCENSE_BASE_ZERO_BITS = 25;
+
+/** Work multiples vs Incense baton. */
+export const PRAYER_WORK_DIVISOR = 10;
+export const CANDLE_WORK_FACTOR = 100;
+export const FLOWER_WORK_FACTOR_FROM_CANDLE = 100;
 
 /** Reference industrial power price. */
 export const ASIC_USD_PER_KWH = 0.08;
@@ -28,29 +54,23 @@ export const UX_PHONE_HASHRATE_H_S = 150_000;
 export const JOULES_PER_KWH = 3.6e6;
 
 /**
- * WLotus target **market** price per baton (100 tokens).
+ * Flower (WLotus) target **market** price per baton (100 tokens).
  * Revenue a remint is meant to clear at — not pure kWh cost.
  */
 export const WLOTUS_TARGET_USD_PER_BATON = 1;
 export const WLOTUS_TARGET_USD_PER_TOKEN =
-  WLOTUS_TARGET_USD_PER_BATON / TOKENS_PER_REMINT;
+  WLOTUS_TARGET_USD_PER_BATON / FLOWER_TOKENS_PER_BATON;
 
 /**
- * Share of baton market price attributed to **electricity** when sizing D.
- * Remainder ≈ hardware + facility/space + labor + risk margin.
- * Ergon-style: mining is a normal business, not NGU speculation.
- *
- * New / illiquid markets typically need a **~30–50%** risk margin (vs ~10%
- * thin commodity nets). We use **40%** — see WLOTUS_COST_STACK.
+ * Share of Flower baton market price attributed to **electricity** in the
+ * business cost stack (illustrative). Difficulty for UX tiers follows the
+ * ritual work ladder; Flower genesis bits follow that ladder too.
  */
 export const WLOTUS_ELECTRICITY_SHARE_OF_PRICE = 0.25;
 
 /**
- * Illustrative $1 baton cost stack (business, not oracle).
- *
- * Margin rationale: mature liquid mining often clears ~30–45% mining margin
- * in good times; a **new** token market has thinner books and demand risk,
- * so target the upper half of the early-market **30–50%** band → **40%**.
+ * Illustrative $1 Flower baton cost stack (business, not oracle).
+ * New/illiquid market → **40%** risk margin (see ECONOMICS.md).
  */
 export const WLOTUS_COST_STACK = {
   electricity: 0.25,
@@ -75,7 +95,7 @@ export function expectedHashesForAsicUsd(
   return usd / asicUsdPerHash(usdPerKwh, joulesPerTh);
 }
 
-/** Hashes so electricity cost ≈ share × market baton price. */
+/** Reference hashes if Flower D were sized purely from $1 × electricity share. */
 export function expectedHashesForWlotusBaton(
   marketUsdPerBaton: number = WLOTUS_TARGET_USD_PER_BATON,
   electricityShare: number = WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
@@ -98,15 +118,42 @@ export function wallSeconds(
   return expectedHashes / hashesPerSec;
 }
 
+/** Rounded genesis bits for the ritual ladder. */
+export function ritualBits(): {
+  prayer: number;
+  incense: number;
+  candle: number;
+  flower: number;
+} {
+  const incense = INCENSE_BASE_ZERO_BITS;
+  const incenseH = expectedHashesFromBits(incense);
+  return {
+    prayer: Math.round(
+      bitsFromExpectedHashes(incenseH / PRAYER_WORK_DIVISOR),
+    ),
+    incense,
+    candle: Math.round(
+      bitsFromExpectedHashes(incenseH * CANDLE_WORK_FACTOR),
+    ),
+    flower: Math.round(
+      bitsFromExpectedHashes(
+        incenseH * CANDLE_WORK_FACTOR * FLOWER_WORK_FACTOR_FROM_CANDLE,
+      ),
+    ),
+  };
+}
+
 export interface TierPlan {
   product: string;
   ticker: string;
-  regime: 'ux-effort' | 'asic-business';
+  ritual: 'prayer' | 'incense' | 'candle' | 'flower';
+  regime: 'ux-offer' | 'prestige-offer';
   baseZeroBits: number;
+  tokensPerBaton: number;
   expectedHashes: number;
-  /** Target market $/token (not electricity-only). */
+  /** Soft / target market $/token. */
   targetUsdPerToken: number;
-  /** Target market $/baton. */
+  /** Soft / target market $/baton. */
   targetUsdPerRemint: number;
   /** Reference ASIC electricity $ at this D (energy cost only). */
   referenceElectricityUsd: number;
@@ -114,16 +161,25 @@ export interface TierPlan {
 }
 
 export function buildPricingLadder(): {
+  prayer: TierPlan;
+  incense: TierPlan;
+  candle: TierPlan;
+  flower: TierPlan;
+  /** @deprecated alias → incense */
   nwlotus: TierPlan;
+  /** @deprecated alias → candle */
   mwlotus: TierPlan;
+  /** @deprecated alias → flower */
   wlotus: TierPlan;
   peg: string;
+  workLadder: string;
   wlotusBusiness: {
     marketUsdPerBaton: number;
     marketUsdPerToken: number;
     electricityShare: number;
     costStack: typeof WLOTUS_COST_STACK;
     electricityUsdAtReference: number;
+    asicSheetBitsIfPricedFromElecShare: number;
   };
   asic: {
     usdPerKwh: number;
@@ -135,11 +191,77 @@ export function buildPricingLadder(): {
   const usdPerHash = asicUsdPerHash();
   const marketBaton = WLOTUS_TARGET_USD_PER_BATON;
   const elecUsd = marketBaton * WLOTUS_ELECTRICITY_SHARE_OF_PRICE;
-  const wlotusHashes = expectedHashesForWlotusBaton();
-  const wlotusBits = Math.round(bitsFromExpectedHashes(wlotusHashes));
+  const bits = ritualBits();
+  const asicSheetBits = Math.round(
+    bitsFromExpectedHashes(expectedHashesForWlotusBaton()),
+  );
 
-  const nBits = 25;
-  const mBits = 30;
+  // Soft token prices from Flower $0.01 and 100∶1 peg intent.
+  const flowerTok = WLOTUS_TARGET_USD_PER_TOKEN;
+  const candleTok = flowerTok / 100;
+  const incenseTok = candleTok / 100;
+  const prayerTok = incenseTok / PRAYER_WORK_DIVISOR;
+
+  const prayer: TierPlan = {
+    product: 'Prayer',
+    ticker: 'PRAYER',
+    ritual: 'prayer',
+    regime: 'ux-offer',
+    baseZeroBits: bits.prayer,
+    tokensPerBaton: PRAYER_TOKENS_PER_BATON,
+    expectedHashes: expectedHashesFromBits(bits.prayer),
+    targetUsdPerToken: prayerTok,
+    targetUsdPerRemint: prayerTok * PRAYER_TOKENS_PER_BATON,
+    referenceElectricityUsd:
+      expectedHashesFromBits(bits.prayer) * usdPerHash,
+    notes: 'Quick offer — ~1/10 Incense wall-clock (~30 s phone).',
+  };
+
+  const incense: TierPlan = {
+    product: 'Incense',
+    ticker: 'INCENSE',
+    ritual: 'incense',
+    regime: 'ux-offer',
+    baseZeroBits: bits.incense,
+    tokensPerBaton: INCENSE_TOKENS_PER_BATON,
+    expectedHashes: expectedHashesFromBits(bits.incense),
+    targetUsdPerToken: incenseTok,
+    targetUsdPerRemint: incenseTok * INCENSE_TOKENS_PER_BATON,
+    referenceElectricityUsd:
+      expectedHashesFromBits(bits.incense) * usdPerHash,
+    notes: 'Launch offer — phone ~3.7 min (ex-nWLotus). 1 token/baton.',
+  };
+
+  const candle: TierPlan = {
+    product: 'Candle',
+    ticker: 'CANDLE',
+    ritual: 'candle',
+    regime: 'ux-offer',
+    baseZeroBits: bits.candle,
+    tokensPerBaton: CANDLE_TOKENS_PER_BATON,
+    expectedHashes: expectedHashesFromBits(bits.candle),
+    targetUsdPerToken: candleTok,
+    targetUsdPerRemint: candleTok * CANDLE_TOKENS_PER_BATON,
+    referenceElectricityUsd:
+      expectedHashesFromBits(bits.candle) * usdPerHash,
+    notes: 'Mid offer — Incense × 100 work (ex-mWLotus). 10 tokens/baton.',
+  };
+
+  const flower: TierPlan = {
+    product: 'Flower',
+    ticker: 'WLOTUS',
+    ritual: 'flower',
+    regime: 'prestige-offer',
+    baseZeroBits: bits.flower,
+    tokensPerBaton: FLOWER_TOKENS_PER_BATON,
+    expectedHashes: expectedHashesFromBits(bits.flower),
+    targetUsdPerToken: flowerTok,
+    targetUsdPerRemint: marketBaton,
+    referenceElectricityUsd:
+      expectedHashesFromBits(bits.flower) * usdPerHash,
+    notes:
+      'Prestige Flower (WLotus) — Candle × 100 work; 100 tokens/baton; $1/baton market target + 40% risk margin stack.',
+  };
 
   return {
     asic: {
@@ -148,50 +270,24 @@ export function buildPricingLadder(): {
       hashrateThs: ASIC_HASHRATE_TH_S,
       usdPerHash,
     },
-    peg: '1_000_000 nWLotus ≈ 1_000 mWLotus ≈ 1 WLotus',
+    peg: '10_000 Incense ≈ 100 Candle ≈ 1 Flower (WLotus); Prayer ≈ Incense/10',
+    workLadder:
+      'Prayer ≈ Incense/10 · Incense = 1× · Candle = Incense×100 · Flower = Candle×100',
     wlotusBusiness: {
       marketUsdPerBaton: marketBaton,
       marketUsdPerToken: WLOTUS_TARGET_USD_PER_TOKEN,
       electricityShare: WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
       costStack: WLOTUS_COST_STACK,
       electricityUsdAtReference: elecUsd,
+      asicSheetBitsIfPricedFromElecShare: asicSheetBits,
     },
-    nwlotus: {
-      product: 'nWLotus',
-      ticker: 'nWLOTUS',
-      regime: 'ux-effort',
-      baseZeroBits: nBits,
-      expectedHashes: expectedHashesFromBits(nBits),
-      targetUsdPerToken: 1e-8,
-      targetUsdPerRemint: 1e-8 * TOKENS_PER_REMINT,
-      referenceElectricityUsd:
-        expectedHashesFromBits(nBits) * usdPerHash,
-      notes: 'Launch — phone/PC wall-clock. Soft market price; not ASIC business D.',
-    },
-    mwlotus: {
-      product: 'mWLotus',
-      ticker: 'mWLOTUS',
-      regime: 'ux-effort',
-      baseZeroBits: mBits,
-      expectedHashes: expectedHashesFromBits(mBits),
-      targetUsdPerToken: 1e-5,
-      targetUsdPerRemint: 1e-5 * TOKENS_PER_REMINT,
-      referenceElectricityUsd:
-        expectedHashesFromBits(mBits) * usdPerHash,
-      notes: 'Incubation — PC minutes. Soft market price; ASICs still cheap.',
-    },
-    wlotus: {
-      product: 'WLotus',
-      ticker: 'WLOTUS',
-      regime: 'asic-business',
-      baseZeroBits: wlotusBits,
-      expectedHashes: wlotusHashes,
-      targetUsdPerToken: WLOTUS_TARGET_USD_PER_TOKEN,
-      targetUsdPerRemint: marketBaton,
-      referenceElectricityUsd: elecUsd,
-      notes:
-        'Production — $1/baton market price; D sized so ~25% is electricity on reference ASIC; ~40% risk margin for new-market demand risk.',
-    },
+    prayer,
+    incense,
+    candle,
+    flower,
+    nwlotus: incense,
+    mwlotus: candle,
+    wlotus: flower,
   };
 }
 
@@ -221,6 +317,7 @@ export function buildMintTimeTable(): {
     product: string;
     ticker: string;
     bits: number;
+    tokensPerBaton: number;
     marketUsdPerToken: number;
     marketUsdPerBaton: number;
     electricityUsd: number;
@@ -231,12 +328,13 @@ export function buildMintTimeTable(): {
 } {
   const ladder = buildPricingLadder();
   const asicHps = ASIC_HASHRATE_TH_S * 1e12;
-  const tiers = [ladder.nwlotus, ladder.mwlotus, ladder.wlotus];
+  const tiers = [ladder.prayer, ladder.incense, ladder.candle, ladder.flower];
   return {
     headers: [
       'Product',
       'Ticker',
       'Bits',
+      'Tokens/baton',
       'Market $/token',
       'Market $/baton',
       'ASIC elec. $ (ref)',
@@ -248,6 +346,7 @@ export function buildMintTimeTable(): {
       product: t.product,
       ticker: t.ticker,
       bits: t.baseZeroBits,
+      tokensPerBaton: t.tokensPerBaton,
       marketUsdPerToken: t.targetUsdPerToken,
       marketUsdPerBaton: t.targetUsdPerRemint,
       electricityUsd: t.referenceElectricityUsd,
