@@ -25,17 +25,16 @@ npm run create-moore-pow-token && npm run mine-moore-once
 - Mint size **fixed**; Moore adjusts **work**
 - Remint has exactly 3 covenant outputs — `mine-once` splits small fuel first
 
-### Moore-bit dogfood (fine grain)
+### Ergon daily-δ dogfood
 
 ```bash
-npm run create-moore-pow-token && npm run mine-moore-once
+npm run create-ergon-pow-token && npm run mine-ergon-once
 ```
 
-- Contract: `WlotusPowRemintMoore` — `bits = base + floor((nLockTime − genesis) / secondsPerExtraBit)`
-- Test schedule: **+1 bit / day** (prod ≈ +1 bit / ~845 days)
-- **eMPP WLDF** stores difficulty beside ALP MINT (Agora dual-push); covenant binds `hashOutputs`
-- `OP_CODESEPARATOR` keeps BIP143 preimage under the 520B push limit
-- P2SH address stays stable; miner sets locktime ≤ MTP
+- Compact target: `target_d = floor(T0 · 99918^d / 100000^d)` (true Ergon daily δ)
+- eMPP **WLDF v2** stores `dayIndex` + `target` beside ALP MINT
+- Dogfood window **days 0..4** (precomputed table — Spedn has no integer Mul)
+- Distinct from Moore-bit token (+1 bit/day steep test)
 
 ## Next
 

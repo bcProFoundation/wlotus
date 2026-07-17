@@ -16,6 +16,8 @@
     "create-pow-token": "tsx scripts/create-pow-token.ts",
     "create-moore-pow-token": "tsx scripts/create-moore-pow-token.ts",
     "mine-moore-once": "tsx scripts/mine-moore-once.ts",
+    "create-ergon-pow-token": "tsx scripts/create-ergon-pow-token.ts",
+    "mine-ergon-once": "tsx scripts/mine-ergon-once.ts",
     "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts"
   },
   "engines": {

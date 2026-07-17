@@ -1,0 +1,84 @@
+// mWLPOW Ergon-like daily Moore δ remint (eCash / XEC)
+// target_d = floor(genesisTarget * 99918^d / 100000^d), d = 0..4 (table).
+// Spedn has no integer Mul — create script precomputes targetTable.
+// eMPP WLDF v2: dayIndex + target + locktime beside ALP MINT.
+// CODESEPARATOR keeps BIP143 scriptCode tiny. Redeem must stay ≤520B.
+
+contract WlotusPowRemintErgon(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    int genesisUnix,
+    int daySeconds,
+    [byte;20] targetTable
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage,
+        [byte;20] batonHash,
+        int target
+    ) {
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+        verify locktime >= genesisUnix;
+
+        int days = (locktime - genesisUnix) / daySeconds;
+        verify days <= 4;
+
+        ([byte] t0b, [byte] r0) = targetTable @ 4;
+        ([byte] t1b, [byte] r1) = r0 @ 4;
+        ([byte] t2b, [byte] r2) = r1 @ 4;
+        ([byte] t3b, [byte] r3) = r2 @ 4;
+        ([byte] t4b, _) = r3 @ 4;
+
+        if (days == 0) { verify target == bin2num(t0b); }
+        else if (days == 1) { verify target == bin2num(t1b); }
+        else if (days == 2) { verify target == bin2num(t2b); }
+        else if (days == 3) { verify target == bin2num(t3b); }
+        else { verify target == bin2num(t4b); }
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        ([byte] head, _) = solhash @ 4;
+        verify bin2num(head) >= 0;
+        verify bin2num(head) < target;
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        [byte] wldf =
+            0x574c4446 .
+            0x02 .
+            num2bin(days, 4) .
+            num2bin(target, 4) .
+            num2bin(locktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x01;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wldf), 1) .
+            wldf .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . batonHash . 0x87;
+
+        verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}
