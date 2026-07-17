@@ -107,12 +107,22 @@ Moore step options (either is Ergon-closer than +1 **byte**):
 
 ## Live mWLPOW today
 
-| Item | Status |
-|------|--------|
-| EMPP | Single push: ALP `MINT` only |
-| Difficulty | Fixed **1** leading zero **byte** in redeem |
-| Moore on-chain | **Not** implemented |
-| Path forward | Agora-style dual EMPP + stateful redeem migration (new genesis/handoff) |
+| Item | Fixed-D (earlier) | Moore-bit dogfood |
+|------|-------------------|-------------------|
+| EMPP | Single push: ALP `MINT` | Dual: **WLDF** + ALP `MINT` |
+| Difficulty | Fixed **1** leading zero **byte** | Locktime-derived **bits** |
+| Moore on-chain | Lib-only | `WlotusPowRemintMoore` (+1 bit/day test) |
+| Scripts | `create-pow-token` / `mine-once` | `create-moore-pow-token` / `mine-moore-once` |
+
+### WLDF layout (v1, 15 bytes)
+
+```
+WLDF | ver=1 | zeroBits u16 LE | extraBits u32 LE | locktime u32 LE
+```
+
+Consensus bits still come from **nLockTime** in the redeem (same formula). WLDF must match byte-exact or `hashOutputs` fails.
+
+Cheat surface for dogfood: miner can pick a **past** locktime for fewer bits. Acceptable for testing; production needs MTP floor / height clock / stateful tip.
 
 ---
 

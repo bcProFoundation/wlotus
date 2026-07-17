@@ -19,11 +19,22 @@ npm run create-pow-token && npm run mine-once
 ## Covenant notes (eCash)
 
 - No native introspection → Spedn Mist-style BIP143 preimage covenant
-- Mint size **fixed**; Moore δ schedules **work** (lib + future stateful D)
+- Mint size **fixed**; Moore adjusts **work**
 - Remint has exactly 3 covenant outputs — `mine-once` splits small fuel first
+
+### Moore-bit dogfood (fine grain)
+
+```bash
+npm run create-moore-pow-token && npm run mine-moore-once
+```
+
+- Contract: `WlotusPowRemintMoore` — `bits = base + floor((nLockTime − genesis) / secondsPerExtraBit)`
+- Test schedule: **+1 bit / day** (prod ≈ +1 bit / ~845 days)
+- eMPP **WLDF** push beside ALP MINT (Agora dual-push pattern)
+- P2SH address stays stable; D comes from locktime, not redeem mutation
 
 ## Next
 
 1. Temple / burn app against mWLPOW  
-2. Stateful Moore-on-difficulty covenant revision  
+2. Harden Moore (shared clock / anti-past-locktime) for production  
 3. WLOTUS genesis (~1000× difficulty) + conversion UX  

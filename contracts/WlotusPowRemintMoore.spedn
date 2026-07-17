@@ -1,0 +1,92 @@
+// mWLPOW Moore-bit PoW remint (eCash / XEC)
+// BIP143 preimage + eMPP WLDF (Agora-style dual push with ALP MINT).
+// bits = baseZeroBits + floor((locktime - genesisUnix) / secondsPerExtraBit)
+// Mint always 100 atoms. P2SH address stable (D from locktime, not redeem mutation).
+
+contract WlotusPowRemintMoore(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    int genesisUnix,
+    int baseZeroBits,
+    int secondsPerExtraBit
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage
+    ) {
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+        verify locktime >= genesisUnix;
+
+        int elapsed = locktime - genesisUnix;
+        int extraBits = elapsed / secondsPerExtraBit;
+        int bits = baseZeroBits + extraBits;
+        verify bits >= baseZeroBits;
+        verify bits <= baseZeroBits + 8;
+
+        [byte] solhash = hash256(preimage . nonce);
+        int zeroBytes = bits / 8;
+        int remBits = bits % 8;
+
+        ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
+        verify bin2num(prefix) == 0;
+
+        if (remBits == 0) {
+            verify true;
+        } else {
+            ([byte] nextByte, _) = rest @ 1;
+            int nb = bin2num(nextByte);
+            if (remBits == 1) { verify nb < 128; }
+            else if (remBits == 2) { verify nb < 64; }
+            else if (remBits == 3) { verify nb < 32; }
+            else if (remBits == 4) { verify nb < 16; }
+            else if (remBits == 5) { verify nb < 8; }
+            else if (remBits == 6) { verify nb < 4; }
+            else if (remBits == 7) { verify nb < 2; }
+            else { verify false; }
+        }
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        ([byte] head, _) = preimage @ (size(preimage) - 52);
+        (_, [byte] scriptCodePrefixed) = head @ 104;
+        (_, [byte] redeemScript) = scriptCodePrefixed @ 1;
+
+        [byte] wldf =
+            0x574c4446 .
+            0x01 .
+            num2bin(bits, 2) .
+            num2bin(extraBits, 4) .
+            num2bin(locktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x01;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wldf), 1) .
+            wldf .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(redeemScript) . 0x87;
+
+        verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+    }
+}

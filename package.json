@@ -14,6 +14,8 @@
     "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
     "mine-once": "tsx scripts/mine-once.ts",
     "create-pow-token": "tsx scripts/create-pow-token.ts",
+    "create-moore-pow-token": "tsx scripts/create-moore-pow-token.ts",
+    "mine-moore-once": "tsx scripts/mine-moore-once.ts",
     "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts"
   },
   "engines": {

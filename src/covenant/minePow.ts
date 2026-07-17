@@ -1,5 +1,6 @@
 import { sha256d } from 'ecash-lib';
 import { meetsPowDifficulty } from './powRemintScript.js';
+import { meetsPowBits } from './wldf.js';
 
 export interface MinePowResult {
   nonce: Uint8Array;
@@ -17,9 +18,28 @@ export function minePow(opts: {
   nonceLength?: number;
   maxAttempts?: number;
 }): MinePowResult {
+  return minePowBits({
+    preimage: opts.preimage,
+    bits: opts.difficultyLeadingZeroBytes * 8,
+    nonceLength: opts.nonceLength,
+    maxAttempts: opts.maxAttempts,
+  });
+}
+
+/**
+ * Fine-grain PoW: leading zero *bits* (Moore schedule).
+ * Byte-only D is `bits = 8 * difficultyLeadingZeroBytes`.
+ */
+export function minePowBits(opts: {
+  preimage: Uint8Array;
+  bits: number;
+  nonceLength?: number;
+  maxAttempts?: number;
+}): MinePowResult {
   const nonceLen = opts.nonceLength ?? 4;
   const max = opts.maxAttempts ?? 5_000_000;
   const nonce = new Uint8Array(nonceLen);
+  const bits = opts.bits;
 
   for (let attempts = 1; attempts <= max; attempts++) {
     for (let i = 0; i < nonceLen; i++) {
@@ -30,11 +50,13 @@ export function minePow(opts: {
     buf.set(opts.preimage, 0);
     buf.set(nonce, opts.preimage.length);
     const hash = sha256d(buf);
-    if (meetsPowDifficulty(hash, opts.difficultyLeadingZeroBytes)) {
+    if (meetsPowBits(hash, bits)) {
+      // Keep byte helper honest for whole-byte difficulties.
+      if (bits % 8 === 0 && !meetsPowDifficulty(hash, bits / 8)) {
+        continue;
+      }
       return { nonce: nonce.slice(), hash, attempts };
     }
   }
-  throw new Error(
-    `PoW not found after ${max} attempts (d=${opts.difficultyLeadingZeroBytes})`,
-  );
+  throw new Error(`PoW not found after ${max} attempts (bits=${bits})`);
 }
