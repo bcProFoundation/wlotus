@@ -69,3 +69,14 @@ describe('genesis multi-baton', () => {
     expect(() => assertMultiBaton(plan)).toThrow(/N >= 2/);
   });
 });
+
+describe('test economics profile', () => {
+  test('PoW difficulty is low for ~$1e-6 target', async () => {
+    const econ = await import('../src/params/testEconomics.js');
+    expect(econ.TEST_POW_LEADING_ZERO_BYTES).toBe(1);
+    expect(econ.TEST_TARGET_USD_PER_TOKEN).toBe(0.000001);
+    expect(econ.PROD_TARGET_USD_PER_TOKEN).toBe(0.01);
+    expect(econ.TEST_POW_BATON_COUNT).toBeGreaterThanOrEqual(2);
+    expect(econ.TEST_INITIAL_MINT_ATOMS).toBeGreaterThan(0n);
+  });
+});

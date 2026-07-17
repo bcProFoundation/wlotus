@@ -17,6 +17,8 @@ access to this repo. That work is now landed here.
 
 ## Next ops
 
-1. Chipnet GENESIS with `N` PoW batons  
-2. Harden `contracts/WlotusRemint.cash` + Chronik miner wiring  
-3. Temple / burn UI in a separate app repo  
+1. Fund genesis address in `deployments/pending-funding.json` (≥ 200 XEC)  
+2. `npm run create-test-token` → writes `deployments/mainnet-test-token.json`  
+3. Harden `contracts/WlotusRemint.cash` + Chronik miner wiring  
+4. Raise PoW from 1 → higher when targeting ~$0.01/token  
+5. Temple / burn UI in a separate app repo  

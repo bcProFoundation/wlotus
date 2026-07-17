@@ -8,14 +8,19 @@
     "build": "tsc -p tsconfig.json",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "moore": "tsx scripts/compute-moore.ts",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "new-wallet": "tsx scripts/new-wallet.ts",
+    "create-test-token": "tsx scripts/create-test-token.ts",
+    "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "chronik-client": "^3.1.0",
-    "ecash-lib": "^4.8.0"
+    "chronik-client": "^4.3.0",
+    "dotenv": "^16.4.7",
+    "ecash-lib": "^4.13.0",
+    "ecash-wallet": "^6.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

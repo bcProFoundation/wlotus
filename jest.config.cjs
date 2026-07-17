@@ -15,5 +15,9 @@ module.exports = {
       },
     ],
   },
+  // ecash-lib ships ESM (+ wasm glue) that Jest must transform
+  transformIgnorePatterns: [
+    '/node_modules/(?!(ecash-lib|ecash-wallet|chronik-client)/)',
+  ],
   testMatch: ['**/tests/**/*.test.ts'],
 };

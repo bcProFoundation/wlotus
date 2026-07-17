@@ -49,6 +49,21 @@ npm test
 npm run moore -- --days 365   # print M after 365 wall-days
 ```
 
+## Create the low-difficulty test token (mainnet)
+
+Target economics: **~$0.000001 / token** now; later raise PoW toward **~$0.01 / token**.
+
+Chronik fleet: `chronik.e.cash`, `xec.paybutton.org`, `chronik.pay2stay.com/xec`.
+
+```bash
+npm run new-wallet            # writes .env + deployments/pending-funding.json
+# Send ≥ 200 XEC to the printed address
+npm run create-test-token     # ALP GENESIS → deployments/mainnet-test-token.json
+```
+
+Ticker for this dogfood deployment: `WLTEST` (keeps `WLOTUS` for the later $0.01 launch).
+Mint batons are custodial on the genesis wallet until the PoW covenant is live.
+
 ## License
 
 MIT

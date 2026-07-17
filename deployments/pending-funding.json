@@ -1,0 +1,12 @@
+{
+  "network": "mainnet",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "balanceSats": "0",
+  "minSuggestedXec": 200,
+  "nextStep": "Send ≥ 200 XEC to genesisAddress, then: npm run create-test-token",
+  "chronikUrls": [
+    "https://chronik.e.cash",
+    "https://xec.paybutton.org",
+    "https://chronik.pay2stay.com/xec"
+  ]
+}

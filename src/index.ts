@@ -7,6 +7,15 @@ export {
   TOKEN_TICKER,
 } from './params/consensus.js';
 export {
+  TEST_INITIAL_MINT_ATOMS,
+  TEST_POW_BATON_COUNT,
+  TEST_POW_LEADING_ZERO_BYTES,
+  TEST_TARGET_USD_PER_TOKEN,
+  TEST_TOKEN_NAME,
+  TEST_TOKEN_TICKER,
+  PROD_TARGET_USD_PER_TOKEN,
+} from './params/testEconomics.js';
+export {
   approxHalfLifeYears,
   mintAtomsAfterDays,
   mintAtomsAtHostHeight,
@@ -14,4 +23,10 @@ export {
   mooreStep,
 } from './lib/moore.js';
 export { assertMultiBaton, buildGenesisPlan } from './genesis/createGenesis.js';
+export {
+  broadcastAlpGenesis,
+  buildAlpGenesisAction,
+} from './genesis/broadcastGenesis.js';
+export { createChronik } from './network/createChronik.js';
+export { MAINNET_CHRONIK_URLS } from './network/chronikUrls.js';
 export { expectedMintAtoms, minerBanner } from './miner/remint.js';

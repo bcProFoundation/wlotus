@@ -17,9 +17,10 @@ export const TOKEN_DECIMALS = 6;
 
 /**
  * Leading zero *bytes* required on hash256(preimage || nonce).
- * Draft — retune on chipnet.
+ * Test deployment uses 1 (~$1e-6/token target). Raise for ~$0.01 later.
+ * @see ./testEconomics.ts
  */
-export const POW_LEADING_ZERO_BYTES = 2;
+export const POW_LEADING_ZERO_BYTES = 1;
 
 /**
  * Base mint atoms at k=0 (genesis day-step).
@@ -32,8 +33,9 @@ export const BASE_MINT_ATOMS = 100_000_000n;
 /**
  * Number of parallel PoW mint batons created at genesis.
  * Each baton is an independent remint race (true parallelization).
+ * Test genesis uses 4; production may raise toward 8–16.
  */
-export const POW_BATON_COUNT = 8;
+export const POW_BATON_COUNT = 4;
 
 /**
  * Ergon post-fix Moore daily factor numerator.
