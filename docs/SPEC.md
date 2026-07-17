@@ -71,7 +71,7 @@ requiredZeroBits(k) = POW_BASE_ZERO_BITS + floor(k / MOORE_DAYS_PER_EXTRA_BIT)
 k = floor(elapsed_days since genesis)
 ```
 
-Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D ships with the WLOTUS difficulty retune (~1000× expected hashes).
+Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D (bit/target) plus Agora-style eMPP announcement ships with a later genesis/handoff — see [research/alp-empp-difficulty-state.md](./research/alp-empp-difficulty-state.md).
 
 ## Future WLOTUS
 

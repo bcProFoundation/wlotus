@@ -128,3 +128,13 @@ With `E[hashes_per_solution] = 256` at incubation, issuance rate scales linearly
 ## Miner note
 
 The remint covenant commits to exactly **3 outputs** (mint OP_RETURN + miner P2PKH + baton P2SH). Excess fuel is fee — `mine-once` splits a ~30 XEC fuel UTXO first.
+
+## Fine-grained difficulty (future)
+
+ALP batons cannot store D. **eMPP can**, the same way Agora attaches `AGR0` beside ALP `SEND`:
+
+```ts
+emppScript([wldfPushdata(), alpMint(...)])
+```
+
+See [research/alp-empp-difficulty-state.md](./research/alp-empp-difficulty-state.md). Consensus still needs **stateful redeem** (Agora updates P2SH on partial fill); EMPP is the indexable announcement channel.
