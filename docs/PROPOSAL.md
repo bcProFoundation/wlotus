@@ -65,7 +65,7 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × 100
 ```
 
-mWLOTUS / nWLPOW are **UX-timed** incubation tiers (phone/PC minutes). **WLOTUS** difficulty is set from **ASIC electricity** (~$1/token floor), not “1000× dogfood.” See [ECONOMICS.md](./ECONOMICS.md). Conversion peg: **1_000_000 nWLPOW ≈ 1_000 mWLPOW ≈ 1 WLOTUS**.
+**nWLotus / mWLotus** are UX-timed (phone/PC). **WLotus** uses ASIC electricity for **$0.01/token = $1/baton** (~6.3 h on 100 TH/s). Launch starts with **nWLotus**; all tiers may run in parallel. See [ECONOMICS.md](./ECONOMICS.md). Peg: **1_000_000 n ≈ 1_000 m ≈ 1 W**.
 
 #### Moore / Koomey — Ergon **post-launch** constant only
 

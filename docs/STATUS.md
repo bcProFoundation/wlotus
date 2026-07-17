@@ -27,17 +27,15 @@ npm run create-moore-pow-token && npm run mine-moore-once
 npm run create-ergon-pow-token && npm run mine-ergon-once
 ```
 
-Economics: always **100**/remint @ **0** decimals. See [ECONOMICS.md](./ECONOMICS.md) for the **corrected** ladder:
+Economics: always **100**/baton @ **0** decimals. **Start with nWLotus.** All three can run in parallel.
 
-| Tier | Difficulty idea | Market intent |
-|------|-----------------|---------------|
-| **nWLPOW** | ~25 bits — phone/PC minutes | Launch / soft price |
-| **mWLPOW** | ~30 bits — PC tens of minutes | Incubation |
-| **WLOTUS** | ~68 bits — ASIC **~$1/token** energy floor | Production |
+| Product | Bits | Phone | PC | ASIC 100 TH/s | $/baton |
+|---------|------|-------|-----|---------------|---------|
+| **nWLotus** | 25 | ~3.7 min | ~40 s | &lt;1 ms | ~$10⁻⁶ |
+| **mWLotus** | 30 | ~2 h | ~21 min | &lt;1 ms | ~$10⁻³ |
+| **WLotus** | 61 | — | — | **~6.3 h** | **$1** |
 
-Live dogfood tokens still use **toy** D for covenant tests — **not** the economic plan.
-
-Docs: [ECONOMICS.md](./ECONOMICS.md) · [TEST_TOKEN.md](./TEST_TOKEN.md) · `npm run pricing`
+WLotus standard = **$0.01/token**. Live dogfood mWLPOW tokens are still toy-D. Details: [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
 ## Covenant notes (eCash)
 

@@ -6,16 +6,19 @@
  * follow the UX / ASIC bits below.
  */
 
-/** Launch tier — phone / PC minutes. */
-export const NWLPOW_TICKER = 'nWLPOW';
-export const NWLPOW_NAME = 'nano White Lotus PoW';
+/** Launch tier — phone / PC minutes. Start here. */
+export const NWLPOW_TICKER = 'nWLOTUS';
+export const NWLPOW_NAME = 'nWLotus';
 
 /** Incubation tier — normal PC tens of minutes+. */
-export const TOKEN_TICKER = 'mWLPOW';
-export const TOKEN_NAME = 'milli White Lotus PoW';
+export const TOKEN_TICKER = 'mWLOTUS';
+export const TOKEN_NAME = 'mWLotus';
+
+/** @deprecated dogfood ticker still on some live test tokens */
+export const DOGFOOD_TICKER_MWLPOW = 'mWLPOW';
 
 export const PROD_TOKEN_TICKER = 'WLOTUS';
-export const PROD_TOKEN_NAME = 'White Lotus';
+export const PROD_TOKEN_NAME = 'WLotus';
 
 export const TOKEN_DECIMALS = 0;
 export const PROD_TOKEN_DECIMALS = 0;
@@ -33,10 +36,10 @@ export const POW_N_BASE_ZERO_BITS = 25;
 export const POW_M_BASE_ZERO_BITS = 30;
 
 /**
- * WLOTUS genesis bits — ASIC electricity floor ≈ $1/token ($100/remint)
- * at 20 J/TH, $0.08/kWh (see pricing.ts). Tune before freeze.
+ * WLotus genesis bits — ASIC electricity floor ≈ $0.01/token ($1/baton)
+ * at 20 J/TH, $0.08/kWh (see pricing.ts). ~6.3h on 100 TH/s.
  */
-export const POW_W_BASE_ZERO_BITS = 68;
+export const POW_W_BASE_ZERO_BITS = 61;
 
 /** @deprecated alias — prefer POW_M_BASE_ZERO_BITS for real incubation. */
 export const POW_BASE_ZERO_BITS = POW_LEADING_ZERO_BYTES * 8;

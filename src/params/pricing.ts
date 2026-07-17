@@ -1,41 +1,40 @@
 /**
  * Pricing / difficulty ladder — ASIC energy vs UX effort.
  *
+ * Standard: WLotus = $0.01/token = $1/baton (ASIC electricity floor).
+ * Launch order: nWLotus → mWLotus → WLotus (all may run in parallel).
+ *
  * See docs/ECONOMICS.md. Recompute: `npm run pricing`.
  */
 
 import { MOORE_NUM, MOORE_DEN } from './consensus.js';
 
-/** Tokens minted per remint (all tiers). */
 export const TOKENS_PER_REMINT = 100;
 
-/** Reference industrial power price for WLOTUS energy floor. */
+/** Reference industrial power price for WLotus energy floor. */
 export const ASIC_USD_PER_KWH = 0.08;
 
 /** Reference ASIC efficiency (J per terahash). */
 export const ASIC_JOULES_PER_TH = 20;
 
-/** User-cited class of machine for projections. */
+/** Reference machine for projections. */
 export const ASIC_HASHRATE_TH_S = 100;
 
-/** Rough laptop/VM JS hashrate for UX timing (H/s). */
+/** Rough laptop/VM JS hashrate (H/s). */
 export const UX_PC_HASHRATE_H_S = 850_000;
 
-/** Rough phone JS hashrate for UX timing (H/s). */
+/** Rough phone JS hashrate (H/s). */
 export const UX_PHONE_HASHRATE_H_S = 150_000;
 
 export const JOULES_PER_KWH = 3.6e6;
 
-/** USD per SHA-256d hash at reference ASIC sheet. */
 export function asicUsdPerHash(
   usdPerKwh: number = ASIC_USD_PER_KWH,
   joulesPerTh: number = ASIC_JOULES_PER_TH,
 ): number {
-  const joulesPerHash = joulesPerTh / 1e12;
-  return (joulesPerHash / JOULES_PER_KWH) * usdPerKwh;
+  return (joulesPerTh / 1e12 / JOULES_PER_KWH) * usdPerKwh;
 }
 
-/** Expected hashes so ASIC electricity ≈ usd (pure energy, no margin). */
 export function expectedHashesForAsicUsd(
   usd: number,
   usdPerKwh: number = ASIC_USD_PER_KWH,
@@ -60,10 +59,9 @@ export function wallSeconds(
 }
 
 export interface TierPlan {
+  product: string;
   ticker: string;
-  name: string;
   regime: 'ux-effort' | 'asic-energy';
-  /** Genesis leading-zero bits (compact target may realize the same E[H]). */
   baseZeroBits: number;
   expectedHashes: number;
   targetUsdPerToken: number;
@@ -72,12 +70,12 @@ export interface TierPlan {
 }
 
 /**
- * Adjusted launch ladder.
- * n/m = UX-timed; WLOTUS = ASIC $1/token energy floor ($100/remint).
+ * Canonical ladder (parallel tokens OK).
+ * WLotus: $0.01/token = $1/baton ASIC floor → ~61 bits.
  */
 export function buildPricingLadder(): {
-  nwlpow: TierPlan;
-  mwlpow: TierPlan;
+  nwlotus: TierPlan;
+  mwlotus: TierPlan;
   wlotus: TierPlan;
   peg: string;
   asic: {
@@ -88,7 +86,8 @@ export function buildPricingLadder(): {
   };
 } {
   const usdPerHash = asicUsdPerHash();
-  const wlotusUsdPerToken = 1;
+  /** Standard: $0.01/token ⇒ $1/remint. */
+  const wlotusUsdPerToken = 0.01;
   const wlotusUsdPerRemint = wlotusUsdPerToken * TOKENS_PER_REMINT;
   const wlotusHashes = expectedHashesForAsicUsd(wlotusUsdPerRemint);
   const wlotusBits = Math.round(bitsFromExpectedHashes(wlotusHashes));
@@ -103,49 +102,100 @@ export function buildPricingLadder(): {
       hashrateThs: ASIC_HASHRATE_TH_S,
       usdPerHash,
     },
-    peg: '1_000_000 nWLPOW ≈ 1_000 mWLPOW ≈ 1 WLOTUS',
-    nwlpow: {
-      ticker: 'nWLPOW',
-      name: 'nano White Lotus PoW',
+    peg: '1_000_000 nWLotus ≈ 1_000 mWLotus ≈ 1 WLotus',
+    nwlotus: {
+      product: 'nWLotus',
+      ticker: 'nWLOTUS',
       regime: 'ux-effort',
       baseZeroBits: nBits,
       expectedHashes: expectedHashesFromBits(nBits),
-      targetUsdPerToken: 1e-6,
-      targetUsdPerRemint: 1e-6 * TOKENS_PER_REMINT,
-      notes: 'Phone/PC launch: ~minutes on phone, <1 min on PC. Not ASIC-priced.',
+      targetUsdPerToken: 1e-8,
+      targetUsdPerRemint: 1e-8 * TOKENS_PER_REMINT,
+      notes: 'Launch tier — phone/PC. Start here. Not ASIC-priced.',
     },
-    mwlpow: {
-      ticker: 'mWLPOW',
-      name: 'milli White Lotus PoW',
+    mwlotus: {
+      product: 'mWLotus',
+      ticker: 'mWLOTUS',
       regime: 'ux-effort',
       baseZeroBits: mBits,
       expectedHashes: expectedHashesFromBits(mBits),
-      targetUsdPerToken: 1e-3,
-      targetUsdPerRemint: 1e-3 * TOKENS_PER_REMINT,
-      notes: 'Normal PC: ~tens of minutes. ASICs still print cheaply — ritual tier.',
+      targetUsdPerToken: 1e-5,
+      targetUsdPerRemint: 1e-5 * TOKENS_PER_REMINT,
+      notes: 'Incubation — normal PC minutes. ASICs still cheap; ritual tier.',
     },
     wlotus: {
+      product: 'WLotus',
       ticker: 'WLOTUS',
-      name: 'White Lotus',
       regime: 'asic-energy',
       baseZeroBits: wlotusBits,
       expectedHashes: wlotusHashes,
       targetUsdPerToken: wlotusUsdPerToken,
       targetUsdPerRemint: wlotusUsdPerRemint,
       notes:
-        'ASIC electricity floor ≈ $1/token ($100/remint) at 20 J/TH, $0.08/kWh. ~26d on 100 TH/s.',
+        'Production — ASIC electricity ≈ $0.01/token ($1/baton). ~6.3h on 100 TH/s.',
     },
   };
 }
 
-/** Days for Ergon δ to multiply work by `factor`. */
 export function ergonDaysForWorkFactor(
   factor: number,
   num: bigint = MOORE_NUM,
   den: bigint = MOORE_DEN,
 ): number {
-  const delta = Number(num) / Number(den);
-  // work_{k+1} = work_k / delta  if we shrink target by δ, required hashes grow by 1/δ
-  const growth = 1 / delta;
+  const growth = Number(den) / Number(num);
   return Math.log(factor) / Math.log(growth);
+}
+
+export function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds > 1e12) return '—';
+  if (seconds < 0.001) return '<1 ms';
+  if (seconds < 1) return `${Math.round(seconds * 1000)} ms`;
+  if (seconds < 60) return `${seconds.toFixed(1)} s`;
+  if (seconds < 3600) return `${(seconds / 60).toFixed(1)} min`;
+  if (seconds < 86400) return `${(seconds / 3600).toFixed(1)} h`;
+  if (seconds < 365.25 * 86400) return `${(seconds / 86400).toFixed(1)} d`;
+  return `${(seconds / 365.25 / 86400).toFixed(1)} y`;
+}
+
+/** Mint-time matrix: product × device. */
+export function buildMintTimeTable(): {
+  headers: string[];
+  rows: {
+    product: string;
+    ticker: string;
+    bits: number;
+    usdPerToken: number;
+    usdPerBaton: number;
+    phone: string;
+    pc: string;
+    asic100THs: string;
+  }[];
+} {
+  const ladder = buildPricingLadder();
+  const asicHps = ASIC_HASHRATE_TH_S * 1e12;
+  const tiers = [ladder.nwlotus, ladder.mwlotus, ladder.wlotus];
+  return {
+    headers: [
+      'Product',
+      'Ticker',
+      'Bits',
+      '$/token',
+      '$/baton',
+      'Phone (~0.15 MH/s)',
+      'PC (~0.85 MH/s)',
+      'ASIC (100 TH/s)',
+    ],
+    rows: tiers.map(t => ({
+      product: t.product,
+      ticker: t.ticker,
+      bits: t.baseZeroBits,
+      usdPerToken: t.targetUsdPerToken,
+      usdPerBaton: t.targetUsdPerRemint,
+      phone: formatDuration(
+        wallSeconds(t.expectedHashes, UX_PHONE_HASHRATE_H_S),
+      ),
+      pc: formatDuration(wallSeconds(t.expectedHashes, UX_PC_HASHRATE_H_S)),
+      asic100THs: formatDuration(wallSeconds(t.expectedHashes, asicHps)),
+    })),
+  };
 }
