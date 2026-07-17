@@ -36,7 +36,8 @@ Economics: ritual **offer** ladder (Prayer → Incense → Candle → Flower). M
 | **Prayer** | 22 | 1 | **~28 s** | ~5 s | ~$10⁻⁷ |
 | **Incense** | 25 | 1 | **~3.7 min** | ~40 s | ~$10⁻⁶ |
 | **Candle** | 32 | 10 | **~8 h** | ~1.4 h | ~$10⁻³ |
-| **Flower** | 38 | 100 | ~21 d | ~3.7 d | **$1** |
+| **Flower** | **59** | 100 | — | — | **$1** (~1.6 h @ 100 TH/s) |
+
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
@@ -50,5 +51,5 @@ Economics: ritual **offer** ladder (Prayer → Incense → Candle → Flower). M
 
 1. Temple / burn app against mWLPOW  
 2. Harden Moore (shared clock / anti-past-locktime) for production  
-3. Flower (WLotus) genesis (~38 bits, $1/baton market) + conversion UX
+3. Flower (WLotus) genesis (~59 bits, $1/baton market) + conversion UX
 4. Optional Prayer @ 22 bits for ~30 s offers 

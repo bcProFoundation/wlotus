@@ -80,7 +80,7 @@ Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D (bit
 | Flower mint | **100** / baton |
 | Candle mint | **10** / baton |
 | Incense / Prayer mint | **1** / baton |
-| Difficulty | Ritual ladder: Prayer **22** · Incense **25** · Candle **32** · Flower **38** |
+| Difficulty | Prayer **22** · Incense **25** · Candle **32** · Flower **59** ($1 ASIC sheet) |
 | Peg | **100 Incense ≈ 1 Candle**; **100 Candle ≈ 1 Flower** |
 
 Prestige: **Flower > Candle > Incense > Prayer** (Flower is highest — unlike Lotus Temple’s amount tiers). Ergon-style remint is for-profit; **~40%** new-market risk margin on Flower. See [ECONOMICS.md](./ECONOMICS.md).

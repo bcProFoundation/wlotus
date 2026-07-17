@@ -4,19 +4,15 @@
  * Prestige (high → low): Flower (WLotus) → Candle → Incense → Prayer.
  * (Unlike Lotus Temple burn amounts, where flower is the cheapest offer.)
  *
- * Work ladder (from Incense baseline @ phone ~3.7 min):
- *   Prayer  ≈ Incense / 10
- *   Incense ≈ 1× (phone ~3.7 min)
- *   Candle  = Incense × 100
- *   Flower  = Candle × 100
+ * Two regimes:
+ *   - **UX offers** (Prayer / Incense / Candle): wall-clock from Incense
+ *     baseline (phone ~3.7 min). Prayer ≈ Incense/10; Candle = Incense×100.
+ *   - **Flower (WLotus)**: **ASIC business** — target market **$1/baton**;
+ *     D sized so ref. electricity ≈ 25% of that $1 → **~59 bits**
+ *     (NOT Incense×10000 — that was a mistaken overwrite of the $1 sheet).
  *
  * Mint atoms / baton: Prayer 1 · Incense 1 · Candle 10 · Flower 100
- * so token peg intent: 100 Incense ≈ 1 Candle; 100 Candle ≈ 1 Flower.
- * PoW **cost per baton** is set by the work ladder (mint size does not
- * cheapen the baton).
- *
- * Flower (WLotus) target **market** price = $1 / baton ($0.01 / token) with
- * Ergon-style business cost stack (not electricity-alone).
+ * Token peg intent: 100 Incense ≈ 1 Candle; 100 Candle ≈ 1 Flower.
  *
  * See docs/ECONOMICS.md. Recompute: `npm run pricing`.
  */
@@ -35,10 +31,9 @@ export const PRAYER_TOKENS_PER_BATON = 1;
 /** Incense baseline bits — phone ~3.7 min @ 0.15 MH/s. */
 export const INCENSE_BASE_ZERO_BITS = 25;
 
-/** Work multiples vs Incense baton. */
+/** Work multiples vs Incense for UX tiers only. */
 export const PRAYER_WORK_DIVISOR = 10;
 export const CANDLE_WORK_FACTOR = 100;
-export const FLOWER_WORK_FACTOR_FROM_CANDLE = 100;
 
 /** Reference industrial power price. */
 export const ASIC_USD_PER_KWH = 0.08;
@@ -62,9 +57,8 @@ export const WLOTUS_TARGET_USD_PER_TOKEN =
   WLOTUS_TARGET_USD_PER_BATON / FLOWER_TOKENS_PER_BATON;
 
 /**
- * Share of Flower baton market price attributed to **electricity** in the
- * business cost stack (illustrative). Difficulty for UX tiers follows the
- * ritual work ladder; Flower genesis bits follow that ladder too.
+ * Share of Flower baton market price attributed to **electricity** when
+ * sizing Flower D. Remainder ≈ HW + facility + labor + risk margin.
  */
 export const WLOTUS_ELECTRICITY_SHARE_OF_PRICE = 0.25;
 
@@ -95,7 +89,7 @@ export function expectedHashesForAsicUsd(
   return usd / asicUsdPerHash(usdPerKwh, joulesPerTh);
 }
 
-/** Reference hashes if Flower D were sized purely from $1 × electricity share. */
+/** Hashes so Flower electricity ≈ share × $1 market baton price. */
 export function expectedHashesForWlotusBaton(
   marketUsdPerBaton: number = WLOTUS_TARGET_USD_PER_BATON,
   electricityShare: number = WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
@@ -118,7 +112,9 @@ export function wallSeconds(
   return expectedHashes / hashesPerSec;
 }
 
-/** Rounded genesis bits for the ritual ladder. */
+/**
+ * Genesis bits: UX tiers from Incense ladder; Flower from $1 ASIC sheet.
+ */
 export function ritualBits(): {
   prayer: number;
   incense: number;
@@ -127,6 +123,7 @@ export function ritualBits(): {
 } {
   const incense = INCENSE_BASE_ZERO_BITS;
   const incenseH = expectedHashesFromBits(incense);
+  const flowerH = expectedHashesForWlotusBaton();
   return {
     prayer: Math.round(
       bitsFromExpectedHashes(incenseH / PRAYER_WORK_DIVISOR),
@@ -135,11 +132,7 @@ export function ritualBits(): {
     candle: Math.round(
       bitsFromExpectedHashes(incenseH * CANDLE_WORK_FACTOR),
     ),
-    flower: Math.round(
-      bitsFromExpectedHashes(
-        incenseH * CANDLE_WORK_FACTOR * FLOWER_WORK_FACTOR_FROM_CANDLE,
-      ),
-    ),
+    flower: Math.round(bitsFromExpectedHashes(flowerH)),
   };
 }
 
@@ -147,7 +140,7 @@ export interface TierPlan {
   product: string;
   ticker: string;
   ritual: 'prayer' | 'incense' | 'candle' | 'flower';
-  regime: 'ux-offer' | 'prestige-offer';
+  regime: 'ux-offer' | 'asic-business';
   baseZeroBits: number;
   tokensPerBaton: number;
   expectedHashes: number;
@@ -179,7 +172,7 @@ export function buildPricingLadder(): {
     electricityShare: number;
     costStack: typeof WLOTUS_COST_STACK;
     electricityUsdAtReference: number;
-    asicSheetBitsIfPricedFromElecShare: number;
+    flowerBitsFromMarket: number;
   };
   asic: {
     usdPerKwh: number;
@@ -192,9 +185,7 @@ export function buildPricingLadder(): {
   const marketBaton = WLOTUS_TARGET_USD_PER_BATON;
   const elecUsd = marketBaton * WLOTUS_ELECTRICITY_SHARE_OF_PRICE;
   const bits = ritualBits();
-  const asicSheetBits = Math.round(
-    bitsFromExpectedHashes(expectedHashesForWlotusBaton()),
-  );
+  const flowerHashes = expectedHashesForWlotusBaton();
 
   // Soft token prices from Flower $0.01 and 100∶1 peg intent.
   const flowerTok = WLOTUS_TARGET_USD_PER_TOKEN;
@@ -251,16 +242,15 @@ export function buildPricingLadder(): {
     product: 'Flower',
     ticker: 'WLOTUS',
     ritual: 'flower',
-    regime: 'prestige-offer',
+    regime: 'asic-business',
     baseZeroBits: bits.flower,
     tokensPerBaton: FLOWER_TOKENS_PER_BATON,
-    expectedHashes: expectedHashesFromBits(bits.flower),
+    expectedHashes: flowerHashes,
     targetUsdPerToken: flowerTok,
     targetUsdPerRemint: marketBaton,
-    referenceElectricityUsd:
-      expectedHashesFromBits(bits.flower) * usdPerHash,
+    referenceElectricityUsd: elecUsd,
     notes:
-      'Prestige Flower (WLotus) — Candle × 100 work; 100 tokens/baton; $1/baton market target + 40% risk margin stack.',
+      'Prestige Flower (WLotus) — $1/baton market; D from ~25% electricity on ref. ASIC (~59 bits); 40% risk margin. Not Incense×10000.',
   };
 
   return {
@@ -272,14 +262,14 @@ export function buildPricingLadder(): {
     },
     peg: '10_000 Incense ≈ 100 Candle ≈ 1 Flower (WLotus); Prayer ≈ Incense/10',
     workLadder:
-      'Prayer ≈ Incense/10 · Incense = 1× · Candle = Incense×100 · Flower = Candle×100',
+      'UX: Prayer ≈ Incense/10 · Candle = Incense×100 · Flower = $1 ASIC sheet (~59 bits), not Incense×10000',
     wlotusBusiness: {
       marketUsdPerBaton: marketBaton,
       marketUsdPerToken: WLOTUS_TARGET_USD_PER_TOKEN,
       electricityShare: WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
       costStack: WLOTUS_COST_STACK,
       electricityUsdAtReference: elecUsd,
-      asicSheetBitsIfPricedFromElecShare: asicSheetBits,
+      flowerBitsFromMarket: bits.flower,
     },
     prayer,
     incense,

@@ -3,16 +3,17 @@ import {
   WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
   WLOTUS_TARGET_USD_PER_BATON,
   WLOTUS_TARGET_USD_PER_TOKEN,
+  bitsFromExpectedHashes,
   buildMintTimeTable,
   buildPricingLadder,
   ergonDaysForWorkFactor,
+  expectedHashesForWlotusBaton,
   expectedHashesFromBits,
   ritualBits,
   wallSeconds,
   UX_PHONE_HASHRATE_H_S,
   PRAYER_WORK_DIVISOR,
   CANDLE_WORK_FACTOR,
-  FLOWER_WORK_FACTOR_FROM_CANDLE,
 } from '../src/params/pricing.js';
 import {
   POW_CANDLE_BASE_ZERO_BITS,
@@ -51,19 +52,29 @@ describe('Ritual offer ladder', () => {
     expect(FLOWER_MINT_ATOMS).toBe(100n);
   });
 
-  test('work ladder: Prayer÷10, Candle×100, Flower×100 from Incense', () => {
+  test('work ladder: Prayer÷10, Candle×100 from Incense; Flower from $1 sheet', () => {
     expect(PRAYER_WORK_DIVISOR).toBe(10);
     expect(CANDLE_WORK_FACTOR).toBe(100);
-    expect(FLOWER_WORK_FACTOR_FROM_CANDLE).toBe(100);
     const b = ritualBits();
     expect(b.prayer).toBe(22);
     expect(b.incense).toBe(25);
     expect(b.candle).toBe(32);
-    expect(b.flower).toBe(38);
+    expect(b.flower).toBe(59);
     expect(POW_PRAYER_BASE_ZERO_BITS).toBe(22);
     expect(POW_INCENSE_BASE_ZERO_BITS).toBe(25);
     expect(POW_CANDLE_BASE_ZERO_BITS).toBe(32);
-    expect(POW_FLOWER_BASE_ZERO_BITS).toBe(38);
+    expect(POW_FLOWER_BASE_ZERO_BITS).toBe(59);
+  });
+
+  test('Flower $1 → ~59 bits, ~1.6h on 100 TH/s (not Incense×10000)', () => {
+    const H = expectedHashesForWlotusBaton();
+    expect(Math.round(bitsFromExpectedHashes(H))).toBe(59);
+    const hours = wallSeconds(H, 100e12) / 3600;
+    expect(hours).toBeGreaterThan(1.4);
+    expect(hours).toBeLessThan(1.8);
+    const ladder = buildPricingLadder();
+    expect(ladder.flower.referenceElectricityUsd).toBeCloseTo(0.25, 10);
+    expect(ladder.flower.regime).toBe('asic-business');
   });
 
   test('Incense phone ~3.7 min; Prayer ~1/10 (~30 s)', () => {

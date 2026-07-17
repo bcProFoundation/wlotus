@@ -17,13 +17,13 @@
 
 | Product | Ticker | Was | Tokens / baton | Work vs Incense |
 |---------|--------|-----|----------------|-----------------|
-| **Prayer** | `PRAYER` | *(new)* | **1** | **÷ 10** |
-| **Incense** | `INCENSE` | nWLotus | **1** | **1×** (baseline) |
-| **Candle** | `CANDLE` | mWLotus | **10** | **× 100** |
-| **Flower (WLotus)** | `WLOTUS` | WLotus | **100** | **× 10_000** (= Candle × 100) |
+| **Prayer** | `PRAYER` | *(new)* | **1** | **÷ 10** (UX) |
+| **Incense** | `INCENSE` | nWLotus | **1** | **1×** (UX baseline) |
+| **Candle** | `CANDLE` | mWLotus | **10** | **× 100** (UX) |
+| **Flower (WLotus)** | `WLOTUS` | WLotus | **100** | **$1 ASIC sheet → ~59 bits** (not Incense×10000) |
 
 Token peg intent: **100 Incense ≈ 1 Candle token**; **100 Candle ≈ 1 Flower token**.  
-PoW **cost is per baton** (mint size does not cheapen the remint) — work follows the time ladder above.
+PoW **cost is per baton**. UX tiers follow the phone time ladder; **Flower difficulty is independent** and keeps the **$1/baton** business sheet.
 
 ---
 
@@ -51,7 +51,7 @@ Ergon-style remint is a **for-profit business** (no NGU subsidy).
 | **Risk margin** | **40%** | **$0.40** |
 | **Market** | **100%** | **$1.00** |
 
-Genesis **difficulty** follows the **ritual work ladder** (Incense baseline → ×100 → ×100). The ASIC “$1 × 25% electricity → ~59 bits” sheet remains a **reference** for a harder future production retune; it is not the current Flower genesis bit.
+Genesis **Flower difficulty** follows the **$1 × 25% electricity ASIC sheet → ~59 bits**. Prayer / Incense / Candle follow the **UX work ladder** from Incense. Do **not** set Flower = Incense×10000 (that was a mistaken rebrand overwrite).
 
 Recompute: `npm run pricing`.
 
@@ -66,9 +66,9 @@ Phone ~0.15 MH/s · PC ~0.85 MH/s · ASIC 100 TH/s.
 | **Prayer** | `PRAYER` | **22** | 1 | ~$10⁻⁷ | ~$10⁻⁷ | **~28 s** | **~5 s** | **&lt;1 ms** |
 | **Incense** | `INCENSE` | **25** | 1 | ~$10⁻⁶ | ~$10⁻⁶ | **~3.7 min** | **~40 s** | **&lt;1 ms** |
 | **Candle** | `CANDLE` | **32** | 10 | ~$10⁻⁴ | ~$10⁻³ | **~8 h** | **~1.4 h** | **&lt;1 ms** |
-| **Flower** | `WLOTUS` | **38** | 100 | **$0.01** | **$1** | **~21 d** | **~3.7 d** | **~3 ms** |
+| **Flower** | `WLOTUS` | **59** | 100 | **$0.01** | **$1** | — | — | **~1.6 h** |
 
-**Work:** Prayer ≈ Incense/10 · Candle = Incense×100 · Flower = Candle×100.
+**Work:** Prayer ≈ Incense/10 · Candle = Incense×100 · Flower = **$1 market ASIC sheet (~59 bits)**.
 
 ---
 

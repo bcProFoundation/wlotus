@@ -55,10 +55,11 @@ export const POW_INCENSE_BASE_ZERO_BITS = 25;
 export const POW_CANDLE_BASE_ZERO_BITS = 32;
 
 /**
- * Flower (WLotus) genesis bits — Candle × 100 work.
- * Market target remains $1/baton with business cost stack — see pricing.ts.
+ * Flower (WLotus) genesis bits — sized so reference ASIC **electricity ≈ 25%**
+ * of **$1/baton market price** (rest = HW/space/labor + ~40% risk margin).
+ * Independent of the Incense×100 UX ladder. See pricing.ts.
  */
-export const POW_FLOWER_BASE_ZERO_BITS = 38;
+export const POW_FLOWER_BASE_ZERO_BITS = 59;
 
 /** @deprecated use POW_INCENSE_BASE_ZERO_BITS */
 export const POW_N_BASE_ZERO_BITS = POW_INCENSE_BASE_ZERO_BITS;
