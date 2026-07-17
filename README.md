@@ -24,10 +24,11 @@ See [docs/SPEC.md](./docs/SPEC.md) and [docs/PROPOSAL.md](./docs/PROPOSAL.md).
 
 ## Status
 
-Scaffold for covenant + miner (migrated from the temporary
-`eminer` branch `cursor/wlotus-scaffold-d6bb`). Chipnet genesis and
-audited Script are TODO. See [docs/STATUS.md](./docs/STATUS.md).
-
+Scaffold for covenant + miner. **Mainnet test token `WLTEST` is live** —
+see [docs/TEST_TOKEN.md](./docs/TEST_TOKEN.md) and
+[deployments/mainnet-test-token.json](./deployments/mainnet-test-token.json).
+PoW covenant audit and `$0.01` `WLOTUS` launch are TODO.
+See [docs/STATUS.md](./docs/STATUS.md).
 ## Layout
 
 ```

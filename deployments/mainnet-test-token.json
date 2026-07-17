@@ -1,0 +1,23 @@
+{
+  "tokenId": "e64406bdda45fb46a642d9b6b2a949d9a12910046e3266e68158d7481e8b08a3",
+  "txids": [
+    "e64406bdda45fb46a642d9b6b2a949d9a12910046e3266e68158d7481e8b08a3"
+  ],
+  "ticker": "WLTEST",
+  "name": "White Lotus Test",
+  "decimals": 6,
+  "initialMintAtoms": "1000000000000",
+  "powBatonCount": 4,
+  "powLeadingZeroBytes": 1,
+  "baseMintAtoms": "100000000",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "createdAt": "2026-07-17T03:59:50.737Z",
+  "tipHeightAtGenesis": 958242,
+  "chronikExplorerHint": "https://explorer.e.cash/tx/e64406bdda45fb46a642d9b6b2a949d9a12910046e3266e68158d7481e8b08a3",
+  "cashtabTokenHint": "https://cashtab.com/#/token/e64406bdda45fb46a642d9b6b2a949d9a12910046e3266e68158d7481e8b08a3",
+  "notes": [
+    "Custodial mint batons held by genesis wallet until PoW covenant is live.",
+    "Test economics target ~$0.000001/token; raise PoW for ~$0.01."
+  ]
+}
