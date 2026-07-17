@@ -1,56 +1,67 @@
-# WLOTUS Consensus Parameters (v0.1 draft)
+# WLOTUS / mWLOTUS Consensus Parameters (v0.2 draft)
 
-These constants define the **intended** genesis / covenant policy.
-They are not live on mainnet until GENESIS + baton handoff are executed.
+See also [ECONOMICS.md](./ECONOMICS.md).
 
-## Identity
+## Identity — incubation genesis
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| Ticker | `WLOTUS` | White Lotus |
-| Name | `White Lotus` | |
+| Ticker | `mWLOTUS` | milli White Lotus (~1/1000 of future WLOTUS) |
+| Name | `milli White Lotus` | |
 | Protocol | ALP standard (`SLP2`) | eCash |
-| Decimals | `6` | Precision for Moore integer decay |
+| Decimals | `2` | Fixed mint size — no Moore on atoms |
 
 ## PoW remint
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| `POW_LEADING_ZERO_BYTES` | `1` | Test — ~$1e-6/token; raise for ~$0.01 later |
-| `BASE_MINT_ATOMS` (`M₀`) | `100_000_000` | = 100 WLOTUS @ 6 decimals per remint at genesis (keep large for Moore floor-div) |
-| Host 1-mint/block CLTV | **disabled** | Required for frequency elasticity |
+| Tokens / remint | **Always 100.00** | `BASE_MINT_ATOMS = 10_000` |
+| `POW_LEADING_ZERO_BYTES` (genesis) | `1` | Cheap incubation (~$1e-5/token target) |
+| Moore / Koomey | On **work**, not mint size | `δ = 99918/100000` |
+| Host 1-mint/block CLTV | **disabled** | Frequency elasticity |
 | Supply cap | **none** | PoW batons never die |
 
 ## Parallel batons
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| `POW_BATON_COUNT` (`N`) | `4` | Test genesis; production may use 8–16 |
-| Temple bootstrap baton | optional | Separate; retire after liquidity |
+| `POW_BATON_COUNT` (`N`) | `4` | Production may use 8–16 |
 
-Each remint spends exactly one PoW baton and recreates exactly one PoW baton (conserve `N`).
+Each remint spends one PoW baton and recreates one (conserve `N`).
 
-## Moore / Koomey decay (Ergon post-fix)
+## Moore on difficulty (Ergon post-fix δ)
 
-Source: [Ergon-moe/Bitcoin-Static `validation.cpp` L978](https://github.com/Ergon-moe/Bitcoin-Static/blob/2e8d5f7635c899cc99e71f06dedbe72b3ff7f07b/src/validation.cpp#L978)
+Source: [Ergon `validation.cpp` L978](https://github.com/Ergon-moe/Bitcoin-Static/blob/2e8d5f7635c899cc99e71f06dedbe72b3ff7f07b/src/validation.cpp#L978)
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| `MOORE_NUM` | **`99918`** | Use this — ~2.3y half-life |
-| `MOORE_DEN` | **`100000`** | |
-| Obsolete factor | `99826/100000` | Pre-fix ~1.1y — **forbidden** |
-| Day step | `144` eCash blocks | Same idea as Ergon `nSubsidyHalvingInterval` @ 10 min |
-| Clock | Host chain height / median time | **Not** token-mint height |
+| `MOORE_NUM` / `MOORE_DEN` | **`99918` / `100000`** | ~2.3y half-life |
+| Obsolete | `99826/100000` | **Forbidden** |
+| Day step | 144 blocks or 86400s | Host clock |
+| Mint atoms | **Fixed** | Do not apply δ to M |
+
+Library schedule (for miners / future stateful covenant):
 
 ```
-M(k) = floor_div_iter(M₀, k)
-where each step: x ← (x * 99918) / 100000
-k = floor( (hostHeight - genesisHeight) / 144 )
+requiredZeroBits(k) = POW_BASE_ZERO_BITS + floor(k / MOORE_DAYS_PER_EXTRA_BIT)
+k = floor(elapsed_days since genesis)
 ```
 
-## Explicit non-goals (v0.1)
+Incubation mWLOTUS covenant enforces genesis **fixed** 1-byte PoW so anyone can mine immediately. Stateful or time-honest Moore-on-D ships with the WLOTUS difficulty retune (~1000×).
+
+## Future WLOTUS
+
+| Param | Value |
+|-------|-------|
+| Target price | ~$0.01/token (~$1/remint) |
+| Mint | Still 100.00 |
+| Difficulty | ~1000× mWLOTUS genesis work |
+| Conversion | 1000 mWLOTUS ≈ 1 WLOTUS (live + burned) |
+
+## Explicit non-goals (v0.2)
 
 - `mintAmount ∝ work(D)` / token DAA  
 - Fixed max supply  
 - Mist 1-mint-per-block CLTV  
-- Website / temple app (separate repo)
+- USD price oracle on-chain  
+- Temple app (separate repo; needs this PoW token first)

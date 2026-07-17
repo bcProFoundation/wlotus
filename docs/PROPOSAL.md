@@ -52,20 +52,20 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 | Indexer | Chronik |
 | Liquidity | Agora + optional temple desk (XEC ↔ token) |
 
-### 3.3 Issuance — remint frequency + Moore decay
+### 3.3 Issuance — fixed 100 / remint + Moore on work
 
-**Insight:** On Ergon, block *rate* is held ~constant by the DAA, so elasticity lives in **coins per block** (`∝ D`). On an ALP PoW remint, invert that:
+**Canonical incubation model (mWLOTUS):** see [ECONOMICS.md](./ECONOMICS.md).
 
-- Fixed PoW difficulty; base atoms per remint before Moore  
-- **Many remints per eCash block** (no Mist “1 mint / host block” CLTV)  
-- **Multiple ALP mint batons** for **true parallel** remints (§3.5)  
-- ⇒ **remints/time ∝ hashrate** ⇒ **coins/time ∝ hashrate**
+- **Always 100 tokens per remint** (not Moore-decaying mint size)
+- **Moore / Koomey (`δ = 99918/100000`)** adjusts **required work / difficulty**
+- **Many remints per eCash block** + **N ≥ 2 batons** ⇒ coins/time ∝ hashrate
+- Burn = sacrifice; remint = pure PoW rebirth (not ritual inverses)
 
 ```
-coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × M(t)
+coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × 100
 ```
 
-No token DAA and no `mintAmount ∝ work(D)` required for Ergon-like *flow*.
+mWLOTUS targets ~$0.00001/token (~1/1000 of future WLOTUS ~$0.01). Conversion: **1000 mWLOTUS ≈ 1 WLOTUS**.
 
 #### Moore / Koomey — Ergon **post-launch** constant only
 
@@ -84,33 +84,25 @@ Bitcoin Static release notes fixed Moore from **1.1y → 2.3y**. **WLOTUS ships 
 | Symbol | WLOTUS | Notes |
 |--------|--------|-------|
 | `δ` | **`99918 / 100000`** | Ergon corrected daily factor |
-| Day step | ~1 wall day | Ergon: once per `nSubsidyHalvingInterval` (144 × 10‑min blocks). Mirror with ~144 eCash blocks or median-time day |
-| `M(t)` | `M₀ · δ^{k}` | `k = floor(elapsed_days)` since genesis |
-| Clock | **eCash height / median time** | **Not** token-mint height (that races with hashrate) |
-
-Covenant integer form:
-
-```
-M_expected = M₀
-repeat k times:
-    M_expected = (M_expected * 99918) / 100000
-verify mintAtoms == M_expected
-```
+| Day step | ~1 wall day | 144 eCash blocks or median-time day |
+| Mint | **Fixed 100** | Do **not** apply δ to mint atoms |
+| Work | `requiredBits(k)` grows with k | Library + future stateful covenant |
+| Clock | **eCash height / median time** | **Not** token-mint height |
 
 #### Canonical knobs
 
 | Knob | Setting | Role |
 |------|---------|------|
-| PoW difficulty `D` | Fixed, tunable | Effort per remint solution |
-| Base atoms `M₀` | Genesis constant | Initial unlock per solution |
-| Moore `δ` | **`99918/100000`** | ~2.3y half-life efficiency decay |
-| Host CLTV 1-mint/block | **Off** | Keep hashrate → issuance elasticity |
+| PoW difficulty `D` | Tunable (+ Moore on work) | Effort per remint solution |
+| Mint | Fixed **100.00** | Predictable offering size |
+| Batons `N` | **≥ 2** at genesis | Parallel remints (§3.5) |
+| Moore `δ` | **99918/100000** | Koomey correction on work (~2.3y) |
+| Host CLTV 1-mint/block | **Off** | Hashrate → issuance elasticity |
 | Supply cap | **None** | Batons never die |
-| PoW baton count `N` | **`N ≥ 2` at genesis** | True parallel remints (§3.5) |
 
 **Skip unless needed later:** token-local DAA; `mintAmount ∝ work(D)`.
 
-Tune `D` / `M₀` / `N` from burn demand and miner contention. Each remint pays XEC fees (anti-spam).
+Tune `D` / `N` from burn demand and miner contention. Each remint pays XEC fees (anti-spam).
 
 ### 3.4 App flow
 
@@ -135,7 +127,7 @@ ALP allows **many mint batons** (SLP allowed only one). White Lotus treats multi
 
 - Genesis creates **`N ≥ 2` identical PoW covenant batons** (independent tips, same rules).  
 - Miners remint **in parallel** in the same eCash block — not merely a serial chain on one tip.  
-- Each successful spend: PoW OK → mint exactly `M(t)` → **return one baton** to the next covenant state (**conserve `N`**).  
+- Each successful spend: PoW OK → mint exactly **100** → **return one baton** to the next covenant state (**conserve `N`**).  
 - Choose `N` at genesis (e.g. 4–16); change only via a deliberate migration if ever required.
 
 This is how “multiple mints per block” becomes **true parallelization** and matches frequency-elasticity in §3.3. A single baton alone still serializes and wastes work under load.

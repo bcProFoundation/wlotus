@@ -24,14 +24,12 @@ See [docs/SPEC.md](./docs/SPEC.md) and [docs/PROPOSAL.md](./docs/PROPOSAL.md).
 
 ## Status
 
-**PoW-mineable mainnet token `WLPOW` is live** (Spedn BIP143 preimage covenant).
-Custodial `WLTEST` also exists but is **not** for mining tests.
-
-See [docs/TEST_TOKEN.md](./docs/TEST_TOKEN.md) and [docs/STATUS.md](./docs/STATUS.md).
+**Incubation PoW token `mWLOTUS` is the mining target** — always 100.00/remint @ 2 decimals,
+~$0.00001/token (~1/1000 of future `WLOTUS` @ ~$0.01). See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
 
 ```bash
-npm run mine-once          # remint against WLPOW batons
-npm run create-pow-token   # recreate PoW genesis + baton handoff
+npm run create-pow-token
+npm run mine-once
 ```
 
 ```
@@ -67,12 +65,12 @@ npm run new-wallet            # writes .env + deployments/pending-funding.json
 npm run create-test-token     # ALP GENESIS → deployments/mainnet-test-token.json
 ```
 
-Ticker for this dogfood deployment: `WLPOW` (PoW) / `WLTEST` (custodial only).
-Keep `WLOTUS` for the later $0.01 launch.
+Ticker for this dogfood deployment: **`mWLOTUS`**. Keep **`WLOTUS`** for the later ~$0.01 launch
+(1000:1 energy peg). See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
 
 ```bash
-npm run create-pow-token   # PoW genesis + handoff to covenant P2SH
-npm run mine-once          # one permissionless remint
+npm run create-pow-token   # mWLOTUS genesis + handoff to covenant P2SH
+npm run mine-once          # one permissionless remint (100.00 tokens)
 ```
 
 ## License

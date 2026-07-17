@@ -43,9 +43,9 @@ export { contractForToken };
 
 export function minerBanner(): string {
   return [
-    'WLOTUS PoW remint miner',
+    'mWLOTUS PoW remint miner',
     `powLeadingZeroBytes=${POW_LEADING_ZERO_BYTES}`,
-    `baseMintAtoms=${BASE_MINT_ATOMS}`,
+    `mintAtoms=${BASE_MINT_ATOMS} (always 100.00 @ 2 decimals)`,
     'covenant: Spedn Mist-style BIP143 preimage (eCash)',
   ].join(' | ');
 }

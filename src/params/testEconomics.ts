@@ -1,38 +1,41 @@
 /**
- * Test-deployment economics for the first on-chain WLOTUS token.
+ * Incubation (mWLOTUS) vs production (WLOTUS) economics.
  *
- * Target: mining / remint cost around **$0.000001 per token** (very cheap dogfood).
- * Later production aim: around **$0.01 per token** (raise PoW difficulty + retune M₀).
+ * Ritual loop: burn = sacrifice (destroy supply); remint = pure PoW rebirth.
+ * Burns create scarcity → support price → pull miners back.
  *
- * At ~$6.6e-6 / XEC (mid-2026 ballpark):
- * - One remint fee (~10–50 XEC) is already on the order of $1e-4 … $3e-4.
- * - With M₀ = 100 tokens/remint and PoW ≈ free (1 leading zero byte),
- *   all-in cost per token lands near the $1e-6 target when hashrate is low.
+ * Price targets are **market** aims (energy + fees + hardware amortisation +
+ * miner margin), not an on-chain USD oracle.
  */
 
-/** Documented target USD per whole token for this test deployment. */
-export const TEST_TARGET_USD_PER_TOKEN = 0.000001;
+/** mWLOTUS target ≈ $0.00001 / token ≈ 1/1000 of WLOTUS $0.01. */
+export const TEST_TARGET_USD_PER_TOKEN = 0.00001;
 
-/** Future production target USD per whole token. */
+/** Future WLOTUS target ≈ $0.01 / token ≈ $1 / remint (100 tokens). */
 export const PROD_TARGET_USD_PER_TOKEN = 0.01;
 
-/**
- * PoW leading zero *bytes* for the test deployment.
- * 1 byte ⇒ ~1/256 hashes succeed — trivial on a laptop; not mainnet-hard.
- * Raise toward 2–3+ when targeting ~$0.01/token.
- */
+/** Fixed tokens per remint (both mWLOTUS and WLOTUS). */
+export const TOKENS_PER_REMINT = 100;
+
+/** @deprecated use POW_LEADING_ZERO_BYTES from consensus — incubation genesis. */
 export const TEST_POW_LEADING_ZERO_BYTES = 1;
 
 /**
- * Initial fungible mint at genesis (atoms) so temple/burn UX can be tested
- * before PoW remint is fully wired. 1e12 atoms @ 6 decimals = 1_000_000 tokens.
+ * Bootstrap fungible supply for burn UX before heavy reminting.
+ * 1_000_000 mWLOTUS @ 2 decimals = 100_000_000 atoms.
  */
-export const TEST_INITIAL_MINT_ATOMS = 1_000_000_000_000n;
+export const TEST_INITIAL_MINT_ATOMS = 100_000_000n;
 
-/** Parallel batons for the test genesis (still N ≥ 2). */
 export const TEST_POW_BATON_COUNT = 4;
 
-/** Ticker for the cheap test deployment (keep WLOTUS name free for $0.01 launch). */
-export const TEST_TOKEN_TICKER = 'WLTEST';
+export const TEST_TOKEN_TICKER = 'mWLOTUS';
 
-export const TEST_TOKEN_NAME = 'White Lotus Test';
+export const TEST_TOKEN_NAME = 'milli White Lotus';
+
+/** Per-remint USD target at incubation (100 × $1e-5). */
+export const TEST_TARGET_USD_PER_REMINT =
+  TEST_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;
+
+/** Per-remint USD target at production (100 × $0.01). */
+export const PROD_TARGET_USD_PER_REMINT =
+  PROD_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;

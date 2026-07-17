@@ -1,7 +1,7 @@
 {
   "name": "wlotus",
   "version": "0.1.0",
-  "description": "White Lotus (WLOTUS): Ergon-like ALP PoW remint covenant on eCash",
+  "description": "mWLOTUS / WLOTUS: Ergon-like ALP PoW remint on eCash (incubation milli-token first)",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,8 @@
     "create-test-token": "tsx scripts/create-test-token.ts",
     "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
     "mine-once": "tsx scripts/mine-once.ts",
-    "create-pow-token": "tsx scripts/create-pow-token.ts"
+    "create-pow-token": "tsx scripts/create-pow-token.ts",
+    "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,15 @@
+{
+  "purpose": "Fund genesis wallet to create mWLOTUS PoW incubation token",
+  "address": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "needXec": 100,
+  "ticker": "mWLOTUS",
+  "decimals": 2,
+  "tokensPerRemint": 100,
+  "targetUsdPerToken": 0.00001,
+  "mwlotusPerWlotus": 1000,
+  "createdAt": "2026-07-17T05:20:00.000Z",
+  "notes": [
+    "Send ≥ 100 XEC to the address, then: npm run create-pow-token && npm run mine-once",
+    "Or: npm run wait-create-mwlotus"
+  ]
+}

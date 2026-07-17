@@ -1,7 +1,8 @@
-// WLOTUS PoW remint covenant (eCash / XEC)
+// mWLOTUS / WLOTUS PoW remint covenant (eCash / XEC)
 // Mist-style BIP143 preimage (eCash has no native introspection opcodes).
-// `s` signs hash256(preimage) for CHECKSIG; `ds` must be toDataSig(s) so
-// CHECKDATASIG(sha256(preimage)) verifies the same message.
+// Mint atoms are FIXED (always 100.00 @ 2 decimals for mWLOTUS).
+// Difficulty leading-zero bytes are a constructor param (incubation: 1).
+// `s` signs hash256(preimage); `ds` is toDataSig(s).
 
 contract WlotusPowRemint(
     [byte;32] tokenIdRev,

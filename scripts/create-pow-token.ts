@@ -1,12 +1,18 @@
 #!/usr/bin/env tsx
 /**
- * Create a NEW PoW-mineable ALP test token and lock batons to the Spedn covenant.
+ * Create mWLOTUS (incubation) PoW token and lock batons to the Spedn covenant.
  *
- * Note: The earlier introspection-based handoff permanently locked 4 WLTEST batons
- * (eCash has no OP_OUTPUTBYTECODE etc.). This script creates a fresh token.
+ * Economics: always 100.00 / remint @ 2 decimals, ~$1e-5/token target,
+ * 1 leading zero byte PoW. See docs/ECONOMICS.md.
  */
 import { resolve } from 'node:path';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import {
+  writeFileSync,
+  mkdirSync,
+  renameSync,
+  existsSync,
+  readFileSync,
+} from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 import { Wallet } from 'ecash-wallet';
 import {
@@ -21,13 +27,17 @@ import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintContract } from '../src/covenant/powRemintScript.js';
 import {
   BASE_MINT_ATOMS,
+  MWLOTUS_PER_WLOTUS,
   POW_LEADING_ZERO_BYTES,
   TOKEN_DECIMALS,
+  TOKEN_NAME,
+  TOKEN_TICKER,
   TOKEN_URL,
 } from '../src/params/consensus.js';
 import {
   TEST_INITIAL_MINT_ATOMS,
   TEST_POW_BATON_COUNT,
+  TEST_TARGET_USD_PER_TOKEN,
 } from '../src/params/testEconomics.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
@@ -47,16 +57,19 @@ async function main(): Promise<void> {
       {
         address: wallet.address,
         balanceXec: Number(wallet.balanceSats) / 100,
+        ticker: TOKEN_TICKER,
+        decimals: TOKEN_DECIMALS,
+        mintPerRemint: Number(BASE_MINT_ATOMS) / 10 ** TOKEN_DECIMALS,
+        targetUsdPerToken: TEST_TARGET_USD_PER_TOKEN,
       },
       null,
       2,
     ),
   );
 
-  // 1) Genesis custodial batons (tokenId = txid)
   const genesis = await broadcastAlpGenesis(wallet, {
-    ticker: 'WLPOW',
-    name: 'White Lotus PoW Test',
+    ticker: TOKEN_TICKER,
+    name: TOKEN_NAME,
     url: TOKEN_URL,
     decimals: TOKEN_DECIMALS,
     initialMintAtoms: TEST_INITIAL_MINT_ATOMS,
@@ -64,7 +77,6 @@ async function main(): Promise<void> {
   });
   console.log('Genesis', genesis.tokenId);
 
-  // 2) Build covenant for this tokenId
   const contract = await createPowRemintContract({
     tokenId: genesis.tokenId,
     mintAtoms: BASE_MINT_ATOMS,
@@ -72,7 +84,6 @@ async function main(): Promise<void> {
   });
   console.log('PoW address', contract.address);
 
-  // 3) Handoff each baton to P2SH
   const handoffTxids: string[] = [];
   for (let i = 0; i < TEST_POW_BATON_COUNT; i++) {
     await wallet.sync();
@@ -103,15 +114,36 @@ async function main(): Promise<void> {
     console.log(`Handoff ${i + 1}/${TEST_POW_BATON_COUNT}: ${resp.broadcasted[0]}`);
   }
 
+  const depDir = resolve(process.cwd(), 'deployments');
+  mkdirSync(depDir, { recursive: true });
+  const livePath = resolve(depDir, 'mainnet-pow-token.json');
+  if (existsSync(livePath)) {
+    const prev = JSON.parse(readFileSync(livePath, 'utf8')) as {
+      ticker?: string;
+    };
+    const stamp = (prev.ticker || 'prev').toLowerCase();
+    const archive = resolve(
+      depDir,
+      `mainnet-pow-token-archived-${stamp}-${Date.now()}.json`,
+    );
+    renameSync(livePath, archive);
+    console.log('Archived previous deployment to', archive);
+  }
+
   const record = {
-    ticker: 'WLPOW',
-    name: 'White Lotus PoW Test',
+    ticker: TOKEN_TICKER,
+    name: TOKEN_NAME,
     tokenId: genesis.tokenId,
     mode: 'pow',
+    role: 'incubation',
+    decimals: TOKEN_DECIMALS,
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,
     difficultyLeadingZeroBytes: POW_LEADING_ZERO_BYTES,
     mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
+    tokensPerRemint: Number(BASE_MINT_ATOMS) / 10 ** TOKEN_DECIMALS,
+    targetUsdPerToken: TEST_TARGET_USD_PER_TOKEN,
+    mwlotusPerWlotus: Number(MWLOTUS_PER_WLOTUS),
     initialMintAtoms: TEST_INITIAL_MINT_ATOMS.toString(),
     powBatonCount: TEST_POW_BATON_COUNT,
     genesisTxid: genesis.tokenId,
@@ -122,19 +154,19 @@ async function main(): Promise<void> {
     explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
     cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
     notes: [
-      'PoW covenant is Spedn Mist-style (BIP143 preimage). eCash has no native introspection.',
-      'Prior WLTEST introspection P2SH batons are permanently locked.',
-      'v1 WLPOW (size-56 trailer) and v2 (0x00 empty-push mint bug) batons are locked.',
-      'See mainnet-pow-token-v1-locked.json / mainnet-pow-token-v2-locked.json.',
+      'mWLOTUS incubation: always 100.00/remint, 2 decimals, 1-byte PoW.',
+      'Target ~$0.00001/token (~1/1000 of future WLOTUS at ~$0.01).',
+      'Moore δ=99918/100000 applies to work schedule (lib); mint size fixed.',
+      'Burn = sacrifice; remint = pure PoW. See docs/ECONOMICS.md.',
     ],
   };
 
-  mkdirSync(resolve(process.cwd(), 'deployments'), { recursive: true });
+  writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
   writeFileSync(
-    resolve(process.cwd(), 'deployments/mainnet-pow-token.json'),
+    resolve(depDir, 'mainnet-mwlotus.json'),
     `${JSON.stringify(record, null, 2)}\n`,
   );
-  console.log('\nPoW token ready');
+  console.log('\nmWLOTUS PoW token ready');
   console.log(JSON.stringify(record, null, 2));
 }
 
