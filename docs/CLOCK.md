@@ -8,12 +8,12 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 
 | Layer | Role |
 |-------|------|
-| **Moore D** | `bits = base + floor((locktime − genesis) / (840 × 86400))` — calendar clock. Idle time advances D. Cap **bits ≤ 128**. |
+| **Moore D** | `bits = base + floor((locktime − genesis) / (840 × 86400))` — calendar clock. Idle time advances D. Cap **bits ≤ 128**. Dryrun uses **whole-byte** bases (24/40/56) so `bits % 8 == 0` (201-op budget). |
 | **tipLocktime** | `locktime ≥ tip` — blocks past-cheat rewind on that baton |
-| **Hard next-P2SH** | `codeHash = sha256(codeBytes)`; baton → `P2SH(prefix ‖ tip'=locktime ‖ codeBytes)`. Miner cannot redirect to an older tip. |
+| **Hard next-P2SH** | `prefixHash`/`codeHash`; miner supplies `nextRedeem`; baton → `P2SH(hash160(nextRedeem))`. No honest-miner soft `batonHash`. |
 | **N batons** | Parallel remint lanes (scale without activity-based D) |
 
-Tier bases (from `consensus.ts`): Prayer **22**, Candle **43**, Flower **59**.
+Tier dryrun bases: Prayer **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
 
 ```bash
 TIER=prayer npm run create-dryrun-token

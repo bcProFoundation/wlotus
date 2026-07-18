@@ -40,9 +40,6 @@ import {
   FLOWER_NAME,
   FLOWER_TICKER,
   POW_BATON_COUNT,
-  POW_CANDLE_BASE_ZERO_BITS,
-  POW_FLOWER_BASE_ZERO_BITS,
-  POW_PRAYER_BASE_ZERO_BITS,
   PRAYER_MINT_ATOMS,
   PRAYER_NAME,
   PRAYER_TICKER,
@@ -57,24 +54,25 @@ const TIERS: Record<
   Tier,
   { ticker: string; name: string; bits: number; mint: bigint; batons: number }
 > = {
+  // Whole-byte PoW bases (bits % 8 == 0) required by MooreTip op budget.
   prayer: {
     ticker: `d${PRAYER_TICKER}`,
     name: `${PRAYER_NAME} dryrun`,
-    bits: POW_PRAYER_BASE_ZERO_BITS,
+    bits: 24,
     mint: PRAYER_MINT_ATOMS,
     batons: POW_BATON_COUNT,
   },
   candle: {
     ticker: `d${CANDLE_TICKER}`,
     name: `${CANDLE_NAME} dryrun`,
-    bits: POW_CANDLE_BASE_ZERO_BITS,
+    bits: 40,
     mint: CANDLE_MINT_ATOMS,
     batons: POW_BATON_COUNT,
   },
   flower: {
     ticker: `d${FLOWER_TICKER}`,
     name: `${FLOWER_NAME} dryrun`,
-    bits: POW_FLOWER_BASE_ZERO_BITS,
+    bits: 56,
     mint: FLOWER_MINT_ATOMS,
     batons: POW_BATON_COUNT,
   },
@@ -209,6 +207,7 @@ async function main(): Promise<void> {
     redeemScriptHex: contract.redeemHex,
     codeHashHex: toHex(contract.codeHash),
     codeBytesHex: toHex(contract.codeBytes),
+    prefixHashHex: toHex(contract.prefixHash),
     tipValueOffset: contract.tipValueOffset,
     genesisUnix,
     baseZeroBits: tier.bits,

@@ -39,12 +39,13 @@ export interface PowRemintMooreTipContract {
   redeemHex: string;
   codeBytes: Buffer;
   codeHash: Uint8Array;
+  prefixHash: Uint8Array;
   tipValueOffset: number;
 }
 
-/** econHead length (through codeHash push). tip opcode at 85, tip value at 86. */
+/** econHead through codeHash; tip opcode at 85+33=118, tip value at 119. */
 export const MOORE_TIP_ECON_HEAD_LEN = 85;
-export const MOORE_TIP_VALUE_OFFSET = 86;
+export const MOORE_TIP_VALUE_OFFSET = 119;
 
 let cachedPortable: PortableModule | undefined;
 
@@ -102,6 +103,7 @@ export function buildEconHead(
 function ctorArgs(
   params: PowRemintMooreTipParams,
   codeHash: Buffer,
+  prefixHash: Buffer,
 ): Record<string, Buffer> {
   if (
     !Number.isInteger(params.baseZeroBits) ||
@@ -110,6 +112,11 @@ function ctorArgs(
   ) {
     throw new Error(`baseZeroBits out of u8 range: ${params.baseZeroBits}`);
   }
+  if (params.baseZeroBits % 8 !== 0) {
+    throw new Error(
+      `baseZeroBits ${params.baseZeroBits} must be a multiple of 8 (whole-byte PoW)`,
+    );
+  }
   return {
     tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
     mintAtomsLe: mintAtomsLe6(params.mintAtoms),
@@ -117,6 +124,7 @@ function ctorArgs(
     baseZeroBitsBin: Buffer.from([params.baseZeroBits & 0xff]),
     secondsPerExtraBitLe: u32LeBuf(params.secondsPerExtraBit),
     codeHash,
+    prefixHash,
     tipLocktimeLe: u32LeBuf(params.tipLocktime),
   };
 }
@@ -125,78 +133,85 @@ export function findTipValueOffset(
   redeem: Buffer,
   tipLocktime: number,
   codeHash: Buffer,
+  prefixHash: Buffer,
 ): number {
   const tipLe = u32LeBuf(tipLocktime);
-  const codeHashPush = Buffer.concat([Buffer.from([0x20]), codeHash]);
-  const afterHash = redeem.indexOf(codeHashPush);
-  if (afterHash >= 0) {
-    const tipAt = afterHash + codeHashPush.length;
-    if (
-      redeem[tipAt] === 0x04 &&
-      redeem.subarray(tipAt + 1, tipAt + 5).equals(tipLe)
-    ) {
-      const off = tipAt + 1;
-      if (off !== MOORE_TIP_VALUE_OFFSET) {
-        throw new Error(
-          `tipValueOffset ${off} != fixed ${MOORE_TIP_VALUE_OFFSET}`,
-        );
-      }
-      return off;
-    }
+  const marker = Buffer.concat([
+    Buffer.from([0x20]),
+    codeHash,
+    Buffer.from([0x20]),
+    prefixHash,
+    Buffer.from([0x04]),
+    tipLe,
+  ]);
+  const at = redeem.indexOf(marker);
+  if (at < 0) throw new Error('tip marker not found');
+  const off = at + 1 + 32 + 1 + 32 + 1;
+  if (off !== MOORE_TIP_VALUE_OFFSET) {
+    throw new Error(`tipValueOffset ${off} != ${MOORE_TIP_VALUE_OFFSET}`);
   }
-  throw new Error('tipLocktimeLe not found in redeem script');
+  return off;
 }
 
 function instantiate(
   portable: PortableModule,
   params: PowRemintMooreTipParams,
   codeHash: Buffer,
+  prefixHash: Buffer,
 ): PowMooreTipInstance {
   const factory = new ModuleFactory(new BchJsRts('mainnet'));
   const Ctor = factory.make(portable).WlotusPowRemintMooreTip;
-  return new Ctor(ctorArgs(params, codeHash)) as PowMooreTipInstance;
+  return new Ctor(
+    ctorArgs(params, codeHash, prefixHash),
+  ) as PowMooreTipInstance;
 }
 
 export async function createPowRemintMooreTipContract(
   params: PowRemintMooreTipParams,
 ): Promise<PowRemintMooreTipContract> {
   const portable = await loadPortable();
-  const placeholderHash = Buffer.alloc(32, 0);
+  const z = Buffer.alloc(32, 0);
 
-  const probe = instantiate(portable, params, placeholderHash);
-  const probeRedeem = probe.redeemScript as Buffer;
+  const probe = instantiate(portable, params, z, z);
   const tipOff = findTipValueOffset(
-    probeRedeem,
+    probe.redeemScript as Buffer,
     params.tipLocktime,
-    placeholderHash,
+    z,
+    z,
   );
-  const codeBytes = Buffer.from(probeRedeem.subarray(tipOff + 4));
+  const codeBytes = Buffer.from(
+    (probe.redeemScript as Buffer).subarray(tipOff + 4),
+  );
   const codeHash = Buffer.from(sha256(codeBytes));
+  const prefixHash = Buffer.from(sha256(buildEconHead(params, codeHash)));
 
-  const instance = instantiate(portable, params, codeHash);
+  const instance = instantiate(portable, params, codeHash, prefixHash);
   const redeemScriptBuf = instance.redeemScript as Buffer;
   const tipValueOffset = findTipValueOffset(
     redeemScriptBuf,
     params.tipLocktime,
     codeHash,
+    prefixHash,
   );
   const finalCode = Buffer.from(redeemScriptBuf.subarray(tipValueOffset + 4));
   if (!finalCode.equals(codeBytes)) {
-    throw new Error(
-      'codeBytes changed after codeHash commit — layout unstable',
-    );
+    throw new Error('codeBytes changed after hash commit');
   }
   if (!Buffer.from(sha256(finalCode)).equals(codeHash)) {
     throw new Error('codeHash mismatch');
   }
-  const econ = redeemScriptBuf.subarray(0, MOORE_TIP_ECON_HEAD_LEN);
-  if (!econ.equals(buildEconHead(params, codeHash))) {
-    throw new Error('econHead layout mismatch');
+  if (
+    !Buffer.from(
+      sha256(redeemScriptBuf.subarray(0, MOORE_TIP_ECON_HEAD_LEN)),
+    ).equals(prefixHash)
+  ) {
+    throw new Error('prefixHash mismatch');
   }
 
   const reconstructed = reconstructNextRedeem(
     params,
     codeHash,
+    prefixHash,
     finalCode,
     params.tipLocktime,
   );
@@ -222,6 +237,7 @@ export async function createPowRemintMooreTipContract(
     redeemHex: toHex(redeem.bytecode),
     codeBytes: finalCode,
     codeHash,
+    prefixHash,
     tipValueOffset,
   };
 }
@@ -229,11 +245,14 @@ export async function createPowRemintMooreTipContract(
 export function reconstructNextRedeem(
   params: PowRemintMooreTipParams,
   codeHash: Buffer | Uint8Array,
+  prefixHash: Buffer | Uint8Array,
   codeBytes: Buffer | Uint8Array,
   nextTipLocktime: number,
 ): Buffer {
   return Buffer.concat([
     buildEconHead(params, codeHash),
+    Buffer.from([0x20]),
+    Buffer.from(prefixHash),
     Buffer.from([0x04]),
     u32LeBuf(nextTipLocktime),
     Buffer.from(codeBytes),

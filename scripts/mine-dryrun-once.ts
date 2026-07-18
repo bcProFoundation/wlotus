@@ -21,7 +21,7 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-const REMINT_FUEL_SATS = 2_000n;
+const REMINT_FUEL_SATS = 4_000n;
 
 interface BatonTip {
   index: number;

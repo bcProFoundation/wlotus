@@ -93,6 +93,7 @@ export async function buildMinedMooreTipRemintTx(opts: {
   const nextRedeem = reconstructNextRedeem(
     contract.params,
     contract.codeHash,
+    contract.prefixHash,
     contract.codeBytes,
     tip.locktime,
   );
@@ -182,7 +183,8 @@ export async function buildMinedMooreTipRemintTx(opts: {
 
   const tx = txBuild.sign({
     ecc,
-    feePerKb: DEFAULT_FEE_SATS_PER_KB,
+    // Large scriptSig (nextRedeem ~450B) needs above default relay fee.
+    feePerKb: DEFAULT_FEE_SATS_PER_KB * 2n,
     dustSats: dust,
   });
   if (tx.outputs.length !== 3) {

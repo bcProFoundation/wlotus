@@ -1,12 +1,13 @@
 // Production Moore + tip remint (dryrun-ready).
 // Redeem ≤520; non-push ops ≤201 (eCash MAX_OPS_PER_SCRIPT).
+// Whole-byte PoW (bits % 8 == 0) — eCash 201-op limit cannot host
+// fractional-bit checks AND hard next-P2SH on one redeem.
+// Dryrun bases: Prayer 24, Candle 40, Flower 56.
 // bits = base + floor((locktime - genesis) / period); cap bits ≤ 128.
 // tipLocktime anti-rewind.
-// Hard next-P2SH: miner supplies nextRedeem (no CAT of full redeem).
-//   econHead == ctor pushes through codeHash, tip' == locktime,
-//   sha256(codeBytes) == codeHash, baton → P2SH(hash160(nextRedeem)).
-// Layout: econHead(85) | 0x04 tipLe | codeBytes
-// WLPT v4 EMPP: bits/extraBits/locktime (tip enforced in ctor, not duplicated in EMPP).
+// Hard next-P2SH: miner supplies nextRedeem; sha256(econ)==prefixHash,
+// tip'==locktime, sha256(code)==codeHash; baton→P2SH(hash160(nextRedeem)).
+// Layout: econHead(85) | 0x20 prefixHash | 0x04 tipLe | codeBytes
 // CODESEPARATOR keeps BIP143 preimage small.
 
 contract WlotusPowRemintMooreTip(
@@ -16,6 +17,7 @@ contract WlotusPowRemintMooreTip(
     [byte;1] baseZeroBitsBin,
     [byte;4] secondsPerExtraBitLe,
     [byte;32] codeHash,
+    [byte;32] prefixHash,
     [byte;4] tipLocktimeLe
 ) {
     challenge remint(
@@ -41,35 +43,17 @@ contract WlotusPowRemintMooreTip(
         int extraBits = (locktime - genesisUnix) / secondsPerExtraBit;
         int bits = baseZeroBits + extraBits;
         verify bits <= 128;
+        verify bits % 8 == 0;
 
         [byte] solhash = hash256(sha256(preimage) . nonce);
-        int zeroBytes = bits / 8;
-        int remBits = bits % 8;
-        ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
-        verify bin2num(prefix) == 0;
-        if (remBits == 1) {
-            ([byte] nextByte, _) = rest @ 1;
-            verify bin2num(nextByte) < 128;
-        } else {
-            if (remBits != 0) {
-                ([byte] nextByte, _) = rest @ 1;
-                [byte] limits = 0x402010080402;
-                (_, [byte] limTail) = limits @ (remBits - 2);
-                ([byte] limB, _) = limTail @ 1;
-                verify bin2num(nextByte) < bin2num(limB);
-            }
-        }
+        ([byte] zpref, _) = solhash @ (bits / 8);
+        verify bin2num(zpref) == 0;
 
-        [byte] econ =
-            0x20 . tokenIdRev .
-            0x06 . mintAtomsLe .
-            0x04 . genesisUnixLe .
-            0x01 . baseZeroBitsBin .
-            0x04 . secondsPerExtraBitLe .
-            0x20 . codeHash;
-        ([byte] head, [byte] after) = nextRedeem @ 85;
-        verify head == econ;
-        ([byte] tipChunk, [byte] codeBytes) = after @ 5;
+        // Hard-bind nextRedeem (no full-script CAT).
+        ([byte] econHead, [byte] afterEcon) = nextRedeem @ 85;
+        verify sha256(econHead) == Sha256(prefixHash);
+        (_, [byte] afterMid) = afterEcon @ 33;
+        ([byte] tipChunk, [byte] codeBytes) = afterMid @ 5;
         verify tipChunk == (0x04 . num2bin(locktime, 4));
         verify sha256(codeBytes) == Sha256(codeHash);
 
@@ -84,9 +68,7 @@ contract WlotusPowRemintMooreTip(
             num2bin(locktime, 4);
 
         [byte] mintSection =
-            0x534c5032 .
-            0x00 .
-            0x04 . 0x4d494e54 .
+            0x534c503200044d494e54 .
             tokenIdRev .
             0x01 .
             mintAtomsLe .

@@ -34,6 +34,14 @@ describe('MooreTip production covenant', () => {
     expect(after840d.bits).toBe(23);
   });
 
+  it('dryrun whole-byte bases stay under absolute cap', () => {
+    for (const bits of [24, 40, 56]) {
+      const s = computeMooreTipState(genesis, { ...base, baseZeroBits: bits });
+      expect(s.bits % 8).toBe(0);
+      expect(s.bits).toBeLessThanOrEqual(MOORE_TIP_MAX_BITS);
+    }
+  });
+
   it('rejects tip rewind', () => {
     expect(() =>
       computeMooreTipState(genesis + 10, {

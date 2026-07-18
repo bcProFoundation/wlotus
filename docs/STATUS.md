@@ -4,13 +4,15 @@ Canonical home: **https://github.com/bcProFoundation/wlotus**
 
 ## Production dryrun (MooreTip hard-bind)
 
-Covenant: `WlotusPowRemintMooreTip` — Moore calendar D + tipLocktime + **hard next-P2SH** (`codeHash`).
+Covenant: `WlotusPowRemintMooreTip` — Moore calendar D + tipLocktime + **hard next-P2SH** (`prefixHash`/`codeHash`).
 
-| Tier | Bits | Mint | Script |
-|------|------|------|--------|
-| Prayer | 22 | 1 | `TIER=prayer npm run create-dryrun-token` |
-| Candle | 43 | 1 | `TIER=candle npm run create-dryrun-token` |
-| Flower | 59 | 100 | `TIER=flower npm run create-dryrun-token` |
+Whole-byte PoW only (`bits % 8 == 0`) so the redeem fits eCash’s **201-op** limit together with hard bind. Dryrun bases (nearby the phone/GPU/ASIC targets):
+
+| Tier | Dryrun bits | Mint | Script |
+|------|-------------|------|--------|
+| Prayer | 24 | 1 | `TIER=prayer npm run create-dryrun-token` |
+| Candle | 40 | 1 | `TIER=candle npm run create-dryrun-token` |
+| Flower | 56 | 100 | `TIER=flower npm run create-dryrun-token` |
 
 ```bash
 TIER=prayer npm run create-dryrun-token
@@ -42,3 +44,4 @@ See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-*.json`.
 1. Dryrun Prayer remints on mainnet with MooreTip  
 2. Dryrun Candle / Flower when funded for longer PoW  
 3. Temple burn UX  
+4. Fractional-bit PoW if/when eCash raises the 201-op limit  
