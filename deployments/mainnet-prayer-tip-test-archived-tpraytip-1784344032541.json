@@ -1,0 +1,48 @@
+{
+  "ticker": "tPRAYTIP",
+  "name": "Test Prayer Tip (Moore+tip)",
+  "tokenId": "fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa",
+  "mode": "prayer-tip-moore",
+  "role": "prayer-tip-test-non-economic",
+  "decimals": 0,
+  "powAddress": "ecash:pp85ahrxjkks2kcj7zmzq9h6453u83ymaymd25mup5",
+  "redeemScriptHex": "20aa698d8e913a97281ae68b344483b5726b910b38be08d8caad51db8e1abc1afd0601000000000004b7e05a6a580380510104b7e05a6a57798258947f7776547f757681765779a269765479a26976577994557996567978937658795893a1695c79a80111797eaa78589652795897527952797f78810088527951876376517f7576810280009f6975675279926376517f750640201008040276557952947f7776517f7553798178819f696d6d686801117901127982770128947f777601207f7504574c5054537e587952807e597954807e5a7954807e5d7954807e04534c50320051807e547e044d494e547e0113797e517e0112797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011979a97e0288ac7e08220200000000000001177e02a9147e0118797e01877e527952797e787eaa577988ab011c79011b79ad011b79011a79a8011c79ba777777777777777777777777777777777777777777777777777777777777",
+  "genesisUnix": 1784340663,
+  "baseZeroBits": 8,
+  "secondsPerExtraBit": 86400,
+  "tipLocktime": 1784340663,
+  "mintAtomsPerRemint": "1",
+  "tokensPerRemint": 1,
+  "initialMintAtoms": "1000",
+  "powBatonCount": 2,
+  "batonTips": [
+    {
+      "index": 0,
+      "tipLocktime": 1784340663,
+      "powAddress": "ecash:pp85ahrxjkks2kcj7zmzq9h6453u83ymaymd25mup5",
+      "lastRemintTxid": "ed1a9e92cef94c1df017313d5d37efa637ffe7b7a4701f9520a182e6d5bcd874"
+    },
+    {
+      "index": 1,
+      "tipLocktime": 1784340663,
+      "powAddress": "ecash:pp85ahrxjkks2kcj7zmzq9h6453u83ymaymd25mup5",
+      "lastRemintTxid": "fdea0bf7ce5c38f51f53a926a1bc7b1f7d0941995ea8210c6d53f9bd3ba9879b"
+    }
+  ],
+  "genesisTxid": "fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa",
+  "handoffTxids": [
+    "ec0fa9dc95713ac7b52211bcb4fc4411247bbef10067330c6d77731c47f067c6",
+    "40f7b0c0b63fc393c427f3e27168196d34905f60e16fc4ad833ad2cf67f1fa8f"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-18T02:47:54.776Z",
+  "explorer": "https://explorer.e.cash/tx/fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa",
+  "cashtab": "https://cashtab.com/#/token/fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa",
+  "notes": [
+    "Moore D from locktime (calendar), not activity.",
+    "tipLocktime anti-rewind per baton. N batons = parallel scale.",
+    "Clock: docs/CLOCK.md."
+  ],
+  "updatedAt": "2026-07-18T02:48:13.348Z"
+}

@@ -8,8 +8,8 @@ Canonical home: **https://github.com/bcProFoundation/wlotus**
 
 | | |
 |--|--|
-| Token | [`fd1abc1a…69aa`](https://explorer.e.cash/tx/fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa) |
-| Remints | [`a0a3e7aa…5c2b`](https://explorer.e.cash/tx/a0a3e7aa3369e60b5cc938407ced723b78fccf797ca2fccbcac9957cc2245c2b) · [`fdea0bf7…879b`](https://explorer.e.cash/tx/fdea0bf7ce5c38f51f53a926a1bc7b1f7d0941995ea8210c6d53f9bd3ba9879b) · [`ed1a9e92…d874`](https://explorer.e.cash/tx/ed1a9e92cef94c1df017313d5d37efa637ffe7b7a4701f9520a182e6d5bcd874) — all **bits=8** (Moore day 0; no activity bump) |
+| Token | [`16828220…76c5`](https://explorer.e.cash/tx/168282208c53dcba4d83463d3bc0dfe04b959035e0968e44a33ab04a63ad76c5) |
+| Remints | [`308c7c0d…83db`](https://explorer.e.cash/tx/308c7c0df1c10ba492d4d05899ad511c3e043dc0457542aeea47fbccda8283db) · [`36ace075…4387`](https://explorer.e.cash/tx/36ace07566b03dce5d79edf7a45491d738da7977afa80667b04fe3ceeb9c4387) — all **bits=8** (Moore day 0; no activity bump) |
 | Mode | Moore calendar D + tipLocktime + **2** batons |
 
 ```bash
@@ -18,7 +18,7 @@ BATON_INDEX=0 npm run mine-prayer-tip-once
 BATON_INDEX=1 npm run mine-prayer-tip-once
 ```
 
-See [CLOCK.md](./CLOCK.md).
+**Not production-ready.** The next-baton P2SH binding is soft (honest-miner). See [CLOCK.md](./CLOCK.md) for known limitations.
 
 ### Test Prayer (`tPRAYER`) — non-economic toy PoW (fixed-D)
 

@@ -192,6 +192,7 @@ async function main(): Promise<void> {
     notes: [
       'Moore D from locktime (calendar), not activity.',
       'tipLocktime anti-rewind per baton. N batons = parallel scale.',
+      'KNOWN LIMITATION: soft next-baton P2SH binding (honest-miner). See docs/CLOCK.md.',
       'Clock: docs/CLOCK.md.',
     ],
   };

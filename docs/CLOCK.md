@@ -51,6 +51,14 @@ BATON_INDEX=0 npm run mine-prayer-tip-once
 BATON_INDEX=1 npm run mine-prayer-tip-once
 ```
 
+### Known limitations (dogfood → production)
+
+- **Soft next-baton binding.** The covenant checks `hashOutputs` against a miner-supplied `batonHash`. It does **not** enforce in-Script that `batonHash` is the P2SH of a successor redeem whose `tipLocktime' == locktime`. A malicious miner could redirect the baton to a P2SH with an older `tipLocktime` and mine at a cheaper past Moore day. The TS factory sets the correct next P2SH, so this is honest-miner dependent. Hardening the binding without breaking the eCash 520-byte push / op limits is the main production open problem.
+- **Moore/Ergon covenants lack tipLocktime.** `WlotusPowRemintMoore` and `WlotusPowRemintErgon` only enforce `locktime >= genesisUnix`, so any final `nLockTime ≤ MTP` can be rewound toward genesis for easier PoW. They need a per-baton `tipLocktime` (or equivalent floor) for production WLotus/Candle/Prayer.
+- **Ergon dogfood bricks after day 1.** `WlotusPowRemintErgon` hard-codes `verify days <= 1` and a 2-slot target table; it is a 48-hour experiment, not a production model.
+- **Moore +8 bit cap.** `WlotusPowRemintMoore` and `WlotusPowRemintPrayerTip` cap `bits <= base + 8`. This is fine for dogfood but would need to be raised or removed for production targets (e.g., Flower 59, Candle 43, Prayer 22).
+- **Ergon uses a different difficulty model.** Production tiers in `docs/SPEC.md` use leading-zero **bit** targets; Ergon uses compact numeric targets. Do not deploy Ergon for production tiers.
+
 ## Library height helpers
 
 `src/lib/moore.ts` can map **host heights → day index** for wallets/indexers. That is **off-chain policy**, not consensus inside the fixed-D Prayer covenant.

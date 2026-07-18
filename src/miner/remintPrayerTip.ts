@@ -44,6 +44,7 @@ export interface FuelUtxo {
 }
 
 export const LOCKTIME_ENABLE_SEQUENCE = 0xfffffffe;
+/** BIP143 scriptCode after the covenant's OP_CODESEPARATOR (index 0). */
 export const PRAYER_TIP_CODESEP_INDEX = 0;
 
 export function prayerTipMinerBanner(

@@ -2,8 +2,14 @@
 // bits = baseZeroBits + floor((locktime - genesisUnix) / secondsPerExtraBit)
 //   → same Moore calendar clock as mWLPOW (NOT activity / concurrent-pray).
 // locktime >= tipLocktime → no past-cheat rewind on this baton.
-// tip' = locktime in next P2SH (soft batonHash). Mint 1.
-// N batons = N parallel remint lanes (scale without raising D from load).
+// tip' = locktime in next P2SH (soft batonHash; see KNOWN_LIMITATIONS below).
+// Mint 1. N batons = N parallel remint lanes (scale without raising D from load).
+//
+// KNOWN_LIMITATIONS (dogfood): miner-supplied batonHash is not bound to a
+// successor redeem with tipLocktime' == locktime in-Script. Honest TS factory
+// sets it correctly; a malicious miner could redirect the baton to a P2SH with
+// an older tipLocktime and mine at an easier past Moore day. Hardening this
+// under the eCash Script 520-byte/op limits is left for production.
 
 contract WlotusPowRemintPrayerTip(
     [byte;32] tokenIdRev,
