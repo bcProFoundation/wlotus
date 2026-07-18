@@ -16,7 +16,11 @@ import {
   Script as EcashScript,
 } from 'ecash-lib';
 import { PRAYER_MINT_ATOMS } from '../params/consensus.js';
-import type { PrayerTipParams } from './wlpt.js';
+import {
+  TEST_MOORE_SECONDS_PER_EXTRA_BIT,
+  TEST_PRAYER_TIP_BASE_ZERO_BITS,
+  type PrayerTipParams,
+} from './wlpt.js';
 
 export interface PowRemintPrayerTipParams extends PrayerTipParams {
   tokenId: string;
@@ -60,7 +64,7 @@ function mintAtomsLe6(atoms: bigint): Buffer {
   return buf;
 }
 
-/** Build Prayer tip PoW remint P2SH (mutating tipLocktime only). */
+/** Moore-bit Prayer tip P2SH (D from calendar locktime; tip anti-rewind). */
 export async function createPowRemintPrayerTipContract(
   params: PowRemintPrayerTipParams,
 ): Promise<PowRemintPrayerTipContract> {
@@ -71,6 +75,8 @@ export async function createPowRemintPrayerTipContract(
     tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
     mintAtomsLe: mintAtomsLe6(params.mintAtoms),
     genesisUnix: params.genesisUnix,
+    baseZeroBits: params.baseZeroBits,
+    secondsPerExtraBit: params.secondsPerExtraBit,
     tipLocktime: params.tipLocktime,
   }) as PowPrayerTipInstance;
   const redeemScriptBuf = instance.redeemScript as Buffer;
@@ -99,6 +105,13 @@ export function defaultPrayerTipParams(
     tokenId,
     mintAtoms: PRAYER_MINT_ATOMS,
     genesisUnix,
+    baseZeroBits: TEST_PRAYER_TIP_BASE_ZERO_BITS,
+    secondsPerExtraBit: TEST_MOORE_SECONDS_PER_EXTRA_BIT,
     tipLocktime: tipLocktime ?? genesisUnix,
   };
 }
+
+export {
+  TEST_MOORE_SECONDS_PER_EXTRA_BIT,
+  TEST_PRAYER_TIP_BASE_ZERO_BITS,
+};

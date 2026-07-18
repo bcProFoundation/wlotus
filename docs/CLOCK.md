@@ -35,21 +35,20 @@ Uses `WlotusPowRemint` with constructor difficulty only — **no locktime clock*
 
 ## Stateful tip test Prayer (`tPRAYTIP`)
 
-Uses `WlotusPowRemintPrayerTip`: **tipLocktime** lives in a mutating P2SH.
+**Confirmed design:**
 
-**Design intent:** mint as many prayers as needed. Difficulty stays fixed (toy 1-byte PoW). Scale comes from **N batons = N independent tips** so concurrent prayers do not serialize on one baton UTXO.
+| Layer | Role |
+|-------|------|
+| **Moore D** | `bits = base + floor((locktime − genesis) / period)` — calendar clock (same family as mWLPOW). Idle time still advances D. |
+| **tipLocktime** | Per-baton floor: `locktime ≥ tip` — blocks Moore **past-cheat** rewind |
+| **N batons** | Parallel remint lanes — concurrent prayers scale **without** activity-based D bump |
 
-| Rule | Effect |
-|------|--------|
-| `locktime ≥ tipLocktime` | Anti-rewind (blocks Moore past-cheat on that baton) |
-| Fixed `zeroBytes = 1` | No activity / difficulty bump |
-| Baton → `P2SH(batonHash)` | Next tip redeem with `tipLocktime' = locktime` (Moore-style soft hash) |
-| **N batons** | **N parallel remint lanes** |
+Difficulty does **not** rise because many people pray at once. It rises because Moore time advances (and tip prevents picking an easier past day on that baton).
 
 ```bash
 npm run create-prayer-tip-pow-token
 BATON_INDEX=0 npm run mine-prayer-tip-once
-BATON_INDEX=1 npm run mine-prayer-tip-once   # parallel tip
+BATON_INDEX=1 npm run mine-prayer-tip-once
 ```
 
 ## Library height helpers

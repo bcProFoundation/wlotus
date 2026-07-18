@@ -1,9 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * Mine one remint against a test Prayer tip (tPRAYTIP) baton.
- *
- * Fixed 1-byte PoW. Scale = pick BATON_INDEX across N tips.
- * Reads deployments/mainnet-prayer-tip-test.json.
+ * Mine one remint against tPRAYTIP (Moore D + tipLocktime).
+ * BATON_INDEX selects which parallel tip/baton.
  */
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -12,7 +10,11 @@ import { Wallet } from 'ecash-wallet';
 import { fromHex, payment, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
-import { createPowRemintPrayerTipContract } from '../src/covenant/powRemintPrayerTipScript.js';
+import {
+  createPowRemintPrayerTipContract,
+  TEST_MOORE_SECONDS_PER_EXTRA_BIT,
+  TEST_PRAYER_TIP_BASE_ZERO_BITS,
+} from '../src/covenant/powRemintPrayerTipScript.js';
 import { computePrayerTipState } from '../src/covenant/wlpt.js';
 import {
   buildMinedPrayerTipRemintTx,
@@ -22,10 +24,7 @@ import { PRAYER_MINT_ATOMS } from '../src/params/consensus.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-/**
- * Covenant hashOutputs is exactly 3 outs (no change). Excess fuel is fee.
- * Keep fuel UTXOs small (~2k sats).
- */
+/** Covenant has no change out — keep fuel small. */
 const REMINT_FUEL_SATS = 2_000n;
 
 interface BatonTip {
@@ -38,6 +37,8 @@ interface BatonTip {
 interface PrayerTipDep {
   tokenId: string;
   genesisUnix: number;
+  baseZeroBits?: number;
+  secondsPerExtraBit?: number;
   tipLocktime?: number;
   powAddress?: string;
   mintAtomsPerRemint?: string;
@@ -59,9 +60,9 @@ async function ensureFuel(wallet: Wallet): Promise<void> {
     .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
   if (!big) {
     const any = wallet.utxos.find(u => !u.token && u.sats >= REMINT_FUEL_SATS);
-    if (any) return; // usable but oversized → excess becomes fee
+    if (any) return;
     throw new Error(
-      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS} sats for remint fees (covenant has no change out)`,
+      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS} sats for remint fees`,
     );
   }
 
@@ -101,6 +102,9 @@ async function main(): Promise<void> {
 
   const tokenId = process.env.TOKEN_ID?.trim() || dep.tokenId;
   const mintAtoms = BigInt(dep.mintAtomsPerRemint ?? PRAYER_MINT_ATOMS);
+  const baseZeroBits = dep.baseZeroBits ?? TEST_PRAYER_TIP_BASE_ZERO_BITS;
+  const secondsPerExtraBit =
+    dep.secondsPerExtraBit ?? TEST_MOORE_SECONDS_PER_EXTRA_BIT;
   const batonIndex = Number(process.env.BATON_INDEX?.trim() || 0);
   const tips =
     dep.batonTips && dep.batonTips.length > 0
@@ -119,6 +123,8 @@ async function main(): Promise<void> {
     tokenId,
     mintAtoms,
     genesisUnix: dep.genesisUnix,
+    baseZeroBits,
+    secondsPerExtraBit,
     tipLocktime: tipRec.tipLocktime,
   });
   console.log(prayerTipMinerBanner(contract));
@@ -151,7 +157,11 @@ async function main(): Promise<void> {
     throw new Error(`No PoW batons at ${contract.address}`);
   }
 
-  const b = batonUtxos[0]!;
+  // Prefer unused tip UTXO matching this baton's last remint when possible.
+  const preferred = tipRec.lastRemintTxid
+    ? batonUtxos.find(u => u.outpoint.txid === tipRec.lastRemintTxid)
+    : undefined;
+  const b = preferred ?? batonUtxos[0]!;
   const baton = {
     outpoint: { txid: b.outpoint.txid, outIdx: b.outpoint.outIdx },
     sats: BigInt(b.sats),
@@ -168,7 +178,7 @@ async function main(): Promise<void> {
   }
 
   const { mtp, tipHeight, tipUnix } = await getMedianTimePast(chronik);
-  // Prefer tipLocktime when still final; else advance toward MTP−1.
+  // Prefer tipLocktime when still < MTP (same Moore day, easy remint).
   const locktime = Number(
     process.env.PRAYER_TIP_LOCKTIME?.trim() ||
       (tipRec.tipLocktime < mtp
@@ -177,7 +187,7 @@ async function main(): Promise<void> {
   );
   if (locktime >= mtp) {
     throw new Error(
-      `locktime ${locktime} ≥ MTP ${mtp} (tip ${tipHeight} @ ${tipUnix}) — non-final (need locktime < MTP)`,
+      `locktime ${locktime} ≥ MTP ${mtp} (tip ${tipHeight} @ ${tipUnix}) — non-final`,
     );
   }
   if (locktime < tipRec.tipLocktime) {
@@ -197,7 +207,8 @@ async function main(): Promise<void> {
         locktime,
         mtp,
         tipLocktime: tipRec.tipLocktime,
-        zeroBytes: preview.zeroBytes,
+        bits: preview.bits,
+        extraBits: preview.extraBits,
         expectedHashes: Math.pow(2, preview.bits),
       },
       null,
@@ -243,12 +254,8 @@ async function main(): Promise<void> {
   };
   writeFileSync(depPath, `${JSON.stringify(updated, null, 2)}\n`);
 
-  const remintPath = resolve(
-    process.cwd(),
-    'deployments/mainnet-last-prayer-tip-remint.json',
-  );
   writeFileSync(
-    remintPath,
+    resolve(process.cwd(), 'deployments/mainnet-last-prayer-tip-remint.json'),
     `${JSON.stringify(
       {
         tokenId,
@@ -276,6 +283,8 @@ async function main(): Promise<void> {
         txid,
         mintAtoms: built.mintAtoms,
         powAttempts: built.powAttempts,
+        bits: built.tip.bits,
+        extraBits: built.tip.extraBits,
         batonIndex: tipRec.index,
         nextPowAddress: built.nextContract.address,
         explorer: `https://explorer.e.cash/tx/${txid}`,

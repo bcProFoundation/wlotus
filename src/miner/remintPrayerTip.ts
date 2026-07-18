@@ -43,10 +43,7 @@ export interface FuelUtxo {
   outputScript: Script;
 }
 
-/** Activate nLockTime: at least one input sequence must be < 0xffffffff. */
 export const LOCKTIME_ENABLE_SEQUENCE = 0xfffffffe;
-
-/** BIP143 scriptCode after the covenant's OP_CODESEPARATOR (index 0). */
 export const PRAYER_TIP_CODESEP_INDEX = 0;
 
 export function prayerTipMinerBanner(
@@ -54,23 +51,23 @@ export function prayerTipMinerBanner(
 ): string {
   const p = contract.params;
   return [
-    'tPRAYTIP scale miner (fixed 1-byte PoW)',
+    'tPRAYTIP Moore+tip miner',
+    `baseZeroBits=${p.baseZeroBits}`,
+    `secondsPerExtraBit=${p.secondsPerExtraBit}`,
     `tipLocktime=${p.tipLocktime}`,
     `mintAtoms=${PRAYER_MINT_ATOMS}`,
-    'covenant: tipLocktime anti-rewind + N-baton parallelism',
+    'D=Moore(locktime); tip anti-rewind; N-baton scale',
   ].join(' | ');
 }
 
 /**
- * Build + mine + sign one Prayer tip remint.
- * Fixed PoW; baton moves to next tip P2SH (tipLocktime' = locktime).
+ * Mine one Prayer tip remint: Moore bits from locktime, tip' = locktime.
  */
 export async function buildMinedPrayerTipRemintTx(opts: {
   contract: PowRemintPrayerTipContract;
   baton: BatonUtxo;
   fuel: FuelUtxo;
   miner: RemintKeys;
-  /** Unix locktime; must be ≥ tipLocktime and < MTP. */
   locktime: number;
 }): Promise<{
   txHex: string;
@@ -131,6 +128,7 @@ export async function buildMinedPrayerTipRemintTx(opts: {
         preimage,
         bits: tip.bits,
         commit: 'sha256-preimage',
+        maxAttempts: 50_000_000,
       });
       minedNonce = mined.nonce;
       minedAttempts = mined.attempts;

@@ -1,19 +1,19 @@
 {
-  "tokenId": "5720ddaa695075aa3a14270d6bd1e7bd9c681835f7f9f23ce314e04fc268ea0a",
-  "txid": "eeb21ad322fd0246088b648e1c7474a566445b01820abcee31391cf79f35d3b4",
+  "tokenId": "fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa",
+  "txid": "ed1a9e92cef94c1df017313d5d37efa637ffe7b7a4701f9520a182e6d5bcd874",
   "batonIndex": 0,
-  "powAttempts": 336,
-  "nonceHex": "50010000",
+  "powAttempts": 272,
+  "nonceHex": "10010000",
   "mintAtoms": "1",
   "tip": {
-    "locktime": 1784339814,
-    "tipLocktime": 1784339814,
-    "zeroBytes": 1,
-    "bits": 8
+    "locktime": 1784340663,
+    "extraBits": 0,
+    "bits": 8,
+    "tipLocktime": 1784340663
   },
-  "locktime": 1784339814,
-  "nextPowAddress": "ecash:pp3hn6n27a6smmyw5k0rqy8e2u69vn25tqa5xyr30m",
-  "nextTipLocktime": 1784339814,
-  "explorer": "https://explorer.e.cash/tx/eeb21ad322fd0246088b648e1c7474a566445b01820abcee31391cf79f35d3b4",
-  "minedAt": "2026-07-18T02:36:55.214Z"
+  "locktime": 1784340663,
+  "nextPowAddress": "ecash:pp85ahrxjkks2kcj7zmzq9h6453u83ymaymd25mup5",
+  "nextTipLocktime": 1784340663,
+  "explorer": "https://explorer.e.cash/tx/ed1a9e92cef94c1df017313d5d37efa637ffe7b7a4701f9520a182e6d5bcd874",
+  "minedAt": "2026-07-18T02:48:13.348Z"
 }

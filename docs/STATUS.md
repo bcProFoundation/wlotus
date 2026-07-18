@@ -4,13 +4,13 @@ Canonical home: **https://github.com/bcProFoundation/wlotus**
 
 ## Live dogfood
 
-### Test Prayer tip (`tPRAYTIP`) — scale via batons (fixed PoW)
+### Test Prayer tip (`tPRAYTIP`) — Moore D + tip anti-rewind
 
 | | |
 |--|--|
-| Token | [`5720ddaa…ea0a`](https://explorer.e.cash/tx/5720ddaa695075aa3a14270d6bd1e7bd9c681835f7f9f23ce314e04fc268ea0a) |
-| Remint | [`eeb21ad3…d3b4`](https://explorer.e.cash/tx/eeb21ad322fd0246088b648e1c7474a566445b01820abcee31391cf79f35d3b4) (fixed 1-byte PoW, tipLocktime only) |
-| Mode | **N batons = parallel lanes**; difficulty does **not** rise with concurrent prayer |
+| Token | [`fd1abc1a…69aa`](https://explorer.e.cash/tx/fd1abc1a8edb51adcad808be380b916b72b58344348be61a28973a918e8d69aa) |
+| Remints | [`a0a3e7aa…5c2b`](https://explorer.e.cash/tx/a0a3e7aa3369e60b5cc938407ced723b78fccf797ca2fccbcac9957cc2245c2b) · [`fdea0bf7…879b`](https://explorer.e.cash/tx/fdea0bf7ce5c38f51f53a926a1bc7b1f7d0941995ea8210c6d53f9bd3ba9879b) · [`ed1a9e92…d874`](https://explorer.e.cash/tx/ed1a9e92cef94c1df017313d5d37efa637ffe7b7a4701f9520a182e6d5bcd874) — all **bits=8** (Moore day 0; no activity bump) |
+| Mode | Moore calendar D + tipLocktime + **2** batons |
 
 ```bash
 npm run create-prayer-tip-pow-token
@@ -18,7 +18,7 @@ BATON_INDEX=0 npm run mine-prayer-tip-once
 BATON_INDEX=1 npm run mine-prayer-tip-once
 ```
 
-See [CLOCK.md](./CLOCK.md). Deployment: `deployments/mainnet-prayer-tip-test.json`.
+See [CLOCK.md](./CLOCK.md).
 
 ### Test Prayer (`tPRAYER`) — non-economic toy PoW (fixed-D)
 

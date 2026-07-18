@@ -1,12 +1,16 @@
-// Test Prayer tip — scale via N batons, not difficulty bump.
-// tipLocktime anti-rewind only; fixed 1 leading zero byte PoW; mint 1.
-// Baton → P2SH(batonHash) with tip' = locktime (Moore-style soft batonHash).
-// N independent tips ⇒ concurrent prayers do not serialize on one baton.
+// Test Prayer tip = Moore difficulty + per-baton tipLocktime (anti-rewind).
+// bits = baseZeroBits + floor((locktime - genesisUnix) / secondsPerExtraBit)
+//   → same Moore calendar clock as mWLPOW (NOT activity / concurrent-pray).
+// locktime >= tipLocktime → no past-cheat rewind on this baton.
+// tip' = locktime in next P2SH (soft batonHash). Mint 1.
+// N batons = N parallel remint lanes (scale without raising D from load).
 
 contract WlotusPowRemintPrayerTip(
     [byte;32] tokenIdRev,
     [byte;6] mintAtomsLe,
     int genesisUnix,
+    int baseZeroBits,
+    int secondsPerExtraBit,
     int tipLocktime
 ) {
     challenge remint(
@@ -23,17 +27,39 @@ contract WlotusPowRemintPrayerTip(
         verify locktime >= genesisUnix;
         verify locktime >= tipLocktime;
 
-        // Fixed toy PoW — throughput via baton count, not rising D.
+        int extraBits = (locktime - genesisUnix) / secondsPerExtraBit;
+        int bits = baseZeroBits + extraBits;
+        verify bits <= baseZeroBits + 8;
+
         [byte] solhash = hash256(sha256(preimage) . nonce);
-        ([byte] prefix, _) = solhash @ 1;
+        int zeroBytes = bits / 8;
+        int remBits = bits % 8;
+
+        ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
         verify bin2num(prefix) == 0;
+
+        if (remBits == 1) {
+            ([byte] nextByte, _) = rest @ 1;
+            verify bin2num(nextByte) < 128;
+        } else {
+            if (remBits != 0) {
+                ([byte] nextByte, _) = rest @ 1;
+                [byte] limits = 0x402010080402;
+                (_, [byte] limTail) = limits @ (remBits - 2);
+                ([byte] limB, _) = limTail @ 1;
+                verify bin2num(nextByte) < bin2num(limB);
+            }
+        }
 
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
+        // WLPT v3: Moore bits + tipLocktime (Agora-style beside ALP MINT)
         [byte] wlpt =
             0x574c5054 .
-            0x02 .
+            0x03 .
+            num2bin(bits, 2) .
+            num2bin(extraBits, 4) .
             num2bin(locktime, 4) .
             num2bin(tipLocktime, 4);
 
