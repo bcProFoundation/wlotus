@@ -1,7 +1,4 @@
 #!/usr/bin/env tsx
-/**
- * Print Prayer / Incense / Candle / Flower matrix (fee floor + PoW).
- */
 import {
   buildMintTimeTable,
   buildPricingLadder,
@@ -11,14 +8,13 @@ import {
 const ladder = buildPricingLadder();
 const table = buildMintTimeTable();
 
-console.log('=== Fee floor + ritual ladder ===');
+console.log('=== Ritual + MoE ladder ===');
 console.log({
   fee: ladder.fee,
-  workLadder: ladder.workLadder,
   peg: ladder.peg,
-  flowerMarketUsdPerBaton: ladder.wlotusBusiness.marketUsdPerBaton,
-  costStack: ladder.wlotusBusiness.costStack,
-  asicSheet: ladder.asic,
+  workLadder: ladder.workLadder,
+  flower: ladder.wlotusBusiness,
+  asic: ladder.asic,
 });
 
 console.log('\n=== Mint-time matrix ===');
@@ -37,7 +33,7 @@ for (const r of table.rows) {
       r.electricityUsd.toExponential(2),
       r.allInUsd.toExponential(2),
       r.phone,
-      r.pc,
+      r.weak1THs,
       r.asic100THs,
     ].join(' | '),
   );
@@ -46,10 +42,7 @@ for (const r of table.rows) {
 console.log(
   '\n',
   JSON.stringify(
-    {
-      ergonYearsToDoubleWork: ergonDaysForWorkFactor(2) / 365.25,
-      rows: table.rows,
-    },
+    { ergonYearsToDoubleWork: ergonDaysForWorkFactor(2) / 365.25, rows: table.rows },
     null,
     2,
   ),

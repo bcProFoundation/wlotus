@@ -1,22 +1,20 @@
 /**
- * Pricing / difficulty ladder — ritual offer tiers + XEC fee floor.
+ * Pricing / difficulty ladder — ritual offer tiers.
  *
- * Prestige (high → low): Flower (WLotus) → Candle → Incense → Prayer.
+ * Prestige: Flower (WLotus) → Candle → (Incense / Prayer = non-economic).
  *
- * Mint atoms / baton: Prayer **1** · Incense **100** · Candle **100** · Flower **100**
- * Token peg: **1000 Prayer ≈ 1 Incense**; **1000 Incense ≈ 1 Candle**;
- *            **1000 Candle ≈ 1 Flower**.
+ * **Non-economic (ritual chrome):**
+ *   Prayer — phone ~30 s PoW + fee (intention / presence)
+ *   Incense — fee-only / trivial PoW, **no MoE**, no peg into Candle/Flower
  *
- * **Fee floor:** every remint pays ~**5.46 XEC**. For easy PoW tiers the fee
- * dominates joules. Amortizing fee over 100 Incense/Candle tokens makes those
- * units cheaper than Prayer (1/baton) — phone users **pray** for ritual UX and
- * **buy** Incense/Candle/Flower on the market to offer.
+ * **Economic:**
+ *   Flower — **$1/baton**, 100 tokens, ASIC sheet → ~59 bits
+ *   Candle — **~1/10 Flower token price** (temple-sensible, not 1/1000);
+ *            fewer tokens/baton so weak machines finish quickly.
+ *   Fine grain → future **mFlower**, not a tiny Candle peg.
  *
- * **Flower** stays ASIC-business: **$1/baton** → ~25% electricity → **~59 bits**.
- * Candle work tracks baton value vs Flower (anti-arb where PoW ≫ fee).
- * Incense/Prayer: easy UX PoW; all-in cost ≈ fee (+ tiny elec).
- *
- * See docs/ECONOMICS.md. Recompute: `npm run pricing`.
+ * Fee ~5.46 XEC / remint (eCash miners). See docs/ECONOMICS.md.
+ * Recompute: `npm run pricing`.
  */
 
 import { MOORE_NUM, MOORE_DEN } from './consensus.js';
@@ -25,27 +23,30 @@ export const FLOWER_TOKENS_PER_BATON = 100;
 /** @deprecated */
 export const TOKENS_PER_REMINT = FLOWER_TOKENS_PER_BATON;
 
-export const CANDLE_TOKENS_PER_BATON = 100;
+/**
+ * Candle mint — keep small so baton work ≪ Flower (weak hardware UX).
+ * 10 tokens × ($0.01/10) = $0.01/baton ≈ Flower/100 work.
+ */
+export const CANDLE_TOKENS_PER_BATON = 10;
+
+/** Non-economic ritual mints. */
 export const INCENSE_TOKENS_PER_BATON = 100;
 export const PRAYER_TOKENS_PER_BATON = 1;
 
-/** Token peg factors (units of lower tier per one higher-tier token). */
-export const PRAYER_PER_INCENSE = 1000;
-export const INCENSE_PER_CANDLE = 1000;
-export const CANDLE_PER_FLOWER = 1000;
+/**
+ * Economic token peg: 1 Flower token ≈ **10 Candle** tokens.
+ * (1/100 or 1/1000 underprices candles vs real offerings; use mFlower later.)
+ */
+export const CANDLES_PER_FLOWER_TOKEN = 10;
 
-/** Typical remint relay fee (XEC). */
 export const REMINT_FEE_XEC = 5.46;
-
-/** Sheet reference XEC/USD (update periodically). */
 export const XEC_USD = 8e-6;
-
 export const REMINT_FEE_USD = REMINT_FEE_XEC * XEC_USD;
 
-/** Prayer UX bits — phone ~30 s @ 0.15 MH/s. */
+/** Prayer UX — phone ~30 s. */
 export const PRAYER_UX_BITS = 22;
-/** Incense UX bits — still easy; fee dominates (ex phone-minute tier). */
-export const INCENSE_UX_BITS = 25;
+/** Incense — trivial / instant; fee is the only real cost. */
+export const INCENSE_UX_BITS = 8;
 
 export const ASIC_USD_PER_KWH = 0.08;
 export const ASIC_JOULES_PER_TH = 20;
@@ -53,6 +54,8 @@ export const ASIC_HASHRATE_TH_S = 100;
 
 export const UX_PC_HASHRATE_H_S = 850_000;
 export const UX_PHONE_HASHRATE_H_S = 150_000;
+/** “Weak” machine for Candle projections (~1 TH/s class / strong hobby). */
+export const WEAK_HASHRATE_TH_S = 1;
 export const JOULES_PER_KWH = 3.6e6;
 
 export const WLOTUS_TARGET_USD_PER_BATON = 1;
@@ -106,39 +109,29 @@ export function wallSeconds(
   return expectedHashes / hashesPerSec;
 }
 
-/** Soft token prices from Flower $0.01 and 1000∶1 peg. */
-export function pegTokenPricesUsd(): {
+/** Economic soft prices only (Prayer/Incense are non-priced). */
+export function economicTokenPricesUsd(): {
   flower: number;
   candle: number;
-  incense: number;
-  prayer: number;
 } {
   const flower = WLOTUS_TARGET_USD_PER_TOKEN;
-  const candle = flower / CANDLE_PER_FLOWER;
-  const incense = candle / INCENSE_PER_CANDLE;
-  const prayer = incense / PRAYER_PER_INCENSE;
-  return { flower, candle, incense, prayer };
-}
-
-export function pegBatonPricesUsd(): {
-  flower: number;
-  candle: number;
-  incense: number;
-  prayer: number;
-} {
-  const t = pegTokenPricesUsd();
   return {
-    flower: t.flower * FLOWER_TOKENS_PER_BATON,
-    candle: t.candle * CANDLE_TOKENS_PER_BATON,
-    incense: t.incense * INCENSE_TOKENS_PER_BATON,
-    prayer: t.prayer * PRAYER_TOKENS_PER_BATON,
+    flower,
+    candle: flower / CANDLES_PER_FLOWER_TOKEN,
   };
 }
 
-/**
- * All-in remint cost ≈ fee + ASIC electricity at D.
- * (Flower also has full business stack in docs; here elec+fee for compare.)
- */
+export function economicBatonPricesUsd(): {
+  flower: number;
+  candle: number;
+} {
+  const t = economicTokenPricesUsd();
+  return {
+    flower: t.flower * FLOWER_TOKENS_PER_BATON,
+    candle: t.candle * CANDLE_TOKENS_PER_BATON,
+  };
+}
+
 export function remintAllInUsd(opts: {
   expectedHashes: number;
   feeUsd?: number;
@@ -153,8 +146,8 @@ export function remintAllInUsd(opts: {
 }
 
 /**
- * Bits: Flower from $1 sheet; Candle from baton-value ratio (PoW ≫ fee);
- * Incense/Prayer = UX easy (fee floor carries anti-spam / unit cost).
+ * Flower from $1 sheet; Candle from baton-value ratio (anti-arb);
+ * Prayer/Incense = UX only (non-economic).
  */
 export function ritualBits(): {
   prayer: number;
@@ -164,14 +157,9 @@ export function ritualBits(): {
 } {
   const flowerH = expectedHashesForWlotusBaton();
   const flower = Math.round(bitsFromExpectedHashes(flowerH));
-  const batons = pegBatonPricesUsd();
-  // Size Candle PoW so elec ≈ share of (baton market), same sheet idea.
+  const batons = economicBatonPricesUsd();
   const candleElec = batons.candle * WLOTUS_ELECTRICITY_SHARE_OF_PRICE;
-  const candleH = Math.max(
-    expectedHashesForAsicUsd(candleElec),
-    // never easier than incense UX
-    expectedHashesFromBits(INCENSE_UX_BITS),
-  );
+  const candleH = expectedHashesForAsicUsd(candleElec);
   return {
     flower,
     candle: Math.round(bitsFromExpectedHashes(candleH)),
@@ -184,17 +172,16 @@ export interface TierPlan {
   product: string;
   ticker: string;
   ritual: 'prayer' | 'incense' | 'candle' | 'flower';
-  regime: 'phone-ritual' | 'fee-floor' | 'asic-business';
+  regime: 'non-economic' | 'asic-business';
   baseZeroBits: number;
   tokensPerBaton: number;
   expectedHashes: number;
+  /** Soft market; 0 = non-economic ritual chrome. */
   targetUsdPerToken: number;
   targetUsdPerRemint: number;
   feeUsd: number;
   referenceElectricityUsd: number;
   allInUsd: number;
-  /** Fee as fraction of soft baton market (can be ≫1 when fee dominates). */
-  feeOverMarket: number;
   notes: string;
 }
 
@@ -216,6 +203,7 @@ export function buildPricingLadder(): {
     costStack: typeof WLOTUS_COST_STACK;
     electricityUsdAtReference: number;
     flowerBitsFromMarket: number;
+    candlePerFlowerToken: number;
   };
   asic: {
     usdPerKwh: number;
@@ -226,15 +214,18 @@ export function buildPricingLadder(): {
 } {
   const usdPerHash = asicUsdPerHash();
   const bits = ritualBits();
-  const tokens = pegTokenPricesUsd();
-  const batons = pegBatonPricesUsd();
+  const tokens = economicTokenPricesUsd();
+  const batons = economicBatonPricesUsd();
   const flowerHashes = expectedHashesForWlotusBaton();
+  const candleHashes = expectedHashesForAsicUsd(
+    batons.candle * WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
+  );
   const elecUsd = batons.flower * WLOTUS_ELECTRICITY_SHARE_OF_PRICE;
 
   function tier(
     partial: Omit<
       TierPlan,
-      'feeUsd' | 'referenceElectricityUsd' | 'allInUsd' | 'feeOverMarket'
+      'feeUsd' | 'referenceElectricityUsd' | 'allInUsd'
     >,
   ): TierPlan {
     const costs = remintAllInUsd({ expectedHashes: partial.expectedHashes });
@@ -243,10 +234,6 @@ export function buildPricingLadder(): {
       feeUsd: costs.feeUsd,
       referenceElectricityUsd: costs.electricityUsd,
       allInUsd: costs.allInUsd,
-      feeOverMarket:
-        partial.targetUsdPerRemint > 0
-          ? costs.feeUsd / partial.targetUsdPerRemint
-          : Number.POSITIVE_INFINITY,
     };
   }
 
@@ -254,28 +241,27 @@ export function buildPricingLadder(): {
     product: 'Prayer',
     ticker: 'PRAYER',
     ritual: 'prayer',
-    regime: 'phone-ritual',
+    regime: 'non-economic',
     baseZeroBits: bits.prayer,
     tokensPerBaton: PRAYER_TOKENS_PER_BATON,
     expectedHashes: expectedHashesFromBits(bits.prayer),
-    targetUsdPerToken: tokens.prayer,
-    targetUsdPerRemint: batons.prayer,
-    notes:
-      'Phone-only ritual (~30 s). Fee ≫ soft peg — pray for devotion; buy Incense to offer.',
+    targetUsdPerToken: 0,
+    targetUsdPerRemint: 0,
+    notes: 'Non-economic — phone intention (~30 s) + fee. Not MoE.',
   });
 
   const incense = tier({
     product: 'Incense',
     ticker: 'INCENSE',
     ritual: 'incense',
-    regime: 'fee-floor',
+    regime: 'non-economic',
     baseZeroBits: bits.incense,
     tokensPerBaton: INCENSE_TOKENS_PER_BATON,
     expectedHashes: expectedHashesFromBits(bits.incense),
-    targetUsdPerToken: tokens.incense,
-    targetUsdPerRemint: batons.incense,
+    targetUsdPerToken: 0,
+    targetUsdPerRemint: 0,
     notes:
-      '100/baton amortizes fee. Fee still dominates soft peg — market clears ≥ fee/100.',
+      'Non-economic everyday thắp hương — fee-only / trivial PoW. No peg into Candle/Flower.',
   });
 
   const candle = tier({
@@ -285,13 +271,11 @@ export function buildPricingLadder(): {
     regime: 'asic-business',
     baseZeroBits: bits.candle,
     tokensPerBaton: CANDLE_TOKENS_PER_BATON,
-    expectedHashes: expectedHashesForAsicUsd(
-      batons.candle * WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
-    ),
+    expectedHashes: candleHashes,
     targetUsdPerToken: tokens.candle,
     targetUsdPerRemint: batons.candle,
     notes:
-      '100/baton · peg 1000 Candle ≈ 1 Flower · PoW sized to baton value (fee small).',
+      'Economic — ~1/10 Flower token; 10/baton → ~$0.01/baton (~Flower/100 work). Weak HW quick mint.',
   });
 
   const flower = tier({
@@ -304,8 +288,7 @@ export function buildPricingLadder(): {
     expectedHashes: flowerHashes,
     targetUsdPerToken: tokens.flower,
     targetUsdPerRemint: batons.flower,
-    notes:
-      '$1/baton · ~59 bits · fee negligible · 40% risk margin stack.',
+    notes: 'Economic prestige — $1/baton · ~59 bits · 40% risk margin.',
   });
 
   return {
@@ -320,9 +303,9 @@ export function buildPricingLadder(): {
       usdPerXec: XEC_USD,
       usd: REMINT_FEE_USD,
     },
-    peg: '1000 Prayer ≈ 1 Incense ≈ 0.001 Candle ≈ 0.000001 Flower (token); batons mint 1/100/100/100',
+    peg: '10 Candle ≈ 1 Flower (token); Prayer/Incense non-economic (no peg). Fine grain → mFlower later.',
     workLadder:
-      'Prayer/Incense = UX + fee floor · Candle/Flower = $ value ASIC sheet (Flower $1 → 59 bits)',
+      'Prayer/Incense = non-economic UX · Candle ≈ Flower/100 baton work · Flower = $1 → 59 bits',
     wlotusBusiness: {
       marketUsdPerBaton: batons.flower,
       marketUsdPerToken: tokens.flower,
@@ -330,6 +313,7 @@ export function buildPricingLadder(): {
       costStack: WLOTUS_COST_STACK,
       electricityUsdAtReference: elecUsd,
       flowerBitsFromMarket: bits.flower,
+      candlePerFlowerToken: CANDLES_PER_FLOWER_TOKEN,
     },
     prayer,
     incense,
@@ -368,18 +352,19 @@ export function buildMintTimeTable(): {
     ticker: string;
     bits: number;
     tokensPerBaton: number;
-    marketUsdPerToken: number;
-    marketUsdPerBaton: number;
+    marketUsdPerToken: number | string;
+    marketUsdPerBaton: number | string;
     feeUsd: number;
     electricityUsd: number;
     allInUsd: number;
     phone: string;
-    pc: string;
+    weak1THs: string;
     asic100THs: string;
   }[];
 } {
   const ladder = buildPricingLadder();
   const asicHps = ASIC_HASHRATE_TH_S * 1e12;
+  const weakHps = WEAK_HASHRATE_TH_S * 1e12;
   const tiers = [ladder.prayer, ladder.incense, ladder.candle, ladder.flower];
   return {
     headers: [
@@ -391,9 +376,9 @@ export function buildMintTimeTable(): {
       'Market $/baton',
       'Fee $',
       'ASIC elec. $',
-      'All-in $ (fee+elec)',
+      'All-in $',
       'Phone',
-      'PC',
+      'Weak 1 TH/s',
       'ASIC 100 TH/s',
     ],
     rows: tiers.map(t => ({
@@ -401,15 +386,17 @@ export function buildMintTimeTable(): {
       ticker: t.ticker,
       bits: t.baseZeroBits,
       tokensPerBaton: t.tokensPerBaton,
-      marketUsdPerToken: t.targetUsdPerToken,
-      marketUsdPerBaton: t.targetUsdPerRemint,
+      marketUsdPerToken:
+        t.regime === 'non-economic' ? '—' : t.targetUsdPerToken,
+      marketUsdPerBaton:
+        t.regime === 'non-economic' ? '—' : t.targetUsdPerRemint,
       feeUsd: t.feeUsd,
       electricityUsd: t.referenceElectricityUsd,
       allInUsd: t.allInUsd,
       phone: formatDuration(
         wallSeconds(t.expectedHashes, UX_PHONE_HASHRATE_H_S),
       ),
-      pc: formatDuration(wallSeconds(t.expectedHashes, UX_PC_HASHRATE_H_S)),
+      weak1THs: formatDuration(wallSeconds(t.expectedHashes, weakHps)),
       asic100THs: formatDuration(wallSeconds(t.expectedHashes, asicHps)),
     })),
   };

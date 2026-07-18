@@ -1,67 +1,56 @@
-# Economics — Prayer → Incense → Candle → Flower (fee floor)
+# Economics — Prayer / Incense (ritual) · Candle / Flower (MoE)
 
-## Product intent
+## Roles
 
-| Who | Does |
-|-----|------|
-| **Phone users** | Mine **Prayer** only (~30 s) — ritual gesture |
-| **Everyone offering** | **Buys** Incense / Candle / Flower on the market |
+| Product | Economic? | Role |
+|---------|-----------|------|
+| **Incense** | **No** | Everyday thắp hương — fee / trivial PoW, **no MoE**, no peg |
+| **Prayer** | **No** | Phone intention (~30 s) — effort chrome, not priced |
+| **Candle** | **Yes** | Entry MoE — weak machines, quicker remint |
+| **Flower (WLotus)** | **Yes** | Prestige MoE — **$1/baton** |
 
-## Mint + peg
+Phone users: pray / mint incense for free-ish ritual. **Buy** Candle/Flower (or mine if they have hardware) to offer value.
 
-| Product | Ticker | Tokens / baton | Token peg |
-|---------|--------|----------------|-----------|
-| Prayer | `PRAYER` | **1** | 1000 Prayer ≈ 1 Incense |
-| Incense | `INCENSE` | **100** | 1000 Incense ≈ 1 Candle |
-| Candle | `CANDLE` | **100** | 1000 Candle ≈ 1 Flower |
-| Flower | `WLOTUS` | **100** | **$1 / baton** ($0.01 / token) |
-
-Soft baton markets from peg: Incense ~$10⁻⁶ · Candle ~$10⁻³ · Flower **$1**.
+Fine denominations → future **mFlower**, not a 1/1000 Candle.
 
 ---
 
-## XEC fee floor (~5.46 XEC / remint)
+## Candle vs Flower: why **1/10**, not 1/100 or 1/1000
 
-At ~$8×10⁻⁶ / XEC, fee ≈ **$4.4×10⁻⁵** per remint.
+A real candle is not three orders of magnitude cheaper than a flower offering. **~1/10** token price keeps temple sense.
 
-| Tier | Soft baton market | Fee / market | What prices the remint |
-|------|-------------------|--------------|------------------------|
-| Prayer | ~$10⁻¹¹ | ≫ 1 (millions×) | **Fee** (PoW negligible) |
-| Incense | ~$10⁻⁶ | ~**44×** | **Fee** (100 mint amortizes → ~fee/100 per token) |
-| Candle | ~$10⁻³ | ~4% | **PoW** (+ small fee) |
-| Flower | **$1** | ~0.004% | **PoW / business stack** |
+| Knob | Choice | Effect |
+|------|--------|--------|
+| Token peg | **10 Candle ≈ 1 Flower** | Candle = $0.001/token if Flower = $0.01 |
+| Mint / baton | Candle **10**, Flower **100** | Candle baton = **$0.01** = Flower/100 |
+| Work | Candle ≈ Flower/100 | ~**52 bits** vs Flower **59** |
 
-### Fee vs Prayer / Incense proportion
+Weak ~1 TH/s: Candle **~1.6 h**, Flower **~6.5 d**.  
+ASIC 100 TH/s: Candle **~56 s**, Flower **~1.6 h**.
 
-With mint **1** vs **100**, fee-floor unit costs are:
-
-- Prayer token ≈ **fee** ≈ $4.4×10⁻⁵  
-- Incense token ≈ **fee / 100** ≈ $4.4×10⁻⁷  
-- → **~100 Prayer ≈ 1 Incense** at the fee floor (not 1000)
-
-The **1000∶1 peg** is the brand/conversion peg. Mining Prayer is an intentionally **worse** deal than buying Incense — phones pray; markets supply offer tokens. ASICs do not undercut Flower by printing Prayer/Incense near the soft peg: fee keeps those floors far above soft peg until demand lifts price.
+Fewer candles/baton → easier Candle mining (same 1/10 token peg). Raising mint to 100 would make Candle batons 10× dearer/harder.
 
 ---
 
-## Flower business ($1 / baton)
+## Fee floor (~5.46 XEC → eCash miners)
 
-Still Ergon-style for-profit (25% elec · 40% risk margin) → **~59 bits** · ~1.6 h @ 100 TH/s. Fee is noise.
+Prices spam for Incense/Prayer. Negligible vs Candle $0.01 / Flower $1.
 
-Candle PoW tracks baton value (~$0.001 → **~49 bits**).
+---
+
+## Flower business stack ($1)
+
+25% electricity · 40% risk margin → **~59 bits**.
 
 ---
 
 ## Mint-time matrix
 
-| Product | Bits | Mint | Market $/baton | Fee $ | Elec $ | All-in $ | Phone | ASIC 100 TH/s |
-|---------|------|------|----------------|-------|--------|----------|-------|---------------|
-| **Prayer** | **22** | 1 | ~$10⁻¹¹ | ~$4.4e-5 | ~0 | ~**fee** | **~28 s** | &lt;1 ms |
-| **Incense** | **25** | 100 | ~$10⁻⁶ | ~$4.4e-5 | ~0 | ~**fee** | **~3.7 min** | &lt;1 ms |
-| **Candle** | **49** | 100 | ~$10⁻³ | ~$4.4e-5 | ~$2.5e-4 | ~$3e-4 | — | **~5.6 s** |
-| **Flower** | **59** | 100 | **$1** | ~$4.4e-5 | **~$0.25** | ~$0.25 | — | **~1.6 h** |
+| Product | Bits | Mint | Market $/baton | Phone | Weak 1 TH/s | ASIC 100 TH/s |
+|---------|------|------|----------------|-------|-------------|---------------|
+| Incense | 8 | 100 | — (non-econ) | ~2 ms | &lt;1 ms | &lt;1 ms |
+| Prayer | 22 | 1 | — (non-econ) | **~28 s** | &lt;1 ms | &lt;1 ms |
+| Candle | **52** | **10** | **$0.01** | — | **~1.6 h** | **~56 s** |
+| Flower | **59** | 100 | **$1** | — | ~6.5 d | **~1.6 h** |
 
-Recompute: `npm run pricing`.
-
-## Parameters
-
-`src/params/pricing.ts` · `src/params/consensus.ts`
+`npm run pricing`

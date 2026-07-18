@@ -1,8 +1,3 @@
-/**
- * Offer-tier economics (market intents).
- * See consensus.ts + pricing.ts / docs/ECONOMICS.md.
- */
-
 import {
   CANDLE_MINT_ATOMS,
   FLOWER_MINT_ATOMS,
@@ -16,7 +11,8 @@ import {
 import {
   WLOTUS_TARGET_USD_PER_TOKEN,
   WLOTUS_TARGET_USD_PER_BATON,
-  pegTokenPricesUsd,
+  economicTokenPricesUsd,
+  CANDLE_TOKENS_PER_BATON,
 } from './pricing.js';
 
 export const TOKENS_PER_REMINT = Number(FLOWER_MINT_ATOMS);
@@ -36,15 +32,16 @@ export const PROD_BASE_ZERO_BITS = FLOWER_BASE_ZERO_BITS;
 export const PROD_TARGET_USD_PER_TOKEN = WLOTUS_TARGET_USD_PER_TOKEN;
 export const PROD_TARGET_USD_PER_REMINT = WLOTUS_TARGET_USD_PER_BATON;
 
-const peg = pegTokenPricesUsd();
+const peg = economicTokenPricesUsd();
 export const CANDLE_TARGET_USD_PER_TOKEN = peg.candle;
-export const INCENSE_TARGET_USD_PER_TOKEN = peg.incense;
-export const PRAYER_TARGET_USD_PER_TOKEN = peg.prayer;
+/** Non-economic */
+export const INCENSE_TARGET_USD_PER_TOKEN = 0;
+export const PRAYER_TARGET_USD_PER_TOKEN = 0;
 
 /** @deprecated */
 export const TEST_TARGET_USD_PER_TOKEN = CANDLE_TARGET_USD_PER_TOKEN;
 /** @deprecated */
-export const NWLPOW_TARGET_USD_PER_TOKEN = INCENSE_TARGET_USD_PER_TOKEN;
+export const NWLPOW_TARGET_USD_PER_TOKEN = 0;
 
 export const TEST_POW_LEADING_ZERO_BYTES = 1;
 export const TEST_INITIAL_MINT_ATOMS = 1_000_000n;
@@ -58,11 +55,9 @@ export const PRAYER_TOKEN_TICKER = 'PRAYER';
 export const PRAYER_TOKEN_NAME = 'Prayer';
 
 export const TEST_TARGET_USD_PER_REMINT =
-  CANDLE_TARGET_USD_PER_TOKEN * Number(CANDLE_MINT_ATOMS);
-export const NWLPOW_TARGET_USD_PER_REMINT =
-  INCENSE_TARGET_USD_PER_TOKEN * Number(INCENSE_MINT_ATOMS);
-export const PRAYER_TARGET_USD_PER_REMINT =
-  PRAYER_TARGET_USD_PER_TOKEN * Number(PRAYER_MINT_ATOMS);
+  CANDLE_TARGET_USD_PER_TOKEN * CANDLE_TOKENS_PER_BATON;
+export const NWLPOW_TARGET_USD_PER_REMINT = 0;
+export const PRAYER_TARGET_USD_PER_REMINT = 0;
 
 export {
   PRAYER_MINT_ATOMS,
