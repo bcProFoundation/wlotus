@@ -40,9 +40,10 @@ export const POW_PRAYER_BASE_ZERO_BITS = 22;
 export const POW_INCENSE_BASE_ZERO_BITS = 8;
 
 /**
- * Candle — ~1/10 Flower token × 10 mint → ~Flower/100 baton work (~52 bits).
+ * Candle — 1/baton, GPU wall-clock (~43 bits). Soft ~1/10 Flower token.
+ * Not full ASIC anti-arb vs Flower.
  */
-export const POW_CANDLE_BASE_ZERO_BITS = 52;
+export const POW_CANDLE_BASE_ZERO_BITS = 43;
 
 /** Flower — $1/baton → ~59 bits. */
 export const POW_FLOWER_BASE_ZERO_BITS = 59;
@@ -59,7 +60,7 @@ export const BASE_MINT_ATOMS = 100n;
 
 export const PRAYER_MINT_ATOMS = 1n;
 export const INCENSE_MINT_ATOMS = 100n;
-export const CANDLE_MINT_ATOMS = 10n;
+export const CANDLE_MINT_ATOMS = 1n;
 export const FLOWER_MINT_ATOMS = 100n;
 
 export const POW_BATON_COUNT = 4;

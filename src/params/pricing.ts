@@ -24,10 +24,18 @@ export const FLOWER_TOKENS_PER_BATON = 100;
 export const TOKENS_PER_REMINT = FLOWER_TOKENS_PER_BATON;
 
 /**
- * Candle mint — keep small so baton work ≪ Flower (weak hardware UX).
- * 10 tokens × ($0.01/10) = $0.01/baton ≈ Flower/100 work.
+ * Candle mint — **1 / baton** (GPU tier, not ASIC).
+ * Soft token peg still ~1/10 Flower; difficulty is **GPU wall-clock**,
+ * not full $/hash parity with Flower (ASICs will mint Candle quickly — OK).
  */
-export const CANDLE_TOKENS_PER_BATON = 10;
+export const CANDLE_TOKENS_PER_BATON = 1;
+
+/**
+ * Candle genesis bits — target ~few hours on ~1 GH/s GPU (SHA256d).
+ * Economic anti-arb vs Flower would be ~49 bits (multi-day on one GPU);
+ * we deliberately sit easier because Candle is not ASIC-targeted.
+ */
+export const CANDLE_GPU_TARGET_BITS = 43;
 
 /** Non-economic ritual mints. */
 export const INCENSE_TOKENS_PER_BATON = 100;
@@ -54,8 +62,10 @@ export const ASIC_HASHRATE_TH_S = 100;
 
 export const UX_PC_HASHRATE_H_S = 850_000;
 export const UX_PHONE_HASHRATE_H_S = 150_000;
-/** “Weak” machine for Candle projections (~1 TH/s class / strong hobby). */
-export const WEAK_HASHRATE_TH_S = 1;
+/** Hobby GPU-class SHA256d hashrate for Candle projections (~1 GH/s). */
+export const GPU_HASHRATE_H_S = 1e9;
+/** @deprecated alias — prefer GPU_HASHRATE_H_S for Candle UX */
+export const WEAK_HASHRATE_TH_S = 0.001;
 export const JOULES_PER_KWH = 3.6e6;
 
 export const WLOTUS_TARGET_USD_PER_BATON = 1;
@@ -146,8 +156,8 @@ export function remintAllInUsd(opts: {
 }
 
 /**
- * Flower from $1 sheet; Candle from baton-value ratio (anti-arb);
- * Prayer/Incense = UX only (non-economic).
+ * Flower from $1 sheet; Candle = GPU UX bits (1/baton);
+ * Prayer/Incense = non-economic UX.
  */
 export function ritualBits(): {
   prayer: number;
@@ -157,12 +167,9 @@ export function ritualBits(): {
 } {
   const flowerH = expectedHashesForWlotusBaton();
   const flower = Math.round(bitsFromExpectedHashes(flowerH));
-  const batons = economicBatonPricesUsd();
-  const candleElec = batons.candle * WLOTUS_ELECTRICITY_SHARE_OF_PRICE;
-  const candleH = expectedHashesForAsicUsd(candleElec);
   return {
     flower,
-    candle: Math.round(bitsFromExpectedHashes(candleH)),
+    candle: CANDLE_GPU_TARGET_BITS,
     incense: INCENSE_UX_BITS,
     prayer: PRAYER_UX_BITS,
   };
@@ -217,9 +224,7 @@ export function buildPricingLadder(): {
   const tokens = economicTokenPricesUsd();
   const batons = economicBatonPricesUsd();
   const flowerHashes = expectedHashesForWlotusBaton();
-  const candleHashes = expectedHashesForAsicUsd(
-    batons.candle * WLOTUS_ELECTRICITY_SHARE_OF_PRICE,
-  );
+  const candleHashes = expectedHashesFromBits(bits.candle);
   const elecUsd = batons.flower * WLOTUS_ELECTRICITY_SHARE_OF_PRICE;
 
   function tier(
@@ -275,7 +280,7 @@ export function buildPricingLadder(): {
     targetUsdPerToken: tokens.candle,
     targetUsdPerRemint: batons.candle,
     notes:
-      'Economic — ~1/10 Flower token; 10/baton → ~$0.01/baton (~Flower/100 work). Weak HW quick mint.',
+      'GPU tier — 1/baton · soft ~1/10 Flower token · bits for ~hours @ 1 GH/s (not ASIC anti-arb).',
   });
 
   const flower = tier({
@@ -303,9 +308,9 @@ export function buildPricingLadder(): {
       usdPerXec: XEC_USD,
       usd: REMINT_FEE_USD,
     },
-    peg: '10 Candle ≈ 1 Flower (token); Prayer/Incense non-economic (no peg). Fine grain → mFlower later.',
+    peg: '10 Candle ≈ 1 Flower (token); 1 Candle/baton (GPU tier). Prayer/Incense non-economic. Fine grain → mFlower.',
     workLadder:
-      'Prayer/Incense = non-economic UX · Candle ≈ Flower/100 baton work · Flower = $1 → 59 bits',
+      'Prayer/Incense = non-economic · Candle = GPU UX (~43 bits, 1/baton) · Flower = $1 ASIC (~59 bits)',
     wlotusBusiness: {
       marketUsdPerBaton: batons.flower,
       marketUsdPerToken: tokens.flower,
@@ -314,6 +319,7 @@ export function buildPricingLadder(): {
       electricityUsdAtReference: elecUsd,
       flowerBitsFromMarket: bits.flower,
       candlePerFlowerToken: CANDLES_PER_FLOWER_TOKEN,
+      candleTokensPerBaton: CANDLE_TOKENS_PER_BATON,
     },
     prayer,
     incense,
@@ -359,12 +365,13 @@ export function buildMintTimeTable(): {
     allInUsd: number;
     phone: string;
     weak1THs: string;
+    gpu1GHs: string;
     asic100THs: string;
   }[];
 } {
   const ladder = buildPricingLadder();
   const asicHps = ASIC_HASHRATE_TH_S * 1e12;
-  const weakHps = WEAK_HASHRATE_TH_S * 1e12;
+  const gpuHps = GPU_HASHRATE_H_S;
   const tiers = [ladder.prayer, ladder.incense, ladder.candle, ladder.flower];
   return {
     headers: [
@@ -378,7 +385,7 @@ export function buildMintTimeTable(): {
       'ASIC elec. $',
       'All-in $',
       'Phone',
-      'Weak 1 TH/s',
+      'GPU 1 GH/s',
       'ASIC 100 TH/s',
     ],
     rows: tiers.map(t => ({
@@ -396,7 +403,8 @@ export function buildMintTimeTable(): {
       phone: formatDuration(
         wallSeconds(t.expectedHashes, UX_PHONE_HASHRATE_H_S),
       ),
-      weak1THs: formatDuration(wallSeconds(t.expectedHashes, weakHps)),
+      weak1THs: formatDuration(wallSeconds(t.expectedHashes, gpuHps)),
+      gpu1GHs: formatDuration(wallSeconds(t.expectedHashes, gpuHps)),
       asic100THs: formatDuration(wallSeconds(t.expectedHashes, asicHps)),
     })),
   };

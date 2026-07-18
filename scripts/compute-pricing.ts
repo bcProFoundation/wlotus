@@ -33,7 +33,7 @@ for (const r of table.rows) {
       r.electricityUsd.toExponential(2),
       r.allInUsd.toExponential(2),
       r.phone,
-      r.weak1THs,
+      r.gpu1GHs,
       r.asic100THs,
     ].join(' | '),
   );
