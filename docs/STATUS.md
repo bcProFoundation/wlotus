@@ -6,7 +6,11 @@ Canonical home: **https://github.com/bcProFoundation/wlotus**
 
 ### Test Prayer tip (`tPRAYTIP`) — stateful tip + multi-baton
 
-Stateful `tipLocktime` / `tipActivity` per baton. Rapid remints on the **same** baton raise bits; N batons = N independent tips.
+| | |
+|--|--|
+| Token | [`359edff6…5d6d`](https://explorer.e.cash/tx/359edff69708b24e63b3aef224bf8809060675d0b70005bf56c06c6375755d6d) |
+| Remints | baton0 activity↑ [`b99e1d4a…b09f`](https://explorer.e.cash/tx/b99e1d4a6c0fda98d615f53325b2a0c6b2f097edfc018a4bfb2a951c8cdfb09f) → [`64dcb8c6…dfc9`](https://explorer.e.cash/tx/64dcb8c6c348c8ab0d507145592fb79589c6b50e17cba34ce1f04b53a646dfc9) (activity **2**, 3 zero bytes); baton1 independent [`a55408cb…b3dc`](https://explorer.e.cash/tx/a55408cbf984ecc484f9ab2d506131fe2b4c6c0912fa5150a931241acb11b3dc) (activity **1**) |
+| Mode | Mutating tip P2SH; gap&lt;60s bumps activity; **2** batons |
 
 ```bash
 npm run create-prayer-tip-pow-token

@@ -3,7 +3,7 @@
  * Mine one remint against a test Prayer tip (tPRAYTIP) baton.
  *
  * Reads deployments/mainnet-prayer-tip-test.json.
- * Default locktime = MTP (may cool or stay). Set PRAYER_TIP_RAPID=1 to use
+ * Default locktime = tip + minGap (hold activity). Set PRAYER_TIP_RAPID=1 to use
  * tipLocktime (gap=0) so activity bumps — proves concurrent-pray difficulty.
  */
 import { resolve } from 'node:path';
@@ -14,7 +14,10 @@ import { fromHex, payment, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createPowRemintPrayerTipContract } from '../src/covenant/powRemintPrayerTipScript.js';
-import { computePrayerTipState } from '../src/covenant/wlpt.js';
+import {
+  computePrayerTipState,
+  PRAYER_TIP_MIN_GAP_SECONDS,
+} from '../src/covenant/wlpt.js';
 import {
   buildMinedPrayerTipRemintTx,
   prayerTipMinerBanner,
@@ -36,13 +39,11 @@ interface BatonTip {
 interface PrayerTipDep {
   tokenId: string;
   genesisUnix: number;
-  baseZeroBits: number;
-  minGapSeconds: number;
-  coolGapSeconds: number;
   tipLocktime?: number;
   tipActivity?: number;
   powAddress?: string;
   mintAtomsPerRemint?: string;
+  minGapSeconds?: number;
   batonTips?: BatonTip[];
 }
 
@@ -99,6 +100,7 @@ async function main(): Promise<void> {
 
   const tokenId = process.env.TOKEN_ID?.trim() || dep.tokenId;
   const mintAtoms = BigInt(dep.mintAtomsPerRemint ?? PRAYER_MINT_ATOMS);
+  const minGap = dep.minGapSeconds ?? PRAYER_TIP_MIN_GAP_SECONDS;
   const batonIndex = Number(process.env.BATON_INDEX?.trim() || 0);
   const tips =
     dep.batonTips && dep.batonTips.length > 0
@@ -118,9 +120,6 @@ async function main(): Promise<void> {
     tokenId,
     mintAtoms,
     genesisUnix: dep.genesisUnix,
-    baseZeroBits: dep.baseZeroBits,
-    minGapSeconds: dep.minGapSeconds,
-    coolGapSeconds: dep.coolGapSeconds,
     tipLocktime: tipRec.tipLocktime,
     tipActivity: tipRec.tipActivity,
   });
@@ -176,11 +175,14 @@ async function main(): Promise<void> {
     process.env.PRAYER_TIP_LOCKTIME?.trim() ||
       (rapid
         ? tipRec.tipLocktime
-        : Math.max(tipRec.tipLocktime, Math.min(mtp, tipRec.tipLocktime + dep.minGapSeconds))),
+        : Math.max(
+            tipRec.tipLocktime,
+            Math.min(mtp - 1, tipRec.tipLocktime + minGap),
+          )),
   );
-  if (locktime > mtp) {
+  if (locktime >= mtp) {
     throw new Error(
-      `locktime ${locktime} > MTP ${mtp} (tip ${tipHeight} @ ${tipUnix}) — non-final`,
+      `locktime ${locktime} ≥ MTP ${mtp} (tip ${tipHeight} @ ${tipUnix}) — non-final (need locktime < MTP)`,
     );
   }
   if (locktime < tipRec.tipLocktime) {
@@ -203,6 +205,7 @@ async function main(): Promise<void> {
         gap: preview.gap,
         tipActivity: tipRec.tipActivity,
         activityPrime: preview.activityPrime,
+        zeroBytes: preview.zeroBytes,
         bits: preview.bits,
         expectedHashes: Math.pow(2, preview.bits),
       },
@@ -229,7 +232,6 @@ async function main(): Promise<void> {
       ? broadcast
       : (broadcast as { txid: string }).txid;
 
-  // Persist next tip for this baton (address moves with tip').
   const nextTips = tips.map(t =>
     t.index === tipRec.index
       ? {
@@ -286,7 +288,7 @@ async function main(): Promise<void> {
         txid,
         mintAtoms: built.mintAtoms,
         powAttempts: built.powAttempts,
-        bits: built.tip.bits,
+        zeroBytes: built.tip.zeroBytes,
         activityPrime: built.tip.activityPrime,
         nextPowAddress: built.nextContract.address,
         explorer: `https://explorer.e.cash/tx/${txid}`,

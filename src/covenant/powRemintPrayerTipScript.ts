@@ -60,11 +60,6 @@ function mintAtomsLe6(atoms: bigint): Buffer {
   return buf;
 }
 
-/** Dogfood defaults: toy base bits; 60s bump / 1h cool. */
-export const TEST_PRAYER_TIP_BASE_ZERO_BITS = 1;
-export const TEST_PRAYER_TIP_MIN_GAP_SECONDS = 60;
-export const TEST_PRAYER_TIP_COOL_GAP_SECONDS = 3_600;
-
 /** Build Prayer tip PoW remint P2SH (mutating tipLocktime + tipActivity). */
 export async function createPowRemintPrayerTipContract(
   params: PowRemintPrayerTipParams,
@@ -76,9 +71,6 @@ export async function createPowRemintPrayerTipContract(
     tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
     mintAtomsLe: mintAtomsLe6(params.mintAtoms),
     genesisUnix: params.genesisUnix,
-    baseZeroBits: params.baseZeroBits,
-    minGapSeconds: params.minGapSeconds,
-    coolGapSeconds: params.coolGapSeconds,
     tipLocktime: params.tipLocktime,
     tipActivity: params.tipActivity,
   }) as PowPrayerTipInstance;
@@ -108,9 +100,6 @@ export function defaultPrayerTipParams(
     tokenId,
     mintAtoms: PRAYER_MINT_ATOMS,
     genesisUnix,
-    baseZeroBits: TEST_PRAYER_TIP_BASE_ZERO_BITS,
-    minGapSeconds: TEST_PRAYER_TIP_MIN_GAP_SECONDS,
-    coolGapSeconds: TEST_PRAYER_TIP_COOL_GAP_SECONDS,
     tipLocktime: tip?.tipLocktime ?? genesisUnix,
     tipActivity: tip?.tipActivity ?? 0,
   };

@@ -4,7 +4,7 @@
  *
  * - Ticker: tPRAYTIP
  * - Mint: **1** atom / remint
- * - PoW: baseZeroBits=1 + tipActivity (bumps when remints are closer than minGap)
+ * - PoW: 1 + tipActivity leading zero bytes (bumps when remints closer than 60s)
  * - Per-baton tipLocktime anti-rewind; N batons = N independent tips
  *
  * See docs/CLOCK.md (stateful tip design).
@@ -29,12 +29,8 @@ import {
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
-import {
-  createPowRemintPrayerTipContract,
-  TEST_PRAYER_TIP_BASE_ZERO_BITS,
-  TEST_PRAYER_TIP_COOL_GAP_SECONDS,
-  TEST_PRAYER_TIP_MIN_GAP_SECONDS,
-} from '../src/covenant/powRemintPrayerTipScript.js';
+import { createPowRemintPrayerTipContract } from '../src/covenant/powRemintPrayerTipScript.js';
+import { PRAYER_TIP_MIN_GAP_SECONDS } from '../src/covenant/wlpt.js';
 import { PRAYER_MINT_ATOMS, TOKEN_URL } from '../src/params/consensus.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
@@ -53,8 +49,10 @@ async function main(): Promise<void> {
 
   const chronik = await createChronik('closest');
   const { mtp, tipHeight } = await getMedianTimePast(chronik);
+  // tipLocktime must stay < MTP so a rapid remint (locktime = tip) is final
+  // (nLockTime requires locktime < MTP, not ≤).
   const genesisUnix = Number(
-    process.env.PRAYER_TIP_GENESIS_UNIX?.trim() || mtp,
+    process.env.PRAYER_TIP_GENESIS_UNIX?.trim() || Math.max(0, mtp - 120),
   );
   const tipLocktime = genesisUnix;
   const tipActivity = 0;
@@ -69,9 +67,7 @@ async function main(): Promise<void> {
         balanceXec: Number(wallet.balanceSats) / 100,
         ticker: TICKER,
         mintPerRemint: Number(PRAYER_MINT_ATOMS),
-        baseZeroBits: TEST_PRAYER_TIP_BASE_ZERO_BITS,
-        minGapSeconds: TEST_PRAYER_TIP_MIN_GAP_SECONDS,
-        coolGapSeconds: TEST_PRAYER_TIP_COOL_GAP_SECONDS,
+        minGapSeconds: PRAYER_TIP_MIN_GAP_SECONDS,
         genesisUnix,
         tipLocktime,
         tipActivity,
@@ -85,9 +81,9 @@ async function main(): Promise<void> {
     ),
   );
 
-  if (wallet.balanceSats < 25_000n) {
+  if (wallet.balanceSats < 18_000n) {
     throw new Error(
-      `Insufficient XEC: need ≥250 for genesis+handoff, have ${Number(wallet.balanceSats) / 100}`,
+      `Insufficient XEC: need ≥180 for genesis+handoff, have ${Number(wallet.balanceSats) / 100}`,
     );
   }
 
@@ -105,9 +101,6 @@ async function main(): Promise<void> {
     tokenId: genesis.tokenId,
     mintAtoms: PRAYER_MINT_ATOMS,
     genesisUnix,
-    baseZeroBits: TEST_PRAYER_TIP_BASE_ZERO_BITS,
-    minGapSeconds: TEST_PRAYER_TIP_MIN_GAP_SECONDS,
-    coolGapSeconds: TEST_PRAYER_TIP_COOL_GAP_SECONDS,
     tipLocktime,
     tipActivity,
   });
@@ -169,16 +162,13 @@ async function main(): Promise<void> {
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,
     genesisUnix,
-    baseZeroBits: TEST_PRAYER_TIP_BASE_ZERO_BITS,
-    minGapSeconds: TEST_PRAYER_TIP_MIN_GAP_SECONDS,
-    coolGapSeconds: TEST_PRAYER_TIP_COOL_GAP_SECONDS,
+    minGapSeconds: PRAYER_TIP_MIN_GAP_SECONDS,
     tipLocktime,
     tipActivity,
     mintAtomsPerRemint: PRAYER_MINT_ATOMS.toString(),
     tokensPerRemint: Number(PRAYER_MINT_ATOMS),
     initialMintAtoms: INITIAL_MINT.toString(),
     powBatonCount: BATONS,
-    /** Per-baton tip tracker (address → tip). Same tip at genesis for all. */
     batonTips: Array.from({ length: BATONS }, (_, i) => ({
       index: i,
       tipLocktime,
@@ -195,9 +185,9 @@ async function main(): Promise<void> {
     cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
     notes: [
       'Test Prayer tip: stateful tipLocktime + tipActivity per baton.',
-      'gap < minGapSeconds → activity+1 → bits = base + activity (concurrent pray bump).',
-      'gap ≥ coolGapSeconds → activity−1. N batons = N independent tips.',
-      'Soft nextRedeem binding (hash160 + nextTip* args). Clock: docs/CLOCK.md.',
+      'gap < 60s → activity+1 (cap 2) → zeroBytes = 1+activity (concurrent pray bump).',
+      'N batons = N independent tips. Soft batonHash (Moore-style).',
+      'Clock: docs/CLOCK.md.',
     ],
   };
 

@@ -40,19 +40,18 @@ Uses `WlotusPowRemintPrayerTip`: tip lives in **mutating P2SH** constructor para
 | Rule | Effect |
 |------|--------|
 | `locktime ≥ tipLocktime` | Anti-rewind (blocks Moore past-cheat on that baton) |
-| `gap < minGapSeconds` | `activity' = min(activity+1, 8)` → bits rise (concurrent pray on **same** baton) |
-| `gap ≥ coolGapSeconds` | `activity' = max(activity−1, 0)` |
-| else | activity unchanged |
-| `bits = baseZeroBits + activity'` | Toy base=1 for dogfood |
-| Baton → `P2SH(hash160(nextRedeem))` | Next tip instance; miner supplies `nextRedeem` + `nextTip*` |
+| `gap < 60s` (hardcoded) | `activity' = min(activity+1, 2)` → more leading zero **bytes** |
+| else | activity unchanged (no cool path — op budget) |
+| `zeroBytes = 1 + activity'` | Toy: 1→2→3 bytes when praying the same baton fast |
+| Baton → `P2SH(batonHash)` | Miner sets `batonHash = hash160(next tip redeem)` off-chain (Moore-style) |
 | **N batons** | **N independent tips** — parallel remints do not force 1/mother-block |
 
-eMPP **WLPT** announces bits/activity/locktimes beside ALP MINT (Agora pattern). Soft binding: on-chain checks `hash160(nextRedeem)` + `nextTip*` match tip'; honest miners use the TS factory.
+eMPP **WLPT** announces zeroBytes/activity/locktimes beside ALP MINT. Covenant kept slim for eCash op limits.
 
 ```bash
 npm run create-prayer-tip-pow-token
 PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump activity
-PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump again
+PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump again (2→3 zero bytes)
 ```
 
 ## Library height helpers

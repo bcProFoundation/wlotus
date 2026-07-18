@@ -1,22 +1,12 @@
-// Test Prayer with per-baton stateful tip (anti-rewind) + activity bits.
-// ALP batons have no commitment — tip lives in mutating P2SH redeem params.
-//
-// tipLocktime / tipActivity are constructor state for THIS baton UTXO.
-// Remint requires locktime >= tipLocktime (no Moore past-cheat).
-// If gap < minGapSeconds → tipActivity' = tipActivity+1 (capped) — concurrent
-// praying on the same baton raises D. Idle gap cools activity by 1.
-// bits = baseZeroBits + tipActivity'  (toy; phone-observable)
-// Mint 1. Baton → P2SH(hash160(nextRedeem)); miner supplies nextRedeem whose
-// tip params must be (locktime, activity'). Soft binding: nextTip* args must
-// match tip' (honest miners build nextRedeem via the TS factory).
+// Test Prayer tip — slim op budget (eCash op limit).
+// tipLocktime anti-rewind; rapid remints (gap < 60s) bump activity → more
+// leading zero *bytes* (1 + activity, cap 3). Mint 1. Soft batonHash.
+// Hardcoded minGap=60; no cool path (dogfood). Mutating tip P2SH.
 
 contract WlotusPowRemintPrayerTip(
     [byte;32] tokenIdRev,
     [byte;6] mintAtomsLe,
     int genesisUnix,
-    int baseZeroBits,
-    int minGapSeconds,
-    int coolGapSeconds,
     int tipLocktime,
     int tipActivity
 ) {
@@ -27,9 +17,7 @@ contract WlotusPowRemintPrayerTip(
         PubKey minerPk,
         [byte] preimage,
         [byte;20] batonHash,
-        [byte] nextRedeem,
-        int nextTipLocktime,
-        int nextTipActivity
+        int activityPrime
     ) {
         (_, [byte] tail8) = preimage @ (size(preimage) - 8);
         ([byte] locktimeBin, _) = tail8 @ 4;
@@ -38,43 +26,13 @@ contract WlotusPowRemintPrayerTip(
         verify locktime >= tipLocktime;
 
         int gap = locktime - tipLocktime;
-        // Rapid remints on this baton → harder; idle cools by 1.
-        int activityPrime =
-            gap < minGapSeconds
-                ? min(tipActivity + 1, 8)
-                : (gap >= coolGapSeconds
-                    ? max(tipActivity - 1, 0)
-                    : tipActivity);
+        // gap < 60 → bump; else hold (no cool — saves ops)
+        verify activityPrime == (gap < 60 ? min(tipActivity + 1, 2) : tipActivity);
 
-        int bits = baseZeroBits + activityPrime;
-        verify bits <= baseZeroBits + 8;
-
+        int zeroBytes = 1 + activityPrime;
         [byte] solhash = hash256(sha256(preimage) . nonce);
-        int zeroBytes = bits / 8;
-        int remBits = bits % 8;
-
-        ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
+        ([byte] prefix, _) = solhash @ zeroBytes;
         verify bin2num(prefix) == 0;
-
-        if (remBits == 1) {
-            ([byte] nextByte, _) = rest @ 1;
-            verify bin2num(nextByte) < 128;
-        } else {
-            if (remBits != 0) {
-                ([byte] nextByte, _) = rest @ 1;
-                [byte] limits = 0x402010080402;
-                (_, [byte] limTail) = limits @ (remBits - 2);
-                ([byte] limB, _) = limTail @ 1;
-                verify bin2num(nextByte) < bin2num(limB);
-            }
-        }
-
-        // Tip' must be advertised and match next P2SH redeem hash.
-        verify nextTipLocktime == locktime;
-        verify nextTipActivity == activityPrime;
-        verify hash160(nextRedeem) == Ripemd160(batonHash);
-        verify size(nextRedeem) >= 100;
-        verify size(nextRedeem) <= 520;
 
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
@@ -82,7 +40,7 @@ contract WlotusPowRemintPrayerTip(
         [byte] wlpt =
             0x574c5054 .
             0x01 .
-            num2bin(bits, 2) .
+            num2bin(zeroBytes, 1) .
             num2bin(activityPrime, 1) .
             num2bin(locktime, 4) .
             num2bin(tipLocktime, 4);

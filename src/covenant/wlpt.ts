@@ -1,23 +1,24 @@
 /**
  * eMPP WLPT (White Lotus Prayer Tip) pushdata — tip announcement beside ALP MINT.
  *
- * Layout (16 bytes):
- *   WLPT (4) | ver u8 | bits u16 LE | activity u8 | locktime u32 LE | tipLocktime u32 LE
+ * Layout (15 bytes):
+ *   WLPT (4) | ver u8 | zeroBytes u8 | activity u8 | locktime u32 LE | tipLocktime u32 LE
  *
- * Consensus tip' lives in the next P2SH redeem; WLPT must match this remint.
+ * Dogfood: zeroBytes = 1 + activityPrime (cap activity 2 → max 3 leading zero bytes).
+ * minGap hardcoded to 60s in the covenant (op budget).
  */
 
 export const WLPT_LOKAD = new TextEncoder().encode('WLPT');
 export const WLPT_VERSION = 1;
 
-/** Cap matches WlotusPowRemintPrayerTip.spedn: activity ≤ 8. */
-export const PRAYER_TIP_MAX_ACTIVITY = 8;
+/** Cap matches WlotusPowRemintPrayerTip.spedn: activity ≤ 2. */
+export const PRAYER_TIP_MAX_ACTIVITY = 2;
+
+/** Hardcoded in covenant. */
+export const PRAYER_TIP_MIN_GAP_SECONDS = 60;
 
 export interface PrayerTipParams {
   genesisUnix: number;
-  baseZeroBits: number;
-  minGapSeconds: number;
-  coolGapSeconds: number;
   tipLocktime: number;
   tipActivity: number;
 }
@@ -27,6 +28,8 @@ export interface PrayerTipState {
   tipLocktime: number;
   tipActivity: number;
   activityPrime: number;
+  zeroBytes: number;
+  /** Equivalent bit count for miners (zeroBytes * 8). */
   bits: number;
   gap: number;
 }
@@ -54,33 +57,20 @@ export function computePrayerTipState(
   }
 
   const gap = locktime - params.tipLocktime;
-  let activityPrime = params.tipActivity;
-  if (gap < params.minGapSeconds) {
-    activityPrime = Math.min(params.tipActivity + 1, PRAYER_TIP_MAX_ACTIVITY);
-  } else if (gap >= params.coolGapSeconds) {
-    activityPrime = Math.max(params.tipActivity - 1, 0);
-  }
-
-  const bits = params.baseZeroBits + activityPrime;
-  if (bits > params.baseZeroBits + PRAYER_TIP_MAX_ACTIVITY) {
-    throw new Error(`bits ${bits} exceeds tip cap`);
-  }
-
+  const activityPrime =
+    gap < PRAYER_TIP_MIN_GAP_SECONDS
+      ? Math.min(params.tipActivity + 1, PRAYER_TIP_MAX_ACTIVITY)
+      : params.tipActivity;
+  const zeroBytes = 1 + activityPrime;
   return {
     locktime,
     tipLocktime: params.tipLocktime,
     tipActivity: params.tipActivity,
     activityPrime,
-    bits,
+    zeroBytes,
+    bits: zeroBytes * 8,
     gap,
   };
-}
-
-function u16Le(n: number): Uint8Array {
-  if (!Number.isInteger(n) || n < 0 || n > 0xffff) {
-    throw new Error(`u16 out of range: ${n}`);
-  }
-  return new Uint8Array([n & 0xff, (n >>> 8) & 0xff]);
 }
 
 function u32Le(n: number): Uint8Array {
@@ -96,14 +86,14 @@ function u32Le(n: number): Uint8Array {
   ]);
 }
 
-/** Build the 16-byte WLPT EMPP push (must match Spedn covenant). */
+/** Build the 15-byte WLPT EMPP push (must match Spedn covenant). */
 export function wlptPushdata(state: PrayerTipState): Uint8Array {
-  const out = new Uint8Array(16);
+  const out = new Uint8Array(15);
   out.set(WLPT_LOKAD, 0);
   out[4] = WLPT_VERSION;
-  out.set(u16Le(state.bits), 5);
-  out[7] = state.activityPrime & 0xff;
-  out.set(u32Le(state.locktime), 8);
-  out.set(u32Le(state.tipLocktime), 12);
+  out[5] = state.zeroBytes & 0xff;
+  out[6] = state.activityPrime & 0xff;
+  out.set(u32Le(state.locktime), 7);
+  out.set(u32Le(state.tipLocktime), 11);
   return out;
 }

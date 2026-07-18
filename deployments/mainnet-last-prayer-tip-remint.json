@@ -1,0 +1,23 @@
+{
+  "tokenId": "359edff69708b24e63b3aef224bf8809060675d0b70005bf56c06c6375755d6d",
+  "txid": "a55408cbf984ecc484f9ab2d506131fe2b4c6c0912fa5150a931241acb11b3dc",
+  "batonIndex": 1,
+  "powAttempts": 5123,
+  "nonceHex": "03140000",
+  "mintAtoms": "1",
+  "tip": {
+    "locktime": 1784339814,
+    "tipLocktime": 1784339814,
+    "tipActivity": 0,
+    "activityPrime": 1,
+    "zeroBytes": 2,
+    "bits": 16,
+    "gap": 0
+  },
+  "locktime": 1784339814,
+  "nextPowAddress": "ecash:prh5wqw6cpq9clckjww0292fe8a8sd5mzgcfjepwqv",
+  "nextTipLocktime": 1784339814,
+  "nextTipActivity": 1,
+  "explorer": "https://explorer.e.cash/tx/a55408cbf984ecc484f9ab2d506131fe2b4c6c0912fa5150a931241acb11b3dc",
+  "minedAt": "2026-07-18T02:33:58.447Z"
+}

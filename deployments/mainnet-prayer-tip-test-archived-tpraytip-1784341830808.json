@@ -1,0 +1,52 @@
+{
+  "ticker": "tPRAYTIP",
+  "name": "Test Prayer Tip (stateful)",
+  "tokenId": "6231e7a7b14dd5836a0123b5f5a68e5df6b8080a1a3753fd4aee8708f48e2436",
+  "mode": "prayer-tip",
+  "role": "prayer-tip-test-non-economic",
+  "decimals": 0,
+  "powAddress": "ecash:pr63y28x6jq70qq8fwsszcmdrergmdnhrq2kcv2x25",
+  "redeemScriptHex": "2036248ef40887ee4afd53371a0a08b8f65d8ea6f5b523016a83d54db1a7e73162060100000000000401dc5a6a51013c02100e0401dc5a6a005c798258947f7776547f757681765979a269765579a269765579947658799f6354798b58a367765779a26354798c00a4675479686859797893765b795893a169011279a80117797eaa78589652795897527952797f78810088527951876376517f7576810280009f6975675279926376517f750640201008040276557952947f7776517f7553798178819f696d6d6868011479597988011379577988011579a90117798801157982770164a2690115798277020802a16901177901187982770128947f777601207f7504574c5054517e587952807e597951807e5b7954807e5f7954807e04534c50320051807e547e044d494e547e0116797e517e0115797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011f79a97e0288ac7e08220200000000000001177e02a9147e011e797e01877e527952797e787eaa577988ab012279012179ad012179012079a8012279ba777777777777777777777777777777777777777777777777777777777777777777777777",
+  "genesisUnix": 1784339457,
+  "baseZeroBits": 1,
+  "minGapSeconds": 60,
+  "coolGapSeconds": 3600,
+  "tipLocktime": 1784339457,
+  "tipActivity": 0,
+  "mintAtomsPerRemint": "1",
+  "tokensPerRemint": 1,
+  "initialMintAtoms": "1000",
+  "powBatonCount": 2,
+  "batonTips": [
+    {
+      "index": 0,
+      "tipLocktime": 1784339457,
+      "tipActivity": 0,
+      "powAddress": "ecash:pr63y28x6jq70qq8fwsszcmdrergmdnhrq2kcv2x25",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 1,
+      "tipLocktime": 1784339457,
+      "tipActivity": 0,
+      "powAddress": "ecash:pr63y28x6jq70qq8fwsszcmdrergmdnhrq2kcv2x25",
+      "lastRemintTxid": null
+    }
+  ],
+  "genesisTxid": "6231e7a7b14dd5836a0123b5f5a68e5df6b8080a1a3753fd4aee8708f48e2436",
+  "handoffTxids": [
+    "d0664fa601106b1b2a72be23fc040f820d2ddd28c5fd996b83f80bf4b3fad4e3",
+    "10594ff97f62f7c93b72f61d17324abbed93c3e263ae3084718cc1a00dce31ef"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-18T02:29:31.209Z",
+  "explorer": "https://explorer.e.cash/tx/6231e7a7b14dd5836a0123b5f5a68e5df6b8080a1a3753fd4aee8708f48e2436",
+  "cashtab": "https://cashtab.com/#/token/6231e7a7b14dd5836a0123b5f5a68e5df6b8080a1a3753fd4aee8708f48e2436",
+  "notes": [
+    "Test Prayer tip: stateful tipLocktime + tipActivity per baton.",
+    "gap < minGapSeconds → activity+1 → bits = base + activity (concurrent pray bump).",
+    "gap ≥ coolGapSeconds → activity−1. N batons = N independent tips.",
+    "Soft nextRedeem binding (hash160 + nextTip* args). Clock: docs/CLOCK.md."
+  ]
+}
