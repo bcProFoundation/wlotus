@@ -22,6 +22,16 @@ BATON_INDEX=1 npm run mine-dryrun-once
 
 See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-*.json`.
 
+### Live Prayer dryrun (mainnet)
+
+| | |
+|--|--|
+| Token | [`a108b17f…4914`](https://explorer.e.cash/tx/a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914) (`dPRAYER`) |
+| Remint baton 0 | [`c79039b5…bfca`](https://explorer.e.cash/tx/c79039b5e8d5fe2b45701e881fdc211d15d069899aa7f061db7e324fef38bfca) |
+| Remint baton 1 | [`bd8ac640…e7bd`](https://explorer.e.cash/tx/bd8ac64005c2105271c51ba3c67f783c879ac7e81a4ff4d9b75ac4e3a33fe7bd) |
+
+Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
+
 ### Not for production
 
 - **Ergon** (`WlotusPowRemintErgon`) — dogfood only  
