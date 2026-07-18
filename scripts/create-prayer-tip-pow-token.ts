@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 /**
- * Create a **test Prayer tip** PoW token (stateful tip + multi-baton).
+ * Create a **test Prayer tip** PoW token (stateful tip + multi-baton scale).
  *
  * - Ticker: tPRAYTIP
  * - Mint: **1** atom / remint
- * - PoW: 1 + tipActivity leading zero bytes (bumps when remints closer than 60s)
- * - Per-baton tipLocktime anti-rewind; N batons = N independent tips
+ * - PoW: fixed **1** leading zero byte (no activity bump)
+ * - tipLocktime anti-rewind; N batons = N parallel remint lanes
  *
- * See docs/CLOCK.md (stateful tip design).
+ * Scale = baton count, not rising difficulty. See docs/CLOCK.md.
  */
 import { resolve } from 'node:path';
 import {
@@ -30,13 +30,13 @@ import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintPrayerTipContract } from '../src/covenant/powRemintPrayerTipScript.js';
-import { PRAYER_TIP_MIN_GAP_SECONDS } from '../src/covenant/wlpt.js';
+import { PRAYER_TIP_ZERO_BYTES } from '../src/covenant/wlpt.js';
 import { PRAYER_MINT_ATOMS, TOKEN_URL } from '../src/params/consensus.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
 const TICKER = 'tPRAYTIP';
-const NAME = 'Test Prayer Tip (stateful)';
+const NAME = 'Test Prayer Tip (scale)';
 const DECIMALS = 0;
 const BATONS = 2;
 const INITIAL_MINT = 1_000n;
@@ -49,13 +49,12 @@ async function main(): Promise<void> {
 
   const chronik = await createChronik('closest');
   const { mtp, tipHeight } = await getMedianTimePast(chronik);
-  // tipLocktime must stay < MTP so a rapid remint (locktime = tip) is final
-  // (nLockTime requires locktime < MTP, not ≤).
+  // tipLocktime must stay < MTP so remints with locktime ≥ tip stay final
+  // (nLockTime requires locktime < MTP).
   const genesisUnix = Number(
     process.env.PRAYER_TIP_GENESIS_UNIX?.trim() || Math.max(0, mtp - 120),
   );
   const tipLocktime = genesisUnix;
-  const tipActivity = 0;
 
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
   await wallet.sync();
@@ -67,23 +66,22 @@ async function main(): Promise<void> {
         balanceXec: Number(wallet.balanceSats) / 100,
         ticker: TICKER,
         mintPerRemint: Number(PRAYER_MINT_ATOMS),
-        minGapSeconds: PRAYER_TIP_MIN_GAP_SECONDS,
+        zeroBytes: PRAYER_TIP_ZERO_BYTES,
         genesisUnix,
         tipLocktime,
-        tipActivity,
         batons: BATONS,
         tipHeight,
         mtp,
-        regime: 'non-economic-tip-test',
+        regime: 'scale-via-batons-fixed-pow',
       },
       null,
       2,
     ),
   );
 
-  if (wallet.balanceSats < 18_000n) {
+  if (wallet.balanceSats < 10_000n) {
     throw new Error(
-      `Insufficient XEC: need ≥180 for genesis+handoff, have ${Number(wallet.balanceSats) / 100}`,
+      `Insufficient XEC: need ≥100 for genesis+handoff, have ${Number(wallet.balanceSats) / 100}`,
     );
   }
 
@@ -102,7 +100,6 @@ async function main(): Promise<void> {
     mintAtoms: PRAYER_MINT_ATOMS,
     genesisUnix,
     tipLocktime,
-    tipActivity,
   });
   console.log('Prayer tip PoW address', contract.address);
   console.log('redeem bytes', contract.redeemScriptBuf.length);
@@ -156,15 +153,14 @@ async function main(): Promise<void> {
     ticker: TICKER,
     name: NAME,
     tokenId: genesis.tokenId,
-    mode: 'prayer-tip',
+    mode: 'prayer-tip-scale',
     role: 'prayer-tip-test-non-economic',
     decimals: DECIMALS,
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,
     genesisUnix,
-    minGapSeconds: PRAYER_TIP_MIN_GAP_SECONDS,
     tipLocktime,
-    tipActivity,
+    zeroBytes: PRAYER_TIP_ZERO_BYTES,
     mintAtomsPerRemint: PRAYER_MINT_ATOMS.toString(),
     tokensPerRemint: Number(PRAYER_MINT_ATOMS),
     initialMintAtoms: INITIAL_MINT.toString(),
@@ -172,7 +168,6 @@ async function main(): Promise<void> {
     batonTips: Array.from({ length: BATONS }, (_, i) => ({
       index: i,
       tipLocktime,
-      tipActivity,
       powAddress: contract.address,
       lastRemintTxid: null as string | null,
     })),
@@ -184,15 +179,14 @@ async function main(): Promise<void> {
     explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
     cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
     notes: [
-      'Test Prayer tip: stateful tipLocktime + tipActivity per baton.',
-      'gap < 60s → activity+1 (cap 2) → zeroBytes = 1+activity (concurrent pray bump).',
-      'N batons = N independent tips. Soft batonHash (Moore-style).',
+      'Scale via N batons (independent tips), fixed 1-byte PoW — no activity bump.',
+      'tipLocktime anti-rewind only. Concurrent prayers remint different batons.',
       'Clock: docs/CLOCK.md.',
     ],
   };
 
   writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
-  console.log('\ntPRAYTIP ready');
+  console.log('\ntPRAYTIP ready (scale)');
   console.log(JSON.stringify(record, null, 2));
 }
 

@@ -1,14 +1,13 @@
-// Test Prayer tip — slim op budget (eCash op limit).
-// tipLocktime anti-rewind; rapid remints (gap < 60s) bump activity → more
-// leading zero *bytes* (1 + activity, cap 3). Mint 1. Soft batonHash.
-// Hardcoded minGap=60; no cool path (dogfood). Mutating tip P2SH.
+// Test Prayer tip — scale via N batons, not difficulty bump.
+// tipLocktime anti-rewind only; fixed 1 leading zero byte PoW; mint 1.
+// Baton → P2SH(batonHash) with tip' = locktime (Moore-style soft batonHash).
+// N independent tips ⇒ concurrent prayers do not serialize on one baton.
 
 contract WlotusPowRemintPrayerTip(
     [byte;32] tokenIdRev,
     [byte;6] mintAtomsLe,
     int genesisUnix,
-    int tipLocktime,
-    int tipActivity
+    int tipLocktime
 ) {
     challenge remint(
         [byte;4] nonce,
@@ -16,8 +15,7 @@ contract WlotusPowRemintPrayerTip(
         DataSig ds,
         PubKey minerPk,
         [byte] preimage,
-        [byte;20] batonHash,
-        int activityPrime
+        [byte;20] batonHash
     ) {
         (_, [byte] tail8) = preimage @ (size(preimage) - 8);
         ([byte] locktimeBin, _) = tail8 @ 4;
@@ -25,13 +23,9 @@ contract WlotusPowRemintPrayerTip(
         verify locktime >= genesisUnix;
         verify locktime >= tipLocktime;
 
-        int gap = locktime - tipLocktime;
-        // gap < 60 → bump; else hold (no cool — saves ops)
-        verify activityPrime == (gap < 60 ? min(tipActivity + 1, 2) : tipActivity);
-
-        int zeroBytes = 1 + activityPrime;
+        // Fixed toy PoW — throughput via baton count, not rising D.
         [byte] solhash = hash256(sha256(preimage) . nonce);
-        ([byte] prefix, _) = solhash @ zeroBytes;
+        ([byte] prefix, _) = solhash @ 1;
         verify bin2num(prefix) == 0;
 
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
@@ -39,9 +33,7 @@ contract WlotusPowRemintPrayerTip(
 
         [byte] wlpt =
             0x574c5054 .
-            0x01 .
-            num2bin(zeroBytes, 1) .
-            num2bin(activityPrime, 1) .
+            0x02 .
             num2bin(locktime, 4) .
             num2bin(tipLocktime, 4);
 

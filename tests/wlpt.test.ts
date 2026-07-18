@@ -3,40 +3,21 @@ import {
   wlptPushdata,
   WLPT_LOKAD,
   WLPT_VERSION,
-  PRAYER_TIP_MIN_GAP_SECONDS,
+  PRAYER_TIP_ZERO_BYTES,
 } from '../src/covenant/wlpt.js';
 
 const base = {
   genesisUnix: 1_700_000_000,
   tipLocktime: 1_700_000_000,
-  tipActivity: 0,
 };
 
-describe('prayer tip activity', () => {
-  it('bumps activity when gap < minGap', () => {
-    const s = computePrayerTipState(base.tipLocktime, base);
-    expect(s.gap).toBe(0);
-    expect(s.activityPrime).toBe(1);
-    expect(s.zeroBytes).toBe(2);
-    expect(s.bits).toBe(16);
-  });
-
-  it('holds activity when gap ≥ minGap', () => {
-    const s = computePrayerTipState(
-      base.tipLocktime + PRAYER_TIP_MIN_GAP_SECONDS,
-      { ...base, tipActivity: 1 },
-    );
-    expect(s.activityPrime).toBe(1);
-    expect(s.zeroBytes).toBe(2);
-  });
-
-  it('caps activity at 2', () => {
-    const s = computePrayerTipState(base.tipLocktime, {
-      ...base,
-      tipActivity: 2,
-    });
-    expect(s.activityPrime).toBe(2);
-    expect(s.zeroBytes).toBe(3);
+describe('prayer tip scale (fixed PoW)', () => {
+  it('keeps fixed 1-byte PoW regardless of gap', () => {
+    const rapid = computePrayerTipState(base.tipLocktime, base);
+    const later = computePrayerTipState(base.tipLocktime + 3600, base);
+    expect(rapid.zeroBytes).toBe(PRAYER_TIP_ZERO_BYTES);
+    expect(later.zeroBytes).toBe(PRAYER_TIP_ZERO_BYTES);
+    expect(rapid.bits).toBe(8);
   });
 
   it('rejects rewind below tipLocktime', () => {
@@ -48,18 +29,13 @@ describe('prayer tip activity', () => {
     ).toThrow(/rewind/);
   });
 
-  it('builds 15-byte WLPT push', () => {
-    const s = computePrayerTipState(base.tipLocktime + 10, {
-      ...base,
-      tipActivity: 1,
-    });
+  it('builds 13-byte WLPT v2 push', () => {
+    const s = computePrayerTipState(base.tipLocktime + 10, base);
     const push = wlptPushdata(s);
-    expect(push.length).toBe(15);
+    expect(push.length).toBe(13);
     expect(Buffer.from(push.slice(0, 4)).equals(Buffer.from(WLPT_LOKAD))).toBe(
       true,
     );
     expect(push[4]).toBe(WLPT_VERSION);
-    expect(push[5]).toBe(s.zeroBytes);
-    expect(push[6]).toBe(s.activityPrime);
   });
 });

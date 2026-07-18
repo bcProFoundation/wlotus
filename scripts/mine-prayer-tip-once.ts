@@ -2,9 +2,8 @@
 /**
  * Mine one remint against a test Prayer tip (tPRAYTIP) baton.
  *
+ * Fixed 1-byte PoW. Scale = pick BATON_INDEX across N tips.
  * Reads deployments/mainnet-prayer-tip-test.json.
- * Default locktime = tip + minGap (hold activity). Set PRAYER_TIP_RAPID=1 to use
- * tipLocktime (gap=0) so activity bumps — proves concurrent-pray difficulty.
  */
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -14,10 +13,7 @@ import { fromHex, payment, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createPowRemintPrayerTipContract } from '../src/covenant/powRemintPrayerTipScript.js';
-import {
-  computePrayerTipState,
-  PRAYER_TIP_MIN_GAP_SECONDS,
-} from '../src/covenant/wlpt.js';
+import { computePrayerTipState } from '../src/covenant/wlpt.js';
 import {
   buildMinedPrayerTipRemintTx,
   prayerTipMinerBanner,
@@ -26,12 +22,15 @@ import { PRAYER_MINT_ATOMS } from '../src/params/consensus.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-const REMINT_FUEL_SATS = 3_000n;
+/**
+ * Covenant hashOutputs is exactly 3 outs (no change). Excess fuel is fee.
+ * Keep fuel UTXOs small (~2k sats).
+ */
+const REMINT_FUEL_SATS = 2_000n;
 
 interface BatonTip {
   index: number;
   tipLocktime: number;
-  tipActivity: number;
   powAddress: string;
   lastRemintTxid: string | null;
 }
@@ -40,33 +39,35 @@ interface PrayerTipDep {
   tokenId: string;
   genesisUnix: number;
   tipLocktime?: number;
-  tipActivity?: number;
   powAddress?: string;
   mintAtomsPerRemint?: string;
-  minGapSeconds?: number;
   batonTips?: BatonTip[];
 }
 
-async function ensureSmallFuel(wallet: Wallet): Promise<void> {
+async function ensureFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();
-  const small = wallet.utxos.find(
+  const sized = wallet.utxos.find(
     u =>
       !u.token &&
       u.sats >= REMINT_FUEL_SATS &&
-      u.sats <= REMINT_FUEL_SATS + 2_000n,
+      u.sats <= REMINT_FUEL_SATS + 1_000n,
   );
-  if (small) return;
+  if (sized) return;
 
   const big = wallet.utxos
-    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 5_000n)
+    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 2_000n)
     .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
   if (!big) {
+    const any = wallet.utxos.find(u => !u.token && u.sats >= REMINT_FUEL_SATS);
+    if (any) return; // usable but oversized → excess becomes fee
     throw new Error(
-      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS + 5_000n} sats to split remint fuel`,
+      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS} sats for remint fees (covenant has no change out)`,
     );
   }
 
-  console.log(`Splitting fuel: ${big.sats} → ${REMINT_FUEL_SATS}`);
+  console.log(
+    `Splitting fuel: ${big.sats} → ${REMINT_FUEL_SATS} (no covenant change out)`,
+  );
   const action: payment.Action = {
     outputs: [{ sats: REMINT_FUEL_SATS, script: wallet.script }],
   };
@@ -100,7 +101,6 @@ async function main(): Promise<void> {
 
   const tokenId = process.env.TOKEN_ID?.trim() || dep.tokenId;
   const mintAtoms = BigInt(dep.mintAtomsPerRemint ?? PRAYER_MINT_ATOMS);
-  const minGap = dep.minGapSeconds ?? PRAYER_TIP_MIN_GAP_SECONDS;
   const batonIndex = Number(process.env.BATON_INDEX?.trim() || 0);
   const tips =
     dep.batonTips && dep.batonTips.length > 0
@@ -109,7 +109,6 @@ async function main(): Promise<void> {
           {
             index: 0,
             tipLocktime: dep.tipLocktime ?? dep.genesisUnix,
-            tipActivity: dep.tipActivity ?? 0,
             powAddress: dep.powAddress ?? '',
             lastRemintTxid: null,
           },
@@ -121,7 +120,6 @@ async function main(): Promise<void> {
     mintAtoms,
     genesisUnix: dep.genesisUnix,
     tipLocktime: tipRec.tipLocktime,
-    tipActivity: tipRec.tipActivity,
   });
   console.log(prayerTipMinerBanner(contract));
 
@@ -133,7 +131,7 @@ async function main(): Promise<void> {
 
   const chronik = await createChronik('closest');
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
-  await ensureSmallFuel(wallet);
+  await ensureFuel(wallet);
 
   const scriptHex = toHex(contract.scriptHash);
   const scriptUtxos = await chronik.script('p2sh', scriptHex).utxos();
@@ -170,15 +168,12 @@ async function main(): Promise<void> {
   }
 
   const { mtp, tipHeight, tipUnix } = await getMedianTimePast(chronik);
-  const rapid = process.env.PRAYER_TIP_RAPID?.trim() === '1';
+  // Prefer tipLocktime when still final; else advance toward MTP−1.
   const locktime = Number(
     process.env.PRAYER_TIP_LOCKTIME?.trim() ||
-      (rapid
+      (tipRec.tipLocktime < mtp
         ? tipRec.tipLocktime
-        : Math.max(
-            tipRec.tipLocktime,
-            Math.min(mtp - 1, tipRec.tipLocktime + minGap),
-          )),
+        : Math.max(tipRec.tipLocktime, mtp - 1)),
   );
   if (locktime >= mtp) {
     throw new Error(
@@ -201,12 +196,8 @@ async function main(): Promise<void> {
         baton: `${baton.txid}:${baton.vout}`,
         locktime,
         mtp,
-        rapid,
-        gap: preview.gap,
-        tipActivity: tipRec.tipActivity,
-        activityPrime: preview.activityPrime,
+        tipLocktime: tipRec.tipLocktime,
         zeroBytes: preview.zeroBytes,
-        bits: preview.bits,
         expectedHashes: Math.pow(2, preview.bits),
       },
       null,
@@ -237,7 +228,6 @@ async function main(): Promise<void> {
       ? {
           ...t,
           tipLocktime: built.tip.locktime,
-          tipActivity: built.tip.activityPrime,
           powAddress: built.nextContract.address,
           lastRemintTxid: txid,
         }
@@ -246,7 +236,6 @@ async function main(): Promise<void> {
   const updated = {
     ...dep,
     tipLocktime: nextTips[0]?.tipLocktime ?? built.tip.locktime,
-    tipActivity: nextTips[0]?.tipActivity ?? built.tip.activityPrime,
     powAddress: nextTips[0]?.powAddress ?? built.nextContract.address,
     redeemScriptHex: built.nextContract.redeemHex,
     batonTips: nextTips,
@@ -272,7 +261,6 @@ async function main(): Promise<void> {
         locktime: built.locktime,
         nextPowAddress: built.nextContract.address,
         nextTipLocktime: built.tip.locktime,
-        nextTipActivity: built.tip.activityPrime,
         explorer: `https://explorer.e.cash/tx/${txid}`,
         minedAt: new Date().toISOString(),
       },
@@ -288,8 +276,7 @@ async function main(): Promise<void> {
         txid,
         mintAtoms: built.mintAtoms,
         powAttempts: built.powAttempts,
-        zeroBytes: built.tip.zeroBytes,
-        activityPrime: built.tip.activityPrime,
+        batonIndex: tipRec.index,
         nextPowAddress: built.nextContract.address,
         explorer: `https://explorer.e.cash/tx/${txid}`,
       },

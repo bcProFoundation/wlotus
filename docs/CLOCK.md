@@ -35,23 +35,21 @@ Uses `WlotusPowRemint` with constructor difficulty only — **no locktime clock*
 
 ## Stateful tip test Prayer (`tPRAYTIP`)
 
-Uses `WlotusPowRemintPrayerTip`: tip lives in **mutating P2SH** constructor params (`tipLocktime`, `tipActivity`).
+Uses `WlotusPowRemintPrayerTip`: **tipLocktime** lives in a mutating P2SH.
+
+**Design intent:** mint as many prayers as needed. Difficulty stays fixed (toy 1-byte PoW). Scale comes from **N batons = N independent tips** so concurrent prayers do not serialize on one baton UTXO.
 
 | Rule | Effect |
 |------|--------|
 | `locktime ≥ tipLocktime` | Anti-rewind (blocks Moore past-cheat on that baton) |
-| `gap < 60s` (hardcoded) | `activity' = min(activity+1, 2)` → more leading zero **bytes** |
-| else | activity unchanged (no cool path — op budget) |
-| `zeroBytes = 1 + activity'` | Toy: 1→2→3 bytes when praying the same baton fast |
-| Baton → `P2SH(batonHash)` | Miner sets `batonHash = hash160(next tip redeem)` off-chain (Moore-style) |
-| **N batons** | **N independent tips** — parallel remints do not force 1/mother-block |
-
-eMPP **WLPT** announces zeroBytes/activity/locktimes beside ALP MINT. Covenant kept slim for eCash op limits.
+| Fixed `zeroBytes = 1` | No activity / difficulty bump |
+| Baton → `P2SH(batonHash)` | Next tip redeem with `tipLocktime' = locktime` (Moore-style soft hash) |
+| **N batons** | **N parallel remint lanes** |
 
 ```bash
 npm run create-prayer-tip-pow-token
-PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump activity
-PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump again (2→3 zero bytes)
+BATON_INDEX=0 npm run mine-prayer-tip-once
+BATON_INDEX=1 npm run mine-prayer-tip-once   # parallel tip
 ```
 
 ## Library height helpers

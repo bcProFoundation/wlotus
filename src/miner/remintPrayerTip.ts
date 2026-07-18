@@ -54,25 +54,23 @@ export function prayerTipMinerBanner(
 ): string {
   const p = contract.params;
   return [
-    'tPRAYER tip PoW remint miner',
+    'tPRAYTIP scale miner (fixed 1-byte PoW)',
     `tipLocktime=${p.tipLocktime}`,
-    `tipActivity=${p.tipActivity}`,
-    `minGap=60s (hardcoded)`,
     `mintAtoms=${PRAYER_MINT_ATOMS}`,
-    'covenant: WlotusPowRemintPrayerTip + eMPP WLPT (mutating P2SH)',
+    'covenant: tipLocktime anti-rewind + N-baton parallelism',
   ].join(' | ');
 }
 
 /**
  * Build + mine + sign one Prayer tip remint.
- * Dual EMPP: WLPT + ALP MINT. Baton moves to next tip P2SH.
+ * Fixed PoW; baton moves to next tip P2SH (tipLocktime' = locktime).
  */
 export async function buildMinedPrayerTipRemintTx(opts: {
   contract: PowRemintPrayerTipContract;
   baton: BatonUtxo;
   fuel: FuelUtxo;
   miner: RemintKeys;
-  /** Unix locktime; must be ≥ tipLocktime and ≤ MTP. */
+  /** Unix locktime; must be ≥ tipLocktime and < MTP. */
   locktime: number;
 }): Promise<{
   txHex: string;
@@ -89,7 +87,6 @@ export async function buildMinedPrayerTipRemintTx(opts: {
   const nextContract = await createPowRemintPrayerTipContract({
     ...contract.params,
     tipLocktime: tip.locktime,
-    tipActivity: tip.activityPrime,
   });
   const opReturn = expectedPrayerTipMintOpReturnScript(
     contract.params.tokenId,
@@ -122,7 +119,6 @@ export async function buildMinedPrayerTipRemintTx(opts: {
       minerPk: Buffer.from(miner.pk),
       preimage: Buffer.from(preimage),
       batonHash,
-      activityPrime: tip.activityPrime,
     }) as Buffer;
     return new Script(new Uint8Array(scriptSigBuf));
   };
@@ -135,7 +131,6 @@ export async function buildMinedPrayerTipRemintTx(opts: {
         preimage,
         bits: tip.bits,
         commit: 'sha256-preimage',
-        maxAttempts: 50_000_000,
       });
       minedNonce = mined.nonce;
       minedAttempts = mined.attempts;

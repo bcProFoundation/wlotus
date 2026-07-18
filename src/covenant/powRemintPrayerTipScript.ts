@@ -60,7 +60,7 @@ function mintAtomsLe6(atoms: bigint): Buffer {
   return buf;
 }
 
-/** Build Prayer tip PoW remint P2SH (mutating tipLocktime + tipActivity). */
+/** Build Prayer tip PoW remint P2SH (mutating tipLocktime only). */
 export async function createPowRemintPrayerTipContract(
   params: PowRemintPrayerTipParams,
 ): Promise<PowRemintPrayerTipContract> {
@@ -72,7 +72,6 @@ export async function createPowRemintPrayerTipContract(
     mintAtomsLe: mintAtomsLe6(params.mintAtoms),
     genesisUnix: params.genesisUnix,
     tipLocktime: params.tipLocktime,
-    tipActivity: params.tipActivity,
   }) as PowPrayerTipInstance;
   const redeemScriptBuf = instance.redeemScript as Buffer;
   const redeem = new EcashScript(new Uint8Array(redeemScriptBuf));
@@ -94,13 +93,12 @@ export async function createPowRemintPrayerTipContract(
 export function defaultPrayerTipParams(
   tokenId: string,
   genesisUnix: number,
-  tip?: Partial<Pick<PrayerTipParams, 'tipLocktime' | 'tipActivity'>>,
+  tipLocktime?: number,
 ): PowRemintPrayerTipParams {
   return {
     tokenId,
     mintAtoms: PRAYER_MINT_ATOMS,
     genesisUnix,
-    tipLocktime: tip?.tipLocktime ?? genesisUnix,
-    tipActivity: tip?.tipActivity ?? 0,
+    tipLocktime: tipLocktime ?? genesisUnix,
   };
 }

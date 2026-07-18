@@ -1,16 +1,15 @@
 {
   "ticker": "tPRAYTIP",
-  "name": "Test Prayer Tip (stateful)",
-  "tokenId": "359edff69708b24e63b3aef224bf8809060675d0b70005bf56c06c6375755d6d",
-  "mode": "prayer-tip",
+  "name": "Test Prayer Tip (scale)",
+  "tokenId": "5720ddaa695075aa3a14270d6bd1e7bd9c681835f7f9f23ce314e04fc268ea0a",
+  "mode": "prayer-tip-scale",
   "role": "prayer-tip-test-non-economic",
   "decimals": 0,
-  "powAddress": "ecash:pph86pnvjfynm7kgdqwxe2ud7lz9krq6c54n0enphg",
-  "redeemScriptHex": "206d5d7575636cc056bf0500b7d07506060988bf24f2aeb3634eb20897f6df9e35060100000000000466dd5a6a0466dd5a6a5157798258947f7776547f757681765679a269765579a26976557994597978013c9f6355798b52a36755796888515a79935c79a80111797eaa7652797f75768100885e79820128947f777601207f7504574c5054517e557951807e5f7951807e577954807e5b7954807e04534c50320051807e547e044d494e547e5f797e517e5e797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011679a97e0288ac7e08220200000000000001177e02a9147e0115797e01877e527952797e787eaa577988ab011979011879ad011879011779a8011979ba777777777777777777777777777777777777777777777777777777",
+  "powAddress": "ecash:pp3hn6n27a6smmyw5k0rqy8e2u69vn25tqa5xyr30m",
+  "redeemScriptHex": "200aea68c24fe014e33cf2f9f73518689cbde7d16b0d27143aaa755069aadd2057060100000000000466dd5a6a0466dd5a6a55798258947f7776547f757681765579a269765479a2695879a85d797eaa76517f75768100885a79820128947f777601207f7504574c5054527e557954807e587954807e04534c50320051807e547e044d494e547e5c797e517e5b797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011279a97e0288ac7e08220200000000000001177e02a9147e0111797e01877e527952797e787eaa577988ab011579011479ad011479011379a8011579ba7777777777777777777777777777777777777777777777",
   "genesisUnix": 1784339814,
-  "minGapSeconds": 60,
   "tipLocktime": 1784339814,
-  "tipActivity": 2,
+  "zeroBytes": 1,
   "mintAtomsPerRemint": "1",
   "tokensPerRemint": 1,
   "initialMintAtoms": "1000",
@@ -19,33 +18,30 @@
     {
       "index": 0,
       "tipLocktime": 1784339814,
-      "tipActivity": 2,
-      "powAddress": "ecash:pph86pnvjfynm7kgdqwxe2ud7lz9krq6c54n0enphg",
-      "lastRemintTxid": "64dcb8c6c348c8ab0d507145592fb79589c6b50e17cba34ce1f04b53a646dfc9"
+      "powAddress": "ecash:pp3hn6n27a6smmyw5k0rqy8e2u69vn25tqa5xyr30m",
+      "lastRemintTxid": "eeb21ad322fd0246088b648e1c7474a566445b01820abcee31391cf79f35d3b4"
     },
     {
       "index": 1,
       "tipLocktime": 1784339814,
-      "tipActivity": 1,
-      "powAddress": "ecash:prh5wqw6cpq9clckjww0292fe8a8sd5mzgcfjepwqv",
-      "lastRemintTxid": "a55408cbf984ecc484f9ab2d506131fe2b4c6c0912fa5150a931241acb11b3dc"
+      "powAddress": "ecash:pp3hn6n27a6smmyw5k0rqy8e2u69vn25tqa5xyr30m",
+      "lastRemintTxid": null
     }
   ],
-  "genesisTxid": "359edff69708b24e63b3aef224bf8809060675d0b70005bf56c06c6375755d6d",
+  "genesisTxid": "5720ddaa695075aa3a14270d6bd1e7bd9c681835f7f9f23ce314e04fc268ea0a",
   "handoffTxids": [
-    "12135aa2543e9d6890e40126f90310e73a3f4873a83126c3cf08dd25e9cc9e05",
-    "1e9bd3e444b8075d4866cdbe623b4a9a7cd250046d665c65d110d77e8b9b4c0f"
+    "ed75aba13b9442e4691c88c1ab8d6601467e17155928a2e02918e38929969f44",
+    "4cfc9688a942c01318fe35b3efcc37eb5fb5dd1129e7ea682036a94282166d88"
   ],
   "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
   "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
-  "createdAt": "2026-07-18T02:33:05.094Z",
-  "explorer": "https://explorer.e.cash/tx/359edff69708b24e63b3aef224bf8809060675d0b70005bf56c06c6375755d6d",
-  "cashtab": "https://cashtab.com/#/token/359edff69708b24e63b3aef224bf8809060675d0b70005bf56c06c6375755d6d",
+  "createdAt": "2026-07-18T02:36:04.972Z",
+  "explorer": "https://explorer.e.cash/tx/5720ddaa695075aa3a14270d6bd1e7bd9c681835f7f9f23ce314e04fc268ea0a",
+  "cashtab": "https://cashtab.com/#/token/5720ddaa695075aa3a14270d6bd1e7bd9c681835f7f9f23ce314e04fc268ea0a",
   "notes": [
-    "Test Prayer tip: stateful tipLocktime + tipActivity per baton.",
-    "gap < 60s → activity+1 (cap 2) → zeroBytes = 1+activity (concurrent pray bump).",
-    "N batons = N independent tips. Soft batonHash (Moore-style).",
+    "Scale via N batons (independent tips), fixed 1-byte PoW — no activity bump.",
+    "tipLocktime anti-rewind only. Concurrent prayers remint different batons.",
     "Clock: docs/CLOCK.md."
   ],
-  "updatedAt": "2026-07-18T02:33:58.446Z"
+  "updatedAt": "2026-07-18T02:36:55.214Z"
 }
