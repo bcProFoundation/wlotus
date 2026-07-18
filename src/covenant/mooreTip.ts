@@ -1,8 +1,8 @@
 /**
  * Production Moore + tip EMPP (WLPT v4).
  *
- * Layout (19 bytes):
- *   WLPT (4) | ver u8=4 | bits u16 LE | extraBits u32 LE | locktime u32 LE | tipLocktime u32 LE
+ * Layout (15 bytes) — tipLocktime is enforced in-Script via ctor, not EMPP:
+ *   WLPT (4) | ver u8=4 | bits u16 LE | extraBits u32 LE | locktime u32 LE
  */
 
 import {
@@ -82,14 +82,13 @@ function u32Le(n: number): Uint8Array {
   ]);
 }
 
-/** Build the 19-byte WLPT v4 EMPP push (must match Spedn covenant). */
+/** Build the 15-byte WLPT v4 EMPP push (must match Spedn covenant). */
 export function wlptV4Pushdata(state: MooreTipState): Uint8Array {
-  const out = new Uint8Array(19);
+  const out = new Uint8Array(15);
   out.set(WLPT_LOKAD, 0);
   out[4] = WLPT_VERSION;
   out.set(u16Le(state.bits), 5);
   out.set(u32Le(state.extraBits), 7);
   out.set(u32Le(state.locktime), 11);
-  out.set(u32Le(state.tipLocktime), 15);
   return out;
 }

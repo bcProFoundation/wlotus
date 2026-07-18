@@ -37,14 +37,13 @@ export interface PowRemintMooreTipContract {
   p2shScript: EcashScript;
   address: string;
   redeemHex: string;
-  /** Immutable body after tipLocktime push (passed in unlock). */
   codeBytes: Buffer;
   codeHash: Uint8Array;
-  /** Byte offset of the 4-byte tipLocktime value in redeem. */
   tipValueOffset: number;
 }
 
-/** tip value starts at byte 86 (7 fixed-width ctor pushes). */
+/** econHead length (through codeHash push). tip opcode at 85, tip value at 86. */
+export const MOORE_TIP_ECON_HEAD_LEN = 85;
 export const MOORE_TIP_VALUE_OFFSET = 86;
 
 let cachedPortable: PortableModule | undefined;
@@ -80,6 +79,26 @@ function u32LeBuf(n: number): Buffer {
   return buf;
 }
 
+export function buildEconHead(
+  params: PowRemintMooreTipParams,
+  codeHash: Buffer | Uint8Array,
+): Buffer {
+  return Buffer.concat([
+    Buffer.from([0x20]),
+    Buffer.from(fromHexRev(params.tokenId)),
+    Buffer.from([0x06]),
+    mintAtomsLe6(params.mintAtoms),
+    Buffer.from([0x04]),
+    u32LeBuf(params.genesisUnix),
+    Buffer.from([0x01]),
+    Buffer.from([params.baseZeroBits & 0xff]),
+    Buffer.from([0x04]),
+    u32LeBuf(params.secondsPerExtraBit),
+    Buffer.from([0x20]),
+    Buffer.from(codeHash),
+  ]);
+}
+
 function ctorArgs(
   params: PowRemintMooreTipParams,
   codeHash: Buffer,
@@ -102,10 +121,6 @@ function ctorArgs(
   };
 }
 
-/**
- * Locate tipLocktime value bytes (4 LE) after PUSH4 opcode in redeem.
- * Layout: … 0x20 codeHash | 0x04 tipLocktimeLe | codeBytes
- */
 export function findTipValueOffset(
   redeem: Buffer,
   tipLocktime: number,
@@ -129,11 +144,6 @@ export function findTipValueOffset(
       return off;
     }
   }
-  for (let i = 0; i + 5 <= redeem.length; i++) {
-    if (redeem[i] === 0x04 && redeem.subarray(i + 1, i + 5).equals(tipLe)) {
-      return i + 1;
-    }
-  }
   throw new Error('tipLocktimeLe not found in redeem script');
 }
 
@@ -147,9 +157,6 @@ function instantiate(
   return new Ctor(ctorArgs(params, codeHash)) as PowMooreTipInstance;
 }
 
-/**
- * Two-phase factory: placeholder codeHash → measure body → real codeHash.
- */
 export async function createPowRemintMooreTipContract(
   params: PowRemintMooreTipParams,
 ): Promise<PowRemintMooreTipContract> {
@@ -181,6 +188,10 @@ export async function createPowRemintMooreTipContract(
   }
   if (!Buffer.from(sha256(finalCode)).equals(codeHash)) {
     throw new Error('codeHash mismatch');
+  }
+  const econ = redeemScriptBuf.subarray(0, MOORE_TIP_ECON_HEAD_LEN);
+  if (!econ.equals(buildEconHead(params, codeHash))) {
+    throw new Error('econHead layout mismatch');
   }
 
   const reconstructed = reconstructNextRedeem(
@@ -215,7 +226,6 @@ export async function createPowRemintMooreTipContract(
   };
 }
 
-/** Build next redeem (tip' = locktime) matching covenant CAT. */
 export function reconstructNextRedeem(
   params: PowRemintMooreTipParams,
   codeHash: Buffer | Uint8Array,
@@ -223,18 +233,7 @@ export function reconstructNextRedeem(
   nextTipLocktime: number,
 ): Buffer {
   return Buffer.concat([
-    Buffer.from([0x20]),
-    Buffer.from(fromHexRev(params.tokenId)),
-    Buffer.from([0x06]),
-    mintAtomsLe6(params.mintAtoms),
-    Buffer.from([0x04]),
-    u32LeBuf(params.genesisUnix),
-    Buffer.from([0x01]),
-    Buffer.from([params.baseZeroBits & 0xff]),
-    Buffer.from([0x04]),
-    u32LeBuf(params.secondsPerExtraBit),
-    Buffer.from([0x20]),
-    Buffer.from(codeHash),
+    buildEconHead(params, codeHash),
     Buffer.from([0x04]),
     u32LeBuf(nextTipLocktime),
     Buffer.from(codeBytes),

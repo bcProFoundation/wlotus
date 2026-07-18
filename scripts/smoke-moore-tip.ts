@@ -7,31 +7,27 @@ import {
 import { PROD_SECONDS_PER_EXTRA_BIT } from '../src/covenant/mooreTip.js';
 
 async function main(): Promise<void> {
-  const tokenId =
-    '243fbdee07ef94c2d3bb7d0447a485be0df8ec12a0a750fb3c9835dd8e82a89e';
-  const genesis = 1_784_342_327;
   const c = await createPowRemintMooreTipContract({
-    tokenId,
+    tokenId: 'f6d21bc68dc36b132a76868f5a0485a1db800efbc3def64ec1b5e1c418c19d46',
     mintAtoms: 1n,
-    genesisUnix: genesis,
+    genesisUnix: 1_784_343_175,
     baseZeroBits: 22,
     secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
-    tipLocktime: genesis,
+    tipLocktime: 1_784_343_175,
   });
-  const drops = (() => {
-    const code = c.codeBytes;
-    let i = code.length - 1;
-    while (i >= 0 && code[i] === 0x77) i--;
-    return code.length - 1 - i;
-  })();
+  const cats = [...c.codeBytes].filter(b => b === 0x7e).length;
+  const splits = [...c.codeBytes].filter(b => b === 0x7f).length;
+  let i = c.codeBytes.length - 1;
+  while (i >= 0 && c.codeBytes[i] === 0x77) i--;
+  const drops = c.codeBytes.length - 1 - i;
   console.log(
     JSON.stringify(
       {
-        address: c.address,
         redeemLen: c.redeemScriptBuf.length,
-        tipValueOffset: c.tipValueOffset,
-        fixedOffset: MOORE_TIP_VALUE_OFFSET,
         codeLen: c.codeBytes.length,
+        tipValueOffset: c.tipValueOffset,
+        OP_CAT: cats,
+        OP_SPLIT: splits,
         trailingDrops: drops,
         under520: c.redeemScriptBuf.length <= 520,
       },
@@ -39,7 +35,7 @@ async function main(): Promise<void> {
       2,
     ),
   );
-  const nextTip = genesis + 60;
+  const nextTip = c.params.tipLocktime + 60;
   const next = reconstructNextRedeem(
     c.params,
     c.codeHash,
@@ -51,6 +47,9 @@ async function main(): Promise<void> {
     tipLocktime: nextTip,
   });
   if (!next.equals(c2.redeemScriptBuf)) throw new Error('reconstruct mismatch');
+  if (c.tipValueOffset !== MOORE_TIP_VALUE_OFFSET) {
+    throw new Error('tip offset drift');
+  }
   if (c.redeemScriptBuf.length > 520) {
     throw new Error(`redeem ${c.redeemScriptBuf.length} > 520`);
   }

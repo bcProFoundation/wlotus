@@ -55,10 +55,10 @@ describe('MooreTip production covenant', () => {
     }
   });
 
-  it('WLPT v4 is 19 bytes', () => {
+  it('WLPT v4 is 15 bytes', () => {
     const s = computeMooreTipState(genesis + 1, base);
     const push = wlptV4Pushdata(s);
-    expect(push.length).toBe(19);
+    expect(push.length).toBe(15);
     expect(Buffer.from(push.slice(0, 4)).equals(Buffer.from(WLPT_LOKAD))).toBe(
       true,
     );

@@ -21,9 +21,16 @@ BATON_INDEX=0 npm run mine-dryrun-once
 BATON_INDEX=1 npm run mine-dryrun-once
 ```
 
-### Why `codeHash` (not soft `batonHash`)
+### Why `codeHash` + miner-supplied `nextRedeem`
 
-Spedn 5.0 cannot emit eCash native introspection (`activeBytecode`, etc.). Full redeem in BIP143 `scriptCode` exceeds the 520-byte push limit. The production covenant keeps a late `CODESEPARATOR` (tiny preimage) and commits the immutable body as `codeHash`; the miner supplies matching `codeBytes` in the unlock.
+Spedn 5.0 cannot emit eCash native introspection. Building the successor redeem on-stack with `OP_CAT` exceeds eCash’s **201 non-push op** limit. The production covenant instead:
+
+1. Commits `codeHash = sha256(codeBytes)` in the ctor  
+2. Requires the miner to supply `nextRedeem` in the unlock  
+3. Verifies `econHead`, `tip'=locktime`, and `codeHash` in-Script  
+4. Sends the baton to `P2SH(hash160(nextRedeem))`  
+
+A late `CODESEPARATOR` keeps the BIP143 preimage small (≪ 520).
 
 ### Deprecated for production
 

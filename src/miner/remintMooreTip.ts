@@ -90,7 +90,6 @@ export async function buildMinedMooreTipRemintTx(opts: {
   );
   const minerP2pkh = Script.p2pkh(shaRmd160(miner.pk));
   const ecc = new Ecc();
-  const codeBytes = Buffer.from(contract.codeBytes);
   const nextRedeem = reconstructNextRedeem(
     contract.params,
     contract.codeHash,
@@ -124,7 +123,7 @@ export async function buildMinedMooreTipRemintTx(opts: {
       ds: Buffer.from(ds64),
       minerPk: Buffer.from(miner.pk),
       preimage: Buffer.from(preimage),
-      codeBytes,
+      nextRedeem,
     }) as Buffer;
     return new Script(new Uint8Array(scriptSigBuf));
   };
