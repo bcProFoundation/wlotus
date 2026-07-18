@@ -1,4 +1,6 @@
-// mWLPOW Ergon-like daily Moore δ remint (eCash / XEC)
+// mWLPOW Ergon-like daily Moore δ remint (eCash / XEC) — DOGFOOD ONLY.
+// NOT for production Prayer / Candle / Flower tiers.
+// Production dryrun uses WlotusPowRemintMooreTip (bit targets + tipLocktime).
 // target_d = floor(T0 * 99918^d / 100000^d) for d ∈ {0,1} (2-slot table).
 // Kept tiny for MAX_OPS; create script precomputes targets (Spedn has no Mul).
 // eMPP WLDF v2 + ALP MINT. CODESEPARATOR for small BIP143 scriptCode.

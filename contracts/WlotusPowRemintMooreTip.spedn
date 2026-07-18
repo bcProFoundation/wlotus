@@ -1,18 +1,20 @@
-// mWLPOW Moore-bit PoW remint (eCash / XEC) — legacy dogfood.
-// Production dryrun uses WlotusPowRemintMooreTip (hard next-P2SH + tipLocktime,
-// bits ≤ 128). This file keeps the old soft-batonHash + base+8 cap toys.
-// Fine-grain bits from nLockTime; difficulty announced in eMPP WLDF
-// beside ALP MINT (Agora dual-push). Ends with CODESEPARATOR + CHECKSIG so
-// BIP143 scriptCode is tiny (preimage ≪ 520B) despite a large redeem.
-// bits = baseZeroBits + floor((locktime - genesisUnix) / secondsPerExtraBit)
-// Mint always 100. Baton returns to batonHash (miner passes hash160(redeem)).
+// Production Moore + tip remint (dryrun-ready). Redeem ≤520; op-budget safe.
+// bits = base + floor((locktime - genesis) / period); cap bits ≤ 128.
+// tipLocktime anti-rewind.
+// Hard next-P2SH: unlock supplies codeBytes (sha256 == codeHash).
+// Covenant CATs immutable head + tip' + codeBytes once, then
+// baton out = P2SH(hash160(nextRedeem)). Head is built from ctor pushes
+// (small); one final CAT attaches codeBytes (avoids field-walk bytecode).
+// CODESEPARATOR keeps BIP143 preimage small.
 
-contract WlotusPowRemintMoore(
+contract WlotusPowRemintMooreTip(
     [byte;32] tokenIdRev,
     [byte;6] mintAtomsLe,
-    int genesisUnix,
-    int baseZeroBits,
-    int secondsPerExtraBit
+    [byte;4] genesisUnixLe,
+    [byte;1] baseZeroBitsBin,
+    [byte;4] secondsPerExtraBitLe,
+    [byte;32] codeHash,
+    [byte;4] tipLocktimeLe
 ) {
     challenge remint(
         [byte;4] nonce,
@@ -20,26 +22,28 @@ contract WlotusPowRemintMoore(
         DataSig ds,
         PubKey minerPk,
         [byte] preimage,
-        [byte;20] batonHash
+        [byte] codeBytes
     ) {
         (_, [byte] tail8) = preimage @ (size(preimage) - 8);
         ([byte] locktimeBin, _) = tail8 @ 4;
         int locktime = bin2num(locktimeBin);
-        verify locktime >= genesisUnix;
 
-        int extraBits = (locktime - genesisUnix) / secondsPerExtraBit;
-        int bits = baseZeroBits + extraBits;
-        verify bits <= baseZeroBits + 8;
+        int genesisUnix = bin2num(genesisUnixLe);
+        int tipLocktime = bin2num(tipLocktimeLe);
+        int baseZeroBits = bin2num(baseZeroBitsBin);
+        int secondsPerExtraBit = bin2num(secondsPerExtraBitLe);
+
+        verify locktime >= genesisUnix;
+        verify locktime >= tipLocktime;
+
+        int bits = baseZeroBits + (locktime - genesisUnix) / secondsPerExtraBit;
+        verify bits <= 128;
 
         [byte] solhash = hash256(sha256(preimage) . nonce);
         int zeroBytes = bits / 8;
         int remBits = bits % 8;
-
         ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
         verify bin2num(prefix) == 0;
-
-        // remBits 1..7 ⇒ next byte < 2^(8-remBits).
-        // Limit 128 cannot be a Script byte (0x80 ⇒ bin2num -128).
         if (remBits == 1) {
             ([byte] nextByte, _) = rest @ 1;
             verify bin2num(nextByte) < 128;
@@ -53,15 +57,30 @@ contract WlotusPowRemintMoore(
             }
         }
 
+        verify sha256(codeBytes) == Sha256(codeHash);
+
+        // One small head, then a single CAT with codeBytes (op-budget).
+        [byte] head =
+            0x20 . tokenIdRev .
+            0x06 . mintAtomsLe .
+            0x04 . genesisUnixLe .
+            0x01 . baseZeroBitsBin .
+            0x04 . secondsPerExtraBitLe .
+            0x20 . codeHash .
+            0x04 . num2bin(locktime, 4);
+        [byte] nextRedeem = head . codeBytes;
+
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
-        [byte] wldf =
-            0x574c4446 .
-            0x01 .
+        int extraBits = bits - baseZeroBits;
+        [byte] wlpt =
+            0x574c5054 .
+            0x04 .
             num2bin(bits, 2) .
             num2bin(extraBits, 4) .
-            num2bin(locktime, 4);
+            num2bin(locktime, 4) .
+            tipLocktimeLe;
 
         [byte] mintSection =
             0x534c5032 .
@@ -74,18 +93,17 @@ contract WlotusPowRemintMoore(
 
         [byte] opReturnScript =
             0x6a50 .
-            num2bin(size(wldf), 1) .
-            wldf .
+            num2bin(size(wlpt), 1) .
+            wlpt .
             num2bin(size(mintSection), 1) .
             mintSection;
 
         [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
         [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
-        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . batonHash . 0x87;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextRedeem) . 0x87;
 
         verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
 
-        // BIP143 scriptCode = only what follows → tiny preimage push.
         separator;
         verify checkSig(s, minerPk);
         verify checkDataSig(ds, sha256(preimage), minerPk);

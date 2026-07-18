@@ -2,6 +2,37 @@
 
 eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint covenants only see what is in the **transaction / BIP143 preimage**.
 
+## Production dryrun covenant (`WlotusPowRemintMooreTip`)
+
+**This is the covenant for Prayer / Candle / Flower dryruns.** Dogfood Moore/Ergon/PrayerTip soft-bind toys are not used for production tiers.
+
+| Layer | Role |
+|-------|------|
+| **Moore D** | `bits = base + floor((locktime − genesis) / (840 × 86400))` — calendar clock. Idle time advances D. Cap **bits ≤ 128**. |
+| **tipLocktime** | `locktime ≥ tip` — blocks past-cheat rewind on that baton |
+| **Hard next-P2SH** | `codeHash = sha256(codeBytes)`; baton → `P2SH(prefix ‖ tip'=locktime ‖ codeBytes)`. Miner cannot redirect to an older tip. |
+| **N batons** | Parallel remint lanes (scale without activity-based D) |
+
+Tier bases (from `consensus.ts`): Prayer **22**, Candle **43**, Flower **59**.
+
+```bash
+TIER=prayer npm run create-dryrun-token
+BATON_INDEX=0 npm run mine-dryrun-once
+BATON_INDEX=1 npm run mine-dryrun-once
+```
+
+### Why `codeHash` (not soft `batonHash`)
+
+Spedn 5.0 cannot emit eCash native introspection (`activeBytecode`, etc.). Full redeem in BIP143 `scriptCode` exceeds the 520-byte push limit. The production covenant keeps a late `CODESEPARATOR` (tiny preimage) and commits the immutable body as `codeHash`; the miner supplies matching `codeBytes` in the unlock.
+
+### Deprecated for production
+
+| Contract | Status |
+|----------|--------|
+| `WlotusPowRemintErgon` | Dogfood only — 2-day table, numeric targets ≠ production bit floors |
+| `WlotusPowRemintMoore` | Legacy soft `batonHash`, `base+8` cap — do not dryrun production tiers on it |
+| `WlotusPowRemintPrayerTip` | Soft next-P2SH — superseded by MooreTip |
+
 ## What the covenant knows
 
 | Source | Available on-chain? |
@@ -9,56 +40,12 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 | eCash tip height | **No** |
 | Median Time Past | **No** (not an opcode) |
 | `nLockTime` in this tx | **Yes** — via BIP143 preimage trailer |
-| Constructor params (`genesisUnix`, δ table, …) | **Yes** — baked into P2SH |
+| Constructor params | **Yes** — baked into P2SH |
 
-## How Moore / Ergon dogfood tiers work
+## Miner clock (off-chain)
 
-1. **Covenant** reads `nLockTime` from the signed preimage and computes  
-   `days = (locktime - genesisUnix) / daySeconds` (or extra bits).
-2. **Miner (off-chain)** asks Chronik for tip + last 11 block timestamps → **MTP**, then sets  
-   `nLockTime ≤ MTP` and `nSequence = 0xfffffffe` so the tx is final.
-3. Implementation: `src/network/medianTimePast.ts` → used by `mine-moore-once` / `mine-ergon-once`.
+Miner asks Chronik for MTP, sets `nLockTime ≤ MTP − ε` and `nSequence = 0xfffffffe`. Covenant derives Moore bits from that locktime and enforces `locktime ≥ tipLocktime`.
 
-```text
-Chronik tip/blocks  →  MTP  →  miner picks locktime ≤ MTP
-                                    ↓
-                         tx nLockTime in BIP143 preimage
-                                    ↓
-                         covenant derives day / bits / target
-```
+## Fixed-D / soft-tip dogfood (archived)
 
-**Cheat surface (dogfood):** a miner can pick a **past** locktime (still ≤ MTP) for easier work. Acceptable for tests; production needs a floor (e.g. locktime ≥ tip−ε via stronger rules or a stateful tip).
-
-## Fixed-D test Prayer (`tPRAYER`)
-
-Uses `WlotusPowRemint` with constructor difficulty only — **no locktime clock**. Remints do not consult height or MTP. Fee + toy PoW only.
-
-## Stateful tip test Prayer (`tPRAYTIP`)
-
-**Confirmed design:**
-
-| Layer | Role |
-|-------|------|
-| **Moore D** | `bits = base + floor((locktime − genesis) / period)` — calendar clock (same family as mWLPOW). Idle time still advances D. |
-| **tipLocktime** | Per-baton floor: `locktime ≥ tip` — blocks Moore **past-cheat** rewind |
-| **N batons** | Parallel remint lanes — concurrent prayers scale **without** activity-based D bump |
-
-Difficulty does **not** rise because many people pray at once. It rises because Moore time advances (and tip prevents picking an easier past day on that baton).
-
-```bash
-npm run create-prayer-tip-pow-token
-BATON_INDEX=0 npm run mine-prayer-tip-once
-BATON_INDEX=1 npm run mine-prayer-tip-once
-```
-
-### Known limitations (dogfood → production)
-
-- **Soft next-baton binding.** The covenant checks `hashOutputs` against a miner-supplied `batonHash`. It does **not** enforce in-Script that `batonHash` is the P2SH of a successor redeem whose `tipLocktime' == locktime`. A malicious miner could redirect the baton to a P2SH with an older `tipLocktime` and mine at a cheaper past Moore day. The TS factory sets the correct next P2SH, so this is honest-miner dependent. Hardening the binding without breaking the eCash 520-byte push / op limits is the main production open problem.
-- **Moore/Ergon covenants lack tipLocktime.** `WlotusPowRemintMoore` and `WlotusPowRemintErgon` only enforce `locktime >= genesisUnix`, so any final `nLockTime ≤ MTP` can be rewound toward genesis for easier PoW. They need a per-baton `tipLocktime` (or equivalent floor) for production WLotus/Candle/Prayer.
-- **Ergon dogfood bricks after day 1.** `WlotusPowRemintErgon` hard-codes `verify days <= 1` and a 2-slot target table; it is a 48-hour experiment, not a production model.
-- **Moore +8 bit cap.** `WlotusPowRemintMoore` and `WlotusPowRemintPrayerTip` cap `bits <= base + 8`. This is fine for dogfood but would need to be raised or removed for production targets (e.g., Flower 59, Candle 43, Prayer 22).
-- **Ergon uses a different difficulty model.** Production tiers in `docs/SPEC.md` use leading-zero **bit** targets; Ergon uses compact numeric targets. Do not deploy Ergon for production tiers.
-
-## Library height helpers
-
-`src/lib/moore.ts` can map **host heights → day index** for wallets/indexers. That is **off-chain policy**, not consensus inside the fixed-D Prayer covenant.
+Earlier toys (`tPRAYER`, soft `tPRAYTIP`, Moore/Ergon mWLPOW) remain in the repo for history. New work uses MooreTip dryrun scripts only.
