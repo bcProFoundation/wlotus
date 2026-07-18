@@ -211,6 +211,7 @@ export function buildPricingLadder(): {
     electricityUsdAtReference: number;
     flowerBitsFromMarket: number;
     candlePerFlowerToken: number;
+    candleTokensPerBaton: number;
   };
   asic: {
     usdPerKwh: number;

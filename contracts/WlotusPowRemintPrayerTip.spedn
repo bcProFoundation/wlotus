@@ -1,0 +1,116 @@
+// Test Prayer with per-baton stateful tip (anti-rewind) + activity bits.
+// ALP batons have no commitment — tip lives in mutating P2SH redeem params.
+//
+// tipLocktime / tipActivity are constructor state for THIS baton UTXO.
+// Remint requires locktime >= tipLocktime (no Moore past-cheat).
+// If gap < minGapSeconds → tipActivity' = tipActivity+1 (capped) — concurrent
+// praying on the same baton raises D. Idle gap cools activity by 1.
+// bits = baseZeroBits + tipActivity'  (toy; phone-observable)
+// Mint 1. Baton → P2SH(hash160(nextRedeem)); miner supplies nextRedeem whose
+// tip params must be (locktime, activity'). Soft binding: nextTip* args must
+// match tip' (honest miners build nextRedeem via the TS factory).
+
+contract WlotusPowRemintPrayerTip(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    int genesisUnix,
+    int baseZeroBits,
+    int minGapSeconds,
+    int coolGapSeconds,
+    int tipLocktime,
+    int tipActivity
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage,
+        [byte;20] batonHash,
+        [byte] nextRedeem,
+        int nextTipLocktime,
+        int nextTipActivity
+    ) {
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+        verify locktime >= genesisUnix;
+        verify locktime >= tipLocktime;
+
+        int gap = locktime - tipLocktime;
+        // Rapid remints on this baton → harder; idle cools by 1.
+        int activityPrime =
+            gap < minGapSeconds
+                ? min(tipActivity + 1, 8)
+                : (gap >= coolGapSeconds
+                    ? max(tipActivity - 1, 0)
+                    : tipActivity);
+
+        int bits = baseZeroBits + activityPrime;
+        verify bits <= baseZeroBits + 8;
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        int zeroBytes = bits / 8;
+        int remBits = bits % 8;
+
+        ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
+        verify bin2num(prefix) == 0;
+
+        if (remBits == 1) {
+            ([byte] nextByte, _) = rest @ 1;
+            verify bin2num(nextByte) < 128;
+        } else {
+            if (remBits != 0) {
+                ([byte] nextByte, _) = rest @ 1;
+                [byte] limits = 0x402010080402;
+                (_, [byte] limTail) = limits @ (remBits - 2);
+                ([byte] limB, _) = limTail @ 1;
+                verify bin2num(nextByte) < bin2num(limB);
+            }
+        }
+
+        // Tip' must be advertised and match next P2SH redeem hash.
+        verify nextTipLocktime == locktime;
+        verify nextTipActivity == activityPrime;
+        verify hash160(nextRedeem) == Ripemd160(batonHash);
+        verify size(nextRedeem) >= 100;
+        verify size(nextRedeem) <= 520;
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        [byte] wlpt =
+            0x574c5054 .
+            0x01 .
+            num2bin(bits, 2) .
+            num2bin(activityPrime, 1) .
+            num2bin(locktime, 4) .
+            num2bin(tipLocktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x01;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wlpt), 1) .
+            wlpt .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . batonHash . 0x87;
+
+        verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}

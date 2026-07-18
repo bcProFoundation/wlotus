@@ -33,6 +33,28 @@ Chronik tip/blocks  →  MTP  →  miner picks locktime ≤ MTP
 
 Uses `WlotusPowRemint` with constructor difficulty only — **no locktime clock**. Remints do not consult height or MTP. Fee + toy PoW only.
 
+## Stateful tip test Prayer (`tPRAYTIP`)
+
+Uses `WlotusPowRemintPrayerTip`: tip lives in **mutating P2SH** constructor params (`tipLocktime`, `tipActivity`).
+
+| Rule | Effect |
+|------|--------|
+| `locktime ≥ tipLocktime` | Anti-rewind (blocks Moore past-cheat on that baton) |
+| `gap < minGapSeconds` | `activity' = min(activity+1, 8)` → bits rise (concurrent pray on **same** baton) |
+| `gap ≥ coolGapSeconds` | `activity' = max(activity−1, 0)` |
+| else | activity unchanged |
+| `bits = baseZeroBits + activity'` | Toy base=1 for dogfood |
+| Baton → `P2SH(hash160(nextRedeem))` | Next tip instance; miner supplies `nextRedeem` + `nextTip*` |
+| **N batons** | **N independent tips** — parallel remints do not force 1/mother-block |
+
+eMPP **WLPT** announces bits/activity/locktimes beside ALP MINT (Agora pattern). Soft binding: on-chain checks `hash160(nextRedeem)` + `nextTip*` match tip'; honest miners use the TS factory.
+
+```bash
+npm run create-prayer-tip-pow-token
+PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump activity
+PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once   # bump again
+```
+
 ## Library height helpers
 
 `src/lib/moore.ts` can map **host heights → day index** for wallets/indexers. That is **off-chain policy**, not consensus inside the fixed-D Prayer covenant.

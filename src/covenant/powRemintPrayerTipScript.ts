@@ -1,0 +1,117 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { Spedn } from '@spedn/sdk';
+import {
+  ModuleFactory,
+  type Instance,
+  type PortableModule,
+  type Challenges,
+} from '@spedn/rts';
+import { BchJsRts } from '@spedn/rts-bchjs';
+import {
+  Address,
+  fromHexRev,
+  shaRmd160,
+  toHex,
+  Script as EcashScript,
+} from 'ecash-lib';
+import { PRAYER_MINT_ATOMS } from '../params/consensus.js';
+import type { PrayerTipParams } from './wlpt.js';
+
+export interface PowRemintPrayerTipParams extends PrayerTipParams {
+  tokenId: string;
+  mintAtoms: bigint;
+}
+
+export type PowPrayerTipInstance = Instance & { challenges: Challenges };
+
+export interface PowRemintPrayerTipContract {
+  params: PowRemintPrayerTipParams;
+  instance: PowPrayerTipInstance;
+  redeem: EcashScript;
+  redeemScriptBuf: Buffer;
+  scriptHash: Uint8Array;
+  p2shScript: EcashScript;
+  address: string;
+  redeemHex: string;
+}
+
+let cachedPortable: PortableModule | undefined;
+
+async function loadPortable(): Promise<PortableModule> {
+  if (cachedPortable) return cachedPortable;
+  const spedn = new Spedn();
+  try {
+    const code = readFileSync(
+      resolve(process.cwd(), 'contracts/WlotusPowRemintPrayerTip.spedn'),
+      'utf8',
+    );
+    cachedPortable = await spedn.compileCode('xec', code);
+    return cachedPortable;
+  } finally {
+    spedn.dispose();
+  }
+}
+
+function mintAtomsLe6(atoms: bigint): Buffer {
+  const buf = Buffer.alloc(6);
+  buf.writeUInt32LE(Number(atoms & 0xffffffffn), 0);
+  buf.writeUInt16LE(Number(atoms >> 32n), 4);
+  return buf;
+}
+
+/** Dogfood defaults: toy base bits; 60s bump / 1h cool. */
+export const TEST_PRAYER_TIP_BASE_ZERO_BITS = 1;
+export const TEST_PRAYER_TIP_MIN_GAP_SECONDS = 60;
+export const TEST_PRAYER_TIP_COOL_GAP_SECONDS = 3_600;
+
+/** Build Prayer tip PoW remint P2SH (mutating tipLocktime + tipActivity). */
+export async function createPowRemintPrayerTipContract(
+  params: PowRemintPrayerTipParams,
+): Promise<PowRemintPrayerTipContract> {
+  const portable = await loadPortable();
+  const factory = new ModuleFactory(new BchJsRts('mainnet'));
+  const Ctor = factory.make(portable).WlotusPowRemintPrayerTip;
+  const instance = new Ctor({
+    tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
+    mintAtomsLe: mintAtomsLe6(params.mintAtoms),
+    genesisUnix: params.genesisUnix,
+    baseZeroBits: params.baseZeroBits,
+    minGapSeconds: params.minGapSeconds,
+    coolGapSeconds: params.coolGapSeconds,
+    tipLocktime: params.tipLocktime,
+    tipActivity: params.tipActivity,
+  }) as PowPrayerTipInstance;
+  const redeemScriptBuf = instance.redeemScript as Buffer;
+  const redeem = new EcashScript(new Uint8Array(redeemScriptBuf));
+  const scriptHash = shaRmd160(redeem.bytecode);
+  const p2shScript = EcashScript.p2sh(scriptHash);
+  const address = Address.p2sh(scriptHash, 'ecash').toString();
+  return {
+    params,
+    instance,
+    redeem,
+    redeemScriptBuf,
+    scriptHash,
+    p2shScript,
+    address,
+    redeemHex: toHex(redeem.bytecode),
+  };
+}
+
+export function defaultPrayerTipParams(
+  tokenId: string,
+  genesisUnix: number,
+  tip?: Partial<Pick<PrayerTipParams, 'tipLocktime' | 'tipActivity'>>,
+): PowRemintPrayerTipParams {
+  return {
+    tokenId,
+    mintAtoms: PRAYER_MINT_ATOMS,
+    genesisUnix,
+    baseZeroBits: TEST_PRAYER_TIP_BASE_ZERO_BITS,
+    minGapSeconds: TEST_PRAYER_TIP_MIN_GAP_SECONDS,
+    coolGapSeconds: TEST_PRAYER_TIP_COOL_GAP_SECONDS,
+    tipLocktime: tip?.tipLocktime ?? genesisUnix,
+    tipActivity: tip?.tipActivity ?? 0,
+  };
+}

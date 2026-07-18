@@ -4,7 +4,18 @@ Canonical home: **https://github.com/bcProFoundation/wlotus**
 
 ## Live dogfood
 
-### Test Prayer (`tPRAYER`) — non-economic toy PoW
+### Test Prayer tip (`tPRAYTIP`) — stateful tip + multi-baton
+
+Stateful `tipLocktime` / `tipActivity` per baton. Rapid remints on the **same** baton raise bits; N batons = N independent tips.
+
+```bash
+npm run create-prayer-tip-pow-token
+PRAYER_TIP_RAPID=1 npm run mine-prayer-tip-once
+```
+
+See [CLOCK.md](./CLOCK.md). Deployment: `deployments/mainnet-prayer-tip-test.json`.
+
+### Test Prayer (`tPRAYER`) — non-economic toy PoW (fixed-D)
 
 | | |
 |--|--|
@@ -29,7 +40,7 @@ Moore [`c7fe2bf2…77dc`](https://explorer.e.cash/tx/c7fe2bf272c9d8ab08e17202a33
 | Candle | 43 | 1 | GPU ~2.4 h | ~$0.001 |
 | Flower | 59 | 100 | ASIC ~1.6 h | **$1** |
 
-**Clock:** covenant cannot read chain height — [CLOCK.md](./CLOCK.md). Moore/Ergon miners set `nLockTime ≤ MTP` via Chronik.
+**Clock:** covenant cannot read chain height — [CLOCK.md](./CLOCK.md). Moore/Ergon miners set `nLockTime ≤ MTP` via Chronik. Tip test uses mutating P2SH.
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
@@ -38,3 +49,4 @@ Moore [`c7fe2bf2…77dc`](https://explorer.e.cash/tx/c7fe2bf272c9d8ab08e17202a33
 1. Real Prayer @ 22 bits / Incense fee-tier  
 2. Candle @ 43 + Flower @ 59 genesis  
 3. Temple burn UX  
+4. Harden tip nextRedeem binding beyond soft hash160 + tip args  

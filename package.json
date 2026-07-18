@@ -21,6 +21,8 @@
     "mine-ergon-once": "tsx scripts/mine-ergon-once.ts",
     "create-prayer-pow-token": "tsx scripts/create-prayer-pow-token.ts",
     "mine-prayer-once": "tsx scripts/mine-prayer-once.ts",
+    "create-prayer-tip-pow-token": "tsx scripts/create-prayer-tip-pow-token.ts",
+    "mine-prayer-tip-once": "tsx scripts/mine-prayer-tip-once.ts",
     "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts"
   },
   "engines": {
