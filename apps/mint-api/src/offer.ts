@@ -231,7 +231,7 @@ async function createChallengeOnce(opts: {
   expireStaleChallenges();
   if (hasOpenBatonChallenge()) {
     throw new Error(
-      'Another Prayer mint is in progress. Try again in a few minutes.',
+      'Another device is mining this Prayer baton. Cancel there, or wait a few minutes for the lock to expire.',
     );
   }
 
@@ -594,6 +594,14 @@ export function cancelChallenge(opts: {
     cancelled++;
   }
   return { ok: true, cancelled };
+}
+
+/** Serialize cancel with challenge/submit so a re-Offer cannot race a stale lock. */
+export function enqueueCancel(opts: {
+  installId: string;
+  challengeId?: string;
+}): Promise<{ ok: true; cancelled: number }> {
+  return withChainLock(async () => cancelChallenge(opts));
 }
 
 export function publicStatus(): {

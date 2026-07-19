@@ -12,9 +12,9 @@ import { createServer } from 'node:http';
 import { config as loadEnv } from 'dotenv';
 import { resolve } from 'node:path';
 import {
+  enqueueCancel,
   enqueueChallenge,
   enqueueSubmit,
-  cancelChallenge,
   publicStatus,
   remainingOffersToday,
 } from './offer.js';
@@ -134,7 +134,7 @@ const server = createServer(async (req, res) => {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
       const challengeId = String(body.challengeId || '').trim() || undefined;
-      const result = cancelChallenge({ installId, challengeId });
+      const result = await enqueueCancel({ installId, challengeId });
       json(res, 200, result);
       return;
     }
