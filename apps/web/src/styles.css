@@ -65,6 +65,8 @@ a {
   object-fit: contain;
   flex-shrink: 0;
   border-radius: 0.35rem;
+  /* Source mark is dark; invert to white on the black UI. */
+  filter: brightness(0) invert(1);
 }
 
 .brand {
@@ -296,6 +298,25 @@ a {
   color: var(--muted);
   font-size: 0.88rem;
   margin: 0.5rem 0 0;
+  line-height: 1.45;
+}
+
+.hint.eta {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+}
+
+.history-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.mine-progress {
+  margin: 0.75rem 0 0;
+  color: var(--accent-2);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .footer {

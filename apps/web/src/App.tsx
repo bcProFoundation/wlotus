@@ -1,23 +1,36 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
   PRAYER_TICKER,
 } from './lib/config.js';
 import {
+  fetchChallenge,
   fetchStatus,
   shortTx,
-  submitOffer,
-  type OfferOk,
+  submitMinedOffer,
 } from './lib/offerApi.js';
+import { mineInWorker } from './lib/mineRunner.js';
+import {
+  estimatePrayerPow,
+  formatActualDuration,
+  formatHashrateLabel,
+  measureDeviceHashrate,
+} from './lib/powEstimate.js';
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
+
+type Phase = 'idle' | 'challenge' | 'mining' | 'submit';
 
 interface LocalOffer {
   remintTxid: string;
   burnTxid: string;
   note: string;
   at: string;
+  powMs?: number;
+  powAttempts?: number;
+  hashrateHps?: number;
+  bits?: number;
 }
 
 function loadOffers(): LocalOffer[] {
@@ -39,17 +52,37 @@ function pushOffer(o: LocalOffer): LocalOffer[] {
 export default function App() {
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [tokenId, setTokenId] = useState<string | null>(null);
+  const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
+  const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
+    null,
+  );
+  const [mineProgress, setMineProgress] = useState<{
+    attempts: number;
+    elapsedMs: number;
+    hashrateHps: number;
+    bits: number;
+  } | null>(null);
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
+  const abortRef = useRef<AbortController | null>(null);
+
+  const busy = phase !== 'idle';
+  const powEta = estimatePrayerPow({
+    bits: baseZeroBits,
+    hashesPerSec: deviceHashrateHps,
+  });
 
   const refreshStatus = useCallback(async () => {
     try {
       const s = await fetchStatus(installId);
       setRemaining(s.remainingToday);
       setTokenId(s.tokenId);
+      if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
+        setBaseZeroBits(s.baseZeroBits);
+      }
     } catch {
       /* API may be down during local UI work */
     }
@@ -59,39 +92,125 @@ export default function App() {
     void refreshStatus();
   }, [refreshStatus]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const hps = await measureDeviceHashrate();
+        if (!cancelled) setDeviceHashrateHps(hps);
+      } catch {
+        /* keep phone-class fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
   async function onOffer() {
-    setBusy(true);
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     setMsg(null);
+    setMineProgress(null);
+    setPhase('challenge');
     try {
-      const result: OfferOk = await submitOffer({
-        installId,
-        note: note.trim(),
+      const challenge = await fetchChallenge(installId);
+      if (ac.signal.aborted) return;
+
+      setPhase('mining');
+      setBaseZeroBits(challenge.bits);
+      const mined = await mineInWorker({
+        powPrefixHex: challenge.powPrefixHex,
+        bits: challenge.bits,
+        nonceLength: challenge.nonceLength,
+        signal: ac.signal,
+        onProgress: p => {
+          setMineProgress({
+            ...p,
+            bits: challenge.bits,
+          });
+          setDeviceHashrateHps(p.hashrateHps);
+        },
       });
+      if (ac.signal.aborted) return;
+
+      setMineProgress({
+        attempts: mined.attempts,
+        elapsedMs: mined.elapsedMs,
+        hashrateHps: mined.hashrateHps,
+        bits: challenge.bits,
+      });
+      setDeviceHashrateHps(mined.hashrateHps);
+
+      setPhase('submit');
+      const result = await submitMinedOffer({
+        installId,
+        challengeId: challenge.challengeId,
+        nonceHex: mined.nonceHex,
+        note: note.trim(),
+        powMs: mined.elapsedMs,
+        powAttempts: mined.attempts,
+      });
+
       setOffers(
         pushOffer({
           remintTxid: result.remintTxid,
           burnTxid: result.burnTxid,
           note: note.trim(),
           at: new Date().toISOString(),
+          powMs: result.powMs || mined.elapsedMs,
+          powAttempts: result.powAttempts || mined.attempts,
+          hashrateHps: result.hashrateHps || mined.hashrateHps,
+          bits: result.bits,
         }),
       );
       setNote('');
       await refreshStatus();
+      const powSec = (result.powMs || mined.elapsedMs) / 1000;
+      const rate = formatHashrateLabel(
+        result.hashrateHps || mined.hashrateHps,
+      );
       setMsg({
         kind: 'ok',
-        text: `Prayer offered. Burn ${shortTx(result.burnTxid)}`,
+        text: [
+          `Prayer offered in ${formatActualDuration(powSec)}`,
+          rate,
+          `Burn ${shortTx(result.burnTxid)}`,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       });
     } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
       setMsg({
         kind: 'err',
         text: e instanceof Error ? e.message : String(e),
       });
     } finally {
-      setBusy(false);
+      setPhase('idle');
+      setMineProgress(null);
+      if (abortRef.current === ac) abortRef.current = null;
     }
   }
 
   const canOffer = !busy && (remaining === null || remaining > 0);
+
+  const buttonLabel =
+    phase === 'challenge'
+      ? 'Preparing…'
+      : phase === 'mining'
+        ? 'Mining on this device…'
+        : phase === 'submit'
+          ? 'Broadcasting…'
+          : 'Offer Prayer';
 
   return (
     <div className="app">
@@ -114,9 +233,14 @@ export default function App() {
       <section className="panel offer-panel">
         <h2>Prayer</h2>
         <p className="hint">
-          One {PRAYER_TICKER} is burned on-chain (memorial + dana). Dual mint:
-          the other atom stays with White Lotus for vault top-up. Limited to 2
-          offerings per day on this device.
+          Mint {PRAYER_TICKER} with this device’s power and burn on-chain for
+          memorial and dana. One token is burned; another helps top up fees.
+          Limited to 2 offerings per day on this device.
+        </p>
+        <p className="hint eta" aria-live="off">
+          {powEta.durationLabel} estimated · {powEta.hashrateLabel}
+          {powEta.measured ? ' this device' : ' phone-class'} · bits{' '}
+          {powEta.bits} · you mine here; server pays fees
         </p>
 
         <div className="field">
@@ -137,8 +261,17 @@ export default function App() {
           disabled={!canOffer}
           onClick={() => void onOffer()}
         >
-          {busy ? 'Offering…' : 'Offer Prayer'}
+          {buttonLabel}
         </button>
+
+        {mineProgress ? (
+          <p className="mine-progress" aria-live="polite">
+            Mining · {formatActualDuration(mineProgress.elapsedMs / 1000)} ·{' '}
+            {formatHashrateLabel(mineProgress.hashrateHps)} ·{' '}
+            {mineProgress.attempts.toLocaleString()} hashes · bits{' '}
+            {mineProgress.bits}
+          </p>
+        ) : null}
 
         <p className="meta">
           {remaining === null
@@ -167,7 +300,18 @@ export default function App() {
           <ul className="history">
             {offers.map(o => (
               <li key={o.burnTxid}>
-                <span>{o.note || 'Prayer'}</span>
+                <span>
+                  {o.note || 'Prayer'}
+                  {o.powMs != null ? (
+                    <span className="history-meta">
+                      {' '}
+                      · {formatActualDuration(o.powMs / 1000)}
+                      {o.hashrateHps
+                        ? ` · ${formatHashrateLabel(o.hashrateHps)}`
+                        : ''}
+                    </span>
+                  ) : null}
+                </span>
                 <a
                   href={`https://explorer.e.cash/tx/${o.burnTxid}`}
                   target="_blank"

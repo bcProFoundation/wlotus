@@ -1,0 +1,149 @@
+/**
+ * Static PoW wall-time estimate from difficulty bits + hash rate.
+ * Pre-mint ETA uses a short this-device probe (not a live countdown).
+ * Post-mint stats come from the mint API (actual PoW wall time).
+ */
+
+import { sha256d } from 'ecash-lib';
+
+/** Phone-class SHA256d UX hashrate (matches `UX_PHONE_HASHRATE_H_S` in pricing). */
+export const PHONE_UX_HASHRATE_H_S = 150_000;
+
+/** Fallback when status API has not returned bits yet (live dual-mint Prayer). */
+export const DEFAULT_PRAYER_BASE_BITS = 24;
+
+export function expectedHashesFromBits(bits: number): number {
+  return 2 ** bits;
+}
+
+export function wallSeconds(
+  expectedHashes: number,
+  hashesPerSec: number,
+): number {
+  return expectedHashes / hashesPerSec;
+}
+
+/** Short human label for estimated duration (no countdown). */
+export function formatEstimateDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds > 1e12) return '—';
+  if (seconds < 1) return '<1 s';
+  if (seconds < 60) return `~${Math.round(seconds)} s`;
+  if (seconds < 3600) {
+    const min = seconds / 60;
+    const rounded = min >= 10 ? Math.round(min) : Math.round(min * 10) / 10;
+    return `~${rounded} min`;
+  }
+  if (seconds < 86400) {
+    const h = seconds / 3600;
+    const rounded = h >= 10 ? Math.round(h) : Math.round(h * 10) / 10;
+    return `~${rounded} h`;
+  }
+  return `~${(seconds / 86400).toFixed(1)} d`;
+}
+
+/** Actual duration label (post-mint), no leading tilde. */
+export function formatActualDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '—';
+  if (seconds < 1) return `${Math.round(seconds * 1000)} ms`;
+  if (seconds < 60) {
+    const rounded = seconds >= 10 ? Math.round(seconds) : Math.round(seconds * 10) / 10;
+    return `${rounded} s`;
+  }
+  if (seconds < 3600) {
+    const min = seconds / 60;
+    const rounded = min >= 10 ? Math.round(min) : Math.round(min * 10) / 10;
+    return `${rounded} min`;
+  }
+  const h = seconds / 3600;
+  const rounded = h >= 10 ? Math.round(h) : Math.round(h * 10) / 10;
+  return `${rounded} h`;
+}
+
+export function formatHashrateLabel(hashesPerSec: number): string {
+  if (!Number.isFinite(hashesPerSec) || hashesPerSec <= 0) return '—';
+  if (hashesPerSec >= 1e12) return `${(hashesPerSec / 1e12).toFixed(1)} TH/s`;
+  if (hashesPerSec >= 1e9) return `${(hashesPerSec / 1e9).toFixed(1)} GH/s`;
+  if (hashesPerSec >= 1e6) return `${(hashesPerSec / 1e6).toFixed(1)} MH/s`;
+  if (hashesPerSec >= 1e3) {
+    const k = hashesPerSec / 1e3;
+    const rounded = k >= 100 ? Math.round(k) : Math.round(k * 10) / 10;
+    return `${rounded} kH/s`;
+  }
+  return `${Math.round(hashesPerSec)} H/s`;
+}
+
+export function estimatePrayerPow(opts?: {
+  bits?: number | null;
+  hashesPerSec?: number | null;
+}): {
+  bits: number;
+  hashesPerSec: number;
+  expectedHashes: number;
+  seconds: number;
+  durationLabel: string;
+  hashrateLabel: string;
+  measured: boolean;
+} {
+  const bits =
+    opts?.bits != null && Number.isFinite(opts.bits) && opts.bits > 0
+      ? opts.bits
+      : DEFAULT_PRAYER_BASE_BITS;
+  const measured =
+    opts?.hashesPerSec != null &&
+    Number.isFinite(opts.hashesPerSec) &&
+    opts.hashesPerSec > 0;
+  const hashesPerSec = measured
+    ? (opts!.hashesPerSec as number)
+    : PHONE_UX_HASHRATE_H_S;
+  const expectedHashes = expectedHashesFromBits(bits);
+  const seconds = wallSeconds(expectedHashes, hashesPerSec);
+  return {
+    bits,
+    hashesPerSec,
+    expectedHashes,
+    seconds,
+    durationLabel: formatEstimateDuration(seconds),
+    hashrateLabel: formatHashrateLabel(hashesPerSec),
+    measured,
+  };
+}
+
+/**
+ * Short browser SHA256d probe approximating Prayer PoW hash work
+ * (sha256d over a fixed prefix || nonce). Yields so the UI stays responsive.
+ *
+ * Note: today’s mint-api still mines on the server; this measures *this device*
+ * for ETA / future client PoW — not the mint worker’s rate.
+ */
+export async function measureDeviceHashrate(opts?: {
+  durationMs?: number;
+  batchSize?: number;
+}): Promise<number> {
+  const durationMs = opts?.durationMs ?? 450;
+  const batchSize = opts?.batchSize ?? 250;
+  const prefix = new Uint8Array(32);
+  for (let i = 0; i < prefix.length; i++) prefix[i] = (i * 17) & 0xff;
+  const nonce = new Uint8Array(4);
+  const buf = new Uint8Array(prefix.length + nonce.length);
+  buf.set(prefix, 0);
+
+  let attempts = 0;
+  const t0 = performance.now();
+  while (performance.now() - t0 < durationMs) {
+    for (let i = 0; i < batchSize; i++) {
+      for (let j = 0; j < nonce.length; j++) {
+        nonce[j] = (nonce[j] + 1) & 0xff;
+        if (nonce[j] !== 0) break;
+      }
+      buf.set(nonce, prefix.length);
+      sha256d(buf);
+      attempts++;
+    }
+    await new Promise<void>(r => {
+      setTimeout(r, 0);
+    });
+  }
+  const elapsedSec = (performance.now() - t0) / 1000;
+  if (elapsedSec <= 0 || attempts < 1) return PHONE_UX_HASHRATE_H_S;
+  return Math.round(attempts / elapsedSec);
+}

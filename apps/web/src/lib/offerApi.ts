@@ -1,5 +1,20 @@
 import { MINT_API_BASE } from './config.js';
 
+export interface ChallengeOk {
+  ok: true;
+  challengeId: string;
+  expiresAt: string;
+  tokenId: string;
+  bits: number;
+  commit: 'sha256-preimage';
+  nonceLength: number;
+  preimageHex: string;
+  powPrefixHex: string;
+  locktime: number;
+  tipLocktime: number;
+  mintAtoms: string;
+}
+
 export interface OfferOk {
   ok: true;
   remintTxid: string;
@@ -7,6 +22,8 @@ export interface OfferOk {
   tokenId: string;
   bits: number;
   powAttempts: number;
+  powMs: number;
+  hashrateHps: number;
   deskAtomsKept: number;
   explorerRemint: string;
   explorerBurn: string;
@@ -18,6 +35,8 @@ export interface StatusOk {
   ticker: string;
   maxOffersPerDay: number;
   remainingToday: number | null;
+  baseZeroBits?: number | null;
+  clientPow?: boolean;
 }
 
 function apiUrl(path: string): string {
@@ -33,21 +52,42 @@ export async function fetchStatus(installId: string): Promise<StatusOk> {
   return body;
 }
 
-export async function submitOffer(opts: {
+export async function fetchChallenge(installId: string): Promise<ChallengeOk> {
+  const res = await fetch(apiUrl('/api/challenge'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ installId }),
+  });
+  const body = (await res.json()) as ChallengeOk & { error?: string; ok?: boolean };
+  if (!res.ok || !body.ok) {
+    throw new Error(body.error || `Challenge failed (${res.status})`);
+  }
+  return body as ChallengeOk;
+}
+
+export async function submitMinedOffer(opts: {
   installId: string;
+  challengeId: string;
+  nonceHex: string;
   note: string;
+  powMs: number;
+  powAttempts: number;
 }): Promise<OfferOk> {
-  const res = await fetch(apiUrl('/api/offer'), {
+  const res = await fetch(apiUrl('/api/submit'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       installId: opts.installId,
+      challengeId: opts.challengeId,
+      nonceHex: opts.nonceHex,
       note: opts.note,
+      powMs: opts.powMs,
+      powAttempts: opts.powAttempts,
     }),
   });
   const body = (await res.json()) as OfferOk & { error?: string; ok?: boolean };
   if (!res.ok || !body.ok) {
-    throw new Error(body.error || `Offer failed (${res.status})`);
+    throw new Error(body.error || `Submit failed (${res.status})`);
   }
   return body as OfferOk;
 }

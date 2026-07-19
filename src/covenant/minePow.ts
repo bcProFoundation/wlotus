@@ -63,6 +63,27 @@ export function minePowBits(opts: {
   throw new Error(`PoW not found after ${max} attempts (bits=${bits})`);
 }
 
+/** Verify a client-submitted nonce against the challenge preimage. */
+export function verifyPowBits(opts: {
+  preimage: Uint8Array;
+  nonce: Uint8Array;
+  bits: number;
+  commit?: PowCommit;
+}): boolean {
+  const commit = opts.commit ?? 'preimage';
+  const prefix =
+    commit === 'sha256-preimage' ? sha256(opts.preimage) : opts.preimage;
+  const buf = new Uint8Array(prefix.length + opts.nonce.length);
+  buf.set(prefix, 0);
+  buf.set(opts.nonce, prefix.length);
+  const hash = sha256d(buf);
+  if (!meetsPowBits(hash, opts.bits)) return false;
+  if (opts.bits % 8 === 0 && !meetsPowDifficulty(hash, opts.bits / 8)) {
+    return false;
+  }
+  return true;
+}
+
 /** Ergon compact-target PoW: bin2num(hash[0:4]) ∈ [0, target). */
 export function minePowErgonTarget(opts: {
   preimage: Uint8Array;
