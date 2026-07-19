@@ -63,7 +63,8 @@ a {
   width: clamp(2.5rem, 8vw, 3.5rem);
   height: auto;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.15));
+  color: #ffffff;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.12));
 }
 
 .brand {
