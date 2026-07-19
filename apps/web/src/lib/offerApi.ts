@@ -7,6 +7,10 @@ export interface OfferOk {
   tokenId: string;
   bits: number;
   powAttempts: number;
+  /** Wall-clock ms for PoW only. */
+  powMs: number;
+  /** Effective hashrate from attempts / powSeconds. */
+  hashrateHps: number;
   deskAtomsKept: number;
   explorerRemint: string;
   explorerBurn: string;

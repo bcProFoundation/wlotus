@@ -25,6 +25,10 @@ export interface OfferResult {
   tokenId: string;
   bits: number;
   powAttempts: number;
+  /** Wall-clock ms for PoW only (not fee sync / burn). */
+  powMs: number;
+  /** Effective hashrate from attempts / powSeconds. */
+  hashrateHps: number;
   deskAtomsKept: 1;
   explorerRemint: string;
   explorerBurn: string;
@@ -272,6 +276,11 @@ async function offerOnce(opts: {
     tokenId: dep.tokenId,
     bits: built.tip.bits,
     powAttempts: built.powAttempts,
+    powMs: built.powMs,
+    hashrateHps:
+      built.powMs > 0
+        ? Math.round(built.powAttempts / (built.powMs / 1000))
+        : 0,
     deskAtomsKept: 1,
     explorerRemint: `https://explorer.e.cash/tx/${remintTxid}`,
     explorerBurn: `https://explorer.e.cash/tx/${burnTxid}`,

@@ -307,6 +307,11 @@ a {
   letter-spacing: 0.01em;
 }
 
+.history-meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .footer {
   margin-top: 2rem;
   color: var(--muted);

@@ -71,6 +71,8 @@ export async function buildMinedMooreTipRemintTx(opts: {
   txHex: string;
   nonceHex: string;
   powAttempts: number;
+  /** Wall-clock ms spent in minePowBits (actual mint PoW). */
+  powMs: number;
   mintAtoms: string;
   tip: MooreTipState;
   locktime: number;
@@ -105,6 +107,7 @@ export async function buildMinedMooreTipRemintTx(opts: {
 
   let minedNonce: Uint8Array | undefined;
   let minedAttempts = 0;
+  let powMs = 0;
 
   const mkUnlock = (
     nonce: Uint8Array,
@@ -133,12 +136,14 @@ export async function buildMinedMooreTipRemintTx(opts: {
     const pre = input.sigHashPreimage(ALL_BIP143, MOORE_TIP_CODESEP_INDEX);
     const preimage = pre.bytes;
     if (!minedNonce) {
+      const t0 = Date.now();
       const mined = minePowBits({
         preimage,
         bits: tip.bits,
         commit: 'sha256-preimage',
         maxAttempts: 100_000_000,
       });
+      powMs = Math.max(1, Date.now() - t0);
       minedNonce = mined.nonce;
       minedAttempts = mined.attempts;
     }
@@ -201,6 +206,7 @@ export async function buildMinedMooreTipRemintTx(opts: {
     txHex: toHex(tx.ser()),
     nonceHex: toHex(minedNonce),
     powAttempts: minedAttempts,
+    powMs,
     mintAtoms: contract.params.mintAtoms.toString(),
     tip,
     locktime,

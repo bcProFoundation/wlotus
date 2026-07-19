@@ -10,7 +10,12 @@ import {
   submitOffer,
   type OfferOk,
 } from './lib/offerApi.js';
-import { estimatePrayerPow } from './lib/powEstimate.js';
+import {
+  estimatePrayerPow,
+  formatActualDuration,
+  formatHashrateLabel,
+  measureDeviceHashrate,
+} from './lib/powEstimate.js';
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
 
@@ -19,6 +24,10 @@ interface LocalOffer {
   burnTxid: string;
   note: string;
   at: string;
+  powMs?: number;
+  powAttempts?: number;
+  hashrateHps?: number;
+  bits?: number;
 }
 
 function loadOffers(): LocalOffer[] {
@@ -45,9 +54,15 @@ export default function App() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
+  const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
+    null,
+  );
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
 
-  const powEta = estimatePrayerPow({ bits: baseZeroBits });
+  const powEta = estimatePrayerPow({
+    bits: baseZeroBits,
+    hashesPerSec: deviceHashrateHps,
+  });
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -66,6 +81,21 @@ export default function App() {
     void refreshStatus();
   }, [refreshStatus]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const hps = await measureDeviceHashrate();
+        if (!cancelled) setDeviceHashrateHps(hps);
+      } catch {
+        /* keep phone-class fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function onOffer() {
     setBusy(true);
     setMsg(null);
@@ -80,13 +110,28 @@ export default function App() {
           burnTxid: result.burnTxid,
           note: note.trim(),
           at: new Date().toISOString(),
+          powMs: result.powMs,
+          powAttempts: result.powAttempts,
+          hashrateHps: result.hashrateHps,
+          bits: result.bits,
         }),
       );
       setNote('');
       await refreshStatus();
+      const powSec = (result.powMs ?? 0) / 1000;
+      const rate =
+        result.hashrateHps > 0
+          ? formatHashrateLabel(result.hashrateHps)
+          : null;
       setMsg({
         kind: 'ok',
-        text: `Prayer offered. Burn ${shortTx(result.burnTxid)}`,
+        text: [
+          `Prayer offered in ${formatActualDuration(powSec)}`,
+          rate,
+          `Burn ${shortTx(result.burnTxid)}`,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       });
     } catch (e) {
       setMsg({
@@ -126,8 +171,9 @@ export default function App() {
           Limited to 2 offerings per day on this device.
         </p>
         <p className="hint eta" aria-live="off">
-          {powEta.durationLabel} estimated · ~{powEta.hashrateLabel} phone-class
-          · bits {powEta.bits} · actual time varies
+          {powEta.durationLabel} estimated · {powEta.hashrateLabel}
+          {powEta.measured ? ' this device' : ' phone-class'} · bits{' '}
+          {powEta.bits} · actual time varies
         </p>
 
         <div className="field">
@@ -178,7 +224,18 @@ export default function App() {
           <ul className="history">
             {offers.map(o => (
               <li key={o.burnTxid}>
-                <span>{o.note || 'Prayer'}</span>
+                <span>
+                  {o.note || 'Prayer'}
+                  {o.powMs != null ? (
+                    <span className="history-meta">
+                      {' '}
+                      · {formatActualDuration(o.powMs / 1000)}
+                      {o.hashrateHps
+                        ? ` · ${formatHashrateLabel(o.hashrateHps)}`
+                        : ''}
+                    </span>
+                  ) : null}
+                </span>
                 <a
                   href={`https://explorer.e.cash/tx/${o.burnTxid}`}
                   target="_blank"
