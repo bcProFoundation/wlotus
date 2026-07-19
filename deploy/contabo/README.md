@@ -181,6 +181,51 @@ See [apps/mint-api/README.md](../../apps/mint-api/README.md).
 
 ---
 
+## Mint API on Contabo (required for Offer Prayer)
+
+Static deploy alone is not enough. `/api` must hit mint-api or the UI stays on
+“Connecting…” / returns HTML JSON errors.
+
+On the VM:
+
+```bash
+# 1) Fee wallet
+sudo mkdir -p /etc/wlotus
+sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
+MINT_MNEMONIC=word1 word2 ... word12
+MINT_API_PORT=8787
+EOF
+sudo chmod 600 /etc/wlotus/mint.env
+
+# 2) App checkout + deps
+sudo mkdir -p /opt/wlotus && sudo chown deploy:deploy /opt/wlotus
+cd /opt/wlotus
+git clone https://github.com/bcProFoundation/wlotus.git .   # or git pull
+git checkout master
+npm ci
+
+# 3) systemd (use repo unit + wrapper)
+sudo cp deploy/contabo/wlotus-mint-api.service /etc/systemd/system/
+sudo cp deploy/contabo/run-mint-api.sh /opt/wlotus/deploy/contabo/
+# WorkingDirectory=/opt/wlotus — edit if needed
+sudo systemctl daemon-reload
+sudo systemctl enable --now wlotus-mint-api
+sudo systemctl status wlotus-mint-api --no-pager
+
+# 4) nginx /api proxy — do NOT overwrite Certbot SSL
+# Prefer: paste deploy/contabo/nginx-api-snippet.conf into the existing
+# test.wlotus.org server block, then: sudo nginx -t && sudo systemctl reload nginx
+
+# 5) Check
+curl -sS http://127.0.0.1:8787/health
+curl -sS https://test.wlotus.org/api/status?installId=test
+```
+
+Fund the mint wallet address with XEC before offering. After pulling a new
+Prayer deployment JSON, restart: `sudo systemctl restart wlotus-mint-api`.
+
+---
+
 ## 4. Deploy / update the live site (CI)
 
 Workflow: **Deploy web (test)** — `.github/workflows/deploy-web-test.yml`
