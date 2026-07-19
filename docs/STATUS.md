@@ -22,13 +22,14 @@ BATON_INDEX=1 npm run mine-dryrun-once
 
 See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-*.json`.
 
-### Live Prayer dryrun (mainnet)
+### Live Prayer dual-mint dryrun (mainnet)
 
 | | |
 |--|--|
-| Token | [`a108b17f…4914`](https://explorer.e.cash/tx/a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914) (`dPRAYER`) |
-| Remint baton 0 | [`c79039b5…bfca`](https://explorer.e.cash/tx/c79039b5e8d5fe2b45701e881fdc211d15d069899aa7f061db7e324fef38bfca) |
-| Remint baton 1 | [`bd8ac640…e7bd`](https://explorer.e.cash/tx/bd8ac64005c2105271c51ba3c67f783c879ac7e81a4ff4d9b75ac4e3a33fe7bd) |
+| Token | [`d9004b41…ca5b`](https://explorer.e.cash/tx/d9004b411d4cbcd2ec16235d506efd6e266186153bd1a2b1db3a1d5118c2ca5b) (`dPRAYER`) |
+| Mint / remint | **2** atoms → burn 1 + desk keep 1 |
+| Bits | 24 (phone ~2 min class) |
+| Prior mint=1 dryrun | archived under `deployments/mainnet-dryrun-prayer-archived-*.json` |
 
 Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
@@ -55,14 +56,15 @@ Burn WLotus = white lotus **in memorial of the dead** + **dana** for everybody (
 
 ## Offerings app (`apps/web`)
 
-Migrated from Lotus Temple UX → **WLotus** branding. Burns **Prayer** (ALP); fees in **XEC** (postage later).
+Minimal **Prayer-only** UI (mobile-first). No browser wallet yet — offerings via mint API.
 
 | | |
 |--|--|
 | **Test site** | https://test.wlotus.org |
-| **Local dev** | `npm run web` |
+| **Local** | `npm run mint-api` + `npm run web` |
+| **Token** | dual-mint `dPRAYER` `d9004b41…ca5b` |
 
-Defaults to live dryrun `dPRAYER` (`a108b17f…4914`).
+Defaults to live dual-mint dryrun. See [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md).
 
 ## Test hosting (Contabo)
 

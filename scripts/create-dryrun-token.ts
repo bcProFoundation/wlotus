@@ -230,6 +230,7 @@ async function main(): Promise<void> {
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: production 840-day bit clock. Cap bits ≤ 128.',
+      'Prayer dual-mint: 2 atoms/remint → burn 1 (offering) + keep 1 (desk).',
       'Ergon not used for production tiers.',
     ],
   };

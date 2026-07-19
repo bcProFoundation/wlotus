@@ -1,62 +1,29 @@
-# WLotus web — offerings (Prayer burn)
+# WLotus web — Prayer offering (dual mint)
 
-Migrated from **Lotus Temple** UX (flower / incense / candle offering steps),
-retargeted to **eCash ALP Prayer burn** with **XEC network fees**.
+Minimal mobile-first UI: one **Prayer** offering, no browser wallet yet.
 
-Brand is **White Lotus** (app title) / **WLotus** (domain). Black & white UI,
-white lotus mark — memorial + dana, not temple/pagoda framing. See
-[docs/VISION.md](../../docs/VISION.md).
+Flow: device → mint API → remint **2** dPRAYER → **burn 1** (memorial) → **keep 1** (desk).
 
-**Test deployment:** https://test.wlotus.org
-
-## Local development (laptop)
-
-From repo root (workspaces):
+## Local
 
 ```bash
-npm install
+# terminal 1 — mint API (needs GENESIS_SK_HEX + dual-mint deployment)
+npm run mint-api
+
+# terminal 2 — web UI
 npm run web
 ```
 
-Or:
+Open http://localhost:5173 — Vite proxies `/api` → `:8787`.
+
+## Env
+
+`apps/web/.env.example` · root `.env` for `GENESIS_SK_HEX`.
+
+## Create dual-mint Prayer token
 
 ```bash
-cd apps/web && npm install && npm run dev
+TIER=prayer npm run create-dryrun-token   # mintAtoms=2
 ```
 
-Open http://localhost:5173 — hot reload, no VM or CI required.
-
-## Env (optional, local build)
-
-Copy `.env.example` → `.env`:
-
-```
-VITE_PRAYER_TOKEN_ID=<alp token id>
-VITE_PRAYER_TICKER=dPRAYER
-VITE_CHRONIK_URLS=https://chronik.e.cash,https://chronik.pay2stay.com/xec
-```
-
-Defaults to the live dryrun `dPRAYER` token.
-
-## Flow
-
-1. Create or unlock a browser wallet (sk stored in `localStorage`).
-2. Fund address with **XEC** (fees) and **Prayer** tokens.
-3. Choose 1 / 10 / 100 Prayer and burn — ALP `BURN` + `WLBR` memorial EMPP.
-4. Postage server can replace the XEC fee input later; burn path stays the same.
-
-## Deploy (test server)
-
-| Where | How |
-|-------|-----|
-| **Live test** | https://test.wlotus.org (CI → Contabo) |
-| **Local** | `npm run web` → http://localhost:5173 |
-
-CI builds `dist/` and rsyncs to the VM. Updating the site = run the GitHub workflow (or push to `master`), **not** `git pull` on the server.
-
-Full guide: **[deploy/contabo/README.md](../../deploy/contabo/README.md)** (local vs VM vs CI).
-
-## Not ported (yet)
-
-Lotus Temple GraphQL social graph, OAuth, Meili search, posts, and XPI settlement.
-Those stay in the lixi monorepo until a thin indexer is needed.
+See [docs/ECONOMICS_PRAYER.md](../../docs/ECONOMICS_PRAYER.md) and [docs/VISION.md](../../docs/VISION.md).

@@ -255,13 +255,26 @@ a {
 }
 
 .msg.ok {
-  background: rgba(111, 191, 139, 0.12);
-  border: 1px solid rgba(111, 191, 139, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .msg.err {
   background: rgba(224, 112, 112, 0.12);
   border: 1px solid rgba(224, 112, 112, 0.35);
+}
+
+.btn-offer {
+  width: 100%;
+  padding: 0.95rem 1.25rem;
+  font-size: 1.05rem;
+  margin-top: 0.35rem;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.85rem 0 0;
 }
 
 .history {
