@@ -192,10 +192,10 @@ export default function App() {
         <div className="brand-row">
           <img
             className="brand-mark"
-            src="/images/white-lotus.svg"
+            src="/images/wlotus.png"
             alt=""
             width={56}
-            height={46}
+            height={56}
           />
           <h1 className="brand">White Lotus</h1>
         </div>
