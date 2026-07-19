@@ -49,9 +49,18 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
+## Offerings app (`apps/web`)
+
+Migrated from Lotus Temple UX → **WLotus** branding. Burns **Prayer** (ALP); fees in **XEC** (postage later).
+
+```bash
+npm run web
+```
+
+Defaults to live dryrun `dPRAYER` (`a108b17f…4914`).
+
 ## Next
 
-1. Dryrun Prayer remints on mainnet with MooreTip  
-2. Dryrun Candle / Flower when funded for longer PoW  
-3. Temple burn UX  
-4. Fractional-bit PoW if/when eCash raises the 201-op limit  
+1. Dryrun Candle / Flower when funded for longer PoW  
+2. Postage server for fee sponsorship  
+3. Fractional-bit PoW if/when eCash raises the 201-op limit  
