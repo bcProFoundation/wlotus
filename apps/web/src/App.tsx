@@ -55,6 +55,7 @@ export default function App() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
@@ -67,6 +68,7 @@ export default function App() {
     bits: number;
   } | null>(null);
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const busy = phase !== 'idle';
@@ -80,16 +82,21 @@ export default function App() {
       const s = await fetchStatus(installId);
       setRemaining(s.remainingToday);
       setTokenId(s.tokenId);
+      if (s.maxOffersPerDay > 0) setMaxOffersPerDay(s.maxOffersPerDay);
       if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
         setBaseZeroBits(s.baseZeroBits);
       }
+      setApiOnline(true);
     } catch {
-      /* API may be down during local UI work */
+      setApiOnline(false);
+      setRemaining(null);
     }
   }, [installId]);
 
   useEffect(() => {
     void refreshStatus();
+    const t = setInterval(() => void refreshStatus(), 15_000);
+    return () => clearInterval(t);
   }, [refreshStatus]);
 
   useEffect(() => {
@@ -122,7 +129,10 @@ export default function App() {
     setMineProgress(null);
     setPhase('challenge');
     try {
-      const challenge = await fetchChallenge(installId);
+      const challenge = await fetchChallenge({
+        installId,
+        note: note.trim(),
+      });
       if (ac.signal.aborted) return;
 
       setPhase('mining');
@@ -155,7 +165,6 @@ export default function App() {
         installId,
         challengeId: challenge.challengeId,
         nonceHex: mined.nonceHex,
-        note: note.trim(),
         powMs: mined.elapsedMs,
         powAttempts: mined.attempts,
       });
@@ -183,7 +192,7 @@ export default function App() {
         text: [
           `Prayer offered in ${formatActualDuration(powSec)}`,
           rate,
-          `Burn ${shortTx(result.burnTxid)}`,
+          shortTx(result.remintTxid),
         ]
           .filter(Boolean)
           .join(' · '),
@@ -201,7 +210,8 @@ export default function App() {
     }
   }
 
-  const canOffer = !busy && (remaining === null || remaining > 0);
+  const canOffer =
+    !busy && apiOnline === true && (remaining === null || remaining > 0);
 
   const buttonLabel =
     phase === 'challenge'
@@ -233,14 +243,12 @@ export default function App() {
       <section className="panel offer-panel">
         <h2>Prayer</h2>
         <p className="hint">
-          Mint {PRAYER_TICKER} with this device’s power and burn on-chain for
-          memorial and dana. One token is burned; another helps top up fees.
-          Limited to 2 offerings per day on this device.
+          Mint {PRAYER_TICKER} with this device’s power — time given for
+          memorial and dana. The dedication is written on-chain in the mint.
+          Limited to {maxOffersPerDay} offerings per day on this device.
         </p>
         <p className="hint eta" aria-live="off">
-          {powEta.durationLabel} estimated · {powEta.hashrateLabel}
-          {powEta.measured ? ' this device' : ' phone-class'} · bits{' '}
-          {powEta.bits} · you mine here; server pays fees
+          {powEta.durationLabel} estimated
         </p>
 
         <div className="field">
@@ -252,7 +260,7 @@ export default function App() {
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder="Name or dedication"
-            disabled={busy}
+            disabled={busy || apiOnline === false}
           />
         </div>
 
@@ -266,17 +274,16 @@ export default function App() {
 
         {mineProgress ? (
           <p className="mine-progress" aria-live="polite">
-            Mining · {formatActualDuration(mineProgress.elapsedMs / 1000)} ·{' '}
-            {formatHashrateLabel(mineProgress.hashrateHps)} ·{' '}
-            {mineProgress.attempts.toLocaleString()} hashes · bits{' '}
-            {mineProgress.bits}
+            Mining · {formatActualDuration(mineProgress.elapsedMs / 1000)}
           </p>
         ) : null}
 
         <p className="meta">
-          {remaining === null
+          {apiOnline === null
             ? 'Connecting…'
-            : `${remaining} left today on this device`}
+            : apiOnline === false
+              ? 'Mint API offline — start mint-api on Contabo and proxy /api → :8787'
+              : `${remaining ?? '—'} left today on this device`}
           {tokenId ? (
             <>
               {' · '}

@@ -1,12 +1,12 @@
 /**
- * White Lotus web — Prayer-only dual-mint client (mobile-first).
- * No browser wallet yet; offerings go through mint API (remint 2 → burn 1 → keep 1).
+ * White Lotus web — Prayer client (mobile-first).
+ * Device PoW; server pays fees; memorial on mint (no separate burn).
  */
 
-/** Live dual-mint dPRAYER (mint 2 → burn 1 + desk 1) */
+/** Live memorial-mint dPRAYER (mint 1 + WLBR on remint) */
 export const DEFAULT_PRAYER_TOKEN_ID =
   (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
-  'd9004b411d4cbcd2ec16235d506efd6e266186153bd1a2b1db3a1d5118c2ca5b';
+  '173e02605a8f7c226c43793539687b1084a605f336faf47aa07f7976edfa6078';
 
 export const PRAYER_TOKEN_ID = DEFAULT_PRAYER_TOKEN_ID;
 

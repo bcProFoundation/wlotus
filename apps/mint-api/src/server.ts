@@ -87,7 +87,8 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/challenge') {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
-      const challenge = await enqueueChallenge({ installId });
+      const note = String(body.note || '').trim().slice(0, 80);
+      const challenge = await enqueueChallenge({ installId, note });
       json(res, 200, challenge);
       return;
     }
@@ -97,7 +98,6 @@ const server = createServer(async (req, res) => {
       const installId = requireInstallId(body.installId);
       const challengeId = String(body.challengeId || '').trim();
       const nonceHex = String(body.nonceHex || '').trim();
-      const note = String(body.note || '').trim().slice(0, 80);
       if (!challengeId) {
         json(res, 400, { error: 'challengeId required' });
         return;
@@ -122,7 +122,6 @@ const server = createServer(async (req, res) => {
         installId,
         challengeId,
         nonceHex,
-        note,
         powMs,
         powAttempts,
       });

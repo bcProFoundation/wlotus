@@ -1,19 +1,21 @@
-# Mint API (Prayer dual-mint)
+# Mint API (Prayer memorial mint)
 
-Server sponsors **XEC fees**, signs, broadcasts, and burns. **PoW runs on the device.**
+Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
+Memorial (`WLBR`) is embedded in the **mint** OP_RETURN — no separate burn tx.
 
 ```
-POST /api/challenge  → contract challenge (preimage, bits)
+POST /api/challenge  { installId, note? }  → preimage + bits (note bound into OP_RETURN)
   device mines nonce
-POST /api/submit     → verify PoW, pay fee, sign, broadcast remint, burn 1
+POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
+                     → verify PoW, pay fee, sign, broadcast remint (mint 1 to desk)
 ```
+
+Requires deployment from `TIER=prayer npm run create-dryrun-token` (MooreTipMemo, mintAtoms=1).
 
 ## Run
 
 ```bash
-# From repo root
 MINT_MNEMONIC="twelve words …" npm run mint-api
-# Contabo: EnvironmentFile=/etc/wlotus/mint.env
 ```
 
 ## Endpoints
@@ -21,14 +23,12 @@ MINT_MNEMONIC="twelve words …" npm run mint-api
 | Method | Path | Body / query |
 |--------|------|----------------|
 | GET | `/health` | — |
-| GET | `/api/status?installId=` | remainingToday, baseZeroBits, clientPow |
-| POST | `/api/challenge` | `{ installId }` → preimageHex, powPrefixHex, bits, challengeId |
-| POST | `/api/submit` | `{ installId, challengeId, nonceHex, note?, powMs?, powAttempts? }` |
-| POST | `/api/offer` | **410** retired (server PoW removed) |
+| GET | `/api/status?installId=` | remainingToday, baseZeroBits, memorialOnMint |
+| POST | `/api/challenge` | `{ installId, note? }` |
+| POST | `/api/submit` | `{ installId, challengeId, nonceHex, powMs?, powAttempts? }` |
+| POST | `/api/offer` | **410** retired |
 
-## Flow
+## Limits
 
-1. Client requests a challenge (server reserves baton + fee UTXO, builds sighash preimage).
-2. Device mines `sha256d(powPrefix || nonce)` to tip bits.
-3. Client submits nonce; server verifies, signs fuel+baton, broadcasts remint, burns 1 atom (desk keeps 1).
-4. Daily limit: 2 successful submits per `installId` (UTC day). Challenges expire after 15 minutes.
+- `MINT_MAX_OFFERS_PER_DAY` (default **20** on test)
+- Challenges expire after 15 minutes

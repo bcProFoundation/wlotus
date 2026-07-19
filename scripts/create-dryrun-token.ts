@@ -31,6 +31,7 @@ import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
+import { createPowRemintMooreTipMemoContract } from '../src/covenant/powRemintMooreTipMemoScript.js';
 import { PROD_SECONDS_PER_EXTRA_BIT } from '../src/covenant/mooreTip.js';
 import {
   CANDLE_MINT_ATOMS,
@@ -139,15 +140,28 @@ async function main(): Promise<void> {
   });
   console.log('Genesis', genesis.tokenId);
 
-  const contract = await createPowRemintMooreTipContract({
-    tokenId: genesis.tokenId,
-    mintAtoms: tier.mint,
-    genesisUnix,
-    baseZeroBits: tier.bits,
-    secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
-    tipLocktime,
-  });
-  console.log('MooreTip address', contract.address);
+  const contract =
+    tierName === 'prayer'
+      ? await createPowRemintMooreTipMemoContract({
+          tokenId: genesis.tokenId,
+          mintAtoms: tier.mint,
+          genesisUnix,
+          baseZeroBits: tier.bits,
+          secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+          tipLocktime,
+        })
+      : await createPowRemintMooreTipContract({
+          tokenId: genesis.tokenId,
+          mintAtoms: tier.mint,
+          genesisUnix,
+          baseZeroBits: tier.bits,
+          secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+          tipLocktime,
+        });
+  console.log(
+    tierName === 'prayer' ? 'MooreTipMemo address' : 'MooreTip address',
+    contract.address,
+  );
   console.log('redeem bytes', contract.redeemScriptBuf.length);
   if (contract.redeemScriptBuf.length > 520) {
     throw new Error('Redeem exceeds 520-byte P2SH limit');
@@ -200,8 +214,13 @@ async function main(): Promise<void> {
     ticker: tier.ticker,
     name: tier.name,
     tokenId: genesis.tokenId,
-    mode: 'moore-tip-hard-bind',
+    mode:
+      tierName === 'prayer' ? 'moore-tip-memo-hard-bind' : 'moore-tip-hard-bind',
     role: 'production-dryrun',
+    covenant:
+      tierName === 'prayer'
+        ? 'WlotusPowRemintMooreTipMemo'
+        : 'WlotusPowRemintMooreTip',
     decimals: 0,
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,
@@ -230,7 +249,9 @@ async function main(): Promise<void> {
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: production 840-day bit clock. Cap bits ≤ 128.',
-      'Prayer dual-mint: 2 atoms/remint → burn 1 (offering) + keep 1 (desk).',
+      tierName === 'prayer'
+        ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
+        : 'Candle/Flower use MooreTip without memorial push.',
       'Ergon not used for production tiers.',
     ],
   };

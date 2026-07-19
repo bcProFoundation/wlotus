@@ -58,7 +58,7 @@ export const POW_BASE_ZERO_BITS = POW_LEADING_ZERO_BYTES * 8;
 
 export const BASE_MINT_ATOMS = 100n;
 
-export const PRAYER_MINT_ATOMS = 2n;
+export const PRAYER_MINT_ATOMS = 1n;
 export const INCENSE_MINT_ATOMS = 100n;
 export const CANDLE_MINT_ATOMS = 1n;
 export const FLOWER_MINT_ATOMS = 100n;

@@ -13,6 +13,7 @@ export interface ChallengeOk {
   locktime: number;
   tipLocktime: number;
   mintAtoms: string;
+  note: string;
 }
 
 export interface OfferOk {
@@ -44,21 +45,49 @@ function apiUrl(path: string): string {
   return `${base}${path}`;
 }
 
+async function readApiJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new Error(`Mint API empty response (${res.status})`);
+  }
+  if (trimmed.startsWith('<')) {
+    throw new Error(
+      'Mint API not reachable (got HTML). On Contabo: proxy /api → :8787 and start mint-api.',
+    );
+  }
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {
+    throw new Error(
+      `Mint API returned non-JSON (${res.status}): ${trimmed.slice(0, 120)}`,
+    );
+  }
+}
+
 export async function fetchStatus(installId: string): Promise<StatusOk> {
   const q = encodeURIComponent(installId);
   const res = await fetch(apiUrl(`/api/status?installId=${q}`));
-  const body = (await res.json()) as StatusOk & { error?: string };
+  const body = await readApiJson<StatusOk & { error?: string }>(res);
   if (!res.ok) throw new Error(body.error || `Status ${res.status}`);
   return body;
 }
 
-export async function fetchChallenge(installId: string): Promise<ChallengeOk> {
+export async function fetchChallenge(opts: {
+  installId: string;
+  note: string;
+}): Promise<ChallengeOk> {
   const res = await fetch(apiUrl('/api/challenge'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ installId }),
+    body: JSON.stringify({
+      installId: opts.installId,
+      note: opts.note,
+    }),
   });
-  const body = (await res.json()) as ChallengeOk & { error?: string; ok?: boolean };
+  const body = await readApiJson<ChallengeOk & { error?: string; ok?: boolean }>(
+    res,
+  );
   if (!res.ok || !body.ok) {
     throw new Error(body.error || `Challenge failed (${res.status})`);
   }
@@ -69,7 +98,6 @@ export async function submitMinedOffer(opts: {
   installId: string;
   challengeId: string;
   nonceHex: string;
-  note: string;
   powMs: number;
   powAttempts: number;
 }): Promise<OfferOk> {
@@ -80,12 +108,13 @@ export async function submitMinedOffer(opts: {
       installId: opts.installId,
       challengeId: opts.challengeId,
       nonceHex: opts.nonceHex,
-      note: opts.note,
       powMs: opts.powMs,
       powAttempts: opts.powAttempts,
     }),
   });
-  const body = (await res.json()) as OfferOk & { error?: string; ok?: boolean };
+  const body = await readApiJson<OfferOk & { error?: string; ok?: boolean }>(
+    res,
+  );
   if (!res.ok || !body.ok) {
     throw new Error(body.error || `Submit failed (${res.status})`);
   }

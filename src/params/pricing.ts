@@ -39,7 +39,7 @@ export const CANDLE_GPU_TARGET_BITS = 43;
 
 /** Non-economic ritual mints. */
 export const INCENSE_TOKENS_PER_BATON = 100;
-export const PRAYER_TOKENS_PER_BATON = 2;
+export const PRAYER_TOKENS_PER_BATON = 1;
 
 /**
  * Economic token peg: 1 Flower token ≈ **10 Candle** tokens.
