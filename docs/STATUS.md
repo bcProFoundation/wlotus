@@ -53,22 +53,24 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 Migrated from Lotus Temple UX → **WLotus** branding. Burns **Prayer** (ALP); fees in **XEC** (postage later).
 
-```bash
-npm run web
-```
+| | |
+|--|--|
+| **Test site** | https://test.wlotus.org |
+| **Local dev** | `npm run web` |
 
 Defaults to live dryrun `dPRAYER` (`a108b17f…4914`).
 
 ## Test hosting (Contabo)
 
-CI/CD for `apps/web`: GitHub Actions → rsync → nginx on Contabo.
+**Live:** https://test.wlotus.org
+
+CI/CD: GitHub Actions → rsync → nginx on Contabo (`/var/www/wlotus-test`).
 
 - Workflow: `.github/workflows/deploy-web-test.yml`
-- VM bootstrap: `deploy/contabo/`
+- Guide (local vs VM vs CI): [deploy/contabo/README.md](../deploy/contabo/README.md)
 
 ## Next
 
-1. Wire Contabo secrets + first test deploy  
-2. Dryrun Candle / Flower when funded for longer PoW  
-3. Postage server for fee sponsorship  
-4. Fractional-bit PoW if/when eCash raises the 201-op limit  
+1. Dryrun Candle / Flower when funded for longer PoW  
+2. Postage server for fee sponsorship  
+3. Fractional-bit PoW if/when eCash raises the 201-op limit  
