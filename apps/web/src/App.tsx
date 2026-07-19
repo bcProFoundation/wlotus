@@ -17,7 +17,9 @@ import {
   formatActualDuration,
   formatElapsedTenthsMin,
   formatHashrateLabel,
+  loadCachedHashrate,
   measureDeviceHashrate,
+  saveCachedHashrate,
 } from './lib/powEstimate.js';
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
@@ -50,6 +52,24 @@ function loadOffers(): LocalOffer[] {
   } catch {
     return [];
   }
+}
+
+/** Prefer explicit cache, else last successful mine hashrate from history. */
+function initialHashrateHps(): number | null {
+  const cached = loadCachedHashrate();
+  if (cached != null) return cached;
+  for (const o of loadOffers()) {
+    if (o.hashrateHps != null && o.hashrateHps > 0) {
+      saveCachedHashrate(o.hashrateHps);
+      return Math.round(o.hashrateHps);
+    }
+  }
+  return null;
+}
+
+function rememberHashrate(hps: number): void {
+  if (!Number.isFinite(hps) || hps <= 0) return;
+  saveCachedHashrate(hps);
 }
 
 function pushOffer(o: LocalOffer): LocalOffer[] {
@@ -94,7 +114,7 @@ export default function App() {
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
-    null,
+    () => initialHashrateHps(),
   );
   const [mineStartedAt, setMineStartedAt] = useState<number | null>(null);
   const [elapsedDisplay, setElapsedDisplay] = useState('0.0 min');
@@ -132,12 +152,16 @@ export default function App() {
     return () => clearInterval(t);
   }, [refreshStatus]);
 
+  /** Probe once if we have no cached rate; otherwise reuse localStorage. */
   useEffect(() => {
+    if (deviceHashrateHps != null && deviceHashrateHps > 0) return;
     let cancelled = false;
     void (async () => {
       try {
         const hps = await measureDeviceHashrate();
-        if (!cancelled) setDeviceHashrateHps(hps);
+        if (cancelled) return;
+        rememberHashrate(hps);
+        setDeviceHashrateHps(hps);
       } catch {
         /* keep phone-class fallback */
       }
@@ -145,7 +169,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [deviceHashrateHps]);
 
   /** If the tab was killed mid-mine, release the server challenge on reload. */
   useEffect(() => {
@@ -237,6 +261,7 @@ export default function App() {
         nonceLength: challenge.nonceLength,
         signal: ac.signal,
         onProgress: p => {
+          rememberHashrate(p.hashrateHps);
           setDeviceHashrateHps(p.hashrateHps);
         },
       });
@@ -245,6 +270,7 @@ export default function App() {
         return;
       }
 
+      rememberHashrate(mined.hashrateHps);
       setDeviceHashrateHps(mined.hashrateHps);
       setPhase('submit');
       const result = await submitMinedOffer({
