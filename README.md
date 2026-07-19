@@ -26,12 +26,16 @@ npm run web          # http://localhost:5173 — burn dPRAYER with XEC fees
 
 ```
 apps/web/           # WLotus offerings (migrated from Lotus Temple UX)
+deploy/contabo/     # Test VM bootstrap + nginx (CI → Contabo)
+.github/workflows/  # Deploy web (test)
 contracts/          # Spedn PoW remint covenants
 docs/               # Spec + research
 src/                # Params, covenant loaders, miners
 scripts/            # create-dryrun-token, mine-dryrun-once, …
 deployments/        # Live mainnet records
 ```
+
+Test deploy: [deploy/contabo/README.md](./deploy/contabo/README.md)
 
 ## Quick start
 

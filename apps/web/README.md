@@ -41,6 +41,13 @@ Defaults to the live dryrun `dPRAYER` token.
 3. Choose 1 / 10 / 100 Prayer and burn — ALP `BURN` + `WLBR` memorial EMPP.
 4. Postage server can replace the XEC fee input later; burn path stays the same.
 
+## Deploy (Contabo test)
+
+CI builds this SPA and rsyncs `dist/` to the Contabo test VM.
+
+See **[deploy/contabo/README.md](../../deploy/contabo/README.md)** for VM bootstrap,
+GitHub secrets, and the **Deploy web (test)** workflow.
+
 ## Not ported (yet)
 
 Lotus Temple GraphQL social graph, OAuth, Meili search, posts, and XPI settlement.

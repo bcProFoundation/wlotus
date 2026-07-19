@@ -59,8 +59,16 @@ npm run web
 
 Defaults to live dryrun `dPRAYER` (`a108b17f…4914`).
 
+## Test hosting (Contabo)
+
+CI/CD for `apps/web`: GitHub Actions → rsync → nginx on Contabo.
+
+- Workflow: `.github/workflows/deploy-web-test.yml`
+- VM bootstrap: `deploy/contabo/`
+
 ## Next
 
-1. Dryrun Candle / Flower when funded for longer PoW  
-2. Postage server for fee sponsorship  
-3. Fractional-bit PoW if/when eCash raises the 201-op limit  
+1. Wire Contabo secrets + first test deploy  
+2. Dryrun Candle / Flower when funded for longer PoW  
+3. Postage server for fee sponsorship  
+4. Fractional-bit PoW if/when eCash raises the 201-op limit  
