@@ -1,19 +1,20 @@
 # WLotus
 
-**White Lotus (WLOTUS)** — Ergon-like ritual ALP token on eCash with permissionless PoW remint.
+**WLotus** — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
 
-This repository holds the **covenant, remint miner, and WLotus web offerings app**.
+Ergon-like ritual ALP token with permissionless PoW remint. This repository holds the **covenant, remint miner, and offerings app**.
 
 ## Design (short)
 
 | Piece | Choice |
 |-------|--------|
+| Meaning | Memorial (hoa sen trắng) + dana — see [docs/VISION.md](./docs/VISION.md) |
 | Host | eCash (XEC) |
 | Token | ALP (`SLP2` / eMPP) |
 | Issuance | MooreTip PoW remint (calendar D + tipLocktime + hard next-P2SH) |
-| Burn | Intentional ALP Prayer burn — `apps/web` (XEC fees; postage later) |
+| Burn | Intentional ALP burn — `apps/web` (XEC fees; postage later) |
 
-See [docs/SPEC.md](./docs/SPEC.md) and [docs/STATUS.md](./docs/STATUS.md).
+See [docs/VISION.md](./docs/VISION.md), [docs/SPEC.md](./docs/SPEC.md), and [docs/STATUS.md](./docs/STATUS.md).
 
 ## Status
 

@@ -49,6 +49,10 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
+## Vision
+
+Burn WLotus = white lotus **in memorial of the dead** + **dana** for everybody (wealth destroyed; unlike vàng mã, no seller captures the gift). Full thesis: [VISION.md](./VISION.md).
+
 ## Offerings app (`apps/web`)
 
 Migrated from Lotus Temple UX → **WLotus** branding. Burns **Prayer** (ALP); fees in **XEC** (postage later).
