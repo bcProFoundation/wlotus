@@ -1,0 +1,14 @@
+{
+  "tokenId": "de640661109f9a56d6404a7a68d054d01094958f466dc01bdc1c4e23f1a50e8e",
+  "txid": "a0fe1941aaa5a4e590140956ea4a890489e10a5d0cfd1d65712063401d9e9fe6",
+  "powAttempts": 176,
+  "nonceHex": "b0000000",
+  "ergon": {
+    "locktime": 1784295659,
+    "days": 1,
+    "target": 16763458
+  },
+  "locktime": 1784295659,
+  "minedAt": "2026-07-17T14:16:30.327Z",
+  "explorer": "https://explorer.e.cash/tx/a0fe1941aaa5a4e590140956ea4a890489e10a5d0cfd1d65712063401d9e9fe6"
+}

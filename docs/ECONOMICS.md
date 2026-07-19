@@ -1,55 +1,33 @@
-# Economics — mWLPOW → WLOTUS
+# Economics — Incense/Prayer (ritual) · Candle (GPU) · Flower (ASIC)
 
-## Ritual loop
+## Roles
 
-| Action | Meaning | Supply |
-|--------|---------|--------|
-| **Burn** | Sacrifice / vàng mã offering | Destroys tokens |
-| **Remint** | Pure PoW rebirth | Creates tokens |
+| Product | Economic? | Hardware | Role |
+|---------|-----------|----------|------|
+| **Incense** | No | Fee / trivial | Everyday thắp hương |
+| **Prayer** | No | Phone ~30 s | Intention |
+| **Candle** | Soft yes | **GPU** | Entry MoE — 1/baton |
+| **Flower** | Yes | **ASIC** | Prestige MoE — **$1/baton** |
 
-Burn does **not** cancel remint. Burns tighten float → support price → incentivise miners to remint again.
+## Candle = 1 / baton (GPU)
 
-## Incubation: mWLPOW
+Token soft peg still **~1/10 Flower** ($0.001 if Flower = $0.01).  
+**Difficulty is GPU wall-clock**, not full $/hash parity with Flower:
 
-| Knob | Value |
-|------|-------|
-| Ticker | `mWLPOW` |
-| Decimals | **0** (whole tokens) |
-| Tokens / remint | **Always 100** (fixed) |
-| PoW | Leading zero bytes on `hash256(preimage ‖ nonce)` |
-| Genesis difficulty | **1** leading zero byte (~1/256) |
-| Target market price | **~$0.00001 / token** (~$0.001 / remint) |
-| vs WLOTUS | **~1/1000** energy / price |
+| Approach | Bits | GPU 1 GH/s | ASIC 100 TH/s |
+|----------|------|------------|---------------|
+| Anti-arb ($0.001 baton) | ~49 | ~6.5 **days** | ~5.6 s |
+| **GPU target (chosen)** | **~43** | **~2.4 h** | **~ms** |
 
-Moore / Koomey (`δ = 99918/100000`, ~2.3y half-life) adjusts **required work**, not the 100-token mint. Incubation genesis uses **fixed** cheap difficulty; the same δ is in `src/lib/moore.ts` for the work schedule.
+ASICs will mint Candle quickly — acceptable because **Candle is not ASIC-targeted**. Flower stays the ASIC business sheet (~59 bits, ~1.6 h @ 100 TH/s). Fine grain → **mFlower**.
 
-## Production: WLOTUS (later)
+## Mint-time matrix
 
-| Knob | Value |
-|------|-------|
-| Ticker | `WLOTUS` |
-| Tokens / remint | **Always 100** |
-| Target market price | **~$0.01 / token** (~$1 / remint) |
-| Difficulty | ~**1000×** mWLPOW genesis work |
+| Product | Bits | Mint | Market $/baton | Phone | GPU 1 GH/s | ASIC 100 TH/s |
+|---------|------|------|----------------|-------|------------|---------------|
+| Incense | 8 | 100 | — | ~2 ms | &lt;1 ms | &lt;1 ms |
+| Prayer | 22 | 1 | — | **~28 s** | ~4 ms | &lt;1 ms |
+| Candle | **43** | **1** | ~$0.001 | — | **~2.4 h** | ~90 ms |
+| Flower | **59** | 100 | **$1** | — | — | **~1.6 h** |
 
-`$0.01` is a **market** target (energy + fees + hardware + miner margin), not a USD oracle.
-
-## Energy peg / conversion
-
-```
-1000 mWLPOW  ≈  1 WLOTUS
-```
-
-for circulating and burned balances when the app matures.
-
-## Elasticity
-
-```
-coins/time ≈ N_batons × (hashrate / hashes_per_solution) × 100
-```
-
-Many remints per eCash block, N ≥ 2 batons, no Mist 1-mint/block CLTV.
-
-## Miner note
-
-The remint covenant commits to exactly **3 outputs** (mint OP_RETURN + miner P2PKH + baton P2SH). Excess fuel is fee — `mine-once` splits a ~30 XEC fuel UTXO first.
+Fee ~5.46 XEC → eCash miners. `npm run pricing`

@@ -1,0 +1,15 @@
+{
+  "tokenId": "c7fe2bf272c9d8ab08e17202a33397294a24ec96e47b06d849f998972d5a77dc",
+  "txid": "a51800126256ac7249f25377b3a0b9149d5ef37aa848555a504849ddab0bdbfa",
+  "powAttempts": 371,
+  "nonceHex": "73010000",
+  "mintAtoms": "100",
+  "moore": {
+    "locktime": 1784292974,
+    "extraBits": 1,
+    "bits": 9
+  },
+  "locktime": 1784292974,
+  "minedAt": "2026-07-17T13:39:31.726Z",
+  "explorer": "https://explorer.e.cash/tx/a51800126256ac7249f25377b3a0b9149d5ef37aa848555a504849ddab0bdbfa"
+}

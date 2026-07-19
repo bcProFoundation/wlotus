@@ -2,28 +2,56 @@
 
 Canonical home: **https://github.com/bcProFoundation/wlotus**
 
-## Live incubation — **mWLPOW**
+## Production dryrun (MooreTip hard-bind)
+
+Covenant: `WlotusPowRemintMooreTip` — Moore calendar D + tipLocktime + **hard next-P2SH** (`prefixHash`/`codeHash`).
+
+Whole-byte PoW only (`bits % 8 == 0`) so the redeem fits eCash’s **201-op** limit together with hard bind. Dryrun bases (nearby the phone/GPU/ASIC targets):
+
+| Tier | Dryrun bits | Mint | Script |
+|------|-------------|------|--------|
+| Prayer | 24 | 1 | `TIER=prayer npm run create-dryrun-token` |
+| Candle | 40 | 1 | `TIER=candle npm run create-dryrun-token` |
+| Flower | 56 | 100 | `TIER=flower npm run create-dryrun-token` |
+
+```bash
+TIER=prayer npm run create-dryrun-token
+BATON_INDEX=0 npm run mine-dryrun-once
+BATON_INDEX=1 npm run mine-dryrun-once
+```
+
+See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-*.json`.
+
+### Live Prayer dryrun (mainnet)
 
 | | |
 |--|--|
-| Role | Cheap PoW token so anyone can mine & burn before the app |
-| Economics | Always **100**/remint @ **0** decimals; ~**$0.00001**/token; 1-byte PoW |
-| Peg | **1000 mWLPOW ≈ 1 WLOTUS** (later launch @ ~$0.01/token) |
-| Docs | [ECONOMICS.md](./ECONOMICS.md) · [TEST_TOKEN.md](./TEST_TOKEN.md) |
+| Token | [`a108b17f…4914`](https://explorer.e.cash/tx/a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914) (`dPRAYER`) |
+| Remint baton 0 | [`c79039b5…bfca`](https://explorer.e.cash/tx/c79039b5e8d5fe2b45701e881fdc211d15d069899aa7f061db7e324fef38bfca) |
+| Remint baton 1 | [`bd8ac640…e7bd`](https://explorer.e.cash/tx/bd8ac64005c2105271c51ba3c67f783c879ac7e81a4ff4d9b75ac4e3a33fe7bd) |
 
-```bash
-npm run create-pow-token && npm run mine-once
-# or: npm run wait-create-mwlotus
-```
+Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
-## Covenant notes (eCash)
+### Not for production
 
-- No native introspection → Spedn Mist-style BIP143 preimage covenant
-- Mint size **fixed**; Moore δ schedules **work** (lib + future stateful D)
-- Remint has exactly 3 covenant outputs — `mine-once` splits small fuel first
+- **Ergon** (`WlotusPowRemintErgon`) — dogfood only  
+- **Legacy Moore** (`WlotusPowRemintMoore`) — soft batonHash, +8 cap  
+- Soft **PrayerTip** — superseded  
+
+## Economics (production plan)
+
+| Product | Bits | Mint | Target HW | Market $/baton |
+|---------|------|------|-----------|----------------|
+| Incense | 8 | 100 | fee | — (non-econ) |
+| Prayer | 22 | 1 | phone | — (non-econ) |
+| Candle | 43 | 1 | GPU ~2.4 h | ~$0.001 |
+| Flower | 59 | 100 | ASIC ~1.6 h | **$1** |
+
+[ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
 ## Next
 
-1. Temple / burn app against mWLPOW  
-2. Stateful Moore-on-difficulty covenant revision  
-3. WLOTUS genesis (~1000× difficulty) + conversion UX  
+1. Dryrun Prayer remints on mainnet with MooreTip  
+2. Dryrun Candle / Flower when funded for longer PoW  
+3. Temple burn UX  
+4. Fractional-bit PoW if/when eCash raises the 201-op limit  

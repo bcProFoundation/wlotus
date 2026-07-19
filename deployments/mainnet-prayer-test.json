@@ -1,0 +1,30 @@
+{
+  "ticker": "tPRAYER",
+  "name": "Test Prayer (toy PoW)",
+  "tokenId": "04317ffa6983692fa0ef326c6a8fcb75135fddfca5ece62f918aa73a7902e352",
+  "mode": "fixed-pow",
+  "role": "prayer-test-non-economic",
+  "decimals": 0,
+  "powAddress": "ecash:prardvf8lhgjv8zw62k2lxyr4dwjwv6plg2mqnf6hj",
+  "redeemScriptHex": "2052e302793aa78a912fe6eca5fcdd5f1375cb8f6a6c32efa02f698369fa7f3104060100000000005156795579ad55795479a85679bb537958797eaa7652797f75768100885579820128947f777601207f755779820134947f757601687f7776517f7704534c50320051807e547e044d494e547e5a797e517e59797e517e026a5078827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e5f79a97e0288ac7e08220200000000000001177e02a9147e5579a97e01877e527952797e787eaa5979877777777777777777777777777777777777777777",
+  "difficultyLeadingZeroBytes": 1,
+  "mintAtomsPerRemint": "1",
+  "tokensPerRemint": 1,
+  "initialMintAtoms": "1000",
+  "powBatonCount": 2,
+  "genesisTxid": "04317ffa6983692fa0ef326c6a8fcb75135fddfca5ece62f918aa73a7902e352",
+  "handoffTxids": [
+    "c92cdc70b4f866b70b01d557bda9e908d418de3fe6a00509dd59e64f89565360",
+    "c1bb59d9910a4d254d0e3470c4444b6949856a2ae3d55f840599ae4bf9ebe0b4"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-18T00:30:56.746Z",
+  "explorer": "https://explorer.e.cash/tx/04317ffa6983692fa0ef326c6a8fcb75135fddfca5ece62f918aa73a7902e352",
+  "cashtab": "https://cashtab.com/#/token/04317ffa6983692fa0ef326c6a8fcb75135fddfca5ece62f918aa73a7902e352",
+  "notes": [
+    "Test Prayer: non-economic ritual chrome, 1 token/remint, toy 1-byte PoW.",
+    "Fixed-D covenant — no nLockTime / height clock.",
+    "Clock docs: docs/CLOCK.md (MTP used only by Moore/Ergon miners)."
+  ]
+}

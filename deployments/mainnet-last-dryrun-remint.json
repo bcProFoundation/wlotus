@@ -1,0 +1,17 @@
+{
+  "tokenId": "a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914",
+  "txid": "bd8ac64005c2105271c51ba3c67f783c879ac7e81a4ff4d9b75ac4e3a33fe7bd",
+  "batonIndex": 1,
+  "powAttempts": 23700,
+  "bits": 24,
+  "extraBits": 0,
+  "tip": {
+    "locktime": 1784344044,
+    "tipLocktime": 1784343925,
+    "extraBits": 0,
+    "bits": 24
+  },
+  "nextPowAddress": "ecash:pqt09hddmhhzhya6s8v5vtumt4t94vmvhy7mt8gxp6",
+  "explorer": "https://explorer.e.cash/tx/bd8ac64005c2105271c51ba3c67f783c879ac7e81a4ff4d9b75ac4e3a33fe7bd",
+  "minedAt": "2026-07-18T03:53:00.404Z"
+}

@@ -1,0 +1,98 @@
+// Test Prayer tip = Moore difficulty + per-baton tipLocktime (anti-rewind).
+// bits = baseZeroBits + floor((locktime - genesisUnix) / secondsPerExtraBit)
+//   → same Moore calendar clock as mWLPOW (NOT activity / concurrent-pray).
+// locktime >= tipLocktime → no past-cheat rewind on this baton.
+// tip' = locktime in next P2SH (soft batonHash; see KNOWN_LIMITATIONS below).
+// Mint 1. N batons = N parallel remint lanes (scale without raising D from load).
+//
+// KNOWN_LIMITATIONS (dogfood): miner-supplied batonHash is not bound to a
+// successor redeem with tipLocktime' == locktime in-Script. Honest TS factory
+// sets it correctly; a malicious miner could redirect the baton to a P2SH with
+// an older tipLocktime and mine at an easier past Moore day. Hardening this
+// under the eCash Script 520-byte/op limits is left for production.
+
+contract WlotusPowRemintPrayerTip(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    int genesisUnix,
+    int baseZeroBits,
+    int secondsPerExtraBit,
+    int tipLocktime
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage,
+        [byte;20] batonHash
+    ) {
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+        verify locktime >= genesisUnix;
+        verify locktime >= tipLocktime;
+
+        int extraBits = (locktime - genesisUnix) / secondsPerExtraBit;
+        int bits = baseZeroBits + extraBits;
+        verify bits <= baseZeroBits + 8;
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        int zeroBytes = bits / 8;
+        int remBits = bits % 8;
+
+        ([byte] prefix, [byte] rest) = solhash @ zeroBytes;
+        verify bin2num(prefix) == 0;
+
+        if (remBits == 1) {
+            ([byte] nextByte, _) = rest @ 1;
+            verify bin2num(nextByte) < 128;
+        } else {
+            if (remBits != 0) {
+                ([byte] nextByte, _) = rest @ 1;
+                [byte] limits = 0x402010080402;
+                (_, [byte] limTail) = limits @ (remBits - 2);
+                ([byte] limB, _) = limTail @ 1;
+                verify bin2num(nextByte) < bin2num(limB);
+            }
+        }
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        // WLPT v3: Moore bits + tipLocktime (Agora-style beside ALP MINT)
+        [byte] wlpt =
+            0x574c5054 .
+            0x03 .
+            num2bin(bits, 2) .
+            num2bin(extraBits, 4) .
+            num2bin(locktime, 4) .
+            num2bin(tipLocktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x01;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wlpt), 1) .
+            wlpt .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . batonHash . 0x87;
+
+        verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}

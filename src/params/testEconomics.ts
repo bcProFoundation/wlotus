@@ -1,35 +1,67 @@
-/**
- * Incubation (mWLPOW) vs production (WLOTUS) economics.
- *
- * Ritual loop: burn = sacrifice (destroy supply); remint = pure PoW rebirth.
- */
+import {
+  CANDLE_MINT_ATOMS,
+  FLOWER_MINT_ATOMS,
+  INCENSE_MINT_ATOMS,
+  POW_CANDLE_BASE_ZERO_BITS,
+  POW_FLOWER_BASE_ZERO_BITS,
+  POW_INCENSE_BASE_ZERO_BITS,
+  POW_PRAYER_BASE_ZERO_BITS,
+  PRAYER_MINT_ATOMS,
+} from './consensus.js';
+import {
+  WLOTUS_TARGET_USD_PER_TOKEN,
+  WLOTUS_TARGET_USD_PER_BATON,
+  economicTokenPricesUsd,
+  CANDLE_TOKENS_PER_BATON,
+} from './pricing.js';
 
-/** mWLPOW target ≈ $0.00001 / token ≈ 1/1000 of WLOTUS $0.01. */
-export const TEST_TARGET_USD_PER_TOKEN = 0.00001;
+export const TOKENS_PER_REMINT = Number(FLOWER_MINT_ATOMS);
 
-/** Future WLOTUS target ≈ $0.01 / token ≈ $1 / remint (100 tokens). */
-export const PROD_TARGET_USD_PER_TOKEN = 0.01;
+export const PRAYER_BASE_ZERO_BITS = POW_PRAYER_BASE_ZERO_BITS;
+export const INCENSE_BASE_ZERO_BITS = POW_INCENSE_BASE_ZERO_BITS;
+export const CANDLE_BASE_ZERO_BITS = POW_CANDLE_BASE_ZERO_BITS;
+export const FLOWER_BASE_ZERO_BITS = POW_FLOWER_BASE_ZERO_BITS;
 
-/** Fixed tokens per remint (both mWLPOW and WLOTUS). */
-export const TOKENS_PER_REMINT = 100;
+/** @deprecated */
+export const NWLPOW_BASE_ZERO_BITS = INCENSE_BASE_ZERO_BITS;
+/** @deprecated */
+export const TEST_BASE_ZERO_BITS = CANDLE_BASE_ZERO_BITS;
+/** @deprecated */
+export const PROD_BASE_ZERO_BITS = FLOWER_BASE_ZERO_BITS;
 
-/** @deprecated use POW_LEADING_ZERO_BYTES from consensus. */
+export const PROD_TARGET_USD_PER_TOKEN = WLOTUS_TARGET_USD_PER_TOKEN;
+export const PROD_TARGET_USD_PER_REMINT = WLOTUS_TARGET_USD_PER_BATON;
+
+const peg = economicTokenPricesUsd();
+export const CANDLE_TARGET_USD_PER_TOKEN = peg.candle;
+/** Non-economic */
+export const INCENSE_TARGET_USD_PER_TOKEN = 0;
+export const PRAYER_TARGET_USD_PER_TOKEN = 0;
+
+/** @deprecated */
+export const TEST_TARGET_USD_PER_TOKEN = CANDLE_TARGET_USD_PER_TOKEN;
+/** @deprecated */
+export const NWLPOW_TARGET_USD_PER_TOKEN = 0;
+
 export const TEST_POW_LEADING_ZERO_BYTES = 1;
-
-/**
- * Bootstrap fungible supply for burn UX.
- * 1_000_000 mWLPOW @ 0 decimals = 1_000_000 atoms.
- */
 export const TEST_INITIAL_MINT_ATOMS = 1_000_000n;
-
 export const TEST_POW_BATON_COUNT = 4;
 
-export const TEST_TOKEN_TICKER = 'mWLPOW';
-
-export const TEST_TOKEN_NAME = 'milli White Lotus PoW';
+export const TEST_TOKEN_TICKER = 'CANDLE';
+export const TEST_TOKEN_NAME = 'Candle';
+export const NWLPOW_TOKEN_TICKER = 'INCENSE';
+export const NWLPOW_TOKEN_NAME = 'Incense';
+export const PRAYER_TOKEN_TICKER = 'PRAYER';
+export const PRAYER_TOKEN_NAME = 'Prayer';
 
 export const TEST_TARGET_USD_PER_REMINT =
-  TEST_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;
+  CANDLE_TARGET_USD_PER_TOKEN * CANDLE_TOKENS_PER_BATON;
+export const NWLPOW_TARGET_USD_PER_REMINT = 0;
+export const PRAYER_TARGET_USD_PER_REMINT = 0;
 
-export const PROD_TARGET_USD_PER_REMINT =
-  PROD_TARGET_USD_PER_TOKEN * TOKENS_PER_REMINT;
+export {
+  PRAYER_MINT_ATOMS,
+  INCENSE_MINT_ATOMS,
+  CANDLE_MINT_ATOMS,
+  FLOWER_MINT_ATOMS,
+};

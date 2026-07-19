@@ -1,82 +1,89 @@
 /**
- * WLOTUS / mWLPOW consensus parameters.
+ * WLOTUS family consensus parameters.
  *
- * Incubation token **mWLPOW** ≈ 1/1000 energy of future **WLOTUS**.
- * Freeze only at GENESIS; until then values may change.
+ * Flower / Candle = economic MoE.
+ * Prayer / Incense = non-economic ritual chrome.
+ * See pricing.ts / docs/ECONOMICS.md.
  */
 
-/** Incubation ticker (milli-WLPOW test). */
-export const TOKEN_TICKER = 'mWLPOW';
+export const PRAYER_TICKER = 'PRAYER';
+export const PRAYER_NAME = 'Prayer';
 
-/** Human-readable name. */
-export const TOKEN_NAME = 'milli White Lotus PoW';
+export const INCENSE_TICKER = 'INCENSE';
+export const INCENSE_NAME = 'Incense';
 
-/**
- * Future production ticker (not this genesis).
- * Nominal energy peg: 1000 mWLPOW ≈ 1 WLOTUS.
- */
+export const CANDLE_TICKER = 'CANDLE';
+export const CANDLE_NAME = 'Candle';
+
 export const PROD_TOKEN_TICKER = 'WLOTUS';
+export const PROD_TOKEN_NAME = 'WLotus';
+export const FLOWER_TICKER = PROD_TOKEN_TICKER;
+export const FLOWER_NAME = 'Flower';
 
-export const PROD_TOKEN_NAME = 'White Lotus';
+/** @deprecated */
+export const NWLPOW_TICKER = INCENSE_TICKER;
+export const NWLPOW_NAME = INCENSE_NAME;
+/** @deprecated */
+export const TOKEN_TICKER = CANDLE_TICKER;
+export const TOKEN_NAME = CANDLE_NAME;
 
-/**
- * Decimals for mWLPOW incubation. Whole tokens only (no fractional).
- * Mint is always 100 tokens per remint.
- */
+export const DOGFOOD_TICKER_MWLPOW = 'mWLPOW';
+
 export const TOKEN_DECIMALS = 0;
-
-/** Future WLOTUS decimals (same fixed-100 mint model). */
 export const PROD_TOKEN_DECIMALS = 0;
-
-/**
- * Leading zero *bytes* on hash256(preimage ‖ nonce) at incubation genesis.
- * 1 byte ⇒ ~1/256 — cheap dogfood so anyone can mine/burn.
- */
 export const POW_LEADING_ZERO_BYTES = 1;
 
-/**
- * Fixed mint per remint (atoms). Always 100 tokens @ 0 decimals.
- * Moore / Koomey adjusts **difficulty**, not this amount.
- */
-export const BASE_MINT_ATOMS = 100n;
+/** Prayer — phone ~30 s (non-economic). */
+export const POW_PRAYER_BASE_ZERO_BITS = 22;
 
-/** Parallel PoW mint batons (N ≥ 2). */
-export const POW_BATON_COUNT = 4;
+/** Incense — trivial PoW / fee-only (non-economic). */
+export const POW_INCENSE_BASE_ZERO_BITS = 8;
 
 /**
- * Ergon post-fix Moore daily factor numerator (~2.3y half-life).
- * Applied to **required work / difficulty**, not to mint atoms.
+ * Candle — 1/baton, GPU wall-clock (~43 bits). Soft ~1/10 Flower token.
+ * Not full ASIC anti-arb vs Flower.
  */
-export const MOORE_NUM = 99918n;
+export const POW_CANDLE_BASE_ZERO_BITS = 43;
 
-export const MOORE_DEN = 100000n;
+/** Flower — $1/baton → ~59 bits. */
+export const POW_FLOWER_BASE_ZERO_BITS = 59;
 
-/** Obsolete Ergon pre-fix factor — forbidden. */
-export const MOORE_NUM_OBSOLETE = 99826n;
-
-/** Host blocks per Moore day-step (~10 min × 144). */
-export const MOORE_DAY_BLOCKS = 144;
-
-/** Wall-seconds per Moore day. */
-export const MOORE_DAY_SECONDS = 86_400;
-
-/**
- * Extra leading zero *bits* of PoW required per this many Moore days.
- * ≈ Ergon half-life (~840d): +1 bit ≈ 2× work.
- */
-export const MOORE_DAYS_PER_EXTRA_BIT = 840;
-
-/** Base PoW zero-bits at genesis (8 ≡ 1 leading zero byte). */
+/** @deprecated */
+export const POW_N_BASE_ZERO_BITS = POW_INCENSE_BASE_ZERO_BITS;
+/** @deprecated */
+export const POW_M_BASE_ZERO_BITS = POW_CANDLE_BASE_ZERO_BITS;
+/** @deprecated */
+export const POW_W_BASE_ZERO_BITS = POW_FLOWER_BASE_ZERO_BITS;
 export const POW_BASE_ZERO_BITS = POW_LEADING_ZERO_BYTES * 8;
 
-/**
- * Nominal energy conversion when WLOTUS launches:
- * 1000 mWLPOW ↔ 1 WLOTUS.
- */
-export const MWLOTUS_PER_WLOTUS = 1000n;
+export const BASE_MINT_ATOMS = 100n;
 
-/** Alias for the same peg. */
+export const PRAYER_MINT_ATOMS = 1n;
+export const INCENSE_MINT_ATOMS = 100n;
+export const CANDLE_MINT_ATOMS = 1n;
+export const FLOWER_MINT_ATOMS = 100n;
+
+export const POW_BATON_COUNT = 4;
+
+export const MOORE_NUM = 99918n;
+export const MOORE_DEN = 100000n;
+export const MOORE_NUM_OBSOLETE = 99826n;
+
+export const MOORE_DAY_BLOCKS = 144;
+export const MOORE_DAY_SECONDS = 86_400;
+export const MOORE_DAYS_PER_EXTRA_BIT = 840;
+
+/** Economic peg only: 10 Candle tokens ≈ 1 Flower token. */
+export const CANDLE_PER_FLOWER = 10n;
+
+/** @deprecated non-economic — do not use for MoE conversion */
+export const PRAYER_PER_INCENSE = 0n;
+/** @deprecated */
+export const INCENSE_PER_CANDLE = 0n;
+/** @deprecated old milli peg */
+export const MWLOTUS_PER_WLOTUS = CANDLE_PER_FLOWER;
 export const MWLPOW_PER_WLOTUS = MWLOTUS_PER_WLOTUS;
+export const NWLPOW_PER_MWLPOW = 0n;
+export const NWLPOW_PER_WLOTUS = 0n;
 
-/** Document URL. */
 export const TOKEN_URL = 'https://github.com/bcProFoundation/wlotus';

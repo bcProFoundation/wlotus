@@ -1,0 +1,94 @@
+// Production Moore + tip remint (dryrun-ready).
+// Redeem ≤520; non-push ops ≤201 (eCash MAX_OPS_PER_SCRIPT).
+// Whole-byte PoW (bits % 8 == 0) — eCash 201-op limit cannot host
+// fractional-bit checks AND hard next-P2SH on one redeem.
+// Dryrun bases: Prayer 24, Candle 40, Flower 56.
+// bits = base + floor((locktime - genesis) / period); cap bits ≤ 128.
+// tipLocktime anti-rewind.
+// Hard next-P2SH: miner supplies nextRedeem; sha256(econ)==prefixHash,
+// tip'==locktime, sha256(code)==codeHash; baton→P2SH(hash160(nextRedeem)).
+// Layout: econHead(85) | 0x20 prefixHash | 0x04 tipLe | codeBytes
+// CODESEPARATOR keeps BIP143 preimage small.
+
+contract WlotusPowRemintMooreTip(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    [byte;4] genesisUnixLe,
+    [byte;1] baseZeroBitsBin,
+    [byte;4] secondsPerExtraBitLe,
+    [byte;32] codeHash,
+    [byte;32] prefixHash,
+    [byte;4] tipLocktimeLe
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage,
+        [byte] nextRedeem
+    ) {
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+
+        int genesisUnix = bin2num(genesisUnixLe);
+        int tipLocktime = bin2num(tipLocktimeLe);
+        int baseZeroBits = bin2num(baseZeroBitsBin);
+        int secondsPerExtraBit = bin2num(secondsPerExtraBitLe);
+
+        verify locktime >= genesisUnix;
+        verify locktime >= tipLocktime;
+
+        int extraBits = (locktime - genesisUnix) / secondsPerExtraBit;
+        int bits = baseZeroBits + extraBits;
+        verify bits <= 128;
+        verify bits % 8 == 0;
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        ([byte] zpref, _) = solhash @ (bits / 8);
+        verify bin2num(zpref) == 0;
+
+        // Hard-bind nextRedeem (no full-script CAT).
+        ([byte] econHead, [byte] afterEcon) = nextRedeem @ 85;
+        verify sha256(econHead) == Sha256(prefixHash);
+        (_, [byte] afterMid) = afterEcon @ 33;
+        ([byte] tipChunk, [byte] codeBytes) = afterMid @ 5;
+        verify tipChunk == (0x04 . num2bin(locktime, 4));
+        verify sha256(codeBytes) == Sha256(codeHash);
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        [byte] wlpt =
+            0x574c5054 .
+            0x04 .
+            num2bin(bits, 2) .
+            num2bin(extraBits, 4) .
+            num2bin(locktime, 4);
+
+        [byte] mintSection =
+            0x534c503200044d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x01;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wlpt), 1) .
+            wlpt .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextRedeem) . 0x87;
+
+        verify hash256(out0 . out1 . out2) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}

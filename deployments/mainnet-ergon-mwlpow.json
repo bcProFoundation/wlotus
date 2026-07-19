@@ -1,0 +1,40 @@
+{
+  "ticker": "mWLPOW",
+  "name": "milli White Lotus PoW (Ergon δ)",
+  "tokenId": "de640661109f9a56d6404a7a68d054d01094958f466dc01bdc1c4e23f1a50e8e",
+  "mode": "ergon-daily-delta",
+  "role": "incubation-ergon-test",
+  "decimals": 0,
+  "powAddress": "ecash:pzjjuvfj0mjpu7qkj95e83ewduk49lzudgclwka3an",
+  "redeemScriptHex": "208e0ea5f1234e1cdc1bc06d468f959410d054d0687a4a40d6569a9f10610664de06640000000000043496576a03805101080000000142caff0057798258947f7776547f757681765679a269765679945579967651a1695479547f76547f7553790087635c7953798188675c79788188685e79a80113797eaa76547f75768100a26976815f799f69607901117982770128947f777601207f7504574c4446527e587954807e01117954807e597954807e04534c50320051807e547e044d494e547e0111797e517e60797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011879a97e0288ac7e08220200000000000001177e02a9147e0117797e01877e527952797e787eaa577988ab011b79011a79ad011a79011979a8011b79ba7777777777777777777777777777777777777777777777777777777777",
+  "genesisUnix": 1784124980,
+  "daySeconds": 86400,
+  "genesisTarget": 16777216,
+  "maxDays": 1,
+  "mooreNum": 99918,
+  "mooreDen": 100000,
+  "targetTableHex": "0000000142caff00",
+  "difficultyNote": "Ergon daily δ: target_d = floor(T0 * 99918^d / 100000^d); WLDF v2 stores day+target",
+  "mintAtomsPerRemint": "100",
+  "tokensPerRemint": 100,
+  "targetUsdPerToken": 0.00001,
+  "mwlpowPerWlotus": 1000,
+  "initialMintAtoms": "1000000",
+  "powBatonCount": 2,
+  "genesisTxid": "de640661109f9a56d6404a7a68d054d01094958f466dc01bdc1c4e23f1a50e8e",
+  "handoffTxids": [
+    "e414bed709ef2f651fdc180040696f9928cde1144502aa2c3ac5cb1b54c7c427",
+    "6dca63cba4ac44a269d0ba783411b4b1e935e8da4ea0328468a37a7b8652426d"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-17T14:16:23.087Z",
+  "explorer": "https://explorer.e.cash/tx/de640661109f9a56d6404a7a68d054d01094958f466dc01bdc1c4e23f1a50e8e",
+  "cashtab": "https://cashtab.com/#/token/de640661109f9a56d6404a7a68d054d01094958f466dc01bdc1c4e23f1a50e8e",
+  "notes": [
+    "Ergon-like daily Moore δ=99918/100000 on compact PoW target (not +1 bit/day).",
+    "eMPP WLDF v2 announces dayIndex + target beside ALP MINT.",
+    "Dogfood window days 0..1 (opcode budget; Spedn has no Mul).",
+    "Half-life ~2.3y; +1 bit ≈ every 840 days at this δ."
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "ticker": "tPRAYTIP",
+  "name": "Test Prayer Tip (stateful)",
+  "tokenId": "ef171a887e0804f4b6fd6dc149d7ee1b615a2c3acca0f5ce0439a2275dd14fd4",
+  "mode": "prayer-tip",
+  "role": "prayer-tip-test-non-economic",
+  "decimals": 0,
+  "powAddress": "ecash:pp09u0dt3fpe9576hughnpmvwv7txu4kpq60spzd98",
+  "redeemScriptHex": "20d44fd15d27a23904cef5a0cc3a2c5a611beed749c16dfdb6f404087e881a17ef060100000000000494dc5a6a51013c02100e0494dc5a6a005a798258947f7776547f757681765979a269765579a269765579947658799f6351670068785879a263516700685e7900585979557993547994a3a4885a795f7993765c795893a169011179a80116797eaa78589652795897527952797f78810088527951876376517f7576810280009f6975675279926376517f750640201008040276557952947f7776517f7553798178819f696d6d686801167901177982770128947f777601207f7504574c5054517e587952807e01177951807e5c7954807e607954807e04534c50320051807e547e044d494e547e0117797e517e0116797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e011e79a97e0288ac7e08220200000000000001177e02a9147e011d797e01877e527952797e787eaa577988ab012179012079ad012079011f79a8012179ba7777777777777777777777777777777777777777777777777777777777777777777777",
+  "genesisUnix": 1784339604,
+  "baseZeroBits": 1,
+  "minGapSeconds": 60,
+  "coolGapSeconds": 3600,
+  "tipLocktime": 1784339604,
+  "tipActivity": 0,
+  "mintAtomsPerRemint": "1",
+  "tokensPerRemint": 1,
+  "initialMintAtoms": "1000",
+  "powBatonCount": 2,
+  "batonTips": [
+    {
+      "index": 0,
+      "tipLocktime": 1784339604,
+      "tipActivity": 0,
+      "powAddress": "ecash:pp09u0dt3fpe9576hughnpmvwv7txu4kpq60spzd98",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 1,
+      "tipLocktime": 1784339604,
+      "tipActivity": 0,
+      "powAddress": "ecash:pp09u0dt3fpe9576hughnpmvwv7txu4kpq60spzd98",
+      "lastRemintTxid": null
+    }
+  ],
+  "genesisTxid": "ef171a887e0804f4b6fd6dc149d7ee1b615a2c3acca0f5ce0439a2275dd14fd4",
+  "handoffTxids": [
+    "77b45c665d9c6c074a8440fc4c7d63504d87c4a5ca44102966b821ba8f29ef6b",
+    "a308323811ddb4553d4cba4b2190c076b7c38491068402b538d2827dde214c48"
+  ],
+  "authPubkey": "02cbd0b249b5ef2fa254807319aff2728013fa8756b4a73b1996480d430ff6bb0e",
+  "genesisAddress": "ecash:qrkf3e43xhu4cl8syfqja4k0g4kchzzt0yf4w00sm7",
+  "createdAt": "2026-07-18T02:30:57.482Z",
+  "explorer": "https://explorer.e.cash/tx/ef171a887e0804f4b6fd6dc149d7ee1b615a2c3acca0f5ce0439a2275dd14fd4",
+  "cashtab": "https://cashtab.com/#/token/ef171a887e0804f4b6fd6dc149d7ee1b615a2c3acca0f5ce0439a2275dd14fd4",
+  "notes": [
+    "Test Prayer tip: stateful tipLocktime + tipActivity per baton.",
+    "gap < minGapSeconds → activity+1 → bits = base + activity (concurrent pray bump).",
+    "gap ≥ coolGapSeconds → activity−1. N batons = N independent tips.",
+    "Soft batonHash (Moore-style): miner sets next tip P2SH off-chain. Clock: docs/CLOCK.md."
+  ]
+}
