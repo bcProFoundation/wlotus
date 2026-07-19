@@ -75,6 +75,7 @@ CI/CD: GitHub Actions → rsync → nginx on Contabo (`/var/www/wlotus-test`).
 
 ## Next
 
-1. Dryrun Candle / Flower when funded for longer PoW  
-2. Postage server for fee sponsorship  
-3. Fractional-bit PoW if/when eCash raises the 201-op limit  
+1. Adopt Prayer bootstrap (phone PoW → server mint 2: burn + inventory) — [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)  
+2. Dryrun Candle / Flower when funded for longer PoW  
+3. Postage server for fee sponsorship  
+4. Fractional-bit PoW if/when eCash raises the 201-op limit  

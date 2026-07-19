@@ -31,3 +31,12 @@ ASICs will mint Candle quickly — acceptable because **Candle is not ASIC-targe
 | Flower | **59** | 100 | **$1** | — | — | **~1.6 h** |
 
 Fee ~5.46 XEC → eCash miners. `npm run pricing`
+
+## Prayer-only bootstrap (phone → server)
+
+Starting path: phone mines a few minutes → server pays fee → mint **2** → **1 burn + 1 inventory**.
+
+Fee at **$10 / 1M XEC** ≈ **$0.000055**; at **$50 / 1M** ≈ **$0.000273**.  
+Phone **energy ≪ fee** — do not peg bits to energy; use **~24 bits (~2 min)** UX. Inventory cost basis ≈ **5.46 XEC**.
+
+Full evaluation: [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md).
