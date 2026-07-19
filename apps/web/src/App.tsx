@@ -231,17 +231,49 @@ export default function App() {
       setPhase('mining');
       setMineStartedAt(Date.now());
       setBaseZeroBits(challenge.bits);
-      const mined = await mineInWorker({
-        powPrefixHex: challenge.powPrefixHex,
-        bits: challenge.bits,
-        nonceLength: challenge.nonceLength,
-        signal: ac.signal,
-        onProgress: p => {
-          setDeviceHashrateHps(p.hashrateHps);
-        },
-      });
+
+      const tipEpoch = challenge.tipEpoch ?? null;
+      let tipMoved = false;
+      const tipWatch =
+        tipEpoch == null
+          ? null
+          : setInterval(() => {
+              void (async () => {
+                try {
+                  const s = await fetchStatus(installId);
+                  if (s.tipEpoch && s.tipEpoch !== tipEpoch) {
+                    tipMoved = true;
+                    ac.abort();
+                  }
+                } catch {
+                  /* ignore transient status errors while mining */
+                }
+              })();
+            }, 5_000);
+
+      let mined;
+      try {
+        mined = await mineInWorker({
+          powPrefixHex: challenge.powPrefixHex,
+          bits: challenge.bits,
+          nonceLength: challenge.nonceLength,
+          signal: ac.signal,
+          onProgress: p => {
+            setDeviceHashrateHps(p.hashrateHps);
+          },
+        });
+      } finally {
+        if (tipWatch) clearInterval(tipWatch);
+      }
+
       if (ac.signal.aborted) {
         await releaseChallenge(challenge.challengeId);
+        if (tipMoved) {
+          setMsg({
+            kind: 'err',
+            text: 'Someone else offered on this tip first. Offer again to start a new challenge.',
+          });
+        }
         return;
       }
 

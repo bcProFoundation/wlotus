@@ -63,7 +63,15 @@ export const INCENSE_MINT_ATOMS = 100n;
 export const CANDLE_MINT_ATOMS = 1n;
 export const FLOWER_MINT_ATOMS = 100n;
 
-export const POW_BATON_COUNT = 4;
+/**
+ * ALP mempool policy caps token outputs per tx at 29 (`ALP_POLICY_MAX_OUTPUTS`).
+ * Genesis with one fungible mint output ⇒ at most 28 PoW batons.
+ * **Immutable after genesis** — always mint the max; desk may serve fewer tips.
+ */
+export const ALP_GENESIS_MAX_TOKEN_OUTPUTS = 29;
+export const POW_BATON_COUNT_MAX = ALP_GENESIS_MAX_TOKEN_OUTPUTS - 1; // 28
+/** Default / required genesis baton count (use the ALP maximum). */
+export const POW_BATON_COUNT = POW_BATON_COUNT_MAX;
 
 export const MOORE_NUM = 99918n;
 export const MOORE_DEN = 100000n;

@@ -32,6 +32,16 @@ const MAX_OFFERS_PER_DAY = Math.max(
   1,
   Number(process.env.MINT_MAX_OFFERS_PER_DAY?.trim() || 20) || 20,
 );
+/** Cap concurrent open challenges (server CPU / fuel UTXOs). Race is open within this. */
+const MAX_OPEN_CHALLENGES = Math.max(
+  1,
+  Number(process.env.MINT_MAX_OPEN_CHALLENGES?.trim() || 32) || 32,
+);
+/** MVP serves one tip; future iterations can raise this / round-robin tips. */
+const SERVING_TIP_INDEX = Math.max(
+  0,
+  Number(process.env.MINT_SERVING_TIP_INDEX?.trim() || 0) || 0,
+);
 const CHALLENGE_TTL_MS = 15 * 60_000;
 
 export interface OfferResult {
@@ -61,6 +71,11 @@ export interface ChallengePublic {
   powPrefixHex: string;
   locktime: number;
   tipLocktime: number;
+  /** Baton outpoint — informational. */
+  tipKey: string;
+  /** Changes when the serving tip is reminted; clients should restart. */
+  tipEpoch: string;
+  tipIndex: number;
   mintAtoms: string;
   note: string;
 }
@@ -81,6 +96,7 @@ interface DryrunDep {
   tipLocktime?: number;
   powAddress?: string;
   mintAtomsPerRemint: string;
+  powBatonCount?: number;
   batonTips?: BatonTip[];
   redeemScriptHex?: string;
   codeHashHex?: string;
@@ -123,6 +139,43 @@ function utcDay(now = Date.now()): number {
 
 function fuelKey(txid: string, outIdx: number): string {
   return `${txid}:${outIdx}`;
+}
+
+function tipKey(txid: string, outIdx: number): string {
+  return fuelKey(txid, outIdx);
+}
+
+function tipEpochOf(tipRec: BatonTip): string {
+  return tipRec.lastRemintTxid ?? `genesis:${tipRec.index}:${tipRec.tipLocktime}`;
+}
+
+
+function countOpenChallenges(): number {
+  expireStaleChallenges();
+  let n = 0;
+  for (const ch of challenges.values()) {
+    if (ch.status === 'open') n++;
+  }
+  return n;
+}
+
+/** After a tip remint, expire every other open job on that baton UTXO. */
+function expireOpenOnBaton(
+  batonTxid: string,
+  batonOutIdx: number,
+  exceptId?: string,
+): number {
+  let n = 0;
+  for (const ch of challenges.values()) {
+    if (ch.status !== 'open') continue;
+    if (exceptId && ch.id === exceptId) continue;
+    if (ch.baton.txid === batonTxid && ch.baton.outIdx === batonOutIdx) {
+      ch.status = 'expired';
+      reservedFuel.delete(fuelKey(ch.fuel.txid, ch.fuel.outIdx));
+      n++;
+    }
+  }
+  return n;
 }
 
 export function remainingOffersToday(installId: string): number {
@@ -179,42 +232,50 @@ function cancelOpenChallengesForInstall(installId: string): void {
   }
 }
 
-function hasOpenBatonChallenge(): boolean {
-  expireStaleChallenges();
-  for (const ch of challenges.values()) {
-    if (ch.status === 'open') return true;
-  }
-  return false;
-}
-
-async function ensureFuel(wallet: Wallet): Promise<void> {
-  await wallet.sync();
-  const sized = wallet.utxos.find(
+function freeFuelCount(wallet: Wallet): number {
+  return wallet.utxos.filter(
     u =>
       !u.token &&
       u.sats >= REMINT_FUEL_SATS &&
-      u.sats <= REMINT_FUEL_SATS + 1_000n,
-  );
-  if (sized) return;
+      !reservedFuel.has(fuelKey(u.outpoint.txid, u.outpoint.outIdx)),
+  ).length;
+}
 
-  const big = wallet.utxos
-    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 2_000n)
-    .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
-  if (!big) {
-    const any = wallet.utxos.find(u => !u.token && u.sats >= REMINT_FUEL_SATS);
-    if (any) return;
-    throw new Error(`Need XEC ≥ ${Number(REMINT_FUEL_SATS) / 100} for remint fee`);
-  }
-
-  const { payment } = await import('ecash-lib');
-  const action: payment.Action = {
-    outputs: [{ sats: REMINT_FUEL_SATS, script: wallet.script }],
-  };
-  const resp = await wallet.action(action).build().broadcast();
-  if (!resp.success || !resp.broadcasted?.length) {
-    throw new Error(`Fuel split failed: ${JSON.stringify(resp)}`);
-  }
+/** Pre-split fee coins so concurrent open challenges each get a unique fuel UTXO. */
+async function ensureFuelPool(wallet: Wallet, wantFree: number): Promise<void> {
   await wallet.sync();
+  let free = freeFuelCount(wallet);
+  let guard = 0;
+  while (free < wantFree && guard < 8) {
+    guard++;
+    const need = Math.min(8, wantFree - free);
+    const big = wallet.utxos
+      .filter(
+        u =>
+          !u.token &&
+          u.sats > REMINT_FUEL_SATS * BigInt(need) + 2_000n,
+      )
+      .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
+    if (!big) {
+      if (freeFuelCount(wallet) >= 1) return;
+      throw new Error(
+        `Need XEC ≥ ${Number(REMINT_FUEL_SATS) / 100} for remint fee (and more for concurrent miners)`,
+      );
+    }
+    const { payment } = await import('ecash-lib');
+    const action: payment.Action = {
+      outputs: Array.from({ length: need }, () => ({
+        sats: REMINT_FUEL_SATS,
+        script: wallet.script,
+      })),
+    };
+    const resp = await wallet.action(action).build().broadcast();
+    if (!resp.success || !resp.broadcasted?.length) {
+      throw new Error(`Fuel split failed: ${JSON.stringify(resp)}`);
+    }
+    await wallet.sync();
+    free = freeFuelCount(wallet);
+  }
 }
 
 async function createChallengeOnce(opts: {
@@ -227,11 +288,12 @@ async function createChallengeOnce(opts: {
       `Daily limit reached (${MAX_OFFERS_PER_DAY} Prayer offerings per device).`,
     );
   }
+  // Same device replaces its own open job; others may keep racing the tip.
   cancelOpenChallengesForInstall(opts.installId);
   expireStaleChallenges();
-  if (hasOpenBatonChallenge()) {
+  if (countOpenChallenges() >= MAX_OPEN_CHALLENGES) {
     throw new Error(
-      'Another Prayer mint is in progress. Try again in a few minutes.',
+      `Mint desk is at capacity (${MAX_OPEN_CHALLENGES} concurrent miners). Try again shortly.`,
     );
   }
 
@@ -241,13 +303,6 @@ async function createChallengeOnce(opts: {
     throw new Error(
       `Deployment mintAtoms=${mintAtoms}; memorial Prayer requires mint 1. Create a new dryrun (TIER=prayer).`,
     );
-  }
-  if (
-    dep.covenant &&
-    dep.covenant !== 'WlotusPowRemintMooreTipMemo' &&
-    dep.mode !== 'moore-tip-memo-hard-bind'
-  ) {
-    // Older dual-mint deployments are rejected by mintAtoms check above.
   }
 
   const tips =
@@ -261,7 +316,8 @@ async function createChallengeOnce(opts: {
             lastRemintTxid: null,
           },
         ];
-  const tipRec = tips[0]!;
+  const tipRec =
+    tips.find(t => t.index === SERVING_TIP_INDEX) ?? tips[0]!;
   const note = opts.note.trim().slice(0, 80);
   const memorial = memorialPushdata(note);
 
@@ -278,7 +334,10 @@ async function createChallengeOnce(opts: {
   const mint = await loadMintWallet(chronik);
   console.log('mint wallet', JSON.stringify(mintWalletSummary(mint)));
   const wallet = mint.wallet;
-  await ensureFuel(wallet);
+  await ensureFuelPool(
+    wallet,
+    Math.min(MAX_OPEN_CHALLENGES, countOpenChallenges() + 1),
+  );
 
   const scriptHex = toHex(contract.scriptHash);
   const scriptUtxos = await chronik.script('p2sh', scriptHex).utxos();
@@ -316,7 +375,11 @@ async function createChallengeOnce(opts: {
         !reservedFuel.has(fuelKey(u.outpoint.txid, u.outpoint.outIdx)),
     )
     .sort((a, c) => (a.sats < c.sats ? -1 : 1))[0];
-  if (!fuelUtxo) throw new Error('No fuel UTXO');
+  if (!fuelUtxo) {
+    throw new Error(
+      'Mint desk temporarily out of fee UTXOs. Try again shortly.',
+    );
+  }
 
   const { mtp } = await getMedianTimePast(chronik);
   const locktime = Math.max(tipRec.tipLocktime, mtp - 1);
@@ -388,6 +451,9 @@ async function createChallengeOnce(opts: {
     powPrefixHex: prepared.powPrefixHex,
     locktime,
     tipLocktime: tipRec.tipLocktime,
+    tipKey: tipKey(stored.baton.txid, stored.baton.outIdx),
+    tipEpoch: tipEpochOf(tipRec),
+    tipIndex: tipRec.index,
     mintAtoms: stored.mintAtoms,
     note,
   };
@@ -484,13 +550,31 @@ async function submitChallengeOnce(opts: {
   const built = await buildMooreTipMemoRemintTxWithNonce({ prepared, nonce });
 
   const chronik = await createChronik('closest');
-  const broadcast = await chronik.broadcastTx(built.txHex);
-  const remintTxid =
-    typeof broadcast === 'string'
-      ? broadcast
-      : (broadcast as { txid: string }).txid;
+  let remintTxid: string;
+  try {
+    const broadcast = await chronik.broadcastTx(built.txHex);
+    remintTxid =
+      typeof broadcast === 'string'
+        ? broadcast
+        : (broadcast as { txid: string }).txid;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    ch.status = 'expired';
+    reservedFuel.delete(fuelKey(ch.fuel.txid, ch.fuel.outIdx));
+    // Likely lost the tip race (double-spend / missing inputs).
+    throw new Error(
+      /missing|spent|conflict|txn-mempool|already|orphan|inputs-missing/i.test(
+        msg,
+      )
+        ? 'Someone else offered on this tip first. Pull to refresh and Offer again.'
+        : msg,
+    );
+  }
 
   consumeOfferSlot(opts.installId);
+
+  // Losers on the same tip restart — free their fuel reservations.
+  expireOpenOnBaton(ch.baton.txid, ch.baton.outIdx, ch.id);
 
   const nextTips = tips.map(t =>
     t.index === tipRec.index
@@ -596,22 +680,47 @@ export function cancelChallenge(opts: {
   return { ok: true, cancelled };
 }
 
+export function enqueueCancel(opts: {
+  installId: string;
+  challengeId?: string;
+}): Promise<{ ok: true; cancelled: number }> {
+  return withChainLock(async () => cancelChallenge(opts));
+}
+
 export function publicStatus(): {
   tokenId: string | null;
   mintAtoms: string | null;
   ticker: string;
   maxOffersPerDay: number;
+  maxOpenChallenges: number;
+  openChallenges: number;
+  servingTipIndex: number;
+  tipKey: string | null;
+  tipEpoch: string | null;
+  powBatonCount: number | null;
+  raceOpen: true;
   baseZeroBits: number | null;
   clientPow: true;
   memorialOnMint: true;
 } {
   try {
     const { dep } = loadDep();
+    const tips =
+      dep.batonTips && dep.batonTips.length > 0 ? dep.batonTips : [];
+    const tipRec =
+      tips.find(t => t.index === SERVING_TIP_INDEX) ?? tips[0] ?? null;
     return {
       tokenId: dep.tokenId,
       mintAtoms: dep.mintAtomsPerRemint,
       ticker: 'dPRAYER',
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
+      maxOpenChallenges: MAX_OPEN_CHALLENGES,
+      openChallenges: countOpenChallenges(),
+      servingTipIndex: SERVING_TIP_INDEX,
+      tipKey: tipRec ? tipEpochOf(tipRec) : null,
+      tipEpoch: tipRec ? tipEpochOf(tipRec) : null,
+      powBatonCount: dep.powBatonCount ?? (tips.length || null),
+      raceOpen: true,
       baseZeroBits: dep.baseZeroBits,
       clientPow: true,
       memorialOnMint: true,
@@ -622,6 +731,13 @@ export function publicStatus(): {
       mintAtoms: null,
       ticker: 'dPRAYER',
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
+      maxOpenChallenges: MAX_OPEN_CHALLENGES,
+      openChallenges: countOpenChallenges(),
+      servingTipIndex: SERVING_TIP_INDEX,
+      tipKey: null,
+      tipEpoch: null,
+      powBatonCount: null,
+      raceOpen: true,
       baseZeroBits: null,
       clientPow: true,
       memorialOnMint: true,

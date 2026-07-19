@@ -78,15 +78,21 @@ describe('moore decay (Ergon 99918/100000) on work', () => {
 });
 
 describe('genesis multi-baton', () => {
-  test('default plan has N>=2', () => {
+  test('default plan uses ALP-max batons', () => {
     const plan = buildGenesisPlan();
     expect(plan.powBatonCount).toBeGreaterThanOrEqual(2);
+    expect(plan.powBatonCount).toBe(28);
     expect(() => assertMultiBaton(plan)).not.toThrow();
   });
 
   test('rejects single baton', () => {
     const plan = buildGenesisPlan({ powBatonCount: 1 });
     expect(() => assertMultiBaton(plan)).toThrow(/N >= 2/);
+  });
+
+  test('rejects above ALP genesis max', () => {
+    const plan = buildGenesisPlan({ powBatonCount: 29 });
+    expect(() => assertMultiBaton(plan)).toThrow(/ALP genesis max/);
   });
 });
 

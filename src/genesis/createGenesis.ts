@@ -1,6 +1,7 @@
 import {
   BASE_MINT_ATOMS,
   POW_BATON_COUNT,
+  POW_BATON_COUNT_MAX,
   POW_LEADING_ZERO_BYTES,
   TOKEN_DECIMALS,
   TOKEN_NAME,
@@ -48,5 +49,10 @@ export function buildGenesisPlan(
 export function assertMultiBaton(plan: GenesisPlan): void {
   if (plan.powBatonCount < 2) {
     throw new Error('WLOTUS requires N >= 2 PoW mint batons for parallel remints');
+  }
+  if (plan.powBatonCount > POW_BATON_COUNT_MAX) {
+    throw new Error(
+      `powBatonCount ${plan.powBatonCount} exceeds ALP genesis max ${POW_BATON_COUNT_MAX}`,
+    );
   }
 }
