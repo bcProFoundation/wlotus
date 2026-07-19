@@ -44,8 +44,10 @@ export interface StatusOk {
   maxOpenChallenges?: number;
   openChallenges?: number;
   tipEpoch?: string | null;
+  tipEpochs?: Record<string, string>;
   tipKey?: string | null;
   servingTipIndex?: number;
+  servingTipCount?: number;
   powBatonCount?: number | null;
   raceOpen?: boolean;
 }

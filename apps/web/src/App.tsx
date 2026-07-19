@@ -233,6 +233,7 @@ export default function App() {
       setBaseZeroBits(challenge.bits);
 
       const tipEpoch = challenge.tipEpoch ?? null;
+      const tipIndex = challenge.tipIndex;
       let tipMoved = false;
       const tipWatch =
         tipEpoch == null
@@ -241,7 +242,11 @@ export default function App() {
               void (async () => {
                 try {
                   const s = await fetchStatus(installId);
-                  if (s.tipEpoch && s.tipEpoch !== tipEpoch) {
+                  const live =
+                    tipIndex != null && s.tipEpochs
+                      ? s.tipEpochs[String(tipIndex)]
+                      : s.tipEpoch;
+                  if (live && live !== tipEpoch) {
                     tipMoved = true;
                     ac.abort();
                   }
