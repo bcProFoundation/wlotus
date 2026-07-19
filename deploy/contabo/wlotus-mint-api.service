@@ -4,13 +4,15 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/wlotus
-EnvironmentFile=-/etc/wlotus/mint.env
-ExecStart=/usr/bin/npm run mint-api
+# Adjust WorkingDirectory to your clone path (e.g. /root/wlotus/wlotus)
+WorkingDirectory=/root/wlotus/wlotus
+# Do NOT use EnvironmentFile for MINT_MNEMONIC (spaces break systemd).
+# server.ts loads /etc/wlotus/mint.env via dotenv.
+Environment=NODE_ENV=production
+Environment=MINT_API_PORT=8787
+ExecStart=/root/wlotus/wlotus/deploy/contabo/run-mint-api.sh
 Restart=on-failure
 RestartSec=5
-User=deploy
-Group=deploy
 # Long remint PoW can take minutes
 TimeoutStartSec=0
 
