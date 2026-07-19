@@ -3,8 +3,8 @@
 Migrated from **Lotus Temple** UX (flower / incense / candle offering steps),
 retargeted to **eCash ALP Prayer burn** with **XEC network fees**.
 
-Brand is **WLotus**: burnable white lotus — **memorial for the dead** and **dana**
-for the living (wealth sacrificed, not sold like vàng mã). See
+Brand is **White Lotus** (app title) / **WLotus** (domain). Black & white UI,
+white lotus mark — memorial + dana, not temple/pagoda framing. See
 [docs/VISION.md](../../docs/VISION.md).
 
 **Test deployment:** https://test.wlotus.org

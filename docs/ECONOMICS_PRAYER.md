@@ -108,6 +108,8 @@ ALP atoms of one `tokenId` are **amount-fungible**, but **UTXO history is still 
 
 Farmers who never receive the keep atom (app path = burn only) never hold desk-origin stock unless they **buy** an unmixed desk UTXO.
 
+**Resale:** buyers may resell same-origin desk coins for profit — allowed. That liquidity feeds vault top-up. Mixed-origin UTXOs may simply fail vault eligibility.
+
 ## Who pays what
 
 | Party | Pays | Receives |

@@ -45,11 +45,29 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 
 | Layer | Name | Role |
 |-------|------|------|
-| Product / domain / tech | **WLotus** | The vessel — burnable white lotus token |
-| The act | **Burn / Offer** | One gesture, two gifts |
+| **App title (human)** | **White Lotus** | Primary display name — flower + memorial meaning |
+| **Short / domain / tech** | **WLotus** | `wlotus.org`, tickers, repo, code |
+| Logo | White lotus flower (B&W mark) | Icon only — botanical motif, not a temple mark |
+| Visual theme | **Black & white** | Monochrome UI; white lotus on black |
+| The act | **Offer / Burn** | One gesture, two gifts |
 | Memorial | Dedication / memory | Why VN already understands sen trắng |
-| Dana | Generosity language (later: feature/category) | Why the burn is for *everyone* |
-| Tiers | Prayer / Candle / Flower (Incense) | Scale of sacrifice |
+| Dana | Generosity language (later: category) | Why the burn is for *everyone* |
+| Issuance | Dual mint (2 atoms) | 1 burn + 1 desk keep for vault top-up sales |
+| Tiers (later) | Prayer first; Candle / Flower later | Scale of sacrifice |
+
+Resale of **same-origin** desk Prayer for profit is fine — liquidity for vault top-up, not a bug.
+
+### App title options
+
+| Title | Pros | Cons |
+|-------|------|------|
+| **White Lotus** (recommended) | Matches flower + VN memorial; clear | HBO show association in English SEO |
+| **WLotus** | Domain-native; coined | Less emotional; needs explanation |
+| **White Lotus Offerings** | Clarifies the act | Longer |
+| **Lotus Offer** | Secular, action-led | Weaker “white” memorial cue |
+| **Sen Trắng** | Perfect VN | Weak globally |
+
+**Recommendation:** ship as **White Lotus**; keep **WLotus** for domain/tech. Subtitle: *Offer · Remember · Give.*
 
 ### Messaging
 
@@ -63,17 +81,22 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 
 **Do**
 
-- Claim the Vietnamese white-lotus memorial reading on purpose (do not hide it)
+- Claim the Vietnamese white-lotus memorial reading on purpose
 - Widen it with dana: memorial *and* community sacrifice
-- Keep **WLotus** as the public product name (`wlotus.org`)
-- Use dana / bố thí / đàn na as **meaning language** (and later as a feature/category), not a forced primary rename
+- **White Lotus** as app title; **WLotus** for domain / tickers
+- Black & white theme; white lotus flower as logo icon
+- Dual-mint desk keep for later vault sales (unmixed origin preferred)
+- Use dana / bố thí as meaning language, not a forced primary rename
 
 **Don’t**
 
-- Soften into generic wellness / spa “temple vibe” that erases death and dana
-- Market only as “token burn for scarcity” (misses the cultural heart)
-- Rename the primary brand to bare **Dana** early (VN niche word + SEA collision with Indonesia’s DANA e-wallet + existing Dana Wallet donation apps)
-- Lean on HBO-style “White Lotus” lifestyle branding in the West without the ritual frame
+- Use **Temple**, **Pagoda**, or sectarian house-of-worship framing (religion conflict risk)
+- Soften into spa / wellness vibe that erases death and dana
+- Market only as “token burn for scarcity”
+- Rename the primary brand to bare **Dana** early (SEA e-wallet / wallet collisions)
+- Frame the product as the HBO series — ritual offering, not luxury satire
+
+**IP note (non-legal):** a white lotus *flower* as a natural motif is ordinary symbolism; avoid copying third-party logos or “The White Lotus” show artwork. Distinct B&W mark + memorial/offering copy.
 
 ---
 
