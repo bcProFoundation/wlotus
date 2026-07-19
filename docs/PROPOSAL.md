@@ -11,7 +11,9 @@
 | **A. White Lotus on eCash (ALP + PoW remint)** | **Primary — ship this** |
 | **B. White Lotus L1 (eCash/Ergon-style fork)** | Contingency only — after product-market fit |
 
-Ritual need (vàng mã sacrifice + rebirth + commons) is satisfied by **issuance rules**, not by owning a blockchain. eCash already gives maintenance, Chronik, wallets, and Agora. An L1 buys fork-fairness and sovereign monetary policy at the cost of becoming a chain operator.
+Ritual need (**vàng mã–style memorial sacrifice** + **dana to the commons** + rebirth) is satisfied by **issuance rules**, not by owning a blockchain. eCash already gives maintenance, Chronik, wallets, and Agora. An L1 buys fork-fairness and sovereign monetary policy at the cost of becoming a chain operator.
+
+See **[VISION.md](./VISION.md)** for the memorial + dana brand thesis.
 
 ---
 
@@ -36,9 +38,14 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 
 ### 3.1 Narrative
 
-- **White Lotus (hoa sen trắng)** — Vietnamese mourning / purity symbol  
-- Cycle: *effort remints the flower → devotee burns it → merit is public → flower can bloom again*  
+Canonical vision: **[VISION.md](./VISION.md)**.
+
+- **WLotus** — the burnable white lotus (hoa sen trắng): Vietnamese memorial flower  
+- **One burn, two gifts:** memorial for the dead **and** dana (bố thí) for everybody — wealth destroyed, not sold  
+- **Vs vàng mã:** same memorial spirit; unlike paper offerings, no maker/seller captures the gift — the burn *is* the sacrifice for the community  
+- Cycle: *effort remints the flower → devotee burns it (memory + dana) → merit is public → flower can bloom again*  
 - Cumulative burned = spiritual ledger; circulating supply is secondary  
+- Public brand stays **WLotus**; dana is meaning / later category language (not an early rename)
 
 ### 3.2 Token
 

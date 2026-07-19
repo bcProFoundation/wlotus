@@ -1,5 +1,7 @@
 # Architecture
 
+Product meaning (memorial + dana): **[VISION.md](./VISION.md)**.
+
 ## Flow
 
 ```
@@ -10,7 +12,9 @@ GENESIS (ALP)
         │     outputs: ALP MINT M(k) → miner
         │              baton → next covenant state (same rules)
         │
-        └─ devotee acquires WLOTUS → alpBurn (+ memorial metadata in app repo)
+        └─ devotee acquires WLOTUS → alpBurn
+              ├── memorial dedication (for the dead — sen trắng)
+              └── dana: wealth destroyed for the community (not sold like vàng mã)
 ```
 
 ## Why multi-baton

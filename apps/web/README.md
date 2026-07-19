@@ -3,7 +3,9 @@
 Migrated from **Lotus Temple** UX (flower / incense / candle offering steps),
 retargeted to **eCash ALP Prayer burn** with **XEC network fees**.
 
-No “temple” product framing — brand is **WLotus**.
+Brand is **White Lotus** (app title) / **WLotus** (domain). Black & white UI,
+white lotus mark — memorial + dana, not temple/pagoda framing. See
+[docs/VISION.md](../../docs/VISION.md).
 
 **Test deployment:** https://test.wlotus.org
 

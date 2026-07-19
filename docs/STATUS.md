@@ -49,6 +49,10 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
+## Vision
+
+Burn WLotus = white lotus **in memorial of the dead** + **dana** for everybody (wealth destroyed; unlike vàng mã, no seller captures the gift). Full thesis: [VISION.md](./VISION.md).
+
 ## Offerings app (`apps/web`)
 
 Migrated from Lotus Temple UX → **WLotus** branding. Burns **Prayer** (ALP); fees in **XEC** (postage later).
@@ -71,6 +75,7 @@ CI/CD: GitHub Actions → rsync → nginx on Contabo (`/var/www/wlotus-test`).
 
 ## Next
 
-1. Dryrun Candle / Flower when funded for longer PoW  
-2. Postage server for fee sponsorship  
-3. Fractional-bit PoW if/when eCash raises the 201-op limit  
+1. Adopt Prayer bootstrap (phone PoW → server mint 2: burn + inventory) — [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)  
+2. Dryrun Candle / Flower when funded for longer PoW  
+3. Postage server for fee sponsorship  
+4. Fractional-bit PoW if/when eCash raises the 201-op limit  

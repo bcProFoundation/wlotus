@@ -189,10 +189,19 @@ export default function App() {
   return (
     <div className="app">
       <header className="hero">
-        <h1 className="brand">WLotus</h1>
+        <div className="brand-row">
+          <img
+            className="brand-mark"
+            src="/images/white-lotus.svg"
+            alt=""
+            width={56}
+            height={46}
+          />
+          <h1 className="brand">White Lotus</h1>
+        </div>
         <p className="tagline">
-          Offer Prayer on eCash. Tokens are burned on-chain; fees are paid in
-          XEC for now (postage server later).
+          Offer a white lotus. Remember someone. Give something up for all.
+          Prayer burns on eCash; fees in XEC for now.
         </p>
       </header>
 
@@ -329,7 +338,7 @@ export default function App() {
       </section>
 
       <footer className="footer">
-        Migrated from Lotus Temple UX · Prayer ALP burn · XEC fees ·{' '}
+        White Lotus · Prayer ALP burn · XEC fees ·{' '}
         <a href="https://github.com/bcProFoundation/wlotus">wlotus</a>
       </footer>
     </div>
