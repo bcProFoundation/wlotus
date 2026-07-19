@@ -19,10 +19,12 @@ See [docs/SPEC.md](./docs/SPEC.md) and [docs/STATUS.md](./docs/STATUS.md).
 
 Production **Prayer dryrun** is live. Offerings UI:
 
-```bash
-npm install
-npm run web          # http://localhost:5173 — burn dPRAYER with XEC fees
-```
+| Environment | URL / command |
+|-------------|----------------|
+| **Test (deployed)** | https://test.wlotus.org |
+| **Local dev** | `npm run web` → http://localhost:5173 |
+
+Deploy guide (local vs VM vs CI): [deploy/contabo/README.md](./deploy/contabo/README.md)
 
 ```
 apps/web/           # WLotus offerings (migrated from Lotus Temple UX)

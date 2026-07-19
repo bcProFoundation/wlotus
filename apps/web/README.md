@@ -5,7 +5,9 @@ retargeted to **eCash ALP Prayer burn** with **XEC network fees**.
 
 No “temple” product framing — brand is **WLotus**.
 
-## Run
+**Test deployment:** https://test.wlotus.org
+
+## Local development (laptop)
 
 From repo root (workspaces):
 
@@ -20,9 +22,9 @@ Or:
 cd apps/web && npm install && npm run dev
 ```
 
-Open http://localhost:5173
+Open http://localhost:5173 — hot reload, no VM or CI required.
 
-## Env (optional)
+## Env (optional, local build)
 
 Copy `.env.example` → `.env`:
 
@@ -41,12 +43,16 @@ Defaults to the live dryrun `dPRAYER` token.
 3. Choose 1 / 10 / 100 Prayer and burn — ALP `BURN` + `WLBR` memorial EMPP.
 4. Postage server can replace the XEC fee input later; burn path stays the same.
 
-## Deploy (Contabo test)
+## Deploy (test server)
 
-CI builds this SPA and rsyncs `dist/` to the Contabo test VM.
+| Where | How |
+|-------|-----|
+| **Live test** | https://test.wlotus.org (CI → Contabo) |
+| **Local** | `npm run web` → http://localhost:5173 |
 
-See **[deploy/contabo/README.md](../../deploy/contabo/README.md)** for VM bootstrap,
-GitHub secrets, and the **Deploy web (test)** workflow.
+CI builds `dist/` and rsyncs to the VM. Updating the site = run the GitHub workflow (or push to `master`), **not** `git pull` on the server.
+
+Full guide: **[deploy/contabo/README.md](../../deploy/contabo/README.md)** (local vs VM vs CI).
 
 ## Not ported (yet)
 
