@@ -187,8 +187,10 @@ Workflow: **Deploy web (test)** — `.github/workflows/deploy-web-test.yml`
 
 | Trigger | When |
 |---------|------|
-| **Automatic** | Push to `master` that touches `apps/web/**`, `package.json`, workflow, or `deploy/contabo/**` |
-| **Manual** | Actions → Deploy web (test) → **Run workflow** |
+| **Automatic** | Push to `master` that touches `apps/web/**`, `apps/mint-api/**`, `package.json`, workflow, or `deploy/contabo/**` |
+| **Manual** | Actions → Deploy web (test) → **Run workflow** (use branch **master** only) |
+
+Feature branches do **not** trigger deploy (cost control).
 
 Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → VM.
 

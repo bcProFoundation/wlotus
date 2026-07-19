@@ -19,13 +19,11 @@
 name: Deploy web (test)
 
 on:
+  # Manual run — still must be from master (see job `if`)
   workflow_dispatch:
   push:
     branches:
-      - cursor/wlotus-offer-app-58ff
-      - cursor/wlotus-vision-branding-58ff
       - master
-      - main
     paths:
       - 'apps/web/**'
       - 'apps/mint-api/**'
@@ -40,6 +38,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
