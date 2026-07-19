@@ -65,6 +65,8 @@ a {
   object-fit: contain;
   flex-shrink: 0;
   border-radius: 0.35rem;
+  /* Source mark is dark; invert to white on the black UI. */
+  filter: brightness(0) invert(1);
 }
 
 .brand {
