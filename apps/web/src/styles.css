@@ -312,6 +312,13 @@ a {
   font-size: 0.82rem;
 }
 
+.mine-progress {
+  margin: 0.75rem 0 0;
+  color: var(--accent-2);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .footer {
   margin-top: 2rem;
   color: var(--muted);
