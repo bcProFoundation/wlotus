@@ -12,6 +12,9 @@ export const PHONE_UX_HASHRATE_H_S = 150_000;
 /** Fallback when status API has not returned bits yet (live dual-mint Prayer). */
 export const DEFAULT_PRAYER_BASE_BITS = 24;
 
+/** Inflate ETA so users usually finish sooner than the label suggests. */
+export const ETA_BUFFER = 1.3;
+
 export function expectedHashesFromBits(bits: number): number {
   return 2 ** bits;
 }
@@ -23,15 +26,13 @@ export function wallSeconds(
   return expectedHashes / hashesPerSec;
 }
 
-/** Short human label for estimated duration (no countdown). */
+/** Short human label for estimated duration (no countdown). Prefer tenths of minutes. */
 export function formatEstimateDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds > 1e12) return '—';
-  if (seconds < 1) return '<1 s';
-  if (seconds < 60) return `~${Math.round(seconds)} s`;
+  if (seconds < 6) return '~0.1 min';
   if (seconds < 3600) {
-    const min = seconds / 60;
-    const rounded = min >= 10 ? Math.round(min) : Math.round(min * 10) / 10;
-    return `~${rounded} min`;
+    const tenths = Math.max(1, Math.round(seconds / 6));
+    return `~${(tenths / 10).toFixed(1)} min`;
   }
   if (seconds < 86400) {
     const h = seconds / 3600;
@@ -57,6 +58,16 @@ export function formatActualDuration(seconds: number): string {
   const h = seconds / 3600;
   const rounded = h >= 10 ? Math.round(h) : Math.round(h * 10) / 10;
   return `${rounded} h`;
+}
+
+/**
+ * Elapsed mining label in tenths of a minute, stepped every 10s:
+ * 0.1, 0.2, 0.3, …
+ */
+export function formatElapsedTenthsMin(elapsedMs: number): string {
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return '0.0 min';
+  const tenths = Math.floor(elapsedMs / 10_000); // 10s → 0.1 min
+  return `${(tenths / 10).toFixed(1)} min`;
 }
 
 export function formatHashrateLabel(hashesPerSec: number): string {
@@ -96,7 +107,7 @@ export function estimatePrayerPow(opts?: {
     ? (opts!.hashesPerSec as number)
     : PHONE_UX_HASHRATE_H_S;
   const expectedHashes = expectedHashesFromBits(bits);
-  const seconds = wallSeconds(expectedHashes, hashesPerSec);
+  const seconds = wallSeconds(expectedHashes, hashesPerSec) * ETA_BUFFER;
   return {
     bits,
     hashesPerSec,

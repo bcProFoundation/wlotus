@@ -14,6 +14,7 @@ import { resolve } from 'node:path';
 import {
   enqueueChallenge,
   enqueueSubmit,
+  cancelChallenge,
   publicStatus,
   remainingOffersToday,
 } from './offer.js';
@@ -126,6 +127,15 @@ const server = createServer(async (req, res) => {
         powAttempts,
       });
       json(res, 200, { ok: true, ...result });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/cancel') {
+      const body = await readJson(req);
+      const installId = requireInstallId(body.installId);
+      const challengeId = String(body.challengeId || '').trim() || undefined;
+      const result = cancelChallenge({ installId, challengeId });
+      json(res, 200, result);
       return;
     }
 

@@ -273,6 +273,25 @@ a {
   margin-top: 0.35rem;
 }
 
+.offer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: stretch;
+  margin-top: 0.35rem;
+}
+
+.offer-actions .btn-offer {
+  flex: 1 1 12rem;
+  margin-top: 0;
+  width: auto;
+}
+
+.offer-actions .btn-danger {
+  flex: 0 0 auto;
+  padding: 0.95rem 1.25rem;
+}
+
 .meta {
   color: var(--muted);
   font-size: 0.85rem;
