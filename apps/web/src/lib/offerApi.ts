@@ -121,6 +121,27 @@ export async function submitMinedOffer(opts: {
   return body as OfferOk;
 }
 
+export async function cancelOfferChallenge(opts: {
+  installId: string;
+  challengeId?: string;
+}): Promise<{ ok: true; cancelled: number }> {
+  const res = await fetch(apiUrl('/api/cancel'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      installId: opts.installId,
+      challengeId: opts.challengeId,
+    }),
+  });
+  const body = await readApiJson<{ ok: true; cancelled: number; error?: string }>(
+    res,
+  );
+  if (!res.ok || !body.ok) {
+    throw new Error(body.error || `Cancel failed (${res.status})`);
+  }
+  return body;
+}
+
 export function shortTx(txid: string): string {
   return `${txid.slice(0, 8)}…${txid.slice(-6)}`;
 }

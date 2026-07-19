@@ -26,6 +26,7 @@ MINT_MNEMONIC="twelve words …" npm run mint-api
 | GET | `/api/status?installId=` | remainingToday, baseZeroBits, memorialOnMint |
 | POST | `/api/challenge` | `{ installId, note? }` |
 | POST | `/api/submit` | `{ installId, challengeId, nonceHex, powMs?, powAttempts? }` |
+| POST | `/api/cancel` | `{ installId, challengeId? }` — release open challenge |
 | POST | `/api/offer` | **410** retired |
 
 ## Limits

@@ -227,13 +227,13 @@ async function createChallengeOnce(opts: {
       `Daily limit reached (${MAX_OFFERS_PER_DAY} Prayer offerings per device).`,
     );
   }
+  cancelOpenChallengesForInstall(opts.installId);
+  expireStaleChallenges();
   if (hasOpenBatonChallenge()) {
     throw new Error(
       'Another Prayer mint is in progress. Try again in a few minutes.',
     );
   }
-
-  cancelOpenChallengesForInstall(opts.installId);
 
   const { dep } = loadDep();
   const mintAtoms = BigInt(dep.mintAtomsPerRemint);
@@ -576,6 +576,24 @@ export function enqueueSubmit(opts: {
   powAttempts?: number;
 }): Promise<OfferResult> {
   return withChainLock(() => submitChallengeOnce(opts));
+}
+
+/** Release an open challenge (cancel mining / page reload cleanup). */
+export function cancelChallenge(opts: {
+  installId: string;
+  challengeId?: string;
+}): { ok: true; cancelled: number } {
+  expireStaleChallenges();
+  let cancelled = 0;
+  for (const ch of challenges.values()) {
+    if (ch.status !== 'open') continue;
+    if (ch.installId !== opts.installId) continue;
+    if (opts.challengeId && ch.id !== opts.challengeId) continue;
+    ch.status = 'expired';
+    reservedFuel.delete(fuelKey(ch.fuel.txid, ch.fuel.outIdx));
+    cancelled++;
+  }
+  return { ok: true, cancelled };
 }
 
 export function publicStatus(): {
