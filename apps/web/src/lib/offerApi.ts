@@ -18,6 +18,8 @@ export interface StatusOk {
   ticker: string;
   maxOffersPerDay: number;
   remainingToday: number | null;
+  /** Covenant base difficulty bits (for static phone ETA). */
+  baseZeroBits?: number | null;
 }
 
 function apiUrl(path: string): string {

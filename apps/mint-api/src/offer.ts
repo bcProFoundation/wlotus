@@ -296,6 +296,8 @@ export function publicStatus(): {
   mintAtoms: string | null;
   ticker: string;
   maxOffersPerDay: number;
+  /** Covenant base difficulty (Moore tip may add bits later). */
+  baseZeroBits: number | null;
 } {
   try {
     const { dep } = loadDep();
@@ -304,6 +306,7 @@ export function publicStatus(): {
       mintAtoms: dep.mintAtomsPerRemint,
       ticker: 'dPRAYER',
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
+      baseZeroBits: dep.baseZeroBits,
     };
   } catch {
     return {
@@ -311,6 +314,7 @@ export function publicStatus(): {
       mintAtoms: null,
       ticker: 'dPRAYER',
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
+      baseZeroBits: null,
     };
   }
 }

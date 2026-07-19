@@ -296,6 +296,13 @@ a {
   color: var(--muted);
   font-size: 0.88rem;
   margin: 0.5rem 0 0;
+  line-height: 1.45;
+}
+
+.hint.eta {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
 }
 
 .footer {

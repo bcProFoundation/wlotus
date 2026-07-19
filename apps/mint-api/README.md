@@ -63,5 +63,5 @@ Production-ish on Contabo: `deploy/contabo/wlotus-mint-api.service` + nginx `/ap
 | Method | Path | Body / query |
 |--------|------|----------------|
 | GET | `/health` | — |
-| GET | `/api/status?installId=` | remainingToday |
+| GET | `/api/status?installId=` | remainingToday, baseZeroBits, tokenId |
 | POST | `/api/offer` | `{ installId, note? }` |

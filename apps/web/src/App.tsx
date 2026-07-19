@@ -10,6 +10,7 @@ import {
   submitOffer,
   type OfferOk,
 } from './lib/offerApi.js';
+import { estimatePrayerPow } from './lib/powEstimate.js';
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
 
@@ -43,13 +44,19 @@ export default function App() {
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [tokenId, setTokenId] = useState<string | null>(null);
+  const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
+
+  const powEta = estimatePrayerPow({ bits: baseZeroBits });
 
   const refreshStatus = useCallback(async () => {
     try {
       const s = await fetchStatus(installId);
       setRemaining(s.remainingToday);
       setTokenId(s.tokenId);
+      if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
+        setBaseZeroBits(s.baseZeroBits);
+      }
     } catch {
       /* API may be down during local UI work */
     }
@@ -114,9 +121,13 @@ export default function App() {
       <section className="panel offer-panel">
         <h2>Prayer</h2>
         <p className="hint">
-          One {PRAYER_TICKER} is burned on-chain (memorial + dana). Dual mint:
-          the other atom stays with White Lotus for vault top-up. Limited to 2
-          offerings per day on this device.
+          Mint {PRAYER_TICKER} with this device’s power and burn on-chain for
+          memorial and dana. One token is burned; another helps top up fees.
+          Limited to 2 offerings per day on this device.
+        </p>
+        <p className="hint eta" aria-live="off">
+          {powEta.durationLabel} estimated · ~{powEta.hashrateLabel} phone-class
+          · bits {powEta.bits} · actual time varies
         </p>
 
         <div className="field">
