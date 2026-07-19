@@ -45,18 +45,24 @@ export default function App() {
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
 
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+
   const refreshStatus = useCallback(async () => {
     try {
       const s = await fetchStatus(installId);
       setRemaining(s.remainingToday);
       setTokenId(s.tokenId);
+      setApiOnline(true);
     } catch {
-      /* API may be down during local UI work */
+      setApiOnline(false);
+      setRemaining(null);
     }
   }, [installId]);
 
   useEffect(() => {
     void refreshStatus();
+    const t = setInterval(() => void refreshStatus(), 15_000);
+    return () => clearInterval(t);
   }, [refreshStatus]);
 
   async function onOffer() {
@@ -91,7 +97,8 @@ export default function App() {
     }
   }
 
-  const canOffer = !busy && (remaining === null || remaining > 0);
+  const canOffer =
+    !busy && apiOnline === true && (remaining === null || remaining > 0);
 
   return (
     <div className="app">
@@ -128,7 +135,7 @@ export default function App() {
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder="Name or dedication"
-            disabled={busy}
+            disabled={busy || apiOnline === false}
           />
         </div>
 
@@ -141,9 +148,11 @@ export default function App() {
         </button>
 
         <p className="meta">
-          {remaining === null
+          {apiOnline === null
             ? 'Connecting…'
-            : `${remaining} left today on this device`}
+            : apiOnline === false
+              ? 'Mint API offline — start mint-api on Contabo and proxy /api → :8787'
+              : `${remaining ?? '—'} left today on this device`}
           {tokenId ? (
             <>
               {' · '}
