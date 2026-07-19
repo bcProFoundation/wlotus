@@ -55,6 +55,7 @@ export default function App() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
@@ -80,6 +81,7 @@ export default function App() {
       const s = await fetchStatus(installId);
       setRemaining(s.remainingToday);
       setTokenId(s.tokenId);
+      if (s.maxOffersPerDay > 0) setMaxOffersPerDay(s.maxOffersPerDay);
       if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
         setBaseZeroBits(s.baseZeroBits);
       }
@@ -235,7 +237,7 @@ export default function App() {
         <p className="hint">
           Mint {PRAYER_TICKER} with this device’s power and burn on-chain for
           memorial and dana. One token is burned; another helps top up fees.
-          Limited to 2 offerings per day on this device.
+          Limited to {maxOffersPerDay} offerings per day on this device.
         </p>
         <p className="hint eta" aria-live="off">
           {powEta.durationLabel} estimated · {powEta.hashrateLabel}

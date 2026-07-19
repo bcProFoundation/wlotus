@@ -31,4 +31,4 @@ MINT_MNEMONIC="twelve words …" npm run mint-api
 1. Client requests a challenge (server reserves baton + fee UTXO, builds sighash preimage).
 2. Device mines `sha256d(powPrefix || nonce)` to tip bits.
 3. Client submits nonce; server verifies, signs fuel+baton, broadcasts remint, burns 1 atom (desk keeps 1).
-4. Daily limit: 2 successful submits per `installId` (UTC day). Challenges expire after 15 minutes.
+4. Daily limit: `MINT_MAX_OFFERS_PER_DAY` (default **20** on test) successful submits per `installId` (UTC day). Challenges expire after 15 minutes.

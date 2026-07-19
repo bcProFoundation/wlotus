@@ -28,7 +28,11 @@ import {
 } from '../../../src/mint/loadMintWallet.js';
 
 const REMINT_FUEL_SATS = 4_000n;
-const MAX_OFFERS_PER_DAY = 2;
+/** Test dryrun default 20; override with MINT_MAX_OFFERS_PER_DAY. */
+const MAX_OFFERS_PER_DAY = Math.max(
+  1,
+  Number(process.env.MINT_MAX_OFFERS_PER_DAY?.trim() || 20) || 20,
+);
 const CHALLENGE_TTL_MS = 15 * 60_000;
 
 export interface OfferResult {
@@ -141,7 +145,9 @@ function consumeOfferSlot(installId: string): void {
   }
   const used = byDay.get(day) ?? 0;
   if (used >= MAX_OFFERS_PER_DAY) {
-    throw new Error('Daily limit reached (2 Prayer offerings per device).');
+    throw new Error(
+      `Daily limit reached (${MAX_OFFERS_PER_DAY} Prayer offerings per device).`,
+    );
   }
   byDay.set(day, used + 1);
 }
@@ -222,7 +228,9 @@ async function createChallengeOnce(opts: {
 }): Promise<ChallengePublic> {
   expireStaleChallenges();
   if (remainingOffersToday(opts.installId) <= 0) {
-    throw new Error('Daily limit reached (2 Prayer offerings per device).');
+    throw new Error(
+      `Daily limit reached (${MAX_OFFERS_PER_DAY} Prayer offerings per device).`,
+    );
   }
   if (hasOpenBatonChallenge()) {
     throw new Error(
