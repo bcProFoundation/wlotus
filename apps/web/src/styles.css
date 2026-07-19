@@ -60,11 +60,11 @@ a {
 }
 
 .brand-mark {
-  width: clamp(2.5rem, 8vw, 3.5rem);
-  height: auto;
+  width: clamp(2.75rem, 8vw, 3.5rem);
+  height: clamp(2.75rem, 8vw, 3.5rem);
+  object-fit: contain;
   flex-shrink: 0;
-  color: #ffffff;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.12));
+  border-radius: 0.35rem;
 }
 
 .brand {
