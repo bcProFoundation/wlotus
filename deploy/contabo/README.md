@@ -1,203 +1,243 @@
-# Contabo test deploy (WLotus web)
+# WLotus web deploy guide
 
-Static SPA (`apps/web`) → Contabo VM via GitHub Actions + rsync.
+**Live test site:** https://test.wlotus.org
 
-## Architecture
+Static SPA (`apps/web`) — Prayer ALP burn, XEC fees from the browser wallet.
+
+---
+
+## Local vs VM vs CI — what runs where
+
+| | **Local (your laptop)** | **VM (Contabo)** | **CI (GitHub Actions)** |
+|--|-------------------------|------------------|-------------------------|
+| **Purpose** | Develop and test UI | Host the built site | Build + publish on push |
+| **You run** | `npm run web` | One-time bootstrap; nginx only after that | Workflow **Deploy web (test)** |
+| **Needs Node/npm?** | Yes | No (only nginx serves files) | Yes (on GitHub runners) |
+| **Needs git clone?** | Yes (full repo) | Optional (bootstrap only); **not** for each deploy | Checkout on each run |
+| **Site files live at** | Vite dev server `:5173` | `/var/www/wlotus-test` | rsync → VM path above |
+| **Updates when** | You save code / restart dev | CI rsync or manual rsync from laptop | Push to `master` or manual workflow run |
+
+**Important:** `git pull` on the VM updates the **source repo** under `~/wlotus` — it does **not** update the live site. The live site is the **built** `dist/` folder rsync’d to `/var/www/wlotus-test`.
 
 ```
-GitHub Actions (build Vite dist)
-        │  SSH + rsync
-        ▼
-Contabo VM  →  nginx  →  /var/www/wlotus-test
+┌─────────────────────────────────────────────────────────────────┐
+│  LOCAL (laptop)                                                 │
+│  git clone → npm install → npm run web → localhost:5173         │
+│  (hot reload, no deploy)                                        │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  CI (GitHub Actions)                                            │
+│  push master / workflow_dispatch → npm run web:build → rsync    │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ SSH (deploy user)
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  VM (Contabo)                                                   │
+│  nginx → /var/www/wlotus-test  →  https://test.wlotus.org       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-Fees still paid in XEC by the browser wallet; this only hosts the frontend.
+---
 
-## 1. One-time VM setup (step by step)
+## 1. Local development (laptop)
 
-Assumes a fresh Contabo VPS with **Ubuntu 22.04/24.04** (or Debian) and SSH access as `root` (or a sudo user).
+From a clone of this repo:
 
-Replace `YOUR_VM_IP` with the Contabo public IP from the customer panel.
-Replace `test.wlotus.org` with your test hostname (or skip DNS for now and use the IP).
+```bash
+git clone https://github.com/bcProFoundation/wlotus.git
+cd wlotus
+npm install
+npm run web
+```
 
-### 1.1 — Confirm you can SSH in
+Open http://localhost:5173
 
-From your laptop:
+Optional env — copy `apps/web/.env.example` → `apps/web/.env`:
+
+```
+VITE_PRAYER_TOKEN_ID=a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914
+VITE_PRAYER_TICKER=dPRAYER
+VITE_CHRONIK_URLS=https://chronik.e.cash,https://chronik.pay2stay.com/xec
+```
+
+Defaults match the live dryrun **dPRAYER** token. No VM or GitHub secrets needed for local dev.
+
+---
+
+## 2. One-time VM setup (Contabo)
+
+Do this **once** on the VPS. Assumes Ubuntu 22.04/24.04 (or Debian), SSH as `root` or sudo.
+
+### 2.1 — SSH in
 
 ```bash
 ssh root@YOUR_VM_IP
 ```
 
-If Contabo gave you a non-root sudo user:
+### 2.2 — Get bootstrap files
+
+**Option A — clone on VM:**
 
 ```bash
-ssh ubuntu@YOUR_VM_IP
-sudo -i   # become root for the rest of the steps
-```
-
-You should land in a shell on the VM. Stay there for 1.2–1.4 (or use a second terminal for the laptop-side copy).
-
-### 1.2 — Get the bootstrap files onto the VM
-
-**Option A — clone the repo on the VM (simplest):**
-
-```bash
-apt-get update -y
-apt-get install -y git
+apt-get update -y && apt-get install -y git
 git clone https://github.com/bcProFoundation/wlotus.git
 cd wlotus
-git checkout cursor/wlotus-offer-app-58ff   # branch that has deploy/contabo/
+git checkout master
 ```
 
-**Option B — copy only the two files from your laptop** (no git on the VM):
-
-On the **laptop** (from your local clone):
+**Option B — copy two files from laptop:**
 
 ```bash
-scp deploy/contabo/bootstrap.sh \
-    deploy/contabo/nginx-wlotus-test.conf \
-    root@YOUR_VM_IP:~/
+# laptop
+scp deploy/contabo/bootstrap.sh deploy/contabo/nginx-wlotus-test.conf root@YOUR_VM_IP:~/
+
+# VM
+mkdir -p ~/wlotus-bootstrap && mv ~/bootstrap.sh ~/nginx-wlotus-test.conf ~/wlotus-bootstrap/
+cd ~/wlotus-bootstrap && chmod +x bootstrap.sh
 ```
 
-On the **VM**:
+### 2.3 — Run bootstrap
 
 ```bash
-mkdir -p ~/wlotus-bootstrap
-mv ~/bootstrap.sh ~/nginx-wlotus-test.conf ~/wlotus-bootstrap/
-cd ~/wlotus-bootstrap
-chmod +x bootstrap.sh
-```
-
-`bootstrap.sh` looks for `nginx-wlotus-test.conf` **next to itself**, so keep them in the same directory.
-
-### 1.3 — Run bootstrap
-
-**If you used Option A (full clone):**
-
-```bash
-cd ~/wlotus   # or wherever you cloned
+# from repo root (Option A):
 sudo bash deploy/contabo/bootstrap.sh test.wlotus.org
-```
 
-**If you used Option B (two files only):**
-
-```bash
-cd ~/wlotus-bootstrap
+# or from bootstrap dir (Option B):
 sudo bash bootstrap.sh test.wlotus.org
 ```
 
-Notes:
+Creates `/var/www/wlotus-test`, nginx site `wlotus-test`, user `deploy`, ufw rules.
 
-- `test.wlotus.org` is written into nginx as `server_name`. Use your real test hostname, or pass `_` / omit it if you only have an IP for now:
-  ```bash
-  sudo bash deploy/contabo/bootstrap.sh
-  ```
-- The script **must** run as root (`sudo`). It will exit with `Run as root (sudo).` otherwise.
-- Expect a few minutes the first time (apt installs nginx, rsync, ufw, curl).
+### 2.4 — DNS
 
-### 1.4 — What the script does
+At your `wlotus.org` DNS host, add:
 
-| Step | Effect |
-|------|--------|
-| `apt-get install nginx rsync ufw curl` | Web server + tools CI needs |
-| Creates `/var/www/wlotus-test` | Deploy target for rsync |
-| Writes a placeholder `index.html` | “waiting for first CI deploy” page |
-| Installs nginx site `wlotus-test` | Serves that directory as an SPA |
-| Removes default nginx site | Avoids the default welcome page winning |
-| Enables ufw: SSH + HTTP + HTTPS | Keeps SSH open; opens 80/443 |
-| Creates user `deploy` | Passwordless account for GitHub Actions |
-| Gives `deploy` write access to the web root | So rsync can update files |
+| Type | Name | Value |
+|------|------|-------|
+| A | `test` | Contabo VM public IPv4 |
 
-When it finishes you should see a `Bootstrap done.` summary with paths and next steps.
+Verify: `dig +short test.wlotus.org A`
 
-### 1.5 — Verify before leaving the VM
+`CONTABO_HOST` in GitHub must be `test.wlotus.org` (no `https://`, no port).
 
-```bash
-# nginx config OK and running
-nginx -t
-systemctl status nginx --no-pager
+### 2.5 — TLS (HTTPS)
 
-# placeholder site is present
-ls -la /var/www/wlotus-test/
-
-# deploy user exists
-id deploy
-ls -la /home/deploy/.ssh/
-```
-
-From your **laptop** browser or curl (HTTP, not HTTPS yet):
-
-```bash
-curl -sS http://YOUR_VM_IP/ | head
-```
-
-You should see the placeholder text: *WLotus test host ready — waiting for first CI deploy.*
-
-If that fails: Contabo firewall/security group may still block port 80 — open **TCP 80** (and later **443**) in the Contabo panel as well as ufw.
-
-### 1.6 — After bootstrap (still required)
-
-Bootstrap does **not** add your CI SSH key or GitHub secrets. Continue with sections **2** (deploy key), **3** (secrets), **4** (run workflow), then **5** (TLS once DNS points at the VM).
-
-## 2. Deploy SSH key
-
-On your laptop (or CI secret store):
-
-```bash
-ssh-keygen -t ed25519 -C "wlotus-github-deploy" -f ./wlotus-deploy -N ""
-```
-
-On the VM:
-
-```bash
-cat wlotus-deploy.pub >> /home/deploy/.ssh/authorized_keys
-```
-
-Keep `wlotus-deploy` (private) for GitHub only — never commit it.
-
-## 3. GitHub secrets
-
-Repo → **Settings → Secrets and variables → Actions**:
-
-| Secret | Required | Example |
-|--------|----------|---------|
-| `CONTABO_HOST` | yes | `12.34.56.78` or `test.wlotus.org` |
-| `CONTABO_USER` | yes | `deploy` |
-| `CONTABO_SSH_PRIVATE_KEY` | yes | full contents of `wlotus-deploy` |
-| `CONTABO_SSH_PORT` | no | `22` |
-| `CONTABO_DEPLOY_PATH` | no | `/var/www/wlotus-test` |
-| `CONTABO_SMOKE_URL` | no | `https://test.wlotus.org/` |
-| `VITE_PRAYER_TOKEN_ID` | no | dryrun id (baked at build) |
-| `VITE_PRAYER_TICKER` | no | `dPRAYER` |
-| `VITE_CHRONIK_URLS` | no | Chronik URLs |
-
-## 4. Deploy
-
-Workflow: **Deploy web (test)** (`.github/workflows/deploy-web-test.yml`)
-
-- Manual: Actions → Deploy web (test) → **Run workflow**
-- Auto: push that touches `apps/web/**` on `cursor/wlotus-offer-app-58ff`, `master`, or `main`
-
-## 5. TLS (after DNS)
+After DNS resolves:
 
 ```bash
 sudo apt-get install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d test.wlotus.org
 ```
 
-## Local dry-run of the same rsync
+### 2.6 — Deploy SSH key (laptop → VM → GitHub)
+
+The key is generated on your **laptop**, not the VM.
+
+**On laptop:**
+
+```bash
+ssh-keygen -t ed25519 -C "wlotus-github-deploy" -f ./wlotus-deploy -N ""
+```
+
+**Copy public key to VM** (pick one):
+
+```bash
+# scp
+scp ./wlotus-deploy.pub root@YOUR_VM_IP:~/
+ssh root@YOUR_VM_IP 'cat ~/wlotus-deploy.pub >> /home/deploy/.ssh/authorized_keys && chown deploy:deploy /home/deploy/.ssh/authorized_keys && chmod 600 /home/deploy/.ssh/authorized_keys'
+```
+
+**Test from laptop:**
+
+```bash
+ssh -i ./wlotus-deploy deploy@test.wlotus.org
+```
+
+**GitHub secret** — paste full private key (`cat ./wlotus-deploy`) into `CONTABO_SSH_PRIVATE_KEY`.
+
+---
+
+## 3. GitHub secrets (CI)
+
+Repo → **Settings → Secrets and variables → Actions**:
+
+| Secret | Required | Value (test env) |
+|--------|----------|------------------|
+| `CONTABO_HOST` | yes | `test.wlotus.org` |
+| `CONTABO_USER` | yes | `deploy` |
+| `CONTABO_SSH_PRIVATE_KEY` | yes | private key from laptop |
+| `CONTABO_SSH_PORT` | no | `22` |
+| `CONTABO_DEPLOY_PATH` | no | `/var/www/wlotus-test` |
+| `CONTABO_SMOKE_URL` | no | `https://test.wlotus.org/` |
+| `VITE_PRAYER_TOKEN_ID` | no | dryrun token id (build-time) |
+| `VITE_PRAYER_TICKER` | no | `dPRAYER` |
+| `VITE_CHRONIK_URLS` | no | Chronik URLs |
+
+`CONTABO_HOST` must be a bare hostname or IP — not `https://…`.
+
+---
+
+## 4. Deploy / update the live site (CI)
+
+Workflow: **Deploy web (test)** — `.github/workflows/deploy-web-test.yml`
+
+| Trigger | When |
+|---------|------|
+| **Automatic** | Push to `master` that touches `apps/web/**`, `package.json`, workflow, or `deploy/contabo/**` |
+| **Manual** | Actions → Deploy web (test) → **Run workflow** |
+
+Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → VM.
+
+After a green run, https://test.wlotus.org serves the new build (hard-refresh if cached).
+
+---
+
+## 5. Manual deploy from laptop (optional)
+
+Same as CI, without GitHub — useful to debug rsync/SSH:
 
 ```bash
 npm run web:build
-rsync -avz --delete apps/web/dist/ deploy@YOUR_HOST:/var/www/wlotus-test/
+rsync -avz --delete -e ssh apps/web/dist/ deploy@test.wlotus.org:/var/www/wlotus-test/
 ```
+
+Requires the deploy SSH key on your laptop and access to the `deploy` user.
+
+---
+
+## 6. VM maintenance (not deploy)
+
+| Task | Command (on VM) |
+|------|-----------------|
+| Check nginx | `sudo nginx -t && systemctl status nginx` |
+| See live files | `ls -la /var/www/wlotus-test/` |
+| Renew TLS | `sudo certbot renew` |
+| Update clone (optional) | `cd ~/wlotus && git pull` — **does not update the website** |
+
+---
 
 ## Troubleshooting
 
-| Symptom | Check |
-|---------|--------|
-| Permission denied (publickey) | `authorized_keys` for `deploy`; secret is private key PEM/ed25519 |
-| rsync: mkstemp failed | `deploy` owns `/var/www/wlotus-test` (bootstrap sets this) |
-| 403 / blank | `nginx -t`; `ls -la /var/www/wlotus-test` after deploy |
-| Smoke step fails | Set `CONTABO_SMOKE_URL` only after HTTP answers |
-| Workflow “secret not set” | Add the three required secrets; re-run |
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `git pull` but site unchanged | Repo ≠ web root | Run CI workflow or manual rsync |
+| `getaddrinfo: Name or service not known` | Bad `CONTABO_HOST` | Use `test.wlotus.org` or IP, no scheme |
+| `Permission denied (publickey)` | Key not on VM | Copy `.pub` to `/home/deploy/.ssh/authorized_keys` |
+| `wlotus-deploy.pub` not on VM | Expected | Generate on laptop; only **public** key goes on VM |
+| Node 20 deprecation warning in Actions | GitHub runner notice | Warning only — not a deploy failure |
+| Smoke check fails | Site/DNS/TLS not ready | Fix HTTP first; set `CONTABO_SMOKE_URL` after |
+| 403 / blank page | nginx or empty dist | `ls /var/www/wlotus-test`; re-run workflow |
+
+---
+
+## Architecture (reference)
+
+```
+GitHub Actions (build Vite dist)
+        │  SSH + rsync
+        ▼
+Contabo VM  →  nginx  →  /var/www/wlotus-test  →  test.wlotus.org
+```
+
+Fees are paid in XEC by the user’s browser wallet; this stack only hosts the frontend.
