@@ -1,0 +1,113 @@
+# Build apps/web and rsync to the Contabo test VM.
+#
+# Required GitHub secrets (Settings → Secrets and variables → Actions):
+#   CONTABO_HOST              — VM IP or hostname
+#   CONTABO_USER              — SSH user (e.g. root or deploy)
+#   CONTABO_SSH_PRIVATE_KEY   — private key (full PEM) with access to the VM
+#
+# Optional secrets:
+#   CONTABO_SSH_PORT          — default 22
+#   CONTABO_DEPLOY_PATH       — default /var/www/wlotus-test
+#   VITE_PRAYER_TOKEN_ID      — bake into the SPA at build time
+#   VITE_PRAYER_TICKER        — default dPRAYER
+#   VITE_CHRONIK_URLS         — comma-separated Chronik URLs
+#
+# One-time VM setup: see deploy/contabo/README.md
+
+name: Deploy web (test)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cursor/wlotus-offer-app-58ff
+      - master
+      - main
+    paths:
+      - 'apps/web/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-web-test.yml'
+      - 'deploy/contabo/**'
+
+concurrency:
+  group: deploy-web-test
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build web
+        env:
+          VITE_PRAYER_TOKEN_ID: ${{ secrets.VITE_PRAYER_TOKEN_ID }}
+          VITE_PRAYER_TICKER: ${{ secrets.VITE_PRAYER_TICKER }}
+          VITE_CHRONIK_URLS: ${{ secrets.VITE_CHRONIK_URLS }}
+        run: npm run web:build
+
+      - name: Require Contabo secrets
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+          CONTABO_SSH_PRIVATE_KEY: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+        run: |
+          missing=0
+          for name in CONTABO_HOST CONTABO_USER CONTABO_SSH_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name secret is not set"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
+        run: |
+          PORT="${CONTABO_SSH_PORT:-22}"
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$PORT" -H "$CONTABO_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync dist to Contabo
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+          CONTABO_SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
+          CONTABO_DEPLOY_PATH: ${{ secrets.CONTABO_DEPLOY_PATH }}
+        run: |
+          PORT="${CONTABO_SSH_PORT:-22}"
+          DEST="${CONTABO_DEPLOY_PATH:-/var/www/wlotus-test}"
+          rsync -avz --delete \
+            -e "ssh -p ${PORT} -o StrictHostKeyChecking=yes" \
+            apps/web/dist/ \
+            "${CONTABO_USER}@${CONTABO_HOST}:${DEST}/"
+
+      - name: Smoke check (optional HTTP)
+        env:
+          CONTABO_SMOKE_URL: ${{ secrets.CONTABO_SMOKE_URL }}
+        run: |
+          if [ -z "$CONTABO_SMOKE_URL" ]; then
+            echo "CONTABO_SMOKE_URL not set — skip smoke check"
+            exit 0
+          fi
+          curl -fsSL --retry 5 --retry-delay 2 "$CONTABO_SMOKE_URL" | head -c 200
+          echo
+          echo "Smoke OK: $CONTABO_SMOKE_URL"

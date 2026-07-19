@@ -49,9 +49,26 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 [ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
 
+## Offerings app (`apps/web`)
+
+Migrated from Lotus Temple UX → **WLotus** branding. Burns **Prayer** (ALP); fees in **XEC** (postage later).
+
+```bash
+npm run web
+```
+
+Defaults to live dryrun `dPRAYER` (`a108b17f…4914`).
+
+## Test hosting (Contabo)
+
+CI/CD for `apps/web`: GitHub Actions → rsync → nginx on Contabo.
+
+- Workflow: `.github/workflows/deploy-web-test.yml`
+- VM bootstrap: `deploy/contabo/`
+
 ## Next
 
-1. Dryrun Prayer remints on mainnet with MooreTip  
+1. Wire Contabo secrets + first test deploy  
 2. Dryrun Candle / Flower when funded for longer PoW  
-3. Temple burn UX  
+3. Postage server for fee sponsorship  
 4. Fractional-bit PoW if/when eCash raises the 201-op limit  

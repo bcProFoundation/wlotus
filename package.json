@@ -1,15 +1,20 @@
 {
   "name": "wlotus",
   "version": "0.1.0",
-  "description": "mWLOTUS / WLOTUS: Ergon-like ALP PoW remint on eCash (incubation milli-token first)",
+  "description": "WLOTUS: Ergon-like ALP PoW remint + offerings on eCash",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "moore": "tsx scripts/compute-moore.ts",
     "pricing": "tsx scripts/compute-pricing.ts",
-    "lint": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit && npm run lint -w @wlotus/web",
+    "web": "npm run dev -w @wlotus/web",
+    "web:build": "npm run build -w @wlotus/web",
     "new-wallet": "tsx scripts/new-wallet.ts",
     "create-test-token": "tsx scripts/create-test-token.ts",
     "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
