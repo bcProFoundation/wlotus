@@ -2,7 +2,9 @@
 /**
  * Minimal Prayer mint API — dual-mint offer (remint 2, burn 1, keep 1).
  *
- *   GENESIS_SK_HEX=… npm run mint-api
+ *   MINT_MNEMONIC="twelve words …" npm run mint-api
+ *   # or MINT_SK_HEX / GENESIS_SK_HEX
+ *   # Contabo: EnvironmentFile=/etc/wlotus/mint.env
  *
  * POST /api/offer  { installId, note? }
  * GET  /api/status?installId=
@@ -17,6 +19,7 @@ import {
 } from './offer.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
+loadEnv({ path: '/etc/wlotus/mint.env', override: true });
 
 const PORT = Number(process.env.MINT_API_PORT?.trim() || 8787);
 

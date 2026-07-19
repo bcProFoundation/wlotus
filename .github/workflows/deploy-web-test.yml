@@ -11,6 +11,8 @@
 #   VITE_PRAYER_TOKEN_ID      — bake into the SPA at build time
 #   VITE_PRAYER_TICKER        — default dPRAYER
 #   VITE_CHRONIK_URLS         — comma-separated Chronik URLs
+#   MINT_MNEMONIC             — 12/24-word fee wallet; synced to /etc/wlotus/mint.env
+#                               (mint-api runtime still reads the server file, not Actions)
 #
 # One-time VM setup: see deploy/contabo/README.md
 
@@ -21,10 +23,12 @@ on:
   push:
     branches:
       - cursor/wlotus-offer-app-58ff
+      - cursor/wlotus-vision-branding-58ff
       - master
       - main
     paths:
       - 'apps/web/**'
+      - 'apps/mint-api/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-web-test.yml'
@@ -99,6 +103,28 @@ jobs:
             -e "ssh -p ${PORT} -o StrictHostKeyChecking=yes" \
             apps/web/dist/ \
             "${CONTABO_USER}@${CONTABO_HOST}:${DEST}/"
+
+      - name: Sync mint fee wallet env (optional)
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+          CONTABO_SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
+          MINT_MNEMONIC: ${{ secrets.MINT_MNEMONIC }}
+        run: |
+          if [ -z "$MINT_MNEMONIC" ]; then
+            echo "MINT_MNEMONIC not set — leave /etc/wlotus/mint.env unchanged"
+            exit 0
+          fi
+          PORT="${CONTABO_SSH_PORT:-22}"
+          ssh -p "$PORT" "${CONTABO_USER}@${CONTABO_HOST}" \
+            'sudo mkdir -p /etc/wlotus'
+          # Do not echo mnemonic into Actions logs
+          printf 'MINT_MNEMONIC=%s\nMINT_API_PORT=8787\n' "$MINT_MNEMONIC" | \
+            ssh -p "$PORT" "${CONTABO_USER}@${CONTABO_HOST}" \
+              'sudo tee /etc/wlotus/mint.env > /dev/null && sudo chmod 600 /etc/wlotus/mint.env'
+          ssh -p "$PORT" "${CONTABO_USER}@${CONTABO_HOST}" \
+            'sudo systemctl try-restart wlotus-mint-api.service || true'
+          echo "Synced /etc/wlotus/mint.env and attempted mint-api restart"
 
       - name: Smoke check (optional HTTP)
         env:

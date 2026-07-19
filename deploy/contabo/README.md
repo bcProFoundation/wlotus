@@ -170,11 +170,14 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `CONTABO_SSH_PORT` | no | `22` |
 | `CONTABO_DEPLOY_PATH` | no | `/var/www/wlotus-test` |
 | `CONTABO_SMOKE_URL` | no | `https://test.wlotus.org/` |
-| `VITE_PRAYER_TOKEN_ID` | no | dryrun token id (build-time) |
+| `VITE_PRAYER_TOKEN_ID` | no | dual-mint dryrun id |
 | `VITE_PRAYER_TICKER` | no | `dPRAYER` |
 | `VITE_CHRONIK_URLS` | no | Chronik URLs |
+| `MINT_MNEMONIC` | no* | 12/24-word **fee wallet** — synced to `/etc/wlotus/mint.env` |
 
-`CONTABO_HOST` must be a bare hostname or IP — not `https://…`.
+\*Mint fee wallet **must** exist on the VM for `mint-api`. Prefer writing `/etc/wlotus/mint.env` once on Contabo. GitHub `MINT_MNEMONIC` is only an optional way to refresh that file on deploy — Actions alone cannot pay fees.
+
+See [apps/mint-api/README.md](../../apps/mint-api/README.md).
 
 ---
 

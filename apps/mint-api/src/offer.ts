@@ -4,13 +4,17 @@
  */
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { fromHex, toHex } from 'ecash-lib';
-import { Wallet } from 'ecash-wallet';
+import { toHex } from 'ecash-lib';
+import type { Wallet } from 'ecash-wallet';
 import { createChronik } from '../../../src/network/createChronik.js';
 import { getMedianTimePast } from '../../../src/network/medianTimePast.js';
 import { createPowRemintMooreTipContract } from '../../../src/covenant/powRemintMooreTipScript.js';
 import { buildMinedMooreTipRemintTx } from '../../../src/miner/remintMooreTip.js';
 import { burnOnePrayer } from '../../../src/offering/burnPrayer.js';
+import {
+  loadMintWallet,
+  mintWalletSummary,
+} from '../../../src/mint/loadMintWallet.js';
 
 const REMINT_FUEL_SATS = 4_000n;
 const MAX_OFFERS_PER_DAY = 2;
@@ -123,11 +127,6 @@ async function offerOnce(opts: {
   installId: string;
   note: string;
 }): Promise<OfferResult> {
-  const skHex = process.env.GENESIS_SK_HEX?.trim() || process.env.MINT_SK_HEX?.trim();
-  if (!skHex || !/^[0-9a-fA-F]{64}$/.test(skHex)) {
-    throw new Error('MINT_SK_HEX / GENESIS_SK_HEX missing');
-  }
-
   consumeOfferSlot(opts.installId);
 
   const { path: depPath, dep } = loadDep();
@@ -161,7 +160,9 @@ async function offerOnce(opts: {
   });
 
   const chronik = await createChronik('closest');
-  const wallet = Wallet.fromSk(fromHex(skHex), chronik);
+  const mint = await loadMintWallet(chronik);
+  console.log('mint wallet', JSON.stringify(mintWalletSummary(mint)));
+  const wallet = mint.wallet;
   await ensureFuel(wallet);
 
   const scriptHex = toHex(contract.scriptHash);
@@ -214,7 +215,7 @@ async function offerOnce(opts: {
       sats: fuelUtxo.sats,
       outputScript: wallet.script,
     },
-    miner: { sk: wallet.sk, pk: wallet.pk },
+    miner: { sk: mint.sk, pk: mint.pk },
     locktime,
   });
 
