@@ -2,8 +2,7 @@
 
 **White Lotus (WLOTUS)** — Ergon-like ritual ALP token on eCash with permissionless PoW remint.
 
-This repository holds the **covenant, parameters, genesis tooling, and remint miner**.  
-Website / temple UI live in a separate repo.
+This repository holds the **covenant, remint miner, and WLotus web offerings app**.
 
 ## Design (short)
 
@@ -11,39 +10,32 @@ Website / temple UI live in a separate repo.
 |-------|--------|
 | Host | eCash (XEC) |
 | Token | ALP (`SLP2` / eMPP) |
-| Issuance | Fixed PoW difficulty; atoms/remint with Moore decay; **many remints/block** |
-| Parallelism | **`N ≥ 2` mint batons** (true concurrent remints) |
-| Moore factor | Ergon post-fix **`99918/100000`** per wall-day (~2.3y half-life) |
-| Supply cap | None — PoW batons never die |
-| Burn | Intentional ALP burn (temple / vàng mã offerings) — app layer |
+| Issuance | MooreTip PoW remint (calendar D + tipLocktime + hard next-P2SH) |
+| Burn | Intentional ALP Prayer burn — `apps/web` (XEC fees; postage later) |
 
-Issuance elasticity comes from **remint frequency ∝ hashrate**, not from `mint ∝ D`.  
-Do **not** use Mist-style 1-mint-per-host-block CLTV.
-
-See [docs/SPEC.md](./docs/SPEC.md) and [docs/PROPOSAL.md](./docs/PROPOSAL.md).
+See [docs/SPEC.md](./docs/SPEC.md) and [docs/STATUS.md](./docs/STATUS.md).
 
 ## Status
 
-**Incubation PoW token `mWLPOW`** — always 100/remint @ 0 decimals,
-~$0.00001/token (~1/1000 of future `WLOTUS` @ ~$0.01). See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
+Production **Prayer dryrun** is live. Offerings UI:
 
 ```bash
-npm run create-pow-token
-npm run mine-once
+npm install
+npm run web          # http://localhost:5173 — burn dPRAYER with XEC fees
 ```
 
 ```
-contracts/          # Spedn PoW remint covenant (BIP143 preimage)
-docs/               # Consensus / product spec + research
-src/params/         # Consensus constants (Moore, batons, …)
-src/lib/            # Moore math
-src/covenant/       # Contract loader, PoW mine, output templates
-src/genesis/        # ALP GENESIS tooling
-src/miner/          # PoW remint miner (Chronik + ecash-lib)
-scripts/            # create-pow-token, mine-once, …
-tests/              # Unit tests
+apps/web/           # WLotus offerings (migrated from Lotus Temple UX)
+deploy/contabo/     # Test VM bootstrap + nginx (CI → Contabo)
+.github/workflows/  # Deploy web (test)
+contracts/          # Spedn PoW remint covenants
+docs/               # Spec + research
+src/                # Params, covenant loaders, miners
+scripts/            # create-dryrun-token, mine-dryrun-once, …
 deployments/        # Live mainnet records
 ```
+
+Test deploy: [deploy/contabo/README.md](./deploy/contabo/README.md)
 
 ## Quick start
 
