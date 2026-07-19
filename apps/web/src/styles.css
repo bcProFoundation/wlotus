@@ -27,9 +27,33 @@ body {
   margin: 0;
   font-family: var(--font-body);
   color: var(--ink);
+  overscroll-behavior-y: contain;
   background:
     radial-gradient(900px 500px at 50% -20%, rgba(255, 255, 255, 0.06) 0%, transparent 55%),
     linear-gradient(180deg, var(--bg0), var(--bg1));
+}
+
+.ptr-indicator {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  height: 0;
+  padding-bottom: 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: transparent;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  opacity: 0;
+}
+
+.ptr-indicator.visible {
+  opacity: 1;
 }
 
 button,
