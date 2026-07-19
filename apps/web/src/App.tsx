@@ -124,7 +124,10 @@ export default function App() {
     setMineProgress(null);
     setPhase('challenge');
     try {
-      const challenge = await fetchChallenge(installId);
+      const challenge = await fetchChallenge({
+        installId,
+        note: note.trim(),
+      });
       if (ac.signal.aborted) return;
 
       setPhase('mining');
@@ -157,7 +160,6 @@ export default function App() {
         installId,
         challengeId: challenge.challengeId,
         nonceHex: mined.nonceHex,
-        note: note.trim(),
         powMs: mined.elapsedMs,
         powAttempts: mined.attempts,
       });
@@ -185,7 +187,7 @@ export default function App() {
         text: [
           `Prayer offered in ${formatActualDuration(powSec)}`,
           rate,
-          `Burn ${shortTx(result.burnTxid)}`,
+          shortTx(result.remintTxid),
         ]
           .filter(Boolean)
           .join(' · '),
@@ -235,14 +237,12 @@ export default function App() {
       <section className="panel offer-panel">
         <h2>Prayer</h2>
         <p className="hint">
-          Mint {PRAYER_TICKER} with this device’s power and burn on-chain for
-          memorial and dana. One token is burned; another helps top up fees.
+          Mint {PRAYER_TICKER} with this device’s power — time given for
+          memorial and dana. The dedication is written on-chain in the mint.
           Limited to {maxOffersPerDay} offerings per day on this device.
         </p>
         <p className="hint eta" aria-live="off">
-          {powEta.durationLabel} estimated · {powEta.hashrateLabel}
-          {powEta.measured ? ' this device' : ' phone-class'} · bits{' '}
-          {powEta.bits} · you mine here; server pays fees
+          {powEta.durationLabel} estimated
         </p>
 
         <div className="field">
@@ -268,10 +268,7 @@ export default function App() {
 
         {mineProgress ? (
           <p className="mine-progress" aria-live="polite">
-            Mining · {formatActualDuration(mineProgress.elapsedMs / 1000)} ·{' '}
-            {formatHashrateLabel(mineProgress.hashrateHps)} ·{' '}
-            {mineProgress.attempts.toLocaleString()} hashes · bits{' '}
-            {mineProgress.bits}
+            Mining · {formatActualDuration(mineProgress.elapsedMs / 1000)}
           </p>
         ) : null}
 

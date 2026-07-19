@@ -13,6 +13,7 @@ export interface ChallengeOk {
   locktime: number;
   tipLocktime: number;
   mintAtoms: string;
+  note: string;
 }
 
 export interface OfferOk {
@@ -52,11 +53,17 @@ export async function fetchStatus(installId: string): Promise<StatusOk> {
   return body;
 }
 
-export async function fetchChallenge(installId: string): Promise<ChallengeOk> {
+export async function fetchChallenge(opts: {
+  installId: string;
+  note: string;
+}): Promise<ChallengeOk> {
   const res = await fetch(apiUrl('/api/challenge'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ installId }),
+    body: JSON.stringify({
+      installId: opts.installId,
+      note: opts.note,
+    }),
   });
   const body = (await res.json()) as ChallengeOk & { error?: string; ok?: boolean };
   if (!res.ok || !body.ok) {
@@ -69,7 +76,6 @@ export async function submitMinedOffer(opts: {
   installId: string;
   challengeId: string;
   nonceHex: string;
-  note: string;
   powMs: number;
   powAttempts: number;
 }): Promise<OfferOk> {
@@ -80,7 +86,6 @@ export async function submitMinedOffer(opts: {
       installId: opts.installId,
       challengeId: opts.challengeId,
       nonceHex: opts.nonceHex,
-      note: opts.note,
       powMs: opts.powMs,
       powAttempts: opts.powAttempts,
     }),
