@@ -1,19 +1,18 @@
+/**
+ * Shared Prayer offering helpers (web + mint API).
+ * Dual-mint design: remint mints 2 → burn 1 (offering) → keep 1 (desk).
+ */
 import { ALP_TOKEN_TYPE_STANDARD, payment } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
-import {
-  OFFERINGS,
-  PRAYER_TOKEN_ID,
-  WLBR_LOKAD,
-  WLBR_VERSION,
-  type OfferingId,
-} from './config.js';
+
+export const WLBR_LOKAD = new TextEncoder().encode('WLBR');
+export const WLBR_VERSION = 1;
+
+export const OFFERING_ID = 'prayer' as const;
 
 /** EMPP memorial push: WLBR | ver | offeringIdLen | offeringId | noteLen | noteUtf8 */
-export function memorialPushdata(
-  offeringId: OfferingId,
-  note: string,
-): Uint8Array {
-  const idBytes = new TextEncoder().encode(offeringId);
+export function memorialPushdata(note: string): Uint8Array {
+  const idBytes = new TextEncoder().encode(OFFERING_ID);
   const noteBytes = new TextEncoder().encode(note.slice(0, 80));
   if (idBytes.length > 255 || noteBytes.length > 255) {
     throw new Error('memorial fields too long');
@@ -33,49 +32,35 @@ export function memorialPushdata(
   return out;
 }
 
-export function offeringById(id: OfferingId) {
-  const o = OFFERINGS.find(x => x.id === id);
-  if (!o) throw new Error(`Unknown offering ${id}`);
-  return o;
-}
-
-/**
- * Burn Prayer atoms; fees paid in XEC from the same wallet.
- * Postage server can replace the XEC fee input later.
- */
-export async function burnPrayerOffering(opts: {
+/** Burn exactly 1 Prayer atom; remainder stays on the same wallet (desk). */
+export async function burnOnePrayer(opts: {
   wallet: Wallet;
-  offeringId: OfferingId;
+  tokenId: string;
   note?: string;
-  tokenId?: string;
-}): Promise<{ txids: string[] }> {
-  const { wallet, offeringId } = opts;
-  const tokenId = opts.tokenId ?? PRAYER_TOKEN_ID;
-  const offering = offeringById(offeringId);
+}): Promise<{ txid: string }> {
   const note = (opts.note ?? '').trim();
-
   const action: payment.Action = {
     outputs: [{ sats: 0n }],
     tokenActions: [
       {
         type: 'BURN',
-        tokenId,
+        tokenId: opts.tokenId,
         tokenType: ALP_TOKEN_TYPE_STANDARD,
-        burnAtoms: offering.atoms,
+        burnAtoms: 1n,
       },
       {
         type: 'DATA',
-        data: memorialPushdata(offeringId, note),
+        data: memorialPushdata(note),
       },
     ],
   };
 
-  const built = wallet.action(action).build();
+  const built = opts.wallet.action(action).build();
   const resp = await built.broadcast();
   if (!resp.success || !resp.broadcasted?.length) {
     throw new Error(`Burn broadcast failed: ${JSON.stringify(resp)}`);
   }
-  return { txids: resp.broadcasted };
+  return { txid: resp.broadcasted[0]! };
 }
 
 export function explorerTx(txid: string): string {

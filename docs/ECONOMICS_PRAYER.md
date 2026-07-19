@@ -148,14 +148,18 @@ Fairness check: miner does **not** receive the retained token. That is coherent 
 
 | Param | Recommendation |
 |-------|----------------|
-| Product | Prayer only (`dPRAYER` / later `PRAYER`) |
-| Bits | **24** (whole-byte; ~2 min @ 150 kH/s) — retune after device benchmarks |
-| Mint atoms / remint | **2** |
+| Product | Prayer only (`dPRAYER`) |
+| Bits | **24** (whole-byte) |
+| Mint atoms / remint | **2** (live dual-mint dryrun) |
 | Split | **1 burn + 1 server inventory** |
-| Fee | **~5.46 XEC** (server-paid) |
+| Fee | **~5.46 XEC** (server-paid via mint API) |
+| Client | Mobile-first web / later native app — **no browser wallet yet** |
+| Rate limit | **2 offers / day / installId** |
 | Token USD peg | **None** — cost basis ≈ fee; ritual product |
 | Secondary price | Soft floor ≈ 5.46 XEC; optional small desk markup |
 | Candle / Flower | Offline until Prayer loop is proven |
+
+Live dual-mint token: see `deployments/mainnet-dryrun-prayer.json`.
 
 ### One-line economic thesis
 

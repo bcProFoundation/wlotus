@@ -23,9 +23,9 @@ Production **Prayer dryrun** is live. Offerings UI:
 | Environment | URL / command |
 |-------------|----------------|
 | **Test (deployed)** | https://test.wlotus.org |
-| **Local dev** | `npm run web` → http://localhost:5173 |
+| **Local** | `npm run mint-api` + `npm run web` |
 
-Deploy guide (local vs VM vs CI): [deploy/contabo/README.md](./deploy/contabo/README.md)
+Dual-mint Prayer (`dPRAYER` mint 2 → burn 1 + desk 1). Deploy guide: [deploy/contabo/README.md](./deploy/contabo/README.md)
 
 ```
 apps/web/           # WLotus offerings (migrated from Lotus Temple UX)

@@ -1,54 +1,36 @@
 /**
- * WLotus web app config.
- * Burn Prayer (ALP); pay fees in XEC. Postage server later.
+ * White Lotus web — Prayer-only dual-mint client (mobile-first).
+ * No browser wallet yet; offerings go through mint API (remint 2 → burn 1 → keep 1).
  */
 
-/** Live dryrun dPRAYER from deployments/mainnet-dryrun-prayer.json */
+/** Live dual-mint dPRAYER (mint 2 → burn 1 + desk 1) */
 export const DEFAULT_PRAYER_TOKEN_ID =
-  'a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914';
-
-export const PRAYER_TOKEN_ID =
   (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
-  DEFAULT_PRAYER_TOKEN_ID;
+  'd9004b411d4cbcd2ec16235d506efd6e266186153bd1a2b1db3a1d5118c2ca5b';
+
+export const PRAYER_TOKEN_ID = DEFAULT_PRAYER_TOKEN_ID;
 
 export const PRAYER_TICKER =
   (import.meta.env.VITE_PRAYER_TICKER as string | undefined)?.trim() || 'dPRAYER';
 
-export const CHRONIK_URLS = (
-  (import.meta.env.VITE_CHRONIK_URLS as string | undefined)?.trim() ||
-  'https://chronik.e.cash,https://chronik.pay2stay.com/xec,https://xec.paybutton.org'
-)
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+/** Mint API base — empty = same origin (/api via Vite proxy or nginx). */
+export const MINT_API_BASE =
+  (import.meta.env.VITE_MINT_API_BASE as string | undefined)?.trim() || '';
 
-/** Offering tiers — Prayer atoms (same 1 / 10 / 100 ratios as legacy Lotus offerings). */
-export const OFFERINGS = [
-  {
-    id: 'prayer',
-    label: 'Prayer',
-    atoms: 1n,
-    blurb: 'A single Prayer.',
-    icon: '/images/flowers.svg',
-  },
-  {
-    id: 'incense',
-    label: 'Incense',
-    atoms: 10n,
-    blurb: 'Ten Prayers.',
-    icon: '/images/incense.svg',
-  },
-  {
-    id: 'candle',
-    label: 'Candle',
-    atoms: 100n,
-    blurb: 'One hundred Prayers.',
-    icon: '/images/candle.svg',
-  },
-] as const;
+export const INSTALL_ID_KEY = 'wlotus.installId';
+export const LOCAL_OFFERS_KEY = 'wlotus.web.offers';
 
-export type OfferingId = (typeof OFFERINGS)[number]['id'];
-
-/** EMPP memorial lokad (4 ASCII). Beside ALP BURN. */
-export const WLBR_LOKAD = new TextEncoder().encode('WLBR');
-export const WLBR_VERSION = 1;
+export function getOrCreateInstallId(): string {
+  try {
+    const existing = localStorage.getItem(INSTALL_ID_KEY);
+    if (existing && existing.length >= 8) return existing;
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `wl-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(INSTALL_ID_KEY, id);
+    return id;
+  } catch {
+    return `wl-ephemeral-${Date.now()}`;
+  }
+}

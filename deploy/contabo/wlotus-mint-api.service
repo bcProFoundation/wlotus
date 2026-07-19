@@ -1,0 +1,18 @@
+[Unit]
+Description=WLotus Prayer mint API (dual-mint)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/wlotus
+EnvironmentFile=-/etc/wlotus/mint.env
+ExecStart=/usr/bin/npm run mint-api
+Restart=on-failure
+RestartSec=5
+User=deploy
+Group=deploy
+# Long remint PoW can take minutes
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
