@@ -7,7 +7,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['images/wlotus.png'],
+      includeAssets: [
+        'images/wlotus.png',
+        'images/wlotus-icon-32.png',
+        'images/wlotus-icon-180.png',
+        'images/wlotus-icon-192.png',
+        'images/wlotus-icon-512.png',
+        'images/wlotus-icon-maskable-512.png',
+      ],
       manifest: {
         name: 'White Lotus',
         short_name: 'White Lotus',
@@ -20,14 +27,20 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: '/images/wlotus.png',
-            sizes: '400x400',
+            src: '/images/wlotus-icon-192.png',
+            sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/images/wlotus.png',
-            sizes: '400x400',
+            src: '/images/wlotus-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/images/wlotus-icon-maskable-512.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
           },
