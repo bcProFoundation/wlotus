@@ -231,7 +231,9 @@ set -a && source /etc/wlotus/mint.env && set +a
 npm run fund-tip-fee-wallets
 ```
 
-After pulling a new Prayer deployment JSON, restart:
+**WLotus temple (launch):** covenant pays 99 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
+
+After pulling a new Prayer / WLotus deployment JSON, restart:
 `sudo systemctl restart wlotus-mint-api`.
 
 ---

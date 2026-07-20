@@ -41,6 +41,10 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 ## Economics (production plan)
 
+**Launch (decision):** [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — **WLotus** (mint 100 → 1 prayer + 99 temple; ceremonial) + **Golden Lotus** (permissionless; premine; event burns; no platform mint tax).
+
+Longer-term hardware ladder (background):
+
 | Product | Bits | Mint | Target HW | Market $/baton |
 |---------|------|------|-----------|----------------|
 | Incense | 8 | 100 | fee | — (non-econ) |

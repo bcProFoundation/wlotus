@@ -1,0 +1,92 @@
+// WLotus temple remint (launch dryrun): mint 100 → 1 miner + 99 temple P2SH.
+// Same Moore tip / hard next-P2SH / whole-byte PoW as WlotusPowRemintMooreTip.
+// Redeem ≤520; non-push ops ≤201. Cap bits ≤ 128.
+// Ctor: templeScriptHash (20) — IFP-style immutable P2SH sink (multisig / cold).
+// Outputs: OP_RETURN | miner P2PKH (1) | temple P2SH (99) | baton P2SH
+// Layout: econHead(99) | 0x20 prefixHash | 0x04 tipLe | codeBytes
+
+contract WlotusPowRemintMooreTipTemple(
+    [byte;32] tokenIdRev,
+    [byte;20] templeScriptHash,
+    [byte;4] genesisUnixLe,
+    [byte;1] baseZeroBitsBin,
+    [byte;4] secondsPerExtraBitLe,
+    [byte;32] codeHash,
+    [byte;32] prefixHash,
+    [byte;4] tipLocktimeLe
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        [byte] preimage,
+        [byte] nextRedeem
+    ) {
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+
+        int genesisUnix = bin2num(genesisUnixLe);
+        int tipLocktime = bin2num(tipLocktimeLe);
+        int baseZeroBits = bin2num(baseZeroBitsBin);
+        int secondsPerExtraBit = bin2num(secondsPerExtraBitLe);
+
+        verify locktime >= genesisUnix;
+        verify locktime >= tipLocktime;
+
+        int extraBits = (locktime - genesisUnix) / secondsPerExtraBit;
+        int bits = baseZeroBits + extraBits;
+        verify bits <= 128;
+        verify bits % 8 == 0;
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        ([byte] zpref, _) = solhash @ (bits / 8);
+        verify bin2num(zpref) == 0;
+
+        // econHead length 99 (templeScriptHash instead of mintAtomsLe)
+        ([byte] econHead, [byte] afterEcon) = nextRedeem @ 99;
+        verify sha256(econHead) == Sha256(prefixHash);
+        (_, [byte] afterMid) = afterEcon @ 33;
+        ([byte] tipChunk, [byte] codeBytes) = afterMid @ 5;
+        verify tipChunk == (0x04 . num2bin(locktime, 4));
+        verify sha256(codeBytes) == Sha256(codeHash);
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+
+        [byte] wlpt =
+            0x574c5054 .
+            0x04 .
+            num2bin(bits, 2) .
+            num2bin(extraBits, 4) .
+            num2bin(locktime, 4);
+
+        // ALP MINT: 2 amounts (1 miner, 99 temple) + 1 baton
+        [byte] mintSection =
+            0x534c503200044d494e54 .
+            tokenIdRev .
+            0x02 .
+            0x010000000000 .
+            0x630000000000 .
+            0x01;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wlpt), 1) .
+            wlpt .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . templeScriptHash . 0x87;
+        [byte] out3 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextRedeem) . 0x87;
+
+        verify hash256(out0 . out1 . out2 . out3) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}

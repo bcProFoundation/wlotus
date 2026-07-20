@@ -55,6 +55,8 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 | Issuance | Dual mint (2 atoms) | 1 burn + 1 desk keep for vault top-up sales |
 | Tiers (later) | Prayer first; Candle / Flower later | Scale of sacrifice |
 
+**Launch economics (decision):** ship **WLotus** (mint 100 → 1 prayer + 99 temple) and **Golden Lotus** (permissionless, premine, event burns) — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md). Prayer dryruns remain the technical lineage.
+
 Resale of **same-origin** desk Prayer for profit is fine — liquidity for vault top-up, not a bug.
 
 ### App title options
