@@ -19,6 +19,8 @@ export const MINT_API_BASE =
 
 export const INSTALL_ID_KEY = 'wlotus.installId';
 export const LOCAL_OFFERS_KEY = 'wlotus.web.offers';
+/** Cached device hashrate (H/s) for Prayer ETA — skip probe on reopen. */
+export const HASHRATE_CACHE_KEY = 'wlotus.deviceHashrateHps';
 
 export function getOrCreateInstallId(): string {
   try {
