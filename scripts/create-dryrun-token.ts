@@ -197,9 +197,11 @@ async function main(): Promise<void> {
     ),
   );
 
-  if (wallet.balanceSats < 15_000n) {
+  // Genesis + N handoffs (dust baton each) + fees. ~3k sats/handoff is conservative.
+  const minSats = 8_000n + BigInt(batons) * 3_000n;
+  if (wallet.balanceSats < minSats) {
     throw new Error(
-      `Insufficient XEC: need ≥150, have ${Number(wallet.balanceSats) / 100}`,
+      `Insufficient XEC: need ≥${Number(minSats) / 100} for ${batons} batons, have ${Number(wallet.balanceSats) / 100}`,
     );
   }
 
