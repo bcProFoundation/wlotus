@@ -221,8 +221,17 @@ curl -sS http://127.0.0.1:8787/health
 curl -sS https://test.wlotus.org/api/status?installId=test
 ```
 
-Fund the mint wallet address with XEC before offering. After pulling a new
-Prayer deployment JSON, restart: `sudo systemctl restart wlotus-mint-api`.
+Fund the **desk** mint wallet address with XEC, then equal-split into per-tip
+fee accounts (remint has no change out — never leave one large UTXO as fuel):
+
+```bash
+cd /opt/wlotus   # or /root/wlotus/wlotus
+set -a && source /etc/wlotus/mint.env && set +a
+npm run fund-tip-fee-wallets
+```
+
+After pulling a new Prayer deployment JSON, restart:
+`sudo systemctl restart wlotus-mint-api`.
 
 ---
 

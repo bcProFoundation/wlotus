@@ -23,11 +23,19 @@ import {
 } from '../../../src/miner/remintMooreTipMemo.js';
 import { memorialPushdata } from '../../../src/offering/burnPrayer.js';
 import {
+  REMINT_FUEL_SATS,
+  pickSizedFuelUtxo,
+  pickSplitSourceUtxo,
+} from '../../../src/mint/fuelUtxo.js';
+import {
+  loadTipFeeWallet,
+  tipFeeWalletSummary,
+} from '../../../src/mint/loadTipFeeWallet.js';
+import {
   loadMintWallet,
   mintWalletSummary,
 } from '../../../src/mint/loadMintWallet.js';
 
-const REMINT_FUEL_SATS = 4_000n;
 const MAX_OFFERS_PER_DAY = Math.max(
   1,
   Number(process.env.MINT_MAX_OFFERS_PER_DAY?.trim() || 20) || 20,
@@ -79,6 +87,8 @@ export interface ChallengePublic {
   /** Changes when the serving tip is reminted; clients should restart. */
   tipEpoch: string;
   tipIndex: number;
+  /** Per-tip fee wallet that pays remint fuel (and receives mint dust). */
+  tipFeeAddress: string;
   mintAtoms: string;
   note: string;
 }
@@ -265,31 +275,20 @@ function tipAnchorTxid(dep: DryrunDep, tipRec: BatonTip): string | null {
   return tipRec.lastRemintTxid ?? dep.handoffTxids?.[tipRec.index] ?? null;
 }
 
+type FuelCoin = { txid: string; outIdx: number; sats: string };
+
 /**
- * One fee UTXO per tip: racers on the same tip share it (only the winner broadcasts).
- * Different tips need distinct fee coins.
+ * Peel one REMINT_FUEL_SATS coin from an oversized UTXO on `wallet`.
+ * Remint has no change out — oversized fuel would burn almost entirely as fee.
  */
-function fuelsBoundToOtherTips(tipIndex: number): Set<string> {
-  const used = new Set<string>();
-  for (const ch of challenges.values()) {
-    if (ch.status !== 'open') continue;
-    if (ch.tipIndex === tipIndex) continue;
-    used.add(fuelKey(ch.fuel.txid, ch.fuel.outIdx));
-  }
-  return used;
-}
-
-/** Ensure at least one spendable fee coin exists (not one-per-racer). */
-async function ensureOneFuel(wallet: Wallet): Promise<void> {
+async function splitSizedFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();
-  const has = wallet.utxos.some(u => !u.token && u.sats >= REMINT_FUEL_SATS);
-  if (has) return;
-
-  const big = wallet.utxos
-    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 2_000n)
-    .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
+  if (pickSizedFuelUtxo(wallet.utxos)) return;
+  const big = pickSplitSourceUtxo(wallet.utxos);
   if (!big) {
-    throw new Error(`Need XEC ≥ ${Number(REMINT_FUEL_SATS) / 100} for remint fee`);
+    throw new Error(
+      `Need XEC ≥ ${Number(REMINT_FUEL_SATS) / 100} for a sized remint fee UTXO`,
+    );
   }
   const { payment } = await import('ecash-lib');
   const action: payment.Action = {
@@ -299,18 +298,55 @@ async function ensureOneFuel(wallet: Wallet): Promise<void> {
   if (!resp.success || !resp.broadcasted?.length) {
     throw new Error(`Fuel split failed: ${JSON.stringify(resp)}`);
   }
+  console.log(
+    `fuel split ${resp.broadcasted[0]} → ${REMINT_FUEL_SATS} sats (refused oversized fuel)`,
+  );
   await wallet.sync();
 }
 
-type FuelCoin = { txid: string; outIdx: number; sats: string };
+/**
+ * Send one sized fuel coin from the main desk → tip fee wallet.
+ * Used when the tip account is empty but the desk still has treasury XEC.
+ */
+async function topUpTipFuelFromDesk(
+  desk: Wallet,
+  tipWallet: Wallet,
+): Promise<void> {
+  await desk.sync();
+  const source =
+    pickSizedFuelUtxo(desk.utxos) ?? pickSplitSourceUtxo(desk.utxos);
+  if (!source) {
+    throw new Error(
+      `Tip fee wallet ${tipWallet.address} is empty and desk has no XEC to fund it. ` +
+        `Run: npm run fund-tip-fee-wallets`,
+    );
+  }
+  // If desk only has oversized coins, peel a sized one onto the tip directly.
+  const { payment } = await import('ecash-lib');
+  const action: payment.Action = {
+    outputs: [{ sats: REMINT_FUEL_SATS, script: tipWallet.script }],
+  };
+  const resp = await desk.action(action).build().broadcast();
+  if (!resp.success || !resp.broadcasted?.length) {
+    throw new Error(`Desk→tip fuel top-up failed: ${JSON.stringify(resp)}`);
+  }
+  console.log(
+    `desk→tip fuel ${resp.broadcasted[0]} ${REMINT_FUEL_SATS} sats → ${tipWallet.address}`,
+  );
+  await tipWallet.sync();
+}
 
+/**
+ * One sized fee UTXO per tip wallet. Racers on the same tip share it
+ * (only the winner broadcasts). Tips use separate HD accounts so they
+ * cannot spend each other's fuel.
+ */
 function resolveFuelForTip(
   wallet: Wallet,
   tipIndex: number,
   batonTxid: string,
   batonOutIdx: number,
 ): FuelCoin {
-  // Reuse the fee coin already bound to racers on this tip/baton.
   const sibling =
     openChallengesOnTip(tipIndex).find(
       ch => ch.baton.txid === batonTxid && ch.baton.outIdx === batonOutIdx,
@@ -319,18 +355,10 @@ function resolveFuelForTip(
     return { ...sibling.fuel };
   }
 
-  const blocked = fuelsBoundToOtherTips(tipIndex);
-  const fuelUtxo = wallet.utxos
-    .filter(
-      u =>
-        !u.token &&
-        u.sats >= REMINT_FUEL_SATS &&
-        !blocked.has(fuelKey(u.outpoint.txid, u.outpoint.outIdx)),
-    )
-    .sort((a, c) => (a.sats < c.sats ? -1 : 1))[0];
+  const fuelUtxo = pickSizedFuelUtxo(wallet.utxos);
   if (!fuelUtxo) {
     throw new Error(
-      'Mint desk needs a free fee UTXO for this tip. Try again shortly.',
+      'Tip fee wallet needs a sized fee UTXO. Try again shortly.',
     );
   }
   return {
@@ -338,6 +366,42 @@ function resolveFuelForTip(
     outIdx: fuelUtxo.outpoint.outIdx,
     sats: fuelUtxo.sats.toString(),
   };
+}
+
+async function ensureTipSizedFuel(
+  desk: Wallet,
+  tipWallet: Wallet,
+  tipIndex: number,
+  batonTxid: string,
+  batonOutIdx: number,
+): Promise<FuelCoin> {
+  // Reuse sibling binding without syncing / splitting.
+  try {
+    return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
+  } catch {
+    /* need to provision */
+  }
+
+  await tipWallet.sync();
+  try {
+    return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
+  } catch {
+    /* continue */
+  }
+
+  if (pickSplitSourceUtxo(tipWallet.utxos)) {
+    await splitSizedFuel(tipWallet);
+  } else {
+    await topUpTipFuelFromDesk(desk, tipWallet);
+    // Top-up sends exactly REMINT_FUEL_SATS; if desk spent an oversized coin
+    // with change, tip already has a sized coin. If tip somehow got a lump,
+    // split again.
+    if (!pickSizedFuelUtxo(tipWallet.utxos)) {
+      await splitSizedFuel(tipWallet);
+    }
+  }
+
+  return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
 }
 
 async function createChallengeOnce(opts: {
@@ -392,10 +456,10 @@ async function createChallengeOnce(opts: {
   });
 
   const chronik = await createChronik('closest');
-  const mint = await loadMintWallet(chronik);
-  console.log('mint wallet', JSON.stringify(mintWalletSummary(mint)));
-  const wallet = mint.wallet;
-  await ensureOneFuel(wallet);
+  const desk = await loadMintWallet(chronik);
+  const tipFee = await loadTipFeeWallet(chronik, tipRec.index);
+  console.log('mint desk', JSON.stringify(mintWalletSummary(desk)));
+  console.log('tip fee', JSON.stringify(tipFeeWalletSummary(tipRec.index, tipFee)));
 
   const scriptHex = toHex(contract.scriptHash);
   const scriptUtxos = await chronik.script('p2sh', scriptHex).utxos();
@@ -425,52 +489,13 @@ async function createChallengeOnce(opts: {
     vout: b.outpoint.outIdx,
   };
 
-  await wallet.sync();
-  // If this tip has no sibling yet, we may need a second fee coin (1 per tip).
-  let fuelCoin: FuelCoin;
-  try {
-    fuelCoin = resolveFuelForTip(
-      wallet,
-      tipRec.index,
-      baton.outpoint.txid,
-      baton.outpoint.outIdx,
-    );
-  } catch {
-    await ensureOneFuel(wallet);
-    // Force-split an extra sized coin when the only fee is bound to another tip.
-    const blocked = fuelsBoundToOtherTips(tipRec.index);
-    const free = wallet.utxos.some(
-      u =>
-        !u.token &&
-        u.sats >= REMINT_FUEL_SATS &&
-        !blocked.has(fuelKey(u.outpoint.txid, u.outpoint.outIdx)),
-    );
-    if (!free) {
-      const big = wallet.utxos
-        .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 2_000n)
-        .sort((a, c) => (a.sats < c.sats ? 1 : -1))[0];
-      if (!big) {
-        throw new Error(
-          `Need XEC ≥ ${Number(REMINT_FUEL_SATS) / 100} for a fee UTXO per tip`,
-        );
-      }
-      const { payment } = await import('ecash-lib');
-      const action: payment.Action = {
-        outputs: [{ sats: REMINT_FUEL_SATS, script: wallet.script }],
-      };
-      const resp = await wallet.action(action).build().broadcast();
-      if (!resp.success || !resp.broadcasted?.length) {
-        throw new Error(`Fuel split failed: ${JSON.stringify(resp)}`);
-      }
-      await wallet.sync();
-    }
-    fuelCoin = resolveFuelForTip(
-      wallet,
-      tipRec.index,
-      baton.outpoint.txid,
-      baton.outpoint.outIdx,
-    );
-  }
+  const fuelCoin = await ensureTipSizedFuel(
+    desk.wallet,
+    tipFee.wallet,
+    tipRec.index,
+    baton.outpoint.txid,
+    baton.outpoint.outIdx,
+  );
 
   const { mtp } = await getMedianTimePast(chronik);
   const locktime = Math.max(tipRec.tipLocktime, mtp - 1);
@@ -487,9 +512,9 @@ async function createChallengeOnce(opts: {
     fuel: {
       outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
       sats: BigInt(fuelCoin.sats),
-      outputScript: wallet.script,
+      outputScript: tipFee.wallet.script,
     },
-    miner: { sk: mint.sk, pk: mint.pk },
+    miner: { sk: tipFee.sk, pk: tipFee.pk },
     locktime,
     memorial,
   });
@@ -516,7 +541,7 @@ async function createChallengeOnce(opts: {
     preimageHex: prepared.preimageHex,
     powPrefixHex: prepared.powPrefixHex,
     mintAtoms: prepared.contract.params.mintAtoms.toString(),
-    minerPkHex: toHex(mint.pk),
+    minerPkHex: toHex(tipFee.pk),
     genesisUnix: dep.genesisUnix,
     baseZeroBits: dep.baseZeroBits,
     secondsPerExtraBit: dep.secondsPerExtraBit,
@@ -540,6 +565,7 @@ async function createChallengeOnce(opts: {
     tipKey: tipKey(stored.baton.txid, stored.baton.outIdx),
     tipEpoch: tipEpochOf(tipRec),
     tipIndex: tipRec.index,
+    tipFeeAddress: tipFee.address,
     mintAtoms: stored.mintAtoms,
     note,
   };
@@ -567,9 +593,9 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
   const tipRec = tips.find(t => t.index === ch.tipIndex) ?? tips[0]!;
 
   const chronik = await createChronik('closest');
-  const mint = await loadMintWallet(chronik);
-  if (toHex(mint.pk) !== ch.minerPkHex) {
-    throw new Error('Mint wallet changed; challenge is invalid. Request a new one.');
+  const tipFee = await loadTipFeeWallet(chronik, ch.tipIndex);
+  if (toHex(tipFee.pk) !== ch.minerPkHex) {
+    throw new Error('Tip fee wallet changed; challenge is invalid. Request a new one.');
   }
 
   const contract = await createPowRemintMooreTipMemoContract({
@@ -595,9 +621,9 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
     fuel: {
       outpoint: { txid: ch.fuel.txid, outIdx: ch.fuel.outIdx },
       sats: BigInt(ch.fuel.sats),
-      outputScript: mint.wallet.script,
+      outputScript: tipFee.wallet.script,
     },
-    miner: { sk: mint.sk, pk: mint.pk },
+    miner: { sk: tipFee.sk, pk: tipFee.pk },
     locktime: ch.locktime,
     memorial,
   });
@@ -787,6 +813,8 @@ export function publicStatus(): {
   baseZeroBits: number | null;
   clientPow: true;
   memorialOnMint: true;
+  /** Per-tip HD fee accounts (tip i → BIP44 account i+1). */
+  tipFeeAccounts: true;
 } {
   try {
     const { dep } = loadDep();
@@ -814,6 +842,7 @@ export function publicStatus(): {
       baseZeroBits: dep.baseZeroBits,
       clientPow: true,
       memorialOnMint: true,
+      tipFeeAccounts: true,
     };
   } catch {
     return {
@@ -832,6 +861,7 @@ export function publicStatus(): {
       baseZeroBits: null,
       clientPow: true,
       memorialOnMint: true,
+      tipFeeAccounts: true,
     };
   }
 }
