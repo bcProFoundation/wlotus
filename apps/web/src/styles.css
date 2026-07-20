@@ -121,9 +121,9 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.4rem;
+  min-width: 2.4rem;
   height: 2.4rem;
-  padding: 0;
+  padding: 0 0.55rem;
   border: 1px solid var(--line);
   border-radius: 0.35rem;
   background: transparent;
@@ -137,9 +137,21 @@ a {
   outline: none;
 }
 
-.lang-flag {
-  font-size: 1.25rem;
+.lang-code {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   line-height: 1;
+  color: var(--muted);
+}
+
+.lang-switch-btn .lang-code {
+  color: var(--ink);
+}
+
+.lang-name {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .lang-menu {

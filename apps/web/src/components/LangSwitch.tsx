@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLocale, useLocaleOptions } from '../i18n/LocaleContext.js';
 
-/** Flag control to the right of the brand title. */
+/** Text language control to the right of the brand title. */
 export function LangSwitch() {
   const { locale, setLocale } = useLocale();
   const options = useLocaleOptions();
@@ -37,9 +37,7 @@ export function LangSwitch() {
         aria-controls={menuId}
         onClick={() => setOpen(v => !v)}
       >
-        <span className="lang-flag" aria-hidden>
-          {current.flag}
-        </span>
+        <span className="lang-code">{current.label}</span>
       </button>
       {open ? (
         <ul className="lang-menu" id={menuId} role="listbox">
@@ -57,10 +55,8 @@ export function LangSwitch() {
                   setOpen(false);
                 }}
               >
-                <span className="lang-flag" aria-hidden>
-                  {opt.flag}
-                </span>
-                <span>{opt.label}</span>
+                <span className="lang-code">{opt.label}</span>
+                <span className="lang-name">{opt.nameEn}</span>
               </button>
             </li>
           ))}
