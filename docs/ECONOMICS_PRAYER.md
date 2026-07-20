@@ -1,6 +1,8 @@
 # Prayer bootstrap economics (phone mine → server mint)
 
 Design under evaluation for **starting with Prayer only** (`dPRAYER` dryrun).  
+**Superseded as launch product path** by [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) (WLotus 100/1+99 + Golden Lotus).  
+This page remains the phone-fee / bits working sheet from the Prayer bootstrap.  
 Canonical vision: [VISION.md](./VISION.md). Ladder overview: [ECONOMICS.md](./ECONOMICS.md).
 
 ## Proposed flow
