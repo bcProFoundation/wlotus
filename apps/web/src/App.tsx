@@ -3,6 +3,7 @@ import {
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
   PRAYER_TICKER,
+  TIP_POLL_MS,
 } from './lib/config.js';
 import {
   cancelOfferChallenge,
@@ -272,26 +273,31 @@ export default function App() {
       const tipEpoch = challenge.tipEpoch ?? null;
       const tipIndex = challenge.tipIndex;
       let tipMoved = false;
-      const tipWatch =
-        tipEpoch == null
-          ? null
-          : setInterval(() => {
-              void (async () => {
-                try {
-                  const s = await fetchStatus(installId);
-                  const live =
-                    tipIndex != null && s.tipEpochs
-                      ? s.tipEpochs[String(tipIndex)]
-                      : s.tipEpoch;
-                  if (live && live !== tipEpoch) {
-                    tipMoved = true;
-                    ac.abort();
-                  }
-                } catch {
-                  /* ignore transient status errors while mining */
-                }
-              })();
-            }, 5_000);
+      let tipWatch: ReturnType<typeof setInterval> | null = null;
+      if (tipEpoch != null) {
+        let tipPollInFlight = false;
+        const checkTip = async () => {
+          if (tipPollInFlight || ac.signal.aborted) return;
+          tipPollInFlight = true;
+          try {
+            const s = await fetchStatus(installId);
+            const live =
+              tipIndex != null && s.tipEpochs
+                ? s.tipEpochs[String(tipIndex)]
+                : s.tipEpoch;
+            if (live && live !== tipEpoch) {
+              tipMoved = true;
+              ac.abort();
+            }
+          } catch {
+            /* ignore transient status errors while mining */
+          } finally {
+            tipPollInFlight = false;
+          }
+        };
+        void checkTip();
+        tipWatch = setInterval(() => void checkTip(), TIP_POLL_MS);
+      }
 
       let mined;
       try {
