@@ -94,4 +94,5 @@ export const MWLPOW_PER_WLOTUS = MWLOTUS_PER_WLOTUS;
 export const NWLPOW_PER_MWLPOW = 0n;
 export const NWLPOW_PER_WLOTUS = 0n;
 
+/** Document / website URI written into ALP genesis metadata (immutable after mint). */
 export const TOKEN_URL = 'https://wlotus.org';

@@ -211,6 +211,10 @@ export default function App() {
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      if (tipMsgClearRef.current != null) {
+        clearTimeout(tipMsgClearRef.current);
+        tipMsgClearRef.current = null;
+      }
     };
   }, []);
 
