@@ -233,6 +233,36 @@ npm run fund-tip-fee-wallets
 
 **WLotus temple (launch):** covenant pays 99 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
+### Create `dWLOTUS` dryrun (on Contabo)
+
+Do this **on the VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). Batons are immutable at genesis — mint the ALP max (**28**); desk soft-serves **2** tips via `MINT_SERVING_TIP_COUNT`.
+
+```bash
+cd ~/wlotus/wlotus   # or /opt/wlotus
+git pull origin master
+npm ci
+
+# Fund GENESIS_ADDRESS with ≥ ~900 XEC before BATONS=28 (handoffs).
+# Temple must be P2SH (IFP-style), e.g. test temple:
+export TEMPLE_ADDRESS=ecash:ppzc7slfa9juf4gfr950qm9fn9gvctptkqdhtvf08j
+
+TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
+  npm run create-dryrun-token
+# Writes deployments/mainnet-dryrun-wlotus.json
+# and copies it to deployments/mainnet-dryrun-active.json
+
+# Smoke one remint (optional; uses GENESIS wallet as miner+fuel):
+TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
+
+# Tip fee wallets still sized for the soft tip count (2):
+set -a && source /etc/wlotus/mint.env && set +a
+# ensure: MINT_SERVING_TIP_COUNT=2
+npm run fund-tip-fee-wallets
+sudo systemctl restart wlotus-mint-api
+```
+
+Until mint-api is wired to the temple covenant, `/api/status` may still show `dPRAYER`. Token creation itself is independent — explorer will show `dWLOTUS` after genesis.
+
 After pulling a new Prayer / WLotus deployment JSON, restart:
 `sudo systemctl restart wlotus-mint-api`.
 
