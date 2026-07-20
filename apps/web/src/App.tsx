@@ -133,6 +133,19 @@ export default function App() {
   const offerGenRef = useRef(0);
   /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
   const elapsedClockRef = useRef(new MineElapsedClock());
+  const tipMsgClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashTipMsg = useCallback((text: string) => {
+    if (tipMsgClearRef.current != null) {
+      clearTimeout(tipMsgClearRef.current);
+      tipMsgClearRef.current = null;
+    }
+    setMsg({ kind: 'ok', text });
+    tipMsgClearRef.current = setTimeout(() => {
+      tipMsgClearRef.current = null;
+      setMsg(m => (m?.kind === 'ok' && m.text === text ? null : m));
+    }, 2200);
+  }, []);
 
   const busy = phase !== 'idle';
   const mining = phase === 'mining';
@@ -253,7 +266,7 @@ export default function App() {
     elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
-    setMsg({ kind: 'ok', text: 'Mining cancelled.' });
+    setMsg({ kind: 'ok', text: 'Prayer cancelled.' });
     // Await so a quick re-Offer sees a free baton on the server.
     await releaseChallenge(id);
   }
@@ -361,10 +374,7 @@ export default function App() {
               mineChallengeId = null;
               if (offerGenRef.current !== gen) return;
               if (tipMoved) {
-                setMsg({
-                  kind: 'ok',
-                  text: 'Tip moved — continuing on a fresh challenge…',
-                });
+                flashTipMsg('Mining on new tip');
                 continue;
               }
               return;
@@ -379,10 +389,7 @@ export default function App() {
             await releaseChallenge(challenge.challengeId);
             mineChallengeId = null;
             if (tipMoved && offerGenRef.current === gen) {
-              setMsg({
-                kind: 'ok',
-                text: 'Tip moved — continuing on a fresh challenge…',
-              });
+              flashTipMsg('Mining on new tip');
               continue;
             }
             return;
@@ -440,10 +447,7 @@ export default function App() {
 
           const msg = e instanceof Error ? e.message : String(e);
           if (isTipRaceLost(msg)) {
-            setMsg({
-              kind: 'ok',
-              text: 'Tip taken — continuing on a fresh challenge…',
-            });
+            flashTipMsg('Mining on new tip');
             continue;
           }
           if (e instanceof DOMException && e.name === 'AbortError') {
@@ -472,9 +476,9 @@ export default function App() {
     phase === 'challenge'
       ? 'Preparing…'
       : phase === 'mining'
-        ? 'Mining…'
+        ? 'PRAYING…'
         : phase === 'submit'
-          ? 'Broadcasting…'
+          ? 'Offering…'
           : 'Offer';
 
   return (
@@ -498,9 +502,13 @@ export default function App() {
       <section className="panel offer-panel">
         <h2>Offer</h2>
         <p className="hint">
-          Mine {ticker} on this device, then burn the presence atom as
-          memorial and dana — real sacrifice on-chain. Limited to{' '}
-          {maxOffersPerDay} offerings per day on this device.
+          Pray on this device while it mines {ticker}, then burn the presence
+          atom — memorial and dana on-chain. Limited to {maxOffersPerDay}{' '}
+          offerings per day here.
+        </p>
+        <p className="hint">
+          Keep this screen on while you pray. Leaving the app or locking the
+          phone pauses the offering (iPhone and Android).
         </p>
         <p className="hint eta" aria-live="off">
           {powEta.durationLabel} estimated

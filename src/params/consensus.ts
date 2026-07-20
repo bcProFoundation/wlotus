@@ -94,4 +94,4 @@ export const MWLPOW_PER_WLOTUS = MWLOTUS_PER_WLOTUS;
 export const NWLPOW_PER_MWLPOW = 0n;
 export const NWLPOW_PER_WLOTUS = 0n;
 
-export const TOKEN_URL = 'https://github.com/bcProFoundation/wlotus';
+export const TOKEN_URL = 'https://wlotus.org';
