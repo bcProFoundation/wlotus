@@ -13,6 +13,7 @@ import {
   submitMinedOffer,
 } from './lib/offerApi.js';
 import { mineInWorker } from './lib/mineRunner.js';
+import { MineElapsedClock } from './lib/mineElapsedClock.js';
 import {
   isTipRaceLost,
   liveTipEpochFromStatus,
@@ -129,6 +130,8 @@ export default function App() {
   const challengeIdRef = useRef<string | null>(null);
   /** Bumps on cancel / new offer so a stale offer's finally cannot clobber UI. */
   const offerGenRef = useRef(0);
+  /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
+  const elapsedClockRef = useRef(new MineElapsedClock());
 
   const busy = phase !== 'idle';
   const mining = phase === 'mining';
@@ -196,18 +199,35 @@ export default function App() {
     };
   }, []);
 
-  /** Tick elapsed every 10s → 0.1, 0.2, … min */
+  /**
+   * Tick elapsed from the active clock (pauses while document.hidden).
+   * Tip retries do not reset the clock — only a new Offer does.
+   */
   useEffect(() => {
     if (mineStartedAt == null) {
       setElapsedDisplay('0.0 min');
       return;
     }
+    const clock = elapsedClockRef.current;
     const tick = () => {
-      setElapsedDisplay(formatElapsedTenthsMin(Date.now() - mineStartedAt));
+      setElapsedDisplay(formatElapsedTenthsMin(clock.readMs()));
     };
     tick();
-    const t = setInterval(tick, 10_000);
-    return () => clearInterval(t);
+    const t = setInterval(tick, 1_000);
+
+    const onVis = () => {
+      if (document.hidden) clock.pause();
+      else clock.resume();
+      tick();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    // If we mount already hidden (rare), pause immediately.
+    if (document.hidden) clock.pause();
+
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [mineStartedAt]);
 
   async function releaseChallenge(challengeId: string | null): Promise<void> {
@@ -228,6 +248,7 @@ export default function App() {
     clearRememberedChallenge();
     abortRef.current?.abort();
     abortRef.current = null;
+    elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
     setMsg({ kind: 'ok', text: 'Mining cancelled.' });
@@ -247,13 +268,13 @@ export default function App() {
     if (offerGenRef.current !== gen) return;
 
     setMsg(null);
-    setMineStartedAt(null);
+    elapsedClockRef.current.resetAndStart();
+    setMineStartedAt(Date.now());
     setPhase('challenge');
 
     /** Fresh controller per attempt so tip-race abort can retry. */
     let ac = new AbortController();
     abortRef.current = ac;
-    let elapsedClockStarted = false;
 
     try {
       // Open race: if another device wins our tip, silently take a new challenge.
@@ -284,9 +305,12 @@ export default function App() {
           });
 
           setPhase('mining');
-          if (!elapsedClockStarted) {
+          // Tip retries must not reset the elapsed clock.
+          if (!elapsedClockRef.current.isRunning) {
+            elapsedClockRef.current.resetAndStart();
             setMineStartedAt(Date.now());
-            elapsedClockStarted = true;
+          } else if (!document.hidden) {
+            elapsedClockRef.current.resume();
           }
           setBaseZeroBits(challenge.bits);
 
@@ -379,13 +403,19 @@ export default function App() {
           clearRememberedChallenge();
           mineChallengeId = null;
 
+          elapsedClockRef.current.stop();
+          const activeMs = elapsedClockRef.current.readMs();
+          // UI duration = active session time (paused while hidden; includes tip retries).
+          // API powMs stays the winning attempt's PoW timer (hashrate math).
+          const uiPowMs = Math.max(activeMs, result.powMs || mined.elapsedMs);
+
           setOffers(
             pushOffer({
               remintTxid: result.remintTxid,
               burnTxid: result.burnTxid,
               note: note.trim(),
               at: new Date().toISOString(),
-              powMs: result.powMs || mined.elapsedMs,
+              powMs: uiPowMs,
               powAttempts: result.powAttempts || mined.attempts,
               hashrateHps: result.hashrateHps || mined.hashrateHps,
               bits: result.bits,
@@ -393,11 +423,10 @@ export default function App() {
           );
           setNote('');
           await refreshStatus();
-          const powSec = (result.powMs || mined.elapsedMs) / 1000;
           setMsg({
             kind: 'ok',
             text: [
-              `Prayer offered in ${formatActualDuration(powSec)}`,
+              `Prayer offered in ${formatActualDuration(uiPowMs / 1000)}`,
               shortTx(result.remintTxid),
             ].join(' · '),
           });
@@ -426,6 +455,7 @@ export default function App() {
       }
     } finally {
       if (offerGenRef.current === gen) {
+        elapsedClockRef.current.stop();
         setPhase('idle');
         setMineStartedAt(null);
         if (abortRef.current === ac) abortRef.current = null;
