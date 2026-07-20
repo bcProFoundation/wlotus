@@ -37,9 +37,11 @@ Each successful remint mints **100** WLotus atoms:
 | Share | Destination | Purpose |
 |------:|-------------|---------|
 | **1** | Prayer / miner | Presence reward — kept or later burned/given |
-| **99** | Temple (`wlotus.org` desk) | Reimburse sponsored XEC fees; inventory for non-miners |
+| **99** | Temple **hot P2PKH** (`wlotus.org` desk) | Fee reimbursement & inventory; **sweep daily to cold** (ops, not covenant) |
 
 This is **not** “app-only mining.” Anyone may satisfy the covenant (including copied clients) **if they pay their own XEC fees** and accept the **99→temple / 1→miner** outputs. The temple cannot stop that on a public chain — and does not need to.
+
+**Launch custody:** temple sink in Script is **P2PKH** (dryrun and production). Cold storage is off-chain policy via `npm run sweep-temple-to-cold` — see [Temple custody](#temple-custody-dryrun--launch-decision).
 
 ### Why 99% temple
 
@@ -129,17 +131,40 @@ Candle / Flower rows in [ECONOMICS.md](./ECONOMICS.md) remain a longer-term hard
 
 ---
 
-## Implementation notes (non-binding)
+### Temple custody (dryrun + launch decision)
 
-- Covenant: `WlotusPowRemintMooreTipTemple` — hard-bind outputs to temple PKH (99) + miner P2PKH (1); mint atoms = 100. Redeem fits ≤520 B / ≤201 ops (memorial EMPP **not** in this covenant — op budget).
+**Covenant destination: temple hot P2PKH** (immutable in Script — 99 atoms per remint).
+
+| Layer | Address type | Role |
+|-------|--------------|------|
+| Hot (in covenant) | **P2PKH** | Receives 99/remint; ops / inventory; **daily sweep** to cold |
+| Cold (ops only) | P2SH multisig or offline | Treasury — **not** encoded in the covenant |
+
+**Why not covenant P2SH temple:** redeem reveal on first spend + forever-fixed script hash is a poor fit for a sink that must move funds. **Why not 90/9 on-chain:** op budget; cutover is cheaper with sweep + new covenant if hot is lost.
+
+```bash
+TOKEN_ID=… COLD_ADDRESS=ecash:p…or q… \
+  TEMPLE_SK_HEX=… npm run sweep-temple-to-cold
+# Contabo cron example (daily 03:00 UTC):
+# 0 3 * * * cd /root/wlotus/wlotus && set -a && . /etc/wlotus/mint.env && set +a \
+#   && COLD_ADDRESS=… npm run sweep-temple-to-cold >> /var/log/wlotus-temple-sweep.log 2>&1
+```
+
+If the hot key is compromised: stop mint-api, sweep remaining if possible, serve a **new** covenant with a new `TEMPLE_ADDRESS`. Cold stack is unchanged.
+
+---
+
+## Implementation notes
+
+- Covenant: `WlotusPowRemintMooreTipTemple` — **P2PKH** temple (99) + miner P2PKH (1); mint = 100. Fits ≤520 B / ≤201 ops (no memorial EMPP — op budget).
 - Dryrun:
   ```bash
-  TIER=wlotus BATONS=2 npm run create-dryrun-token
-  # optional: TEMPLE_ADDRESS=ecash:q…
+  TIER=wlotus BATONS=2 npm run create-dryrun-token   # TEMPLE_ADDRESS = P2PKH
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
+  npm run sweep-temple-to-cold                       # COLD_ADDRESS + temple key
   ```
-- Bits schedule: whole-byte only; see [CLOCK.md](./CLOCK.md) (“Can bits start at 1?”). WLotus dryrun base **24**; starting at **1** needs fractional PoW restored. A ctor “shift” does not extend the 128-bit calendar by itself — use lower base and/or slower Moore period.
-- Mint-api / web: still on Prayer memo path; wire to temple covenant in a follow-up.
-- Golden Lotus: separate token id / baton set; open remint; no temple output required.
+- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for WLotus dryrun.
+- Mint-api / web: still on Prayer memo; wire to temple covenant in a follow-up.
+- Golden Lotus: separate token; open remint; no temple mint tax.
 
-Open product decisions (track separately): exact bits/difficulty, premine %, temple multisig vs single desk, whether convertibility ships in v1, memorial-on-mint for WLotus if op budget frees up.
+Open product decisions: bits/difficulty, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up.

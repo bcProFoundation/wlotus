@@ -9,7 +9,8 @@
  *   TIER=wlotus npm run create-dryrun-token
  *   TIER=wlotus TEMPLE_ADDRESS=ecash:q… BATONS=2 npm run create-dryrun-token
  *
- * WLotus: mint 100 → 1 miner + 99 temple (MooreTipTemple covenant).
+ * WLotus: mint 100 → 1 miner + 99 temple **P2PKH** (MooreTipTemple covenant).
+ * TEMPLE_ADDRESS must be P2PKH (launch + dryrun). Sweep hot→cold off-chain daily.
  * Uses hardened next-P2SH (codeHash) + tipLocktime. Moore clock: +1 bit / 840 days.
  */
 import { resolve } from 'node:path';
@@ -334,7 +335,7 @@ async function main(): Promise<void> {
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: production 840-day bit clock. Cap bits ≤ 128. Whole-byte PoW only.',
       tierName === 'wlotus'
-        ? `WLotus: mint ${WLOTUS_MINT_ATOMS} → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple. Memorial EMPP not in this covenant (op budget).`
+        ? `WLotus: mint ${WLOTUS_MINT_ATOMS} → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2PKH (hot). Sweep to cold off-chain. No memorial EMPP (op budget).`
         : tierName === 'prayer'
           ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
           : 'Candle/Flower use MooreTip without memorial push.',
