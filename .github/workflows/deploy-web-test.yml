@@ -8,8 +8,9 @@
 # Optional secrets:
 #   CONTABO_SSH_PORT          — default 22
 #   CONTABO_DEPLOY_PATH       — default /var/www/wlotus-test
-#   VITE_PRAYER_TOKEN_ID      — bake into the SPA at build time
-#   VITE_PRAYER_TICKER        — default dPRAYER
+#   VITE_PRAYER_TOKEN_ID      — bake into SPA (prefer Actions *variable*; secret ok)
+#   VITE_PRAYER_TICKER        — prefer Actions *variable* (e.g. dWLOTUS). Do not leave a
+#                               stale secret set to dPRAYER — UI also reads /api/status.ticker
 #   VITE_CHRONIK_URLS         — comma-separated Chronik URLs
 #   VITE_TIP_POLL_MS          — tip-epoch poll while mining (ms); prefer Actions *variable*
 #                               (not sensitive). e.g. 1000 or 5000; app default 2000
@@ -57,9 +58,11 @@ jobs:
 
       - name: Build web
         env:
-          VITE_PRAYER_TOKEN_ID: ${{ secrets.VITE_PRAYER_TOKEN_ID }}
-          VITE_PRAYER_TICKER: ${{ secrets.VITE_PRAYER_TICKER }}
-          VITE_CHRONIK_URLS: ${{ secrets.VITE_CHRONIK_URLS }}
+          # Prefer variables. Empty ticker/token → apps/web config defaults (dWLOTUS).
+          # Stale secrets.VITE_PRAYER_TICKER=dPRAYER would otherwise bake the old name.
+          VITE_PRAYER_TOKEN_ID: ${{ vars.VITE_PRAYER_TOKEN_ID || secrets.VITE_PRAYER_TOKEN_ID }}
+          VITE_PRAYER_TICKER: ${{ vars.VITE_PRAYER_TICKER }}
+          VITE_CHRONIK_URLS: ${{ vars.VITE_CHRONIK_URLS || secrets.VITE_CHRONIK_URLS }}
           # Tip-epoch poll while mining (ms). Prefer Actions variable; secret also ok.
           # Examples: 1000 (1s) or 5000 (5s). Default in app is 2000 if unset.
           VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
