@@ -1,17 +1,18 @@
 /**
- * White Lotus web — Prayer client (mobile-first).
- * Device PoW; server pays fees; memorial on mint (no separate burn).
+ * White Lotus web — Offer client (mobile-first).
+ * Device PoW; server pays fees; WLotus burns miner atom for memorial.
  */
 
-/** Live memorial-mint dPRAYER (mint 1 + WLBR on remint) */
+/** Live dWLOTUS temple dryrun (mint 100 → burn 1) */
 export const DEFAULT_PRAYER_TOKEN_ID =
   (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
-  '173e02605a8f7c226c43793539687b1084a605f336faf47aa07f7976edfa6078';
+  'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
 
 export const PRAYER_TOKEN_ID = DEFAULT_PRAYER_TOKEN_ID;
 
 export const PRAYER_TICKER =
-  (import.meta.env.VITE_PRAYER_TICKER as string | undefined)?.trim() || 'dPRAYER';
+  (import.meta.env.VITE_PRAYER_TICKER as string | undefined)?.trim() ||
+  'dWLOTUS';
 
 import { parseTipPollMs } from './tipPollMs.js';
 

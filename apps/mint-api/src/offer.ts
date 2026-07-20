@@ -1,6 +1,8 @@
 /**
- * Prayer offer: device PoW → server fees/sign/broadcast (mint 1 + on-chain memorial).
- * No separate burn tx — the mint OP_RETURN carries WLBR.
+ * Offer API: device PoW → server fees/sign/broadcast.
+ *
+ * WLotus (temple): remint mint 100 (1 miner + 99 temple) → burn miner 1 with WLBR.
+ * Legacy Prayer memo: remint mint 1 with WLBR in OP_RETURN (no burn tx).
  *
  *   POST /api/challenge  { installId, note? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
@@ -8,11 +10,12 @@
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { toHex } from 'ecash-lib';
+import { fromHex, toHex } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
 import { createChronik } from '../../../src/network/createChronik.js';
 import { getMedianTimePast } from '../../../src/network/medianTimePast.js';
 import { createPowRemintMooreTipMemoContract } from '../../../src/covenant/powRemintMooreTipMemoScript.js';
+import { createPowRemintMooreTipTempleContract } from '../../../src/covenant/powRemintMooreTipTempleScript.js';
 import {
   buildMooreTipMemoRemintChallenge,
   buildMooreTipMemoRemintTxWithNonce,
@@ -21,7 +24,19 @@ import {
   parseNonceHex,
   type MooreTipMemoRemintPrepared,
 } from '../../../src/miner/remintMooreTipMemo.js';
-import { memorialPushdata } from '../../../src/offering/burnPrayer.js';
+import {
+  buildMooreTipTempleRemintChallenge,
+  buildMooreTipTempleRemintTxWithNonce,
+  MOORE_TIP_TEMPLE_NONCE_LENGTH,
+  MOORE_TIP_TEMPLE_POW_COMMIT,
+  type MooreTipTempleRemintPrepared,
+} from '../../../src/miner/remintMooreTipTemple.js';
+import {
+  burnOnePrayer,
+  memorialPushdata,
+  OFFERING_ID_WLOTUS,
+} from '../../../src/offering/burnPrayer.js';
+import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
 import {
   REMINT_FUEL_SATS,
   pickSizedFuelUtxo,
@@ -57,14 +72,15 @@ const CHALLENGE_TTL_MS = 15 * 60_000;
 
 export interface OfferResult {
   remintTxid: string;
-  /** Same as remint for memo mint (no separate burn). */
+  /** Burn tx (WLotus) or same as remint (legacy Prayer memo). */
   burnTxid: string;
   tokenId: string;
   bits: number;
   powAttempts: number;
   powMs: number;
   hashrateHps: number;
-  deskAtomsKept: 1;
+  /** 0 when miner atom was burned; 1 for legacy memo-keep. */
+  deskAtomsKept: 0 | 1;
   note: string;
   explorerRemint: string;
   explorerBurn: string;
@@ -76,7 +92,9 @@ export interface ChallengePublic {
   expiresAt: string;
   tokenId: string;
   bits: number;
-  commit: typeof MOORE_TIP_MEMO_POW_COMMIT;
+  commit:
+    | typeof MOORE_TIP_MEMO_POW_COMMIT
+    | typeof MOORE_TIP_TEMPLE_POW_COMMIT;
   nonceLength: number;
   preimageHex: string;
   powPrefixHex: string;
@@ -102,6 +120,7 @@ interface BatonTip {
 
 interface DryrunDep {
   tier?: string;
+  ticker?: string;
   tokenId: string;
   genesisUnix: number;
   baseZeroBits: number;
@@ -116,7 +135,12 @@ interface DryrunDep {
   codeHashHex?: string;
   covenant?: string;
   mode?: string;
+  templeScriptHashHex?: string | null;
+  /** @deprecated */
+  templePkhHex?: string | null;
 }
+
+type OfferMode = 'temple' | 'memo';
 
 interface StoredChallenge {
   id: string;
@@ -124,6 +148,7 @@ interface StoredChallenge {
   createdAt: number;
   expiresAt: number;
   status: 'open' | 'done' | 'expired';
+  mode: OfferMode;
   tokenId: string;
   tipIndex: number;
   tipLocktime: number;
@@ -139,7 +164,9 @@ interface StoredChallenge {
   baseZeroBits: number;
   secondsPerExtraBit: number;
   note: string;
+  /** Prayer memo path only. */
   memorialHex: string;
+  templeScriptHashHex?: string;
 }
 
 const offerCounts = new Map<string, Map<number, number>>();
@@ -206,7 +233,7 @@ function consumeOfferSlot(installId: string): void {
   const used = byDay.get(day) ?? 0;
   if (used >= MAX_OFFERS_PER_DAY) {
     throw new Error(
-      `Daily limit reached (${MAX_OFFERS_PER_DAY} Prayer offerings per device).`,
+      `Daily limit reached (${MAX_OFFERS_PER_DAY} offerings per device).`,
     );
   }
   byDay.set(day, used + 1);
@@ -214,8 +241,9 @@ function consumeOfferSlot(installId: string): void {
 
 function loadDep(): { path: string; dep: DryrunDep } {
   const candidates = [
-    'deployments/mainnet-dryrun-prayer.json',
+    'deployments/mainnet-dryrun-wlotus.json',
     'deployments/mainnet-dryrun-active.json',
+    'deployments/mainnet-dryrun-prayer.json',
   ];
   for (const rel of candidates) {
     const path = resolve(process.cwd(), rel);
@@ -223,7 +251,58 @@ function loadDep(): { path: string; dep: DryrunDep } {
       return { path, dep: JSON.parse(readFileSync(path, 'utf8')) as DryrunDep };
     }
   }
-  throw new Error('Missing Prayer dryrun deployment');
+  throw new Error('Missing dryrun deployment (wlotus / active / prayer)');
+}
+
+function isTempleDep(dep: DryrunDep): boolean {
+  return (
+    dep.tier === 'wlotus' ||
+    dep.covenant === 'WlotusPowRemintMooreTipTemple' ||
+    dep.mode === 'moore-tip-temple-hard-bind'
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+/** After temple remint, burn the miner 1 atom from the tip fee wallet. */
+async function burnMinerAtomAfterMint(opts: {
+  wallet: Wallet;
+  tokenId: string;
+  note: string;
+}): Promise<string> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await opts.wallet.sync();
+    const has = opts.wallet.utxos.some(
+      u =>
+        u.token?.tokenId === opts.tokenId &&
+        u.token.atoms != null &&
+        BigInt(u.token.atoms) >= 1n,
+    );
+    if (!has) {
+      await sleep(400 + attempt * 200);
+      continue;
+    }
+    try {
+      const burned = await burnOnePrayer({
+        wallet: opts.wallet,
+        tokenId: opts.tokenId,
+        note: opts.note,
+        offeringId: OFFERING_ID_WLOTUS,
+      });
+      return burned.txid;
+    } catch (e) {
+      lastErr = e;
+      await sleep(400 + attempt * 200);
+    }
+  }
+  throw new Error(
+    `Burn after mint failed: ${
+      lastErr instanceof Error ? lastErr.message : String(lastErr ?? 'no atoms')
+    }`,
+  );
 }
 
 function expireStaleChallenges(now = Date.now()): void {
@@ -411,7 +490,7 @@ async function createChallengeOnce(opts: {
   expireStaleChallenges();
   if (remainingOffersToday(opts.installId) <= 0) {
     throw new Error(
-      `Daily limit reached (${MAX_OFFERS_PER_DAY} Prayer offerings per device).`,
+      `Daily limit reached (${MAX_OFFERS_PER_DAY} offerings per device).`,
     );
   }
   // Same device replaces its own open job; others may keep racing tips.
@@ -424,8 +503,15 @@ async function createChallengeOnce(opts: {
   }
 
   const { dep } = loadDep();
+  const temple = isTempleDep(dep);
   const mintAtoms = BigInt(dep.mintAtomsPerRemint);
-  if (mintAtoms !== 1n) {
+  if (temple) {
+    if (mintAtoms !== WLOTUS_MINT_ATOMS) {
+      throw new Error(
+        `WLotus deployment mintAtoms=${mintAtoms}; expected ${WLOTUS_MINT_ATOMS}`,
+      );
+    }
+  } else if (mintAtoms !== 1n) {
     throw new Error(
       `Deployment mintAtoms=${mintAtoms}; memorial Prayer requires mint 1. Create a new dryrun (TIER=prayer).`,
     );
@@ -445,15 +531,29 @@ async function createChallengeOnce(opts: {
   const tipRec = pickTipRec(tips);
   const note = opts.note.trim().slice(0, 80);
   const memorial = memorialPushdata(note);
+  const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
+  if (temple && (!templeHashHex || templeHashHex.length !== 40)) {
+    throw new Error('WLotus deployment missing templeScriptHashHex');
+  }
 
-  const contract = await createPowRemintMooreTipMemoContract({
-    tokenId: dep.tokenId,
-    mintAtoms,
-    genesisUnix: dep.genesisUnix,
-    baseZeroBits: dep.baseZeroBits,
-    secondsPerExtraBit: dep.secondsPerExtraBit,
-    tipLocktime: tipRec.tipLocktime,
-  });
+  const contract = temple
+    ? await createPowRemintMooreTipTempleContract({
+        tokenId: dep.tokenId,
+        mintAtoms,
+        templeScriptHash: fromHex(templeHashHex!),
+        genesisUnix: dep.genesisUnix,
+        baseZeroBits: dep.baseZeroBits,
+        secondsPerExtraBit: dep.secondsPerExtraBit,
+        tipLocktime: tipRec.tipLocktime,
+      })
+    : await createPowRemintMooreTipMemoContract({
+        tokenId: dep.tokenId,
+        mintAtoms,
+        genesisUnix: dep.genesisUnix,
+        baseZeroBits: dep.baseZeroBits,
+        secondsPerExtraBit: dep.secondsPerExtraBit,
+        tipLocktime: tipRec.tipLocktime,
+      });
 
   const chronik = await createChronik('closest');
   const desk = await loadMintWallet(chronik);
@@ -506,18 +606,34 @@ async function createChallengeOnce(opts: {
     throw new Error(`locktime ${locktime} ≥ MTP ${mtp}`);
   }
 
-  const prepared = await buildMooreTipMemoRemintChallenge({
-    contract,
-    baton,
-    fuel: {
-      outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
-      sats: BigInt(fuelCoin.sats),
-      outputScript: tipFee.wallet.script,
-    },
-    miner: { sk: tipFee.sk, pk: tipFee.pk },
-    locktime,
-    memorial,
-  });
+  const prepared = temple
+    ? await buildMooreTipTempleRemintChallenge({
+        contract: contract as Awaited<
+          ReturnType<typeof createPowRemintMooreTipTempleContract>
+        >,
+        baton,
+        fuel: {
+          outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
+          sats: BigInt(fuelCoin.sats),
+          outputScript: tipFee.wallet.script,
+        },
+        miner: { sk: tipFee.sk, pk: tipFee.pk },
+        locktime,
+      })
+    : await buildMooreTipMemoRemintChallenge({
+        contract: contract as Awaited<
+          ReturnType<typeof createPowRemintMooreTipMemoContract>
+        >,
+        baton,
+        fuel: {
+          outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
+          sats: BigInt(fuelCoin.sats),
+          outputScript: tipFee.wallet.script,
+        },
+        miner: { sk: tipFee.sk, pk: tipFee.pk },
+        locktime,
+        memorial,
+      });
 
   const now = Date.now();
   const id = randomUUID();
@@ -527,6 +643,7 @@ async function createChallengeOnce(opts: {
     createdAt: now,
     expiresAt: now + CHALLENGE_TTL_MS,
     status: 'open',
+    mode: temple ? 'temple' : 'memo',
     tokenId: dep.tokenId,
     tipIndex: tipRec.index,
     tipLocktime: tipRec.tipLocktime,
@@ -547,6 +664,7 @@ async function createChallengeOnce(opts: {
     secondsPerExtraBit: dep.secondsPerExtraBit,
     note,
     memorialHex: toHex(memorial),
+    templeScriptHashHex: temple ? templeHashHex! : undefined,
   };
   challenges.set(id, stored);
 
@@ -556,8 +674,10 @@ async function createChallengeOnce(opts: {
     expiresAt: new Date(stored.expiresAt).toISOString(),
     tokenId: dep.tokenId,
     bits: prepared.tip.bits,
-    commit: MOORE_TIP_MEMO_POW_COMMIT,
-    nonceLength: MOORE_TIP_MEMO_NONCE_LENGTH,
+    commit: temple ? MOORE_TIP_TEMPLE_POW_COMMIT : MOORE_TIP_MEMO_POW_COMMIT,
+    nonceLength: temple
+      ? MOORE_TIP_TEMPLE_NONCE_LENGTH
+      : MOORE_TIP_MEMO_NONCE_LENGTH,
     preimageHex: prepared.preimageHex,
     powPrefixHex: prepared.powPrefixHex,
     locktime,
@@ -572,7 +692,7 @@ async function createChallengeOnce(opts: {
 }
 
 async function rebuildPrepared(ch: StoredChallenge): Promise<{
-  prepared: MooreTipMemoRemintPrepared;
+  prepared: MooreTipMemoRemintPrepared | MooreTipTempleRemintPrepared;
   depPath: string;
   dep: DryrunDep;
   tips: BatonTip[];
@@ -598,35 +718,58 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
     throw new Error('Tip fee wallet changed; challenge is invalid. Request a new one.');
   }
 
-  const contract = await createPowRemintMooreTipMemoContract({
-    tokenId: ch.tokenId,
-    mintAtoms: BigInt(ch.mintAtoms),
-    genesisUnix: ch.genesisUnix,
-    baseZeroBits: ch.baseZeroBits,
-    secondsPerExtraBit: ch.secondsPerExtraBit,
-    tipLocktime: ch.tipLocktime,
-  });
+  const baton = {
+    outpoint: { txid: ch.baton.txid, outIdx: ch.baton.outIdx },
+    sats: BigInt(ch.baton.sats),
+    txid: ch.baton.txid,
+    vout: ch.baton.outIdx,
+  };
+  const fuel = {
+    outpoint: { txid: ch.fuel.txid, outIdx: ch.fuel.outIdx },
+    sats: BigInt(ch.fuel.sats),
+    outputScript: tipFee.wallet.script,
+  };
+  const miner = { sk: tipFee.sk, pk: tipFee.pk };
 
-  const { fromHex } = await import('ecash-lib');
-  const memorial = fromHex(ch.memorialHex);
-
-  const prepared = await buildMooreTipMemoRemintChallenge({
-    contract,
-    baton: {
-      outpoint: { txid: ch.baton.txid, outIdx: ch.baton.outIdx },
-      sats: BigInt(ch.baton.sats),
-      txid: ch.baton.txid,
-      vout: ch.baton.outIdx,
-    },
-    fuel: {
-      outpoint: { txid: ch.fuel.txid, outIdx: ch.fuel.outIdx },
-      sats: BigInt(ch.fuel.sats),
-      outputScript: tipFee.wallet.script,
-    },
-    miner: { sk: tipFee.sk, pk: tipFee.pk },
-    locktime: ch.locktime,
-    memorial,
-  });
+  let prepared: MooreTipMemoRemintPrepared | MooreTipTempleRemintPrepared;
+  if (ch.mode === 'temple') {
+    if (!ch.templeScriptHashHex || ch.templeScriptHashHex.length !== 40) {
+      throw new Error('Temple challenge missing templeScriptHashHex');
+    }
+    const contract = await createPowRemintMooreTipTempleContract({
+      tokenId: ch.tokenId,
+      mintAtoms: BigInt(ch.mintAtoms),
+      templeScriptHash: fromHex(ch.templeScriptHashHex),
+      genesisUnix: ch.genesisUnix,
+      baseZeroBits: ch.baseZeroBits,
+      secondsPerExtraBit: ch.secondsPerExtraBit,
+      tipLocktime: ch.tipLocktime,
+    });
+    prepared = await buildMooreTipTempleRemintChallenge({
+      contract,
+      baton,
+      fuel,
+      miner,
+      locktime: ch.locktime,
+    });
+  } else {
+    const contract = await createPowRemintMooreTipMemoContract({
+      tokenId: ch.tokenId,
+      mintAtoms: BigInt(ch.mintAtoms),
+      genesisUnix: ch.genesisUnix,
+      baseZeroBits: ch.baseZeroBits,
+      secondsPerExtraBit: ch.secondsPerExtraBit,
+      tipLocktime: ch.tipLocktime,
+    });
+    prepared = await buildMooreTipMemoRemintChallenge({
+      contract,
+      baton,
+      fuel,
+      miner,
+      locktime: ch.locktime,
+      memorial: fromHex(ch.memorialHex),
+    });
+  }
 
   if (prepared.preimageHex !== ch.preimageHex) {
     throw new Error('Challenge preimage no longer matches tip state');
@@ -658,7 +801,16 @@ async function submitChallengeOnce(opts: {
 
   const nonce = parseNonceHex(opts.nonceHex);
   const { prepared, depPath, dep, tips, tipRec } = await rebuildPrepared(ch);
-  const built = await buildMooreTipMemoRemintTxWithNonce({ prepared, nonce });
+  const built =
+    ch.mode === 'temple'
+      ? await buildMooreTipTempleRemintTxWithNonce({
+          prepared: prepared as MooreTipTempleRemintPrepared,
+          nonce,
+        })
+      : await buildMooreTipMemoRemintTxWithNonce({
+          prepared: prepared as MooreTipMemoRemintPrepared,
+          nonce,
+        });
 
   const chronik = await createChronik('closest');
   let remintTxid: string;
@@ -711,8 +863,25 @@ async function submitChallengeOnce(opts: {
   if (existsSync(active)) {
     writeFileSync(active, `${JSON.stringify(updated, null, 2)}\n`);
   }
+  // Keep wlotus json in sync when active was the load path
+  const wlotusPath = resolve(process.cwd(), 'deployments/mainnet-dryrun-wlotus.json');
+  if (existsSync(wlotusPath) && depPath !== wlotusPath && isTempleDep(dep)) {
+    writeFileSync(wlotusPath, `${JSON.stringify(updated, null, 2)}\n`);
+  }
 
   ch.status = 'done';
+
+  let burnTxid = remintTxid;
+  let deskAtomsKept: 0 | 1 = 1;
+  if (ch.mode === 'temple') {
+    const tipFee = await loadTipFeeWallet(chronik, ch.tipIndex);
+    burnTxid = await burnMinerAtomAfterMint({
+      wallet: tipFee.wallet,
+      tokenId: ch.tokenId,
+      note: ch.note,
+    });
+    deskAtomsKept = 0;
+  }
 
   const powMs =
     opts.powMs != null && opts.powMs > 0 ? Math.round(opts.powMs) : 0;
@@ -725,19 +894,18 @@ async function submitChallengeOnce(opts: {
       ? Math.round(powAttempts / (powMs / 1000))
       : 0;
 
-  const explorer = `https://explorer.e.cash/tx/${remintTxid}`;
   return {
     remintTxid,
-    burnTxid: remintTxid,
+    burnTxid,
     tokenId: dep.tokenId,
     bits: built.tip.bits,
     powAttempts,
     powMs,
     hashrateHps,
-    deskAtomsKept: 1,
+    deskAtomsKept,
     note: ch.note,
-    explorerRemint: explorer,
-    explorerBurn: explorer,
+    explorerRemint: `https://explorer.e.cash/tx/${remintTxid}`,
+    explorerBurn: `https://explorer.e.cash/tx/${burnTxid}`,
   };
 }
 
@@ -813,12 +981,16 @@ export function publicStatus(): {
   raceOpen: true;
   baseZeroBits: number | null;
   clientPow: true;
-  memorialOnMint: true;
+  /** Legacy Prayer memo path. */
+  memorialOnMint: boolean;
+  /** WLotus: burn miner atom after remint. */
+  memorialOnBurn: boolean;
   /** Per-tip HD fee accounts (tip i → BIP44 account i+1). */
   tipFeeAccounts: true;
 } {
   try {
     const { dep } = loadDep();
+    const temple = isTempleDep(dep);
     const tips =
       dep.batonTips && dep.batonTips.length > 0 ? dep.batonTips : [];
     const served = servingTips(tips);
@@ -830,7 +1002,7 @@ export function publicStatus(): {
     return {
       tokenId: dep.tokenId,
       mintAtoms: dep.mintAtomsPerRemint,
-      ticker: 'dPRAYER',
+      ticker: dep.ticker ?? (temple ? 'dWLOTUS' : 'dPRAYER'),
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
@@ -842,14 +1014,15 @@ export function publicStatus(): {
       raceOpen: true,
       baseZeroBits: dep.baseZeroBits,
       clientPow: true,
-      memorialOnMint: true,
+      memorialOnMint: !temple,
+      memorialOnBurn: temple,
       tipFeeAccounts: true,
     };
   } catch {
     return {
       tokenId: null,
       mintAtoms: null,
-      ticker: 'dPRAYER',
+      ticker: 'dWLOTUS',
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
@@ -861,7 +1034,8 @@ export function publicStatus(): {
       raceOpen: true,
       baseZeroBits: null,
       clientPow: true,
-      memorialOnMint: true,
+      memorialOnMint: false,
+      memorialOnBurn: true,
       tipFeeAccounts: true,
     };
   }

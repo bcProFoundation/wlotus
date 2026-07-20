@@ -1,6 +1,7 @@
 /**
- * Shared Prayer offering helpers (web + mint API).
- * Dual-mint design: remint mints 2 → burn 1 (offering) → keep 1 (desk).
+ * Offering helpers (web + mint API).
+ * WLotus: remint mints 100 (1 miner + 99 temple) → burn the miner 1 with WLBR.
+ * Legacy Prayer memo path may still embed WLBR on mint without a burn tx.
  */
 import { ALP_TOKEN_TYPE_STANDARD, payment } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
@@ -8,11 +9,17 @@ import type { Wallet } from 'ecash-wallet';
 export const WLBR_LOKAD = new TextEncoder().encode('WLBR');
 export const WLBR_VERSION = 1;
 
-export const OFFERING_ID = 'prayer' as const;
+export const OFFERING_ID_PRAYER = 'prayer' as const;
+export const OFFERING_ID_WLOTUS = 'wlotus' as const;
+/** @deprecated use OFFERING_ID_PRAYER */
+export const OFFERING_ID = OFFERING_ID_PRAYER;
 
 /** EMPP memorial push: WLBR | ver | offeringIdLen | offeringId | noteLen | noteUtf8 */
-export function memorialPushdata(note: string): Uint8Array {
-  const idBytes = new TextEncoder().encode(OFFERING_ID);
+export function memorialPushdata(
+  note: string,
+  offeringId: string = OFFERING_ID_PRAYER,
+): Uint8Array {
+  const idBytes = new TextEncoder().encode(offeringId);
   const noteBytes = new TextEncoder().encode(note.slice(0, 80));
   if (idBytes.length > 255 || noteBytes.length > 255) {
     throw new Error('memorial fields too long');
@@ -32,13 +39,15 @@ export function memorialPushdata(note: string): Uint8Array {
   return out;
 }
 
-/** Burn exactly 1 Prayer atom; remainder stays on the same wallet (desk). */
+/** Burn exactly 1 atom with on-chain memorial (WLBR). */
 export async function burnOnePrayer(opts: {
   wallet: Wallet;
   tokenId: string;
   note?: string;
+  offeringId?: string;
 }): Promise<{ txid: string }> {
   const note = (opts.note ?? '').trim();
+  const offeringId = opts.offeringId ?? OFFERING_ID_PRAYER;
   const action: payment.Action = {
     outputs: [{ sats: 0n }],
     tokenActions: [
@@ -50,7 +59,7 @@ export async function burnOnePrayer(opts: {
       },
       {
         type: 'DATA',
-        data: memorialPushdata(note),
+        data: memorialPushdata(note, offeringId),
       },
     ],
   };

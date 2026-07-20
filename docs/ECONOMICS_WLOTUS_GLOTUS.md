@@ -155,14 +155,15 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
 
 ## Implementation notes
 
-- Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (99) + miner P2PKH (1); mint = 100. Fits ≤520 B / ≤201 ops (no memorial EMPP — op budget).
+- Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (99) + miner P2PKH (1); mint = 100. Fits ≤520 B / ≤201 ops (no memorial EMPP on mint — op budget).
+- **Memorial:** burn the miner **1** atom after remint (`WLBR` on burn tx). Keeping the atom is not the offering; burning is the sacrifice.
 - Dryrun:
   ```bash
-  TIER=wlotus BATONS=2 npm run create-dryrun-token   # TEMPLE_ADDRESS = P2SH (or unset → wrap genesis)
+  TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
+- Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=2`.
 - Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for WLotus dryrun.
-- Mint-api / web: still on Prayer memo; wire to temple covenant in a follow-up.
 - Golden Lotus: separate token; open remint; no temple mint tax.
 
 Open product decisions: bits/difficulty, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up.
