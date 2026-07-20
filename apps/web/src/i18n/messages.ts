@@ -42,7 +42,7 @@ const en: Dict = {
   hintPrayMine:
     'Pray on this device while it mines {ticker}, then burn the presence atom — memorial and dana on-chain. Limited to {max} offerings per day here.',
   hintKeepScreen:
-    'Keep this screen on while you pray. Leaving the app or locking the phone pauses the offering (iPhone and Android).',
+    'Keep this screen on while you pray so the offering can continue (iPhone and Android).',
   howTitle: 'How an offering works',
   howPrayTitle: 'Pray while mining.',
   howPrayBody:
@@ -82,7 +82,7 @@ const vi: Dict = {
   hintPrayMine:
     'Cầu nguyện trên máy này trong lúc đào {ticker}, rồi đốt hạt hiện diện — tưởng niệm và bố thí trên chuỗi. Giới hạn {max} lần mỗi ngày trên thiết bị này.',
   hintKeepScreen:
-    'Giữ màn hình sáng khi cầu nguyện. Thoát ứng dụng hoặc khóa máy sẽ tạm dừng (iPhone và Android).',
+    'Giữ màn hình sáng khi cầu nguyện để lần dâng tiếp tục (iPhone và Android).',
   howTitle: 'Cách một lần dâng hoạt động',
   howPrayTitle: 'Cầu nguyện trong lúc đào.',
   howPrayBody:
@@ -120,7 +120,7 @@ const zh: Dict = {
   hintPrayMine:
     '在本机祈祷并同时挖出 {ticker}，再燃烧那枚临在代币——链上纪念与布施。本设备每天限 {max} 次。',
   hintKeepScreen:
-    '祈祷时请保持屏幕开启。离开应用或锁屏会暂停（iPhone 与 Android）。',
+    '祈祷时请保持屏幕开启，以便供奉继续进行（iPhone 与 Android）。',
   howTitle: '一次供奉如何进行',
   howPrayTitle: '边挖边祈祷。',
   howPrayBody:
