@@ -102,6 +102,8 @@ export default function App() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const challengeIdRef = useRef<string | null>(null);
+  /** Bumps on cancel / new offer so a stale offer's finally cannot clobber UI. */
+  const offerGenRef = useRef(0);
 
   const busy = phase !== 'idle';
   const mining = phase === 'mining';
@@ -181,33 +183,43 @@ export default function App() {
 
   async function releaseChallenge(challengeId: string | null): Promise<void> {
     if (!challengeId) return;
+    if (challengeIdRef.current === challengeId) challengeIdRef.current = null;
+    clearRememberedChallenge();
     try {
       await cancelOfferChallenge({ installId, challengeId });
     } catch {
-      /* best-effort */
+      /* best-effort — server also replaces same-device challenges on /api/challenge */
     }
-    if (challengeIdRef.current === challengeId) challengeIdRef.current = null;
-    clearRememberedChallenge();
   }
 
-  function onCancelMine() {
+  async function onCancelMine() {
     const id = challengeIdRef.current;
+    offerGenRef.current += 1;
+    challengeIdRef.current = null;
+    clearRememberedChallenge();
     abortRef.current?.abort();
-    void releaseChallenge(id);
+    abortRef.current = null;
     setMineStartedAt(null);
     setPhase('idle');
     setMsg({ kind: 'ok', text: 'Mining cancelled.' });
+    // Await so a quick re-Offer sees a free baton on the server.
+    await releaseChallenge(id);
   }
 
   async function onOffer() {
     // Kill any in-progress mine before starting a new one.
     const prevId = challengeIdRef.current;
+    offerGenRef.current += 1;
+    const gen = offerGenRef.current;
     abortRef.current?.abort();
+    challengeIdRef.current = null;
+    clearRememberedChallenge();
     if (prevId) await releaseChallenge(prevId);
+    if (offerGenRef.current !== gen) return;
 
     const ac = new AbortController();
     abortRef.current = ac;
-    challengeIdRef.current = null;
+    let mineChallengeId: string | null = null;
 
     setMsg(null);
     setMineStartedAt(null);
@@ -217,11 +229,12 @@ export default function App() {
         installId,
         note: note.trim(),
       });
-      if (ac.signal.aborted) {
+      if (ac.signal.aborted || offerGenRef.current !== gen) {
         await releaseChallenge(challenge.challengeId);
         return;
       }
 
+      mineChallengeId = challenge.challengeId;
       challengeIdRef.current = challenge.challengeId;
       rememberChallenge({
         challengeId: challenge.challengeId,
@@ -271,7 +284,7 @@ export default function App() {
         if (tipWatch) clearInterval(tipWatch);
       }
 
-      if (ac.signal.aborted) {
+      if (ac.signal.aborted || offerGenRef.current !== gen) {
         await releaseChallenge(challenge.challengeId);
         if (tipMoved) {
           setMsg({
@@ -292,8 +305,11 @@ export default function App() {
         powAttempts: mined.attempts,
       });
 
+      if (offerGenRef.current !== gen) return;
+
       challengeIdRef.current = null;
       clearRememberedChallenge();
+      mineChallengeId = null;
 
       setOffers(
         pushOffer({
@@ -318,19 +334,22 @@ export default function App() {
         ].join(' · '),
       });
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') {
-        await releaseChallenge(challengeIdRef.current);
-        return;
+      // Only release *this* offer's challenge — never challengeIdRef (may be a newer offer).
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        if (offerGenRef.current === gen) {
+          setMsg({
+            kind: 'err',
+            text: e instanceof Error ? e.message : String(e),
+          });
+        }
       }
-      await releaseChallenge(challengeIdRef.current);
-      setMsg({
-        kind: 'err',
-        text: e instanceof Error ? e.message : String(e),
-      });
+      await releaseChallenge(mineChallengeId);
     } finally {
-      setPhase('idle');
-      setMineStartedAt(null);
-      if (abortRef.current === ac) abortRef.current = null;
+      if (offerGenRef.current === gen) {
+        setPhase('idle');
+        setMineStartedAt(null);
+        if (abortRef.current === ac) abortRef.current = null;
+      }
     }
   }
 
@@ -400,7 +419,7 @@ export default function App() {
             <button
               type="button"
               className="btn btn-danger"
-              onClick={onCancelMine}
+            onClick={() => void onCancelMine()}
             >
               Cancel
             </button>

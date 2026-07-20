@@ -762,6 +762,7 @@ export function cancelChallenge(opts: {
   return { ok: true, cancelled };
 }
 
+/** Serialize cancel with challenge/submit so a re-Offer cannot race a stale lock. */
 export function enqueueCancel(opts: {
   installId: string;
   challengeId?: string;
