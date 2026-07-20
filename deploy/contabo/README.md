@@ -173,6 +173,7 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `VITE_PRAYER_TOKEN_ID` | no | dual-mint dryrun id |
 | `VITE_PRAYER_TICKER` | no | `dPRAYER` |
 | `VITE_CHRONIK_URLS` | no | Chronik URLs |
+| `VITE_TIP_POLL_MS` | no | Tip-epoch poll while mining (ms). Prefer an Actions **variable** (not sensitive): `1000` or `5000`. App default **2000** if unset. Secret also works. |
 | `MINT_MNEMONIC` | no* | 12/24-word **fee wallet** — synced to `/etc/wlotus/mint.env` |
 
 \*Mint fee wallet **must** exist on the VM for `mint-api`. Prefer writing `/etc/wlotus/mint.env` once on Contabo. GitHub `MINT_MNEMONIC` is only an optional way to refresh that file on deploy — Actions alone cannot pay fees.
@@ -221,8 +222,17 @@ curl -sS http://127.0.0.1:8787/health
 curl -sS https://test.wlotus.org/api/status?installId=test
 ```
 
-Fund the mint wallet address with XEC before offering. After pulling a new
-Prayer deployment JSON, restart: `sudo systemctl restart wlotus-mint-api`.
+Fund the **desk** mint wallet address with XEC, then equal-split into per-tip
+fee accounts (remint has no change out — never leave one large UTXO as fuel):
+
+```bash
+cd /opt/wlotus   # or /root/wlotus/wlotus
+set -a && source /etc/wlotus/mint.env && set +a
+npm run fund-tip-fee-wallets
+```
+
+After pulling a new Prayer deployment JSON, restart:
+`sudo systemctl restart wlotus-mint-api`.
 
 ---
 

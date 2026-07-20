@@ -11,6 +11,8 @@
 #   VITE_PRAYER_TOKEN_ID      — bake into the SPA at build time
 #   VITE_PRAYER_TICKER        — default dPRAYER
 #   VITE_CHRONIK_URLS         — comma-separated Chronik URLs
+#   VITE_TIP_POLL_MS          — tip-epoch poll while mining (ms); prefer Actions *variable*
+#                               (not sensitive). e.g. 1000 or 5000; app default 2000
 #   MINT_MNEMONIC             — 12/24-word fee wallet; synced to /etc/wlotus/mint.env
 #                               (mint-api runtime still reads the server file, not Actions)
 #
@@ -58,6 +60,9 @@ jobs:
           VITE_PRAYER_TOKEN_ID: ${{ secrets.VITE_PRAYER_TOKEN_ID }}
           VITE_PRAYER_TICKER: ${{ secrets.VITE_PRAYER_TICKER }}
           VITE_CHRONIK_URLS: ${{ secrets.VITE_CHRONIK_URLS }}
+          # Tip-epoch poll while mining (ms). Prefer Actions variable; secret also ok.
+          # Examples: 1000 (1s) or 5000 (5s). Default in app is 2000 if unset.
+          VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
         run: npm run web:build
 
       - name: Require Contabo secrets

@@ -1,5 +1,8 @@
 /**
- * Load the mint / desk wallet used to pay XEC fees and hold kept Prayer atoms.
+ * Load the mint / desk wallet used to hold treasury XEC and top up tip fees.
+ *
+ * Per-tip remint fuel uses HD accounts from the same mnemonic — see
+ * `loadTipFeeWallet` (tip i → BIP44 account i+1).
  *
  * Priority:
  *   1. MINT_MNEMONIC (12/24-word BIP39-style phrase)

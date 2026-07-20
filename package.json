@@ -31,7 +31,8 @@
     "mine-prayer-tip-once": "tsx scripts/mine-prayer-tip-once.ts",
     "create-dryrun-token": "tsx scripts/create-dryrun-token.ts",
     "mine-dryrun-once": "tsx scripts/mine-dryrun-once.ts",
-    "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts"
+    "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts",
+    "fund-tip-fee-wallets": "tsx scripts/fund-tip-fee-wallets.ts"
   },
   "engines": {
     "node": ">=20"

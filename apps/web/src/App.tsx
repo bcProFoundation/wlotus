@@ -3,6 +3,7 @@ import {
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
   PRAYER_TICKER,
+  TIP_POLL_MS,
 } from './lib/config.js';
 import {
   cancelOfferChallenge,
@@ -12,6 +13,10 @@ import {
   submitMinedOffer,
 } from './lib/offerApi.js';
 import { mineInWorker } from './lib/mineRunner.js';
+import {
+  isTipRaceLost,
+  liveTipEpochFromStatus,
+} from './lib/tipRace.js';
 import {
   estimatePrayerPow,
   formatActualDuration,
@@ -241,135 +246,184 @@ export default function App() {
     if (prevId) await releaseChallenge(prevId);
     if (offerGenRef.current !== gen) return;
 
-    const ac = new AbortController();
-    abortRef.current = ac;
-    let mineChallengeId: string | null = null;
-
     setMsg(null);
     setMineStartedAt(null);
     setPhase('challenge');
+
+    /** Fresh controller per attempt so tip-race abort can retry. */
+    let ac = new AbortController();
+    abortRef.current = ac;
+    let elapsedClockStarted = false;
+
     try {
-      const challenge = await fetchChallenge({
-        installId,
-        note: note.trim(),
-      });
-      if (ac.signal.aborted || offerGenRef.current !== gen) {
-        await releaseChallenge(challenge.challengeId);
-        return;
-      }
+      // Open race: if another device wins our tip, silently take a new challenge.
+      // Never surface "someone else offered / pull to refresh" as a hard stop.
+      while (offerGenRef.current === gen) {
+        ac = new AbortController();
+        abortRef.current = ac;
+        let mineChallengeId: string | null = null;
+        let tipMoved = false;
+        let tipWatch: ReturnType<typeof setInterval> | null = null;
 
-      mineChallengeId = challenge.challengeId;
-      challengeIdRef.current = challenge.challengeId;
-      rememberChallenge({
-        challengeId: challenge.challengeId,
-        installId,
-      });
+        try {
+          setPhase('challenge');
+          const challenge = await fetchChallenge({
+            installId,
+            note: note.trim(),
+          });
+          if (offerGenRef.current !== gen || ac.signal.aborted) {
+            await releaseChallenge(challenge.challengeId);
+            return;
+          }
 
-      setPhase('mining');
-      setMineStartedAt(Date.now());
-      setBaseZeroBits(challenge.bits);
+          mineChallengeId = challenge.challengeId;
+          challengeIdRef.current = challenge.challengeId;
+          rememberChallenge({
+            challengeId: challenge.challengeId,
+            installId,
+          });
 
-      const tipEpoch = challenge.tipEpoch ?? null;
-      const tipIndex = challenge.tipIndex;
-      let tipMoved = false;
-      const tipWatch =
-        tipEpoch == null
-          ? null
-          : setInterval(() => {
-              void (async () => {
-                try {
-                  const s = await fetchStatus(installId);
-                  const live =
-                    tipIndex != null && s.tipEpochs
-                      ? s.tipEpochs[String(tipIndex)]
-                      : s.tipEpoch;
-                  if (live && live !== tipEpoch) {
-                    tipMoved = true;
-                    ac.abort();
-                  }
-                } catch {
-                  /* ignore transient status errors while mining */
+          setPhase('mining');
+          if (!elapsedClockStarted) {
+            setMineStartedAt(Date.now());
+            elapsedClockStarted = true;
+          }
+          setBaseZeroBits(challenge.bits);
+
+          const tipEpoch = challenge.tipEpoch ?? null;
+          const tipIndex = challenge.tipIndex;
+          if (tipEpoch != null) {
+            let tipPollInFlight = false;
+            const checkTip = async () => {
+              if (tipPollInFlight || ac.signal.aborted) return;
+              tipPollInFlight = true;
+              try {
+                const s = await fetchStatus(installId);
+                const live = liveTipEpochFromStatus(s, tipIndex, tipEpoch);
+                if (live && live !== tipEpoch) {
+                  tipMoved = true;
+                  ac.abort();
                 }
-              })();
-            }, 5_000);
+              } catch {
+                /* ignore transient status errors while mining */
+              } finally {
+                tipPollInFlight = false;
+              }
+            };
+            void checkTip();
+            tipWatch = setInterval(() => void checkTip(), TIP_POLL_MS);
+          }
 
-      let mined;
-      try {
-        mined = await mineInWorker({
-          powPrefixHex: challenge.powPrefixHex,
-          bits: challenge.bits,
-          nonceLength: challenge.nonceLength,
-          signal: ac.signal,
-          onProgress: p => {
-            rememberHashrate(p.hashrateHps);
-            setDeviceHashrateHps(p.hashrateHps);
-          },
-        });
-      } finally {
-        if (tipWatch) clearInterval(tipWatch);
-      }
+          let mined;
+          try {
+            mined = await mineInWorker({
+              powPrefixHex: challenge.powPrefixHex,
+              bits: challenge.bits,
+              nonceLength: challenge.nonceLength,
+              signal: ac.signal,
+              onProgress: p => {
+                rememberHashrate(p.hashrateHps);
+                setDeviceHashrateHps(p.hashrateHps);
+              },
+            });
+          } catch (e) {
+            if (
+              tipMoved ||
+              (e instanceof DOMException && e.name === 'AbortError')
+            ) {
+              await releaseChallenge(challenge.challengeId);
+              mineChallengeId = null;
+              if (offerGenRef.current !== gen) return;
+              if (tipMoved) {
+                setMsg({
+                  kind: 'ok',
+                  text: 'Tip moved — continuing on a fresh challenge…',
+                });
+                continue;
+              }
+              return;
+            }
+            throw e;
+          } finally {
+            if (tipWatch) clearInterval(tipWatch);
+            tipWatch = null;
+          }
 
-      if (ac.signal.aborted || offerGenRef.current !== gen) {
-        await releaseChallenge(challenge.challengeId);
-        if (tipMoved) {
-          setMsg({
-            kind: 'err',
-            text: 'Someone else offered on this tip first. Offer again to start a new challenge.',
+          if (offerGenRef.current !== gen || ac.signal.aborted) {
+            await releaseChallenge(challenge.challengeId);
+            mineChallengeId = null;
+            if (tipMoved && offerGenRef.current === gen) {
+              setMsg({
+                kind: 'ok',
+                text: 'Tip moved — continuing on a fresh challenge…',
+              });
+              continue;
+            }
+            return;
+          }
+
+          rememberHashrate(mined.hashrateHps);
+          setDeviceHashrateHps(mined.hashrateHps);
+          setPhase('submit');
+          const result = await submitMinedOffer({
+            installId,
+            challengeId: challenge.challengeId,
+            nonceHex: mined.nonceHex,
+            powMs: mined.elapsedMs,
+            powAttempts: mined.attempts,
           });
-        }
-        return;
-      }
 
-      rememberHashrate(mined.hashrateHps);
-      setDeviceHashrateHps(mined.hashrateHps);
-      setPhase('submit');
-      const result = await submitMinedOffer({
-        installId,
-        challengeId: challenge.challengeId,
-        nonceHex: mined.nonceHex,
-        powMs: mined.elapsedMs,
-        powAttempts: mined.attempts,
-      });
+          if (offerGenRef.current !== gen) return;
 
-      if (offerGenRef.current !== gen) return;
+          challengeIdRef.current = null;
+          clearRememberedChallenge();
+          mineChallengeId = null;
 
-      challengeIdRef.current = null;
-      clearRememberedChallenge();
-      mineChallengeId = null;
-
-      setOffers(
-        pushOffer({
-          remintTxid: result.remintTxid,
-          burnTxid: result.burnTxid,
-          note: note.trim(),
-          at: new Date().toISOString(),
-          powMs: result.powMs || mined.elapsedMs,
-          powAttempts: result.powAttempts || mined.attempts,
-          hashrateHps: result.hashrateHps || mined.hashrateHps,
-          bits: result.bits,
-        }),
-      );
-      setNote('');
-      await refreshStatus();
-      const powSec = (result.powMs || mined.elapsedMs) / 1000;
-      setMsg({
-        kind: 'ok',
-        text: [
-          `Prayer offered in ${formatActualDuration(powSec)}`,
-          shortTx(result.remintTxid),
-        ].join(' · '),
-      });
-    } catch (e) {
-      // Only release *this* offer's challenge — never challengeIdRef (may be a newer offer).
-      if (!(e instanceof DOMException && e.name === 'AbortError')) {
-        if (offerGenRef.current === gen) {
+          setOffers(
+            pushOffer({
+              remintTxid: result.remintTxid,
+              burnTxid: result.burnTxid,
+              note: note.trim(),
+              at: new Date().toISOString(),
+              powMs: result.powMs || mined.elapsedMs,
+              powAttempts: result.powAttempts || mined.attempts,
+              hashrateHps: result.hashrateHps || mined.hashrateHps,
+              bits: result.bits,
+            }),
+          );
+          setNote('');
+          await refreshStatus();
+          const powSec = (result.powMs || mined.elapsedMs) / 1000;
           setMsg({
-            kind: 'err',
-            text: e instanceof Error ? e.message : String(e),
+            kind: 'ok',
+            text: [
+              `Prayer offered in ${formatActualDuration(powSec)}`,
+              shortTx(result.remintTxid),
+            ].join(' · '),
           });
+          return;
+        } catch (e) {
+          await releaseChallenge(mineChallengeId);
+          mineChallengeId = null;
+          if (offerGenRef.current !== gen) return;
+
+          const msg = e instanceof Error ? e.message : String(e);
+          if (isTipRaceLost(msg)) {
+            setMsg({
+              kind: 'ok',
+              text: 'Tip taken — continuing on a fresh challenge…',
+            });
+            continue;
+          }
+          if (e instanceof DOMException && e.name === 'AbortError') {
+            return;
+          }
+          setMsg({ kind: 'err', text: msg });
+          return;
+        } finally {
+          if (tipWatch) clearInterval(tipWatch);
         }
       }
-      await releaseChallenge(mineChallengeId);
     } finally {
       if (offerGenRef.current === gen) {
         setPhase('idle');

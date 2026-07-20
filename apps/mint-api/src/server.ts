@@ -133,6 +133,7 @@ function healthPayload(): Record<string, unknown> {
     features: {
       raceOpen: pub.raceOpen === true,
       servingTipCount: pub.servingTipCount ?? null,
+      tipFeeAccounts: pub.tipFeeAccounts === true,
       maxOpenChallenges: pub.maxOpenChallenges ?? null,
       openChallenges: pub.openChallenges ?? null,
       clientPow: true,
@@ -239,7 +240,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXOs|Someone else offered/i.test(
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee/i.test(
         msg,
       )
         ? 400
