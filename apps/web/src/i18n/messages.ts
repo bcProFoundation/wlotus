@@ -46,13 +46,13 @@ const en: Dict = {
   howTitle: 'How an offering works',
   howPrayTitle: 'Pray while mining.',
   howPrayBody:
-    'Your phone does the work; use that time for the person you remember. Cancel stops mining — praying is yours to continue.',
+    'Your phone does the work; use that time for the person you remember. You can stop mining anytime — your prayer is always yours.',
   howMintTitle: 'Mint 100 {ticker}.',
   howMintBody:
     '1 stays as your presence atom; 99 go to WLotus.org to cover network fees for mint and burn.',
   howBurnTitle: 'Burn the 1.',
   howBurnBody:
-    'That destroy-on-chain act is the sacrifice (memorial + dana). Keeping the atom is not the offering.',
+    'The on-chain burn is your gift — memorial and dana offered for all.',
   etaEstimated: '{eta} estimated',
   noteLabel: 'In memory of… (optional)',
   notePlaceholder: 'Name or dedication',
@@ -86,13 +86,13 @@ const vi: Dict = {
   howTitle: 'Cách một lần dâng hoạt động',
   howPrayTitle: 'Cầu nguyện trong lúc đào.',
   howPrayBody:
-    'Điện thoại làm công việc kỹ thuật; bạn dùng thời gian đó cho người mình tưởng nhớ. Hủy chỉ dừng đào — cầu nguyện vẫn là của bạn.',
+    'Điện thoại làm công việc kỹ thuật; bạn dùng thời gian đó cho người mình tưởng nhớ. Bạn có thể dừng đào bất cứ lúc nào — lời cầu nguyện vẫn thuộc về bạn.',
   howMintTitle: 'Đúc 100 {ticker}.',
   howMintBody:
     '1 hạt hiện diện thuộc về bạn; 99 gửi tới WLotus.org để trả phí mạng cho đúc và đốt.',
   howBurnTitle: 'Đốt hạt 1.',
   howBurnBody:
-    'Hành động hủy trên chuỗi chính là sự hy sinh (tưởng niệm + bố thí). Giữ lại hạt không phải là dâng.',
+    'Đốt trên chuỗi chính là món quà — tưởng niệm và bố thí dâng lên cho tất cả.',
   etaEstimated: 'ước tính {eta}',
   noteLabel: 'Tưởng nhớ… (tuỳ chọn)',
   notePlaceholder: 'Tên hoặc lời tưởng niệm',
@@ -124,13 +124,13 @@ const zh: Dict = {
   howTitle: '一次供奉如何进行',
   howPrayTitle: '边挖边祈祷。',
   howPrayBody:
-    '手机完成计算；请把这段时间留给你要纪念的人。取消只停止挖矿——祈祷仍属于你。',
+    '手机完成计算；请把这段时间留给你要纪念的人。你可以随时停止挖矿——祈祷始终属于你。',
   howMintTitle: '铸造 100 {ticker}。',
   howMintBody:
     '1 枚留作你的临在；99 枚归 WLotus.org，用于支付铸造与燃烧的网络手续费。',
   howBurnTitle: '燃烧那 1 枚。',
   howBurnBody:
-    '链上销毁即是牺牲（纪念 + 布施）。留下代币不算完成供奉。',
+    '链上燃烧即是供奉——纪念与布施由此献给众生。',
   etaEstimated: '预计 {eta}',
   noteLabel: '纪念……（可选）',
   notePlaceholder: '姓名或寄语',
