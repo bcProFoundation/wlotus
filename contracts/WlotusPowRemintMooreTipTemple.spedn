@@ -1,13 +1,13 @@
-// WLotus temple remint (launch dryrun): mint 100 → 1 miner + 99 temple.
+// WLotus temple remint (launch dryrun): mint 100 → 1 miner + 99 temple P2SH.
 // Same Moore tip / hard next-P2SH / whole-byte PoW as WlotusPowRemintMooreTip.
 // Redeem ≤520; non-push ops ≤201. Cap bits ≤ 128.
-// Ctor: templePkh replaces mintAtomsLe (amounts hardcoded 1 + 99).
-// Outputs: OP_RETURN | miner P2PKH (1) | temple P2PKH (99) | baton P2SH
+// Ctor: templeScriptHash (20) — IFP-style immutable P2SH sink (multisig / cold).
+// Outputs: OP_RETURN | miner P2PKH (1) | temple P2SH (99) | baton P2SH
 // Layout: econHead(99) | 0x20 prefixHash | 0x04 tipLe | codeBytes
 
 contract WlotusPowRemintMooreTipTemple(
     [byte;32] tokenIdRev,
-    [byte;20] templePkh,
+    [byte;20] templeScriptHash,
     [byte;4] genesisUnixLe,
     [byte;1] baseZeroBitsBin,
     [byte;4] secondsPerExtraBitLe,
@@ -44,7 +44,7 @@ contract WlotusPowRemintMooreTipTemple(
         ([byte] zpref, _) = solhash @ (bits / 8);
         verify bin2num(zpref) == 0;
 
-        // econHead length 99 (templePkh instead of mintAtomsLe)
+        // econHead length 99 (templeScriptHash instead of mintAtomsLe)
         ([byte] econHead, [byte] afterEcon) = nextRedeem @ 99;
         verify sha256(econHead) == Sha256(prefixHash);
         (_, [byte] afterMid) = afterEcon @ 33;
@@ -80,7 +80,7 @@ contract WlotusPowRemintMooreTipTemple(
 
         [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
         [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
-        [byte] out2 = 0x2202000000000000 . 0x19 . 0x76a914 . templePkh . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . templeScriptHash . 0x87;
         [byte] out3 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextRedeem) . 0x87;
 
         verify hash256(out0 . out1 . out2 . out3) == Sha256(hashOutputs);

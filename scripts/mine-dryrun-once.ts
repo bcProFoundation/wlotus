@@ -45,6 +45,8 @@ interface DryrunDep {
   tipLocktime?: number;
   powAddress?: string;
   mintAtomsPerRemint: string;
+  templeScriptHashHex?: string | null;
+  /** @deprecated Prefer templeScriptHashHex (P2SH temple). */
   templePkhHex?: string | null;
   batonTips?: BatonTip[];
 }
@@ -129,15 +131,18 @@ async function main(): Promise<void> {
         ];
   const tipRec = tips.find(t => t.index === batonIndex) ?? tips[0]!;
 
-  if (isTemple && (!dep.templePkhHex || dep.templePkhHex.length !== 40)) {
-    throw new Error('WLotus dryrun missing templePkhHex (20-byte hex)');
+  const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
+  if (isTemple && (!templeHashHex || templeHashHex.length !== 40)) {
+    throw new Error(
+      'WLotus dryrun missing templeScriptHashHex (20-byte hex)',
+    );
   }
 
   const contract = isTemple
     ? await createPowRemintMooreTipTempleContract({
         tokenId,
         mintAtoms,
-        templePkh: fromHex(dep.templePkhHex!),
+        templeScriptHash: fromHex(templeHashHex!),
         genesisUnix: dep.genesisUnix,
         baseZeroBits: dep.baseZeroBits,
         secondsPerExtraBit: dep.secondsPerExtraBit,

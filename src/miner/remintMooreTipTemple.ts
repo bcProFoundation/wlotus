@@ -75,7 +75,7 @@ export interface MooreTipTempleRemintPrepared {
   nextRedeem: Buffer;
   opReturn: Script;
   minerP2pkh: Script;
-  templeP2pkh: Script;
+  templeP2sh: Script;
   dust: bigint;
   preimage: Uint8Array;
   powPrefix: Uint8Array;
@@ -102,7 +102,7 @@ async function prepareMooreTipTempleRemint(opts: {
     tip,
   );
   const minerP2pkh = Script.p2pkh(shaRmd160(miner.pk));
-  const templeP2pkh = Script.p2pkh(contract.params.templePkh);
+  const templeP2sh = Script.p2sh(contract.params.templeScriptHash);
   const nextRedeem = reconstructTempleNextRedeem(
     contract.params,
     contract.codeHash,
@@ -139,7 +139,7 @@ async function prepareMooreTipTempleRemint(opts: {
     outputs: [
       { sats: 0n, script: opReturn },
       { sats: dust, script: minerP2pkh },
-      { sats: dust, script: templeP2pkh },
+      { sats: dust, script: templeP2sh },
       { sats: dust, script: nextContract.p2shScript },
     ],
   });
@@ -160,7 +160,7 @@ async function prepareMooreTipTempleRemint(opts: {
     nextRedeem,
     opReturn,
     minerP2pkh,
-    templeP2pkh,
+    templeP2sh,
     dust,
     preimage,
     powPrefix,
@@ -277,7 +277,7 @@ export async function buildMooreTipTempleRemintTxWithNonce(opts: {
     outputs: [
       { sats: 0n, script: prepared.opReturn },
       { sats: prepared.dust, script: prepared.minerP2pkh },
-      { sats: prepared.dust, script: prepared.templeP2pkh },
+      { sats: prepared.dust, script: prepared.templeP2sh },
       { sats: prepared.dust, script: nextContract.p2shScript },
     ],
   });

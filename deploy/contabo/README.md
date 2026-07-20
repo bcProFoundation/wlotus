@@ -231,11 +231,7 @@ set -a && source /etc/wlotus/mint.env && set +a
 npm run fund-tip-fee-wallets
 ```
 
-**WLotus temple (launch):** covenant pays 99 → hot **P2PKH**. Sweep inventory to cold daily:
-
-```bash
-COLD_ADDRESS=ecash:… TOKEN_ID=… npm run sweep-temple-to-cold
-```
+**WLotus temple (launch):** covenant pays 99 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
 After pulling a new Prayer / WLotus deployment JSON, restart:
 `sudo systemctl restart wlotus-mint-api`.

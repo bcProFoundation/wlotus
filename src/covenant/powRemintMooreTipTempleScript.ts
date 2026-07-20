@@ -24,8 +24,8 @@ import {
 
 export interface PowRemintMooreTipTempleParams extends MooreTipParams {
   tokenId: string;
-  /** 20-byte pubkey hash — receives 99 WLotus each remint. */
-  templePkh: Uint8Array;
+  /** 20-byte script hash — IFP-style P2SH temple sink (multisig / cold). */
+  templeScriptHash: Uint8Array;
   /** Always 100 for this covenant (1+99). */
   mintAtoms: bigint;
 }
@@ -81,14 +81,16 @@ export function buildTempleEconHead(
   params: PowRemintMooreTipTempleParams,
   codeHash: Buffer | Uint8Array,
 ): Buffer {
-  if (params.templePkh.length !== 20) {
-    throw new Error(`templePkh must be 20 bytes, got ${params.templePkh.length}`);
+  if (params.templeScriptHash.length !== 20) {
+    throw new Error(
+      `templeScriptHash must be 20 bytes, got ${params.templeScriptHash.length}`,
+    );
   }
   return Buffer.concat([
     Buffer.from([0x20]),
     Buffer.from(fromHexRev(params.tokenId)),
     Buffer.from([0x14]),
-    Buffer.from(params.templePkh),
+    Buffer.from(params.templeScriptHash),
     Buffer.from([0x04]),
     u32LeBuf(params.genesisUnix),
     Buffer.from([0x01]),
@@ -122,12 +124,12 @@ function ctorArgs(
       `WLotus temple covenant requires mintAtoms=${WLOTUS_MINT_ATOMS}, got ${params.mintAtoms}`,
     );
   }
-  if (params.templePkh.length !== 20) {
-    throw new Error(`templePkh must be 20 bytes`);
+  if (params.templeScriptHash.length !== 20) {
+    throw new Error(`templeScriptHash must be 20 bytes`);
   }
   return {
     tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
-    templePkh: Buffer.from(params.templePkh),
+    templeScriptHash: Buffer.from(params.templeScriptHash),
     genesisUnixLe: u32LeBuf(params.genesisUnix),
     baseZeroBitsBin: Buffer.from([params.baseZeroBits & 0xff]),
     secondsPerExtraBitLe: u32LeBuf(params.secondsPerExtraBit),
@@ -282,7 +284,7 @@ export async function mooreTipTempleContractForNextTip(
 export function defaultMooreTipTempleParams(
   tokenId: string,
   genesisUnix: number,
-  templePkh: Uint8Array,
+  templeScriptHash: Uint8Array,
   opts: {
     baseZeroBits: number;
     tipLocktime?: number;
@@ -291,7 +293,7 @@ export function defaultMooreTipTempleParams(
 ): PowRemintMooreTipTempleParams {
   return {
     tokenId,
-    templePkh,
+    templeScriptHash,
     mintAtoms: WLOTUS_MINT_ATOMS,
     genesisUnix,
     baseZeroBits: opts.baseZeroBits,

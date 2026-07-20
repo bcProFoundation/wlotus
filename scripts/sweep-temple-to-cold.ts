@@ -1,16 +1,14 @@
 /**
- * Sweep WLotus (or other ALP) inventory from the hot temple P2PKH to cold storage.
+ * Optional helper: move ALP inventory from a **P2PKH** desk wallet to cold storage.
  *
- * Launch / dryrun custody model:
- *   Covenant pays 99 → hot temple P2PKH (immutable in Script).
- *   Ops run this job daily (cron) so theft window ≈ unswept balance.
- *   If hot key is lost: stop mint-api, cut over to a new covenant + new hot.
+ * Launch WLotus temple sink is **P2SH** (covenant `templeScriptHash`) — this script
+ * does not spend that address. Use it only for leftover P2PKH inventory or ops desks.
  *
  * Usage:
  *   TOKEN_ID=… COLD_ADDRESS=ecash:q…or p… \
  *     TEMPLE_SK_HEX=… npm run sweep-temple-to-cold
  *
- *   # or mnemonic (same phrase as TEMPLE_ADDRESS / genesis desk for dryrun):
+ *   # or mnemonic:
  *   TOKEN_ID=… COLD_ADDRESS=… TEMPLE_MNEMONIC="…" npm run sweep-temple-to-cold
  *
  * Dry-run (no broadcast):

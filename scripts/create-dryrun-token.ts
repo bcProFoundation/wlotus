@@ -7,10 +7,11 @@
  *   TIER=candle npm run create-dryrun-token
  *   TIER=flower npm run create-dryrun-token
  *   TIER=wlotus npm run create-dryrun-token
- *   TIER=wlotus TEMPLE_ADDRESS=ecash:q… BATONS=2 npm run create-dryrun-token
+ *   TIER=wlotus TEMPLE_ADDRESS=ecash:p… BATONS=2 npm run create-dryrun-token
  *
- * WLotus: mint 100 → 1 miner + 99 temple **P2PKH** (MooreTipTemple covenant).
- * TEMPLE_ADDRESS must be P2PKH (launch + dryrun). Sweep hot→cold off-chain daily.
+ * WLotus: mint 100 → 1 miner + 99 temple **P2SH** (MooreTipTemple covenant).
+ * TEMPLE_ADDRESS must be P2SH (IFP-style multisig / cold). If unset, dryrun wraps
+ * the genesis wallet P2PKH in P2SH so the same key can spend by revealing redeem.
  * Uses hardened next-P2SH (codeHash) + tipLocktime. Moore clock: +1 bit / 840 days.
  */
 import { resolve } from 'node:path';
@@ -28,6 +29,7 @@ import {
   DEFAULT_DUST_SATS,
   fromHex,
   payment,
+  Script,
   shaRmd160,
   toHex,
 } from 'ecash-lib';
@@ -98,23 +100,39 @@ const TIERS: Record<
   },
 };
 
-function resolveTemplePkh(wallet: Wallet): {
-  pkh: Uint8Array;
+function resolveTempleScriptHash(wallet: Wallet): {
+  scriptHash: Uint8Array;
   address: string;
+  /** True when dryrun wrapped genesis P2PKH inside P2SH. */
+  dryrunWrappedP2pkh: boolean;
+  /** Redeem hex when dryrunWrappedP2pkh (spend by revealing this). */
+  templeRedeemHex: string | null;
 } {
   const raw = process.env.TEMPLE_ADDRESS?.trim();
   if (raw) {
     const addr = Address.parse(raw);
-    if (addr.type !== 'p2pkh') {
-      throw new Error(`TEMPLE_ADDRESS must be P2PKH (got ${addr.type})`);
+    if (addr.type !== 'p2sh') {
+      throw new Error(
+        `TEMPLE_ADDRESS must be P2SH (got ${addr.type}); IFP-style temple sink`,
+      );
     }
     const hashHex =
       typeof addr.hash === 'string' ? addr.hash : toHex(addr.hash);
-    return { pkh: fromHex(hashHex), address: addr.toString() };
+    return {
+      scriptHash: fromHex(hashHex),
+      address: addr.toString(),
+      dryrunWrappedP2pkh: false,
+      templeRedeemHex: null,
+    };
   }
+  // Dryrun default: P2SH-wrap genesis P2PKH (same key spends via redeem reveal).
+  const p2pkh = Script.p2pkh(shaRmd160(wallet.pk));
+  const scriptHash = shaRmd160(p2pkh.bytecode);
   return {
-    pkh: shaRmd160(wallet.pk),
-    address: wallet.address,
+    scriptHash,
+    address: Address.p2sh(scriptHash, 'ecash').toString(),
+    dryrunWrappedP2pkh: true,
+    templeRedeemHex: toHex(p2pkh.bytecode),
   };
 }
 
@@ -150,7 +168,8 @@ async function main(): Promise<void> {
 
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
   await wallet.sync();
-  const temple = tierName === 'wlotus' ? resolveTemplePkh(wallet) : null;
+  const temple =
+    tierName === 'wlotus' ? resolveTempleScriptHash(wallet) : null;
 
   console.log(
     JSON.stringify(
@@ -199,7 +218,7 @@ async function main(): Promise<void> {
       ? await createPowRemintMooreTipTempleContract({
           tokenId: genesis.tokenId,
           mintAtoms: tier.mint,
-          templePkh: temple!.pkh,
+          templeScriptHash: temple!.scriptHash,
           genesisUnix,
           baseZeroBits: tier.bits,
           secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
@@ -317,7 +336,9 @@ async function main(): Promise<void> {
           }
         : null,
     templeAddress: temple?.address ?? null,
-    templePkhHex: temple ? toHex(temple.pkh) : null,
+    templeScriptHashHex: temple ? toHex(temple.scriptHash) : null,
+    templeRedeemHex: temple?.templeRedeemHex ?? null,
+    templeDryrunWrappedP2pkh: temple?.dryrunWrappedP2pkh ?? null,
     powBatonCount: batons,
     batonTips: Array.from({ length: batons }, (_, i) => ({
       index: i,
@@ -335,7 +356,7 @@ async function main(): Promise<void> {
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: production 840-day bit clock. Cap bits ≤ 128. Whole-byte PoW only.',
       tierName === 'wlotus'
-        ? `WLotus: mint ${WLOTUS_MINT_ATOMS} → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2PKH (hot). Sweep to cold off-chain. No memorial EMPP (op budget).`
+        ? `WLotus: mint ${WLOTUS_MINT_ATOMS} → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget).`
         : tierName === 'prayer'
           ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
           : 'Candle/Flower use MooreTip without memorial push.',

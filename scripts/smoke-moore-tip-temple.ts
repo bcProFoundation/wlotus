@@ -41,14 +41,14 @@ async function main() {
     const factory = new ModuleFactory(new BchJsRts('mainnet'));
     const Ctor = factory.make(portable).WlotusPowRemintMooreTipTemple;
     const z = Buffer.alloc(32, 0);
-    const templePkh = Buffer.alloc(20, 0x11);
+    const templeScriptHash = Buffer.alloc(20, 0x11);
     const inst = new Ctor({
       tokenIdRev: Buffer.from(
         fromHexRev(
           'd9004b411d4cbcd2ec16235d506efd6e266186153bd1a2b1db3a1d5118c2ca5b',
         ),
       ),
-      templePkh,
+      templeScriptHash,
       genesisUnixLe: u32(1000),
       baseZeroBitsBin: Buffer.from([24]),
       secondsPerExtraBitLe: u32(72576000),

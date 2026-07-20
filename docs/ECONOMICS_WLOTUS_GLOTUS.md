@@ -37,11 +37,11 @@ Each successful remint mints **100** WLotus atoms:
 | Share | Destination | Purpose |
 |------:|-------------|---------|
 | **1** | Prayer / miner | Presence reward — kept or later burned/given |
-| **99** | Temple **hot P2PKH** (`wlotus.org` desk) | Fee reimbursement & inventory; **sweep daily to cold** (ops, not covenant) |
+| **99** | Temple **P2SH** (IFP-style multisig / cold) | Fee reimbursement & inventory; spends are rare ops, not daily key hops |
 
 This is **not** “app-only mining.” Anyone may satisfy the covenant (including copied clients) **if they pay their own XEC fees** and accept the **99→temple / 1→miner** outputs. The temple cannot stop that on a public chain — and does not need to.
 
-**Launch custody:** temple sink in Script is **P2PKH** (dryrun and production). Cold storage is off-chain policy via `npm run sweep-temple-to-cold` — see [Temple custody](#temple-custody-dryrun--launch-decision).
+**Launch custody:** temple sink in Script is **P2SH** (dryrun and production), same pattern as eCash’s baked IFP address. Redeem is revealed only on spend; quantum threats are handled by a future address-format fork, not by baking a single hot P2PKH. See [Temple custody](#temple-custody-dryrun--launch-decision).
 
 ### Why 99% temple
 
@@ -133,35 +133,33 @@ Candle / Flower rows in [ECONOMICS.md](./ECONOMICS.md) remain a longer-term hard
 
 ### Temple custody (dryrun + launch decision)
 
-**Covenant destination: temple hot P2PKH** (immutable in Script — 99 atoms per remint).
+**Covenant destination: temple P2SH** (immutable `templeScriptHash` — 99 atoms per remint).
 
 | Layer | Address type | Role |
 |-------|--------------|------|
-| Hot (in covenant) | **P2PKH** | Receives 99/remint; ops / inventory; **daily sweep** to cold |
-| Cold (ops only) | P2SH multisig or offline | Treasury — **not** encoded in the covenant |
+| Temple (in covenant) | **P2SH** (multisig / cold) | Receives 99/remint; IFP-style baked sink |
+| Spends | Redeem + keys | Rare, intentional treasury moves — not a daily hot key |
 
-**Why not covenant P2SH temple:** redeem reveal on first spend + forever-fixed script hash is a poor fit for a sink that must move funds. **Why not 90/9 on-chain:** op budget; cutover is cheaper with sweep + new covenant if hot is lost.
+**Why P2SH (not hot P2PKH):** ops custody matches other eCash baked funds (e.g. IFP). Multisig reduces single-key loss; the redeem is public only when spending. Quantum / address-format risk is accepted the same way as other P2SH sinks — migrate via a **protocol fork** to a new format when needed, rather than encoding a forever-hot P2PKH.
+
+**Dryrun convenience:** if `TEMPLE_ADDRESS` is unset, `create-dryrun-token` P2SH-wraps the genesis wallet’s P2PKH so the same key can spend by revealing redeem (`templeRedeemHex` in the deployment JSON). Launch should set `TEMPLE_ADDRESS` to a real multisig P2SH.
 
 ```bash
-TOKEN_ID=… COLD_ADDRESS=ecash:p…or q… \
-  TEMPLE_SK_HEX=… npm run sweep-temple-to-cold
-# Contabo cron example (daily 03:00 UTC):
-# 0 3 * * * cd /root/wlotus/wlotus && set -a && . /etc/wlotus/mint.env && set +a \
-#   && COLD_ADDRESS=… npm run sweep-temple-to-cold >> /var/log/wlotus-temple-sweep.log 2>&1
+# Launch / Contabo: bake a known multisig P2SH
+TIER=wlotus TEMPLE_ADDRESS=ecash:p… BATONS=2 npm run create-dryrun-token
 ```
 
-If the hot key is compromised: stop mint-api, sweep remaining if possible, serve a **new** covenant with a new `TEMPLE_ADDRESS`. Cold stack is unchanged.
+If temple keys are compromised: stop mint-api, move remaining inventory with the redeem, serve a **new** covenant with a new `templeScriptHash`.
 
 ---
 
 ## Implementation notes
 
-- Covenant: `WlotusPowRemintMooreTipTemple` — **P2PKH** temple (99) + miner P2PKH (1); mint = 100. Fits ≤520 B / ≤201 ops (no memorial EMPP — op budget).
+- Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (99) + miner P2PKH (1); mint = 100. Fits ≤520 B / ≤201 ops (no memorial EMPP — op budget).
 - Dryrun:
   ```bash
-  TIER=wlotus BATONS=2 npm run create-dryrun-token   # TEMPLE_ADDRESS = P2PKH
+  TIER=wlotus BATONS=2 npm run create-dryrun-token   # TEMPLE_ADDRESS = P2SH (or unset → wrap genesis)
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
-  npm run sweep-temple-to-cold                       # COLD_ADDRESS + temple key
   ```
 - Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for WLotus dryrun.
 - Mint-api / web: still on Prayer memo; wire to temple covenant in a follow-up.
