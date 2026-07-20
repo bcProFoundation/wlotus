@@ -672,11 +672,12 @@ async function submitChallengeOnce(opts: {
     const msg = e instanceof Error ? e.message : String(e);
     ch.status = 'expired';
     // Likely lost the tip race (double-spend / missing inputs).
+    // Clients auto-retry; TIP_RACE_LOST is the stable signal (do not ask users to refresh).
     throw new Error(
       /missing|spent|conflict|txn-mempool|already|orphan|inputs-missing/i.test(
         msg,
       )
-        ? 'Someone else offered on this tip first. Pull to refresh and Offer again.'
+        ? 'TIP_RACE_LOST'
         : msg,
     );
   }

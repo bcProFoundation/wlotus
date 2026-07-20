@@ -240,7 +240,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|Someone else offered|fund-tip-fee/i.test(
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee/i.test(
         msg,
       )
         ? 400
