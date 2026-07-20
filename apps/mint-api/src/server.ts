@@ -7,10 +7,13 @@
  *   POST /api/challenge  { installId }
  *   POST /api/submit     { installId, challengeId, nonceHex, note?, powMs?, powAttempts? }
  *   GET  /api/status?installId=
+ *   GET  /health         → ok + deploy stamps (file mtime / git sha)
  */
 import { createServer } from 'node:http';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
-import { resolve } from 'node:path';
 import {
   enqueueCancel,
   enqueueChallenge,
@@ -23,6 +26,8 @@ loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
 
 const PORT = Number(process.env.MINT_API_PORT?.trim() || 8787);
+const STARTED_AT = new Date().toISOString();
+const SERVER_FILE = fileURLToPath(import.meta.url);
 
 function cors(res: import('node:http').ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -60,9 +65,88 @@ function requireInstallId(raw: unknown): string {
   return installId;
 }
 
+function fileMtimeIso(path: string): string | null {
+  try {
+    return statSync(path).mtime.toISOString();
+  } catch {
+    return null;
+  }
+}
+
+/** Short git sha from env or `.git` (Contabo source checkout). */
+function resolveGitSha(repoRoot: string): string | null {
+  const env =
+    process.env.GIT_SHA?.trim() ||
+    process.env.GITHUB_SHA?.trim() ||
+    process.env.MINT_API_GIT_SHA?.trim();
+  if (env) return env.slice(0, 12);
+  try {
+    const head = readFileSync(join(repoRoot, '.git/HEAD'), 'utf8').trim();
+    if (head.startsWith('ref:')) {
+      const ref = head.slice(4).trim();
+      return readFileSync(join(repoRoot, '.git', ref), 'utf8')
+        .trim()
+        .slice(0, 12);
+    }
+    return head.slice(0, 12);
+  } catch {
+    return null;
+  }
+}
+
+function healthPayload(): Record<string, unknown> {
+  const srcDir = dirname(SERVER_FILE);
+  const offerTs = join(srcDir, 'offer.ts');
+  const offerJs = join(srcDir, 'offer.js');
+  const offerFile = existsSync(offerTs)
+    ? offerTs
+    : existsSync(offerJs)
+      ? offerJs
+      : null;
+  // apps/mint-api/src → repo root
+  const repoRoot = resolve(srcDir, '../../..');
+  const pub = publicStatus();
+  const serverMtime = fileMtimeIso(SERVER_FILE);
+  const offerMtime = offerFile ? fileMtimeIso(offerFile) : null;
+  // Prefer the newer of the two source files as "deployedAt"
+  const deployedAt =
+    [serverMtime, offerMtime]
+      .filter((t): t is string => !!t)
+      .sort()
+      .at(-1) ?? null;
+
+  return {
+    ok: true,
+    service: 'wlotus-mint-api',
+    startedAt: STARTED_AT,
+    now: new Date().toISOString(),
+    uptimeSec: Math.round(process.uptime()),
+    deployedAt,
+    deploy: {
+      serverFile: SERVER_FILE,
+      serverMtime,
+      offerFile,
+      offerMtime,
+      gitSha: resolveGitSha(repoRoot),
+      cwd: process.cwd(),
+    },
+    features: {
+      raceOpen: pub.raceOpen === true,
+      servingTipCount: pub.servingTipCount ?? null,
+      maxOpenChallenges: pub.maxOpenChallenges ?? null,
+      openChallenges: pub.openChallenges ?? null,
+      clientPow: true,
+      memorialOnMint: true,
+    },
+  };
+}
+
 const server = createServer(async (req, res) => {
   try {
-    const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+    const url = new URL(
+      req.url || '/',
+      `http://${req.headers.host || 'localhost'}`,
+    );
     if (req.method === 'OPTIONS') {
       cors(res);
       res.writeHead(204);
@@ -73,15 +157,18 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/status') {
       const installId = url.searchParams.get('installId') || '';
       const pub = publicStatus();
+      const health = healthPayload();
       json(res, 200, {
         ...pub,
         remainingToday: installId ? remainingOffersToday(installId) : null,
+        startedAt: STARTED_AT,
+        deployedAt: health.deployedAt,
       });
       return;
     }
 
     if (req.method === 'GET' && url.pathname === '/health') {
-      json(res, 200, { ok: true });
+      json(res, 200, healthPayload());
       return;
     }
 
@@ -151,15 +238,20 @@ const server = createServer(async (req, res) => {
     json(res, 404, { error: 'not found' });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const status = /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXOs|Someone else offered/i.test(
-      msg,
-    )
-      ? 400
-      : 500;
+    const status =
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXOs|Someone else offered/i.test(
+        msg,
+      )
+        ? 400
+        : 500;
     json(res, status, { error: msg });
   }
 });
 
 server.listen(PORT, () => {
-  console.log(`wlotus mint-api (client PoW) listening on :${PORT}`);
+  const h = healthPayload();
+  const feats = h.features as { raceOpen?: boolean };
+  console.log(
+    `wlotus mint-api listening on :${PORT} startedAt=${STARTED_AT} deployedAt=${h.deployedAt} raceOpen=${feats.raceOpen}`,
+  );
 });

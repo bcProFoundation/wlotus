@@ -31,8 +31,8 @@ MINT_MNEMONIC="twelve words …" npm run mint-api
 
 | Method | Path | Body / query |
 |--------|------|----------------|
-| GET | `/health` | — |
-| GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, … |
+| GET | `/health` | `ok`, `startedAt`, `deployedAt` (source file mtime), `deploy.gitSha`, `features.raceOpen` |
+| GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, `raceOpen`, `deployedAt`, … |
 | POST | `/api/challenge` | `{ installId, note? }` |
 | POST | `/api/submit` | `{ installId, challengeId, nonceHex, powMs?, powAttempts? }` |
 | POST | `/api/cancel` | `{ installId, challengeId? }` — release open challenge |
