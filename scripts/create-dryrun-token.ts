@@ -1,14 +1,16 @@
 #!/usr/bin/env tsx
 /**
- * Dryrun genesis for production MooreTip tiers: Prayer | Candle | Flower.
+ * Dryrun genesis for production MooreTip tiers: Prayer | Candle | Flower | WLotus.
  *
  * Usage:
  *   TIER=prayer npm run create-dryrun-token
  *   TIER=candle npm run create-dryrun-token
  *   TIER=flower npm run create-dryrun-token
+ *   TIER=wlotus npm run create-dryrun-token
+ *   TIER=wlotus TEMPLE_ADDRESS=ecash:q… BATONS=2 npm run create-dryrun-token
  *
- * Uses hardened WlotusPowRemintMooreTip (codeHash next-P2SH + tipLocktime).
- * Production Moore clock: +1 bit / 840 days. Cap bits ≤ 128.
+ * WLotus: mint 100 → 1 miner + 99 temple (MooreTipTemple covenant).
+ * Uses hardened next-P2SH (codeHash) + tipLocktime. Moore clock: +1 bit / 840 days.
  */
 import { resolve } from 'node:path';
 import {
@@ -16,15 +18,16 @@ import {
   mkdirSync,
   renameSync,
   existsSync,
-  readFileSync,
 } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 import { Wallet } from 'ecash-wallet';
 import {
+  Address,
   ALP_TOKEN_TYPE_STANDARD,
   DEFAULT_DUST_SATS,
   fromHex,
   payment,
+  shaRmd160,
   toHex,
 } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
@@ -32,6 +35,12 @@ import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
 import { createPowRemintMooreTipMemoContract } from '../src/covenant/powRemintMooreTipMemoScript.js';
+import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
+import {
+  WLOTUS_MINT_ATOMS,
+  WLOTUS_MINER_ATOMS,
+  WLOTUS_TEMPLE_ATOMS,
+} from '../src/params/wlotusMint.js';
 import { PROD_SECONDS_PER_EXTRA_BIT } from '../src/covenant/mooreTip.js';
 import {
   CANDLE_MINT_ATOMS,
@@ -41,6 +50,8 @@ import {
   FLOWER_NAME,
   FLOWER_TICKER,
   POW_BATON_COUNT,
+  PROD_TOKEN_NAME,
+  PROD_TOKEN_TICKER,
   PRAYER_MINT_ATOMS,
   PRAYER_NAME,
   PRAYER_TICKER,
@@ -49,7 +60,7 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-type Tier = 'prayer' | 'candle' | 'flower';
+type Tier = 'prayer' | 'candle' | 'flower' | 'wlotus';
 
 const TIERS: Record<
   Tier,
@@ -77,13 +88,42 @@ const TIERS: Record<
     mint: FLOWER_MINT_ATOMS,
     batons: POW_BATON_COUNT,
   },
+  wlotus: {
+    ticker: `d${PROD_TOKEN_TICKER}`,
+    name: `${PROD_TOKEN_NAME} temple dryrun`,
+    bits: 24,
+    mint: WLOTUS_MINT_ATOMS,
+    batons: POW_BATON_COUNT,
+  },
 };
+
+function resolveTemplePkh(wallet: Wallet): {
+  pkh: Uint8Array;
+  address: string;
+} {
+  const raw = process.env.TEMPLE_ADDRESS?.trim();
+  if (raw) {
+    const addr = Address.parse(raw);
+    if (addr.type !== 'p2pkh') {
+      throw new Error(`TEMPLE_ADDRESS must be P2PKH (got ${addr.type})`);
+    }
+    const hashHex =
+      typeof addr.hash === 'string' ? addr.hash : toHex(addr.hash);
+    return { pkh: fromHex(hashHex), address: addr.toString() };
+  }
+  return {
+    pkh: shaRmd160(wallet.pk),
+    address: wallet.address,
+  };
+}
 
 async function main(): Promise<void> {
   const tierName = (process.env.TIER?.trim().toLowerCase() || 'prayer') as Tier;
   const tier = TIERS[tierName];
   if (!tier) {
-    throw new Error(`Unknown TIER=${tierName}; use prayer|candle|flower`);
+    throw new Error(
+      `Unknown TIER=${tierName}; use prayer|candle|flower|wlotus`,
+    );
   }
 
   const skHex = process.env.GENESIS_SK_HEX?.trim();
@@ -109,6 +149,7 @@ async function main(): Promise<void> {
 
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
   await wallet.sync();
+  const temple = tierName === 'wlotus' ? resolveTemplePkh(wallet) : null;
 
   console.log(
     JSON.stringify(
@@ -119,13 +160,17 @@ async function main(): Promise<void> {
         ticker: tier.ticker,
         baseZeroBits: tier.bits,
         mintAtoms: Number(tier.mint),
+        templeAddress: temple?.address ?? null,
         secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
         genesisUnix,
         tipLocktime,
         batons,
         tipHeight,
         mtp,
-        regime: 'production-moore-tip-dryrun',
+        regime:
+          tierName === 'wlotus'
+            ? 'production-moore-tip-temple-dryrun'
+            : 'production-moore-tip-dryrun',
       },
       null,
       2,
@@ -149,25 +194,39 @@ async function main(): Promise<void> {
   console.log('Genesis', genesis.tokenId);
 
   const contract =
-    tierName === 'prayer'
-      ? await createPowRemintMooreTipMemoContract({
+    tierName === 'wlotus'
+      ? await createPowRemintMooreTipTempleContract({
           tokenId: genesis.tokenId,
           mintAtoms: tier.mint,
+          templePkh: temple!.pkh,
           genesisUnix,
           baseZeroBits: tier.bits,
           secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
           tipLocktime,
         })
-      : await createPowRemintMooreTipContract({
-          tokenId: genesis.tokenId,
-          mintAtoms: tier.mint,
-          genesisUnix,
-          baseZeroBits: tier.bits,
-          secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
-          tipLocktime,
-        });
+      : tierName === 'prayer'
+        ? await createPowRemintMooreTipMemoContract({
+            tokenId: genesis.tokenId,
+            mintAtoms: tier.mint,
+            genesisUnix,
+            baseZeroBits: tier.bits,
+            secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+            tipLocktime,
+          })
+        : await createPowRemintMooreTipContract({
+            tokenId: genesis.tokenId,
+            mintAtoms: tier.mint,
+            genesisUnix,
+            baseZeroBits: tier.bits,
+            secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+            tipLocktime,
+          });
   console.log(
-    tierName === 'prayer' ? 'MooreTipMemo address' : 'MooreTip address',
+    tierName === 'wlotus'
+      ? 'MooreTipTemple address'
+      : tierName === 'prayer'
+        ? 'MooreTipMemo address'
+        : 'MooreTip address',
     contract.address,
   );
   console.log('redeem bytes', contract.redeemScriptBuf.length);
@@ -217,18 +276,26 @@ async function main(): Promise<void> {
     console.log('Archived', archive);
   }
 
+  const covenantName =
+    tierName === 'wlotus'
+      ? 'WlotusPowRemintMooreTipTemple'
+      : tierName === 'prayer'
+        ? 'WlotusPowRemintMooreTipMemo'
+        : 'WlotusPowRemintMooreTip';
+
   const record = {
     tier: tierName,
     ticker: tier.ticker,
     name: tier.name,
     tokenId: genesis.tokenId,
     mode:
-      tierName === 'prayer' ? 'moore-tip-memo-hard-bind' : 'moore-tip-hard-bind',
+      tierName === 'wlotus'
+        ? 'moore-tip-temple-hard-bind'
+        : tierName === 'prayer'
+          ? 'moore-tip-memo-hard-bind'
+          : 'moore-tip-hard-bind',
     role: 'production-dryrun',
-    covenant:
-      tierName === 'prayer'
-        ? 'WlotusPowRemintMooreTipMemo'
-        : 'WlotusPowRemintMooreTip',
+    covenant: covenantName,
     decimals: 0,
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,
@@ -241,6 +308,15 @@ async function main(): Promise<void> {
     secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
     tipLocktime,
     mintAtomsPerRemint: tier.mint.toString(),
+    mintSplit:
+      tierName === 'wlotus'
+        ? {
+            miner: WLOTUS_MINER_ATOMS.toString(),
+            temple: WLOTUS_TEMPLE_ATOMS.toString(),
+          }
+        : null,
+    templeAddress: temple?.address ?? null,
+    templePkhHex: temple ? toHex(temple.pkh) : null,
     powBatonCount: batons,
     batonTips: Array.from({ length: batons }, (_, i) => ({
       index: i,
@@ -256,17 +332,18 @@ async function main(): Promise<void> {
     explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
-      'Moore D: production 840-day bit clock. Cap bits ≤ 128.',
-      tierName === 'prayer'
-        ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
-        : 'Candle/Flower use MooreTip without memorial push.',
+      'Moore D: production 840-day bit clock. Cap bits ≤ 128. Whole-byte PoW only.',
+      tierName === 'wlotus'
+        ? `WLotus: mint ${WLOTUS_MINT_ATOMS} → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple. Memorial EMPP not in this covenant (op budget).`
+        : tierName === 'prayer'
+          ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
+          : 'Candle/Flower use MooreTip without memorial push.',
       'Ergon not used for production tiers.',
     ],
   };
 
   writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
-  // Also point default prayer-tip path for miner convenience when TIER=prayer
-  if (tierName === 'prayer') {
+  if (tierName === 'prayer' || tierName === 'wlotus') {
     writeFileSync(
       resolve(depDir, 'mainnet-dryrun-active.json'),
       `${JSON.stringify(record, null, 2)}\n`,

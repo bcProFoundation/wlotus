@@ -14,7 +14,7 @@ Ergon-like ritual ALP token with permissionless PoW remint. This repository hold
 | Issuance | MooreTip PoW remint (calendar D + tipLocktime + hard next-P2SH) |
 | Burn | Intentional ALP burn — `apps/web` (XEC fees; postage later) |
 
-See [docs/VISION.md](./docs/VISION.md), [docs/SPEC.md](./docs/SPEC.md), and [docs/STATUS.md](./docs/STATUS.md).
+See [docs/VISION.md](./docs/VISION.md), [docs/ECONOMICS_WLOTUS_GLOTUS.md](./docs/ECONOMICS_WLOTUS_GLOTUS.md), [docs/SPEC.md](./docs/SPEC.md), and [docs/STATUS.md](./docs/STATUS.md).
 
 ## Status
 

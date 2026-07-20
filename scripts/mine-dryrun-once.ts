@@ -13,11 +13,16 @@ import { fromHex, payment, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
+import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
 import { computeMooreTipState } from '../src/covenant/mooreTip.js';
 import {
   buildMinedMooreTipRemintTx,
   mooreTipMinerBanner,
 } from '../src/miner/remintMooreTip.js';
+import {
+  buildMinedMooreTipTempleRemintTx,
+  mooreTipTempleMinerBanner,
+} from '../src/miner/remintMooreTipTemple.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
@@ -32,6 +37,7 @@ interface BatonTip {
 
 interface DryrunDep {
   tier?: string;
+  covenant?: string;
   tokenId: string;
   genesisUnix: number;
   baseZeroBits: number;
@@ -39,6 +45,7 @@ interface DryrunDep {
   tipLocktime?: number;
   powAddress?: string;
   mintAtomsPerRemint: string;
+  templePkhHex?: string | null;
   batonTips?: BatonTip[];
 }
 
@@ -82,6 +89,7 @@ function loadDep(): { path: string; dep: DryrunDep } {
   const candidates = [
     tier ? `deployments/mainnet-dryrun-${tier}.json` : '',
     'deployments/mainnet-dryrun-active.json',
+    'deployments/mainnet-dryrun-wlotus.json',
     'deployments/mainnet-dryrun-prayer.json',
   ].filter(Boolean);
   for (const rel of candidates) {
@@ -91,7 +99,7 @@ function loadDep(): { path: string; dep: DryrunDep } {
     }
   }
   throw new Error(
-    'Missing dryrun deployment — run TIER=prayer npm run create-dryrun-token',
+    'Missing dryrun deployment — run TIER=wlotus|prayer npm run create-dryrun-token',
   );
 }
 
@@ -105,6 +113,9 @@ async function main(): Promise<void> {
   const tokenId = process.env.TOKEN_ID?.trim() || dep.tokenId;
   const mintAtoms = BigInt(dep.mintAtomsPerRemint);
   const batonIndex = Number(process.env.BATON_INDEX?.trim() || 0);
+  const isTemple =
+    dep.tier === 'wlotus' ||
+    dep.covenant === 'WlotusPowRemintMooreTipTemple';
   const tips =
     dep.batonTips && dep.batonTips.length > 0
       ? dep.batonTips
@@ -118,16 +129,41 @@ async function main(): Promise<void> {
         ];
   const tipRec = tips.find(t => t.index === batonIndex) ?? tips[0]!;
 
-  const contract = await createPowRemintMooreTipContract({
-    tokenId,
-    mintAtoms,
-    genesisUnix: dep.genesisUnix,
-    baseZeroBits: dep.baseZeroBits,
-    secondsPerExtraBit: dep.secondsPerExtraBit,
-    tipLocktime: tipRec.tipLocktime,
-  });
-  console.log(mooreTipMinerBanner(contract));
+  if (isTemple && (!dep.templePkhHex || dep.templePkhHex.length !== 40)) {
+    throw new Error('WLotus dryrun missing templePkhHex (20-byte hex)');
+  }
 
+  const contract = isTemple
+    ? await createPowRemintMooreTipTempleContract({
+        tokenId,
+        mintAtoms,
+        templePkh: fromHex(dep.templePkhHex!),
+        genesisUnix: dep.genesisUnix,
+        baseZeroBits: dep.baseZeroBits,
+        secondsPerExtraBit: dep.secondsPerExtraBit,
+        tipLocktime: tipRec.tipLocktime,
+      })
+    : await createPowRemintMooreTipContract({
+        tokenId,
+        mintAtoms,
+        genesisUnix: dep.genesisUnix,
+        baseZeroBits: dep.baseZeroBits,
+        secondsPerExtraBit: dep.secondsPerExtraBit,
+        tipLocktime: tipRec.tipLocktime,
+      });
+  console.log(
+    isTemple
+      ? mooreTipTempleMinerBanner(
+          contract as Awaited<
+            ReturnType<typeof createPowRemintMooreTipTempleContract>
+          >,
+        )
+      : mooreTipMinerBanner(
+          contract as Awaited<
+            ReturnType<typeof createPowRemintMooreTipContract>
+          >,
+        ),
+  );
   if (tipRec.powAddress && tipRec.powAddress !== contract.address) {
     throw new Error(
       `Address mismatch: tip=${tipRec.powAddress} computed=${contract.address}`,
@@ -212,18 +248,33 @@ async function main(): Promise<void> {
     ),
   );
 
-  const built = await buildMinedMooreTipRemintTx({
-    contract,
-    baton,
-    fuel: {
-      outpoint: fuelUtxo.outpoint,
-      sats: fuelUtxo.sats,
-      outputScript: wallet.script,
-    },
-    miner: { sk: wallet.sk, pk: wallet.pk },
-    locktime,
-  });
-
+  const built = isTemple
+    ? await buildMinedMooreTipTempleRemintTx({
+        contract: contract as Awaited<
+          ReturnType<typeof createPowRemintMooreTipTempleContract>
+        >,
+        baton,
+        fuel: {
+          outpoint: fuelUtxo.outpoint,
+          sats: fuelUtxo.sats,
+          outputScript: wallet.script,
+        },
+        miner: { sk: wallet.sk, pk: wallet.pk },
+        locktime,
+      })
+    : await buildMinedMooreTipRemintTx({
+        contract: contract as Awaited<
+          ReturnType<typeof createPowRemintMooreTipContract>
+        >,
+        baton,
+        fuel: {
+          outpoint: fuelUtxo.outpoint,
+          sats: fuelUtxo.sats,
+          outputScript: wallet.script,
+        },
+        miner: { sk: wallet.sk, pk: wallet.pk },
+        locktime,
+      });
   const broadcast = await chronik.broadcastTx(built.txHex);
   const txid =
     typeof broadcast === 'string'
