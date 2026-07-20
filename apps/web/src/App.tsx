@@ -270,7 +270,7 @@ export default function App() {
     elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
-    setMsg({ kind: 'ok', text: 'Prayer cancelled.' });
+    setMsg({ kind: 'ok', text: 'Mining cancelled.' });
     // Await so a quick re-Offer sees a free baton on the server.
     await releaseChallenge(id);
   }
@@ -514,6 +514,27 @@ export default function App() {
           Keep this screen on while you pray. Leaving the app or locking the
           phone pauses the offering (iPhone and Android).
         </p>
+
+        <details className="how-offer">
+          <summary>How an offering works</summary>
+          <ol>
+            <li>
+              <strong>Pray while mining.</strong> Your phone does the work; use
+              that time for the person you remember. Cancel stops mining — praying
+              is yours to continue.
+            </li>
+            <li>
+              <strong>Mint 100 {ticker}.</strong> 1 stays as your presence atom;
+              99 go to <strong>WLotus.org</strong> to cover network fees for mint
+              and burn.
+            </li>
+            <li>
+              <strong>Burn the 1.</strong> That destroy-on-chain act is the
+              sacrifice (memorial + dana). Keeping the atom is not the offering.
+            </li>
+          </ol>
+        </details>
+
         <p className="hint eta" aria-live="off">
           {powEta.durationLabel} estimated
         </p>

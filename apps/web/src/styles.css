@@ -350,6 +350,41 @@ a {
   letter-spacing: 0.01em;
 }
 
+.how-offer {
+  margin: 0.85rem 0 0;
+  padding: 0.55rem 0 0.15rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.how-offer summary {
+  cursor: pointer;
+  color: var(--accent-2);
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
+  list-style-position: outside;
+}
+
+.how-offer summary::-webkit-details-marker {
+  color: var(--muted);
+}
+
+.how-offer ol {
+  margin: 0.55rem 0 0.25rem;
+  padding-left: 1.15rem;
+}
+
+.how-offer li {
+  margin: 0.4rem 0;
+}
+
+.how-offer li strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .history-meta {
   color: var(--muted);
   font-size: 0.82rem;
