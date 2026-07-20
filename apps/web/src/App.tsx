@@ -1,4 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LangSwitch } from './components/LangSwitch.js';
+import {
+  formatActualDurationLocale,
+  formatElapsedTenthsMinLocale,
+  formatEstimateDurationLocale,
+} from './i18n/format.js';
+import { useLocale } from './i18n/LocaleContext.js';
 import {
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
@@ -20,8 +27,6 @@ import {
 } from './lib/tipRace.js';
 import {
   estimatePrayerPow,
-  formatActualDuration,
-  formatElapsedTenthsMin,
   formatHashrateLabel,
   loadCachedHashrate,
   measureDeviceHashrate,
@@ -111,6 +116,7 @@ function readRememberedChallenge(): StoredChallenge | null {
 }
 
 export default function App() {
+  const { locale, t } = useLocale();
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
@@ -124,7 +130,9 @@ export default function App() {
     () => initialHashrateHps(),
   );
   const [mineStartedAt, setMineStartedAt] = useState<number | null>(null);
-  const [elapsedDisplay, setElapsedDisplay] = useState('0.0 min');
+  const [elapsedDisplay, setElapsedDisplay] = useState(() =>
+    formatElapsedTenthsMinLocale(0, 'en'),
+  );
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -134,6 +142,10 @@ export default function App() {
   /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
   const elapsedClockRef = useRef(new MineElapsedClock());
   const tipMsgClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tRef = useRef(t);
+  const localeRef = useRef(locale);
+  tRef.current = t;
+  localeRef.current = locale;
 
   const flashTipMsg = useCallback((text: string) => {
     if (tipMsgClearRef.current != null) {
@@ -153,6 +165,7 @@ export default function App() {
     bits: baseZeroBits,
     hashesPerSec: deviceHashrateHps,
   });
+  const etaLabel = formatEstimateDurationLocale(powEta.seconds, locale);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -173,8 +186,8 @@ export default function App() {
 
   useEffect(() => {
     void refreshStatus();
-    const t = setInterval(() => void refreshStatus(), 15_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => void refreshStatus(), 15_000);
+    return () => clearInterval(timer);
   }, [refreshStatus]);
 
   /** Probe once if we have no cached rate; otherwise reuse localStorage. */
@@ -224,15 +237,15 @@ export default function App() {
    */
   useEffect(() => {
     if (mineStartedAt == null) {
-      setElapsedDisplay('0.0 min');
+      setElapsedDisplay(formatElapsedTenthsMinLocale(0, locale));
       return;
     }
     const clock = elapsedClockRef.current;
     const tick = () => {
-      setElapsedDisplay(formatElapsedTenthsMin(clock.readMs()));
+      setElapsedDisplay(formatElapsedTenthsMinLocale(clock.readMs(), locale));
     };
     tick();
-    const t = setInterval(tick, 1_000);
+    const timer = setInterval(tick, 1_000);
 
     const onVis = () => {
       if (document.hidden) clock.pause();
@@ -240,14 +253,13 @@ export default function App() {
       tick();
     };
     document.addEventListener('visibilitychange', onVis);
-    // If we mount already hidden (rare), pause immediately.
     if (document.hidden) clock.pause();
 
     return () => {
-      clearInterval(t);
+      clearInterval(timer);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [mineStartedAt]);
+  }, [mineStartedAt, locale]);
 
   async function releaseChallenge(challengeId: string | null): Promise<void> {
     if (!challengeId) return;
@@ -270,13 +282,11 @@ export default function App() {
     elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
-    setMsg({ kind: 'ok', text: 'Mining cancelled.' });
-    // Await so a quick re-Offer sees a free baton on the server.
+    setMsg({ kind: 'ok', text: tRef.current('miningCancelled') });
     await releaseChallenge(id);
   }
 
   async function onOffer() {
-    // Kill any in-progress mine before starting a new one.
     const prevId = challengeIdRef.current;
     offerGenRef.current += 1;
     const gen = offerGenRef.current;
@@ -291,13 +301,10 @@ export default function App() {
     setMineStartedAt(Date.now());
     setPhase('challenge');
 
-    /** Fresh controller per attempt so tip-race abort can retry. */
     let ac = new AbortController();
     abortRef.current = ac;
 
     try {
-      // Open race: if another device wins our tip, silently take a new challenge.
-      // Never surface "someone else offered / pull to refresh" as a hard stop.
       while (offerGenRef.current === gen) {
         ac = new AbortController();
         abortRef.current = ac;
@@ -324,7 +331,6 @@ export default function App() {
           });
 
           setPhase('mining');
-          // Tip retries must not reset the elapsed clock.
           if (!elapsedClockRef.current.isRunning) {
             elapsedClockRef.current.resetAndStart();
             setMineStartedAt(Date.now());
@@ -378,7 +384,7 @@ export default function App() {
               mineChallengeId = null;
               if (offerGenRef.current !== gen) return;
               if (tipMoved) {
-                flashTipMsg('Mining on new tip');
+                flashTipMsg(tRef.current('miningOnNewTip'));
                 continue;
               }
               return;
@@ -393,7 +399,7 @@ export default function App() {
             await releaseChallenge(challenge.challengeId);
             mineChallengeId = null;
             if (tipMoved && offerGenRef.current === gen) {
-              flashTipMsg('Mining on new tip');
+              flashTipMsg(tRef.current('miningOnNewTip'));
               continue;
             }
             return;
@@ -418,8 +424,6 @@ export default function App() {
 
           elapsedClockRef.current.stop();
           const activeMs = elapsedClockRef.current.readMs();
-          // UI duration = active session time (paused while hidden; includes tip retries).
-          // API powMs stays the winning attempt's PoW timer (hashrate math).
           const uiPowMs = Math.max(activeMs, result.powMs || mined.elapsedMs);
 
           setOffers(
@@ -439,7 +443,12 @@ export default function App() {
           setMsg({
             kind: 'ok',
             text: [
-              `Offered in ${formatActualDuration(uiPowMs / 1000)}`,
+              tRef.current('offeredIn', {
+                duration: formatActualDurationLocale(
+                  uiPowMs / 1000,
+                  localeRef.current,
+                ),
+              }),
               shortTx(result.remintTxid),
             ].join(' · '),
           });
@@ -449,15 +458,15 @@ export default function App() {
           mineChallengeId = null;
           if (offerGenRef.current !== gen) return;
 
-          const msg = e instanceof Error ? e.message : String(e);
-          if (isTipRaceLost(msg)) {
-            flashTipMsg('Mining on new tip');
+          const errMsg = e instanceof Error ? e.message : String(e);
+          if (isTipRaceLost(errMsg)) {
+            flashTipMsg(tRef.current('miningOnNewTip'));
             continue;
           }
           if (e instanceof DOMException && e.name === 'AbortError') {
             return;
           }
-          setMsg({ kind: 'err', text: msg });
+          setMsg({ kind: 'err', text: errMsg });
           return;
         } finally {
           if (tipWatch) clearInterval(tipWatch);
@@ -478,76 +487,68 @@ export default function App() {
 
   const buttonLabel =
     phase === 'challenge'
-      ? 'Preparing…'
+      ? t('btnPreparing')
       : phase === 'mining'
-        ? 'PRAYING…'
+        ? t('btnPraying')
         : phase === 'submit'
-          ? 'Offering…'
-          : 'Offer';
+          ? t('btnOffering')
+          : t('btnOffer');
 
   return (
     <div className="app">
       <header className="hero">
         <div className="brand-row">
-          <img
-            className="brand-mark"
-            src="/images/wlotus.png"
-            alt=""
-            width={56}
-            height={56}
-          />
-          <h1 className="brand">White Lotus</h1>
+          <div className="brand-main">
+            <img
+              className="brand-mark"
+              src="/images/wlotus.png"
+              alt=""
+              width={56}
+              height={56}
+            />
+            <h1 className="brand">{t('brand')}</h1>
+          </div>
+          <LangSwitch />
         </div>
-        <p className="tagline">
-          Offer a white lotus. Remember someone. Give something up for all.
-        </p>
+        <p className="tagline">{t('tagline')}</p>
       </header>
 
       <section className="panel offer-panel">
-        <h2>Offer</h2>
+        <h2>{t('offerTitle')}</h2>
         <p className="hint">
-          Pray on this device while it mines {ticker}, then burn the presence
-          atom — memorial and dana on-chain. Limited to {maxOffersPerDay}{' '}
-          offerings per day here.
+          {t('hintPrayMine', { ticker, max: maxOffersPerDay })}
         </p>
-        <p className="hint">
-          Keep this screen on while you pray. Leaving the app or locking the
-          phone pauses the offering (iPhone and Android).
-        </p>
+        <p className="hint">{t('hintKeepScreen')}</p>
 
         <details className="how-offer">
-          <summary>How an offering works</summary>
+          <summary>{t('howTitle')}</summary>
           <ol>
             <li>
-              <strong>Pray while mining.</strong> Your phone does the work; use
-              that time for the person you remember. Cancel stops mining — praying
-              is yours to continue.
+              <strong>{t('howPrayTitle')}</strong> {t('howPrayBody')}
             </li>
             <li>
-              <strong>Mint 100 {ticker}.</strong> 1 stays as your presence atom;
-              99 go to <strong>WLotus.org</strong> to cover network fees for mint
-              and burn.
+              <strong>{t('howMintTitle', { ticker })}</strong>{' '}
+              {t('howMintBody')}
             </li>
             <li>
-              <strong>Burn the 1.</strong> That destroy-on-chain act is the
-              sacrifice (memorial + dana). Keeping the atom is not the offering.
+              <strong>{t('howBurnTitle')}</strong> {t('howBurnBody')}
             </li>
           </ol>
         </details>
 
         <p className="hint eta" aria-live="off">
-          {powEta.durationLabel} estimated
+          {t('etaEstimated', { eta: etaLabel })}
         </p>
 
         <div className="field">
-          <label htmlFor="note">In memory of… (optional)</label>
+          <label htmlFor="note">{t('noteLabel')}</label>
           <textarea
             id="note"
             rows={2}
             maxLength={80}
             value={note}
             onChange={e => setNote(e.target.value)}
-            placeholder="Name or dedication"
+            placeholder={t('notePlaceholder')}
             disabled={busy || apiOnline === false}
           />
         </div>
@@ -564,25 +565,25 @@ export default function App() {
             <button
               type="button"
               className="btn btn-danger"
-            onClick={() => void onCancelMine()}
+              onClick={() => void onCancelMine()}
             >
-              Cancel
+              {t('btnCancel')}
             </button>
           ) : null}
         </div>
 
         {mineStartedAt != null ? (
           <p className="mine-progress" aria-live="polite">
-            Mining · {elapsedDisplay}
+            {t('miningElapsed', { elapsed: elapsedDisplay })}
           </p>
         ) : null}
 
         <p className="meta">
           {apiOnline === null
-            ? 'Connecting…'
+            ? t('connecting')
             : apiOnline === false
-              ? 'Mint API offline — start mint-api on Contabo and proxy /api → :8787'
-              : `${remaining ?? '—'} left today on this device`}
+              ? t('apiOffline')
+              : t('leftToday', { n: remaining ?? '—' })}
           {tokenId ? (
             <>
               {' · '}
@@ -602,16 +603,16 @@ export default function App() {
 
       {offers.length > 0 ? (
         <section className="panel">
-          <h2>Recent</h2>
+          <h2>{t('recentTitle')}</h2>
           <ul className="history">
             {offers.map(o => (
               <li key={o.burnTxid}>
                 <span>
-                  {o.note || 'Offering'}
+                  {o.note || t('offeringFallback')}
                   {o.powMs != null ? (
                     <span className="history-meta">
                       {' '}
-                      · {formatActualDuration(o.powMs / 1000)}
+                      · {formatActualDurationLocale(o.powMs / 1000, locale)}
                       {o.hashrateHps
                         ? ` · ${formatHashrateLabel(o.hashrateHps)}`
                         : ''}
@@ -632,8 +633,8 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        White Lotus · {ticker} ·{' '}
-        <a href="https://github.com/bcProFoundation/wlotus">wlotus</a>
+        {t('footerBrand')} · {ticker} ·{' '}
+        <a href="https://wlotus.org">wlotus.org</a>
       </footer>
     </div>
   );
