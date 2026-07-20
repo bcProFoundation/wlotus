@@ -426,7 +426,7 @@ export default function App() {
           setMsg({
             kind: 'ok',
             text: [
-              `Prayer offered in ${formatActualDuration(uiPowMs / 1000)}`,
+              `Offered in ${formatActualDuration(uiPowMs / 1000)}`,
               shortTx(result.remintTxid),
             ].join(' · '),
           });
@@ -473,7 +473,7 @@ export default function App() {
         ? 'Mining…'
         : phase === 'submit'
           ? 'Broadcasting…'
-          : 'Offer Prayer';
+          : 'Offer';
 
   return (
     <div className="app">
@@ -494,11 +494,11 @@ export default function App() {
       </header>
 
       <section className="panel offer-panel">
-        <h2>Prayer</h2>
+        <h2>Offer</h2>
         <p className="hint">
-          Mint {PRAYER_TICKER} with this device’s power — time given for
-          memorial and dana. The dedication is written on-chain in the mint.
-          Limited to {maxOffersPerDay} offerings per day on this device.
+          Mine {PRAYER_TICKER} on this device, then burn the prayer atom as
+          memorial and dana — real sacrifice on-chain. Limited to{' '}
+          {maxOffersPerDay} offerings per day on this device.
         </p>
         <p className="hint eta" aria-live="off">
           {powEta.durationLabel} estimated
@@ -572,7 +572,7 @@ export default function App() {
             {offers.map(o => (
               <li key={o.burnTxid}>
                 <span>
-                  {o.note || 'Prayer'}
+                  {o.note || 'Offering'}
                   {o.powMs != null ? (
                     <span className="history-meta">
                       {' '}
@@ -597,7 +597,7 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        White Lotus · Prayer ·{' '}
+        White Lotus · {PRAYER_TICKER} ·{' '}
         <a href="https://github.com/bcProFoundation/wlotus">wlotus</a>
       </footer>
     </div>

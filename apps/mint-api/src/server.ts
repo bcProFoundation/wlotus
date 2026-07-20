@@ -1,11 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * Prayer mint API — device PoW, server fees/sign/broadcast/burn.
+ * WLotus / Prayer mint API — device PoW, server fees/sign/broadcast.
+ * WLotus burns the miner atom after remint (memorial dedication).
  *
  *   MINT_MNEMONIC="twelve words …" npm run mint-api
  *
- *   POST /api/challenge  { installId }
- *   POST /api/submit     { installId, challengeId, nonceHex, note?, powMs?, powAttempts? }
+ *   POST /api/challenge  { installId, note? }
+ *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  *   GET  /api/status?installId=
  *   GET  /health         → ok + deploy stamps (file mtime / git sha)
  */
@@ -137,7 +138,8 @@ function healthPayload(): Record<string, unknown> {
       maxOpenChallenges: pub.maxOpenChallenges ?? null,
       openChallenges: pub.openChallenges ?? null,
       clientPow: true,
-      memorialOnMint: true,
+      memorialOnMint: pub.memorialOnMint === true,
+      memorialOnBurn: pub.memorialOnBurn === true,
     },
   };
 }

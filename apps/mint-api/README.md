@@ -1,30 +1,34 @@
-# Mint API (Prayer memorial mint)
+# Mint API (WLotus burn-after-mint)
 
 Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
-Memorial (`WLBR`) is embedded in the **mint** OP_RETURN — no separate burn tx.
+
+**WLotus (live):** remint mints **100** (1 → tip fee wallet, 99 → temple P2SH), then
+**burns the miner 1** with `WLBR` memorial. Keeping the atom is not the offering.
+
+Legacy Prayer memo path (mint 1 + WLBR on remint, no burn) still works if the
+loaded deployment is `tier=prayer`.
 
 **Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
-tips (default **2**, matches live dPRAYER). First valid submit wins that tip; losers
-restart. No global challenge lock. Concurrent open challenges are capped for desk CPU.
+tips (default **2**). First valid submit wins that tip; losers restart. Concurrent
+open challenges are capped for desk CPU.
 
-**Fee wallets:** the main desk (`MINT_MNEMONIC`, legacy single address) holds treasury
-XEC. Each tip has its own HD fee account (`m/44'/1899'/(tipIndex+1)'/0/0`) so tips
-operate independently. Racers on the same tip share that tip’s sized fee coin; only
-the winner broadcasts.
+**Fee wallets:** the main desk (`MINT_MNEMONIC`) holds treasury XEC. Each tip has its
+own HD fee account (`m/44'/1899'/(tipIndex+1)'/0/0`). The tip fee wallet receives the
+minted miner atom and must fund the burn fee.
 
 **Critical:** remint has **no change output**. Fuel must be a small coin
 (~40 XEC / 4000 sats). Attaching a large UTXO burns almost all of it as miner fee.
 
 ```
-POST /api/challenge  { installId, note? }  → preimage + bits (note bound into OP_RETURN)
+POST /api/challenge  { installId, note? }  → preimage + bits
   device mines nonce
 POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
-                     → verify PoW, pay fee, sign, broadcast remint (mint 1 to tip fee wallet)
+                     → remint (100) → burn miner 1 + WLBR
 ```
 
-Requires deployment from `TIER=prayer npm run create-dryrun-token` (MooreTipMemo, mintAtoms=1).
-**Genesis baton count:** default **28** (ALP max) for launch tokens. Live **dPRAYER** PoC
-has **2** tips — fine for testing. Override create with `BATONS=` only for cheap tests.
+Requires `deployments/mainnet-dryrun-wlotus.json` (or active) from
+`TIER=wlotus BATONS=28 npm run create-dryrun-token`.
+**Genesis baton count:** **28** (ALP max). Desk soft-serves **2** tips via env.
 
 ## Run
 

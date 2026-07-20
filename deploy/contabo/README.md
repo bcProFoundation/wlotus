@@ -261,10 +261,17 @@ npm run fund-tip-fee-wallets
 sudo systemctl restart wlotus-mint-api
 ```
 
-Until mint-api is wired to the temple covenant, `/api/status` may still show `dPRAYER`. Token creation itself is independent — explorer will show `dWLOTUS` after genesis.
+Until mint-api is restarted with this repo’s burn-after-mint wiring, `/api/status` may lag. After deploy:
 
-After pulling a new Prayer / WLotus deployment JSON, restart:
-`sudo systemctl restart wlotus-mint-api`.
+```bash
+git pull
+npm ci
+# ensure deployments/mainnet-dryrun-wlotus.json (or active) is present
+sudo systemctl restart wlotus-mint-api
+curl -sS https://test.wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,memorialOnBurn,servingTipCount,powBatonCount}'
+```
+
+Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
 ---
 

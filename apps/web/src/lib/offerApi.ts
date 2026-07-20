@@ -45,6 +45,8 @@ export interface StatusOk {
   openChallenges?: number;
   tipEpoch?: string | null;
   tipEpochs?: Record<string, string>;
+  memorialOnMint?: boolean;
+  memorialOnBurn?: boolean;
   tipKey?: string | null;
   servingTipIndex?: number;
   servingTipCount?: number;
