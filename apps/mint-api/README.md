@@ -3,6 +3,13 @@
 Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 Memorial (`WLBR`) is embedded in the **mint** OP_RETURN — no separate burn tx.
 
+**Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
+tips (default **2**, matches live dPRAYER). First valid submit wins that tip; losers
+restart. No global challenge lock. Concurrent open challenges are capped for desk CPU.
+
+**Fee UTXOs:** **one fee coin per tip** (shared by all racers on that tip). Only the
+winner broadcasts, so concurrent miners on one tip do not need separate fee splits.
+
 ```
 POST /api/challenge  { installId, note? }  → preimage + bits (note bound into OP_RETURN)
   device mines nonce
@@ -11,6 +18,8 @@ POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
 ```
 
 Requires deployment from `TIER=prayer npm run create-dryrun-token` (MooreTipMemo, mintAtoms=1).
+**Genesis baton count:** default **28** (ALP max) for launch tokens. Live **dPRAYER** PoC
+has **2** tips — fine for testing. Override create with `BATONS=` only for cheap tests.
 
 ## Run
 
@@ -23,7 +32,7 @@ MINT_MNEMONIC="twelve words …" npm run mint-api
 | Method | Path | Body / query |
 |--------|------|----------------|
 | GET | `/health` | — |
-| GET | `/api/status?installId=` | remainingToday, baseZeroBits, memorialOnMint |
+| GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, … |
 | POST | `/api/challenge` | `{ installId, note? }` |
 | POST | `/api/submit` | `{ installId, challengeId, nonceHex, powMs?, powAttempts? }` |
 | POST | `/api/cancel` | `{ installId, challengeId? }` — release open challenge |
@@ -32,4 +41,6 @@ MINT_MNEMONIC="twelve words …" npm run mint-api
 ## Limits
 
 - `MINT_MAX_OFFERS_PER_DAY` (default **20** on test)
-- Challenges expire after 15 minutes
+- `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
+- `MINT_SERVING_TIP_COUNT` (default **2**) — tips load-balanced for PoC; raise toward 28 at launch
+- Challenges expire after 15 minutes (or when that tip is reminted by someone else)

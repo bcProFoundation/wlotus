@@ -62,9 +62,11 @@ Minimal **Prayer-only** UI (mobile-first). No browser wallet yet — offerings v
 |--|--|
 | **Test site** | https://test.wlotus.org |
 | **Local** | `npm run mint-api` + `npm run web` |
-| **Token** | dual-mint `dPRAYER` `d9004b41…ca5b` |
+| **Token** | memorial mint `dPRAYER` `173e0260…6078` |
 
-Defaults to live dual-mint dryrun. See [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md).
+Desk MVP: **open race on 2 tips** (dPRAYER PoC), 1 fee UTXO/tip, `MINT_MAX_OPEN_CHALLENGES` caps concurrent jobs. Launch genesis must use **`POW_BATON_COUNT=28`** (ALP max; immutable).
+
+Defaults to live memorial dryrun. See [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md).
 
 ## Test hosting (Contabo)
 

@@ -12,9 +12,9 @@ import { createServer } from 'node:http';
 import { config as loadEnv } from 'dotenv';
 import { resolve } from 'node:path';
 import {
+  enqueueCancel,
   enqueueChallenge,
   enqueueSubmit,
-  cancelChallenge,
   publicStatus,
   remainingOffersToday,
 } from './offer.js';
@@ -134,7 +134,7 @@ const server = createServer(async (req, res) => {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
       const challengeId = String(body.challengeId || '').trim() || undefined;
-      const result = cancelChallenge({ installId, challengeId });
+      const result = await enqueueCancel({ installId, challengeId });
       json(res, 200, result);
       return;
     }
@@ -151,7 +151,7 @@ const server = createServer(async (req, res) => {
     json(res, 404, { error: 'not found' });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    const status = /Daily limit|installId|mintAtoms|challenge|nonce|expired|in progress/i.test(
+    const status = /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXOs|Someone else offered/i.test(
       msg,
     )
       ? 400

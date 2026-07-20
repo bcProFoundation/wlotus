@@ -97,7 +97,15 @@ async function main(): Promise<void> {
     process.env.DRYRUN_GENESIS_UNIX?.trim() || Math.max(0, mtp - 120),
   );
   const tipLocktime = genesisUnix;
-  const batons = Number(process.env.BATONS?.trim() || Math.min(2, tier.batons));
+  const batons = Number(process.env.BATONS?.trim() || tier.batons);
+  if (!Number.isFinite(batons) || batons < 2) {
+    throw new Error(`BATONS must be >= 2 (got ${batons})`);
+  }
+  if (batons > POW_BATON_COUNT) {
+    throw new Error(
+      `BATONS=${batons} exceeds ALP max ${POW_BATON_COUNT} (immutable at genesis)`,
+    );
+  }
 
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
   await wallet.sync();

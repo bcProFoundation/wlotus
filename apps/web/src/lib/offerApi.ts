@@ -12,6 +12,9 @@ export interface ChallengeOk {
   powPrefixHex: string;
   locktime: number;
   tipLocktime: number;
+  tipKey?: string;
+  tipEpoch?: string;
+  tipIndex?: number;
   mintAtoms: string;
   note: string;
 }
@@ -38,6 +41,15 @@ export interface StatusOk {
   remainingToday: number | null;
   baseZeroBits?: number | null;
   clientPow?: boolean;
+  maxOpenChallenges?: number;
+  openChallenges?: number;
+  tipEpoch?: string | null;
+  tipEpochs?: Record<string, string>;
+  tipKey?: string | null;
+  servingTipIndex?: number;
+  servingTipCount?: number;
+  powBatonCount?: number | null;
+  raceOpen?: boolean;
 }
 
 function apiUrl(path: string): string {

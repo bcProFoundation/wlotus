@@ -1,10 +1,11 @@
 /**
  * Static PoW wall-time estimate from difficulty bits + hash rate.
- * Pre-mint ETA uses a short this-device probe (not a live countdown).
+ * Pre-mint ETA uses a cached this-device rate (or a one-time probe).
  * Post-mint stats come from the mint API (actual PoW wall time).
  */
 
 import { sha256d } from 'ecash-lib';
+import { HASHRATE_CACHE_KEY } from './config.js';
 
 /** Phone-class SHA256d UX hashrate (matches `UX_PHONE_HASHRATE_H_S` in pricing). */
 export const PHONE_UX_HASHRATE_H_S = 150_000;
@@ -119,12 +120,34 @@ export function estimatePrayerPow(opts?: {
   };
 }
 
+export function loadCachedHashrate(): number | null {
+  try {
+    const raw = localStorage.getItem(HASHRATE_CACHE_KEY);
+    if (!raw) return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n);
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedHashrate(hashesPerSec: number): void {
+  if (!Number.isFinite(hashesPerSec) || hashesPerSec <= 0) return;
+  try {
+    localStorage.setItem(
+      HASHRATE_CACHE_KEY,
+      String(Math.round(hashesPerSec)),
+    );
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 /**
  * Short browser SHA256d probe approximating Prayer PoW hash work
  * (sha256d over a fixed prefix || nonce). Yields so the UI stays responsive.
- *
- * Note: today’s mint-api still mines on the server; this measures *this device*
- * for ETA / future client PoW — not the mint worker’s rate.
+ * Prefer {@link loadCachedHashrate} / mining rates over re-probing.
  */
 export async function measureDeviceHashrate(opts?: {
   durationMs?: number;

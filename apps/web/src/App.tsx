@@ -17,7 +17,9 @@ import {
   formatActualDuration,
   formatElapsedTenthsMin,
   formatHashrateLabel,
+  loadCachedHashrate,
   measureDeviceHashrate,
+  saveCachedHashrate,
 } from './lib/powEstimate.js';
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
@@ -50,6 +52,24 @@ function loadOffers(): LocalOffer[] {
   } catch {
     return [];
   }
+}
+
+/** Prefer explicit cache, else last successful mine hashrate from history. */
+function initialHashrateHps(): number | null {
+  const cached = loadCachedHashrate();
+  if (cached != null) return cached;
+  for (const o of loadOffers()) {
+    if (o.hashrateHps != null && o.hashrateHps > 0) {
+      saveCachedHashrate(o.hashrateHps);
+      return Math.round(o.hashrateHps);
+    }
+  }
+  return null;
+}
+
+function rememberHashrate(hps: number): void {
+  if (!Number.isFinite(hps) || hps <= 0) return;
+  saveCachedHashrate(hps);
 }
 
 function pushOffer(o: LocalOffer): LocalOffer[] {
@@ -94,7 +114,7 @@ export default function App() {
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
-    null,
+    () => initialHashrateHps(),
   );
   const [mineStartedAt, setMineStartedAt] = useState<number | null>(null);
   const [elapsedDisplay, setElapsedDisplay] = useState('0.0 min');
@@ -102,6 +122,8 @@ export default function App() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const challengeIdRef = useRef<string | null>(null);
+  /** Bumps on cancel / new offer so a stale offer's finally cannot clobber UI. */
+  const offerGenRef = useRef(0);
 
   const busy = phase !== 'idle';
   const mining = phase === 'mining';
@@ -132,12 +154,16 @@ export default function App() {
     return () => clearInterval(t);
   }, [refreshStatus]);
 
+  /** Probe once if we have no cached rate; otherwise reuse localStorage. */
   useEffect(() => {
+    if (deviceHashrateHps != null && deviceHashrateHps > 0) return;
     let cancelled = false;
     void (async () => {
       try {
         const hps = await measureDeviceHashrate();
-        if (!cancelled) setDeviceHashrateHps(hps);
+        if (cancelled) return;
+        rememberHashrate(hps);
+        setDeviceHashrateHps(hps);
       } catch {
         /* keep phone-class fallback */
       }
@@ -145,7 +171,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [deviceHashrateHps]);
 
   /** If the tab was killed mid-mine, release the server challenge on reload. */
   useEffect(() => {
@@ -181,33 +207,43 @@ export default function App() {
 
   async function releaseChallenge(challengeId: string | null): Promise<void> {
     if (!challengeId) return;
+    if (challengeIdRef.current === challengeId) challengeIdRef.current = null;
+    clearRememberedChallenge();
     try {
       await cancelOfferChallenge({ installId, challengeId });
     } catch {
-      /* best-effort */
+      /* best-effort — server also replaces same-device challenges on /api/challenge */
     }
-    if (challengeIdRef.current === challengeId) challengeIdRef.current = null;
-    clearRememberedChallenge();
   }
 
-  function onCancelMine() {
+  async function onCancelMine() {
     const id = challengeIdRef.current;
+    offerGenRef.current += 1;
+    challengeIdRef.current = null;
+    clearRememberedChallenge();
     abortRef.current?.abort();
-    void releaseChallenge(id);
+    abortRef.current = null;
     setMineStartedAt(null);
     setPhase('idle');
     setMsg({ kind: 'ok', text: 'Mining cancelled.' });
+    // Await so a quick re-Offer sees a free baton on the server.
+    await releaseChallenge(id);
   }
 
   async function onOffer() {
     // Kill any in-progress mine before starting a new one.
     const prevId = challengeIdRef.current;
+    offerGenRef.current += 1;
+    const gen = offerGenRef.current;
     abortRef.current?.abort();
+    challengeIdRef.current = null;
+    clearRememberedChallenge();
     if (prevId) await releaseChallenge(prevId);
+    if (offerGenRef.current !== gen) return;
 
     const ac = new AbortController();
     abortRef.current = ac;
-    challengeIdRef.current = null;
+    let mineChallengeId: string | null = null;
 
     setMsg(null);
     setMineStartedAt(null);
@@ -217,11 +253,12 @@ export default function App() {
         installId,
         note: note.trim(),
       });
-      if (ac.signal.aborted) {
+      if (ac.signal.aborted || offerGenRef.current !== gen) {
         await releaseChallenge(challenge.challengeId);
         return;
       }
 
+      mineChallengeId = challenge.challengeId;
       challengeIdRef.current = challenge.challengeId;
       rememberChallenge({
         challengeId: challenge.challengeId,
@@ -231,20 +268,59 @@ export default function App() {
       setPhase('mining');
       setMineStartedAt(Date.now());
       setBaseZeroBits(challenge.bits);
-      const mined = await mineInWorker({
-        powPrefixHex: challenge.powPrefixHex,
-        bits: challenge.bits,
-        nonceLength: challenge.nonceLength,
-        signal: ac.signal,
-        onProgress: p => {
-          setDeviceHashrateHps(p.hashrateHps);
-        },
-      });
-      if (ac.signal.aborted) {
+
+      const tipEpoch = challenge.tipEpoch ?? null;
+      const tipIndex = challenge.tipIndex;
+      let tipMoved = false;
+      const tipWatch =
+        tipEpoch == null
+          ? null
+          : setInterval(() => {
+              void (async () => {
+                try {
+                  const s = await fetchStatus(installId);
+                  const live =
+                    tipIndex != null && s.tipEpochs
+                      ? s.tipEpochs[String(tipIndex)]
+                      : s.tipEpoch;
+                  if (live && live !== tipEpoch) {
+                    tipMoved = true;
+                    ac.abort();
+                  }
+                } catch {
+                  /* ignore transient status errors while mining */
+                }
+              })();
+            }, 5_000);
+
+      let mined;
+      try {
+        mined = await mineInWorker({
+          powPrefixHex: challenge.powPrefixHex,
+          bits: challenge.bits,
+          nonceLength: challenge.nonceLength,
+          signal: ac.signal,
+          onProgress: p => {
+            rememberHashrate(p.hashrateHps);
+            setDeviceHashrateHps(p.hashrateHps);
+          },
+        });
+      } finally {
+        if (tipWatch) clearInterval(tipWatch);
+      }
+
+      if (ac.signal.aborted || offerGenRef.current !== gen) {
         await releaseChallenge(challenge.challengeId);
+        if (tipMoved) {
+          setMsg({
+            kind: 'err',
+            text: 'Someone else offered on this tip first. Offer again to start a new challenge.',
+          });
+        }
         return;
       }
 
+      rememberHashrate(mined.hashrateHps);
       setDeviceHashrateHps(mined.hashrateHps);
       setPhase('submit');
       const result = await submitMinedOffer({
@@ -255,8 +331,11 @@ export default function App() {
         powAttempts: mined.attempts,
       });
 
+      if (offerGenRef.current !== gen) return;
+
       challengeIdRef.current = null;
       clearRememberedChallenge();
+      mineChallengeId = null;
 
       setOffers(
         pushOffer({
@@ -281,19 +360,22 @@ export default function App() {
         ].join(' · '),
       });
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') {
-        await releaseChallenge(challengeIdRef.current);
-        return;
+      // Only release *this* offer's challenge — never challengeIdRef (may be a newer offer).
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        if (offerGenRef.current === gen) {
+          setMsg({
+            kind: 'err',
+            text: e instanceof Error ? e.message : String(e),
+          });
+        }
       }
-      await releaseChallenge(challengeIdRef.current);
-      setMsg({
-        kind: 'err',
-        text: e instanceof Error ? e.message : String(e),
-      });
+      await releaseChallenge(mineChallengeId);
     } finally {
-      setPhase('idle');
-      setMineStartedAt(null);
-      if (abortRef.current === ac) abortRef.current = null;
+      if (offerGenRef.current === gen) {
+        setPhase('idle');
+        setMineStartedAt(null);
+        if (abortRef.current === ac) abortRef.current = null;
+      }
     }
   }
 
@@ -363,7 +445,7 @@ export default function App() {
             <button
               type="button"
               className="btn btn-danger"
-              onClick={onCancelMine}
+            onClick={() => void onCancelMine()}
             >
               Cancel
             </button>

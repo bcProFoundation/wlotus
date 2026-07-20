@@ -24,6 +24,10 @@ A single ALP mint baton tip is **serial**: only one spend wins at a time.
 
 `coins/time ≈ N × (hashrate/N) / work_per_solution × M(k) ≈ hashrate × M(k) / work`
 
+**Genesis must use the ALP maximum (`POW_BATON_COUNT` = 28).** Batons cannot be added later.
+The mint desk PoC serves **2 tips** (live dPRAYER) with an open multi-client race and
+**one fee UTXO per tip**; raise served tips toward 28 without a new token.
+
 ## Covenant responsibilities
 
 For each remint spend, Script must enforce:
