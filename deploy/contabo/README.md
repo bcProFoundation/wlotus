@@ -56,12 +56,13 @@ Open http://localhost:5173
 Optional env — copy `apps/web/.env.example` → `apps/web/.env`:
 
 ```
-VITE_PRAYER_TOKEN_ID=a108b17f5050e354641c7de26d16d97e6a1019dd0a273e92bc8aced2fff74914
-VITE_PRAYER_TICKER=dPRAYER
+VITE_PRAYER_TOKEN_ID=a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838
+VITE_PRAYER_TICKER=dWLOTUS
 VITE_CHRONIK_URLS=https://chronik.e.cash,https://chronik.pay2stay.com/xec
 ```
 
-Defaults match the live dryrun **dPRAYER** token. No VM or GitHub secrets needed for local dev.
+Defaults match live **dWLOTUS**. The SPA also shows `/api/status.ticker` at runtime.
+No VM or GitHub secrets needed for local dev.
 
 ---
 

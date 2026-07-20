@@ -118,6 +118,7 @@ export default function App() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
+  const [ticker, setTicker] = useState(PRAYER_TICKER);
   const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
     () => initialHashrateHps(),
@@ -145,6 +146,7 @@ export default function App() {
       const s = await fetchStatus(installId);
       setRemaining(s.remainingToday);
       setTokenId(s.tokenId);
+      if (s.ticker?.trim()) setTicker(s.ticker.trim());
       if (s.maxOffersPerDay > 0) setMaxOffersPerDay(s.maxOffersPerDay);
       if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
         setBaseZeroBits(s.baseZeroBits);
@@ -496,7 +498,7 @@ export default function App() {
       <section className="panel offer-panel">
         <h2>Offer</h2>
         <p className="hint">
-          Mine {PRAYER_TICKER} on this device, then burn the prayer atom as
+          Mine {ticker} on this device, then burn the presence atom as
           memorial and dana — real sacrifice on-chain. Limited to{' '}
           {maxOffersPerDay} offerings per day on this device.
         </p>
@@ -597,7 +599,7 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        White Lotus · {PRAYER_TICKER} ·{' '}
+        White Lotus · {ticker} ·{' '}
         <a href="https://github.com/bcProFoundation/wlotus">wlotus</a>
       </footer>
     </div>
