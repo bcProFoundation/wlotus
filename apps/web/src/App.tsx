@@ -523,16 +523,27 @@ export default function App() {
         <details className="how-offer">
           <summary>{t('howTitle')}</summary>
           <ol>
-            <li>
-              <strong>{t('howPrayTitle')}</strong> {t('howPrayBody')}
-            </li>
-            <li>
-              <strong>{t('howMintTitle', { ticker })}</strong>{' '}
-              {t('howMintBody')}
-            </li>
-            <li>
-              <strong>{t('howBurnTitle')}</strong> {t('howBurnBody')}
-            </li>
+            {[
+              {
+                title: t('howPrayTitle'),
+                body: t('howPrayBody'),
+              },
+              {
+                title: t('howMintTitle', { ticker }),
+                body: t('howMintBody'),
+              },
+              {
+                title: t('howBurnTitle'),
+                body: t('howBurnBody'),
+              },
+            ]
+              .filter(step => step.title.trim() || step.body.trim())
+              .map((step, i) => (
+                <li key={i}>
+                  {step.title.trim() ? <strong>{step.title} </strong> : null}
+                  {step.body}
+                </li>
+              ))}
           </ol>
         </details>
 
