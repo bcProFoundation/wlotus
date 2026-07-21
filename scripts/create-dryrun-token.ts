@@ -93,7 +93,7 @@ const TIERS: Record<
   },
   wlotus: {
     ticker: `d${PROD_TOKEN_TICKER}`,
-    name: `${PROD_TOKEN_NAME} temple dryrun`,
+    name: PROD_TOKEN_NAME,
     bits: 24,
     mint: WLOTUS_MINT_ATOMS,
     batons: POW_BATON_COUNT,

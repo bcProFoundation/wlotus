@@ -55,7 +55,7 @@ const en: Dict = {
     'Finding WLOTUS yields 108 digital lotuses — one full mala round. Depending on your device, this may take from about a minute to over ten minutes. One lotus is offered in remembrance of the departed. The other 107 go to the wLotus developers.',
   howWhyTitle: 'Why do 107 flowers go to the wLotus developers?',
   howWhyBody:
-    'Issuing each lotus incurs network fees, which wLotus developers currently cover. Searching on a device also yields only a limited number of flowers. So that those with a sincere heart can still receive lotuses for remembrance — and so the system can keep running — the remaining 107 beads of the mala are sent to the developers for distribution.',
+    'Issuing and offering each lotus incurs network fees. Searching on a phone also yields only a limited number of flowers. So those with a sincere heart can still receive lotuses for remembrance — and so professional mining rigs do not crowd out phone users — the remaining 107 beads of the mala go to the wLotus developers to distribute to those with affinity who did not get a chance to find a lotus.',
   etaEstimated: 'Estimated time {eta}',
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name or dedication',
@@ -98,7 +98,7 @@ const vi: Dict = {
     'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ 1 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 107 bông còn lại được chuyển đến nhà phát triển wLotus.',
   howWhyTitle: 'Tại sao 107 bông được chuyển đến nhà phát triển wLotus?',
   howWhyBody:
-    'Mỗi lần phát hành hoa sen đều tốn phí giao dịch trên mạng — hiện do các nhà phát triển wLotus chi trả. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để duy trì hệ thống, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên.',
+    'Mỗi lần phát hành và dâng hoa sen đều tốn phí giao dịch trên mạng. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để tránh các máy chuyên nghiệp làm ảnh hưởng đến việc dùng trên điện thoại, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên không có cơ may tìm kiếm được hoa sen.',
   etaEstimated: 'Thời gian ước tính {eta}',
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên hoặc lời tưởng niệm',
@@ -116,7 +116,7 @@ const vi: Dict = {
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng lại từ danh sách này để liên kết lần đốt mới với lần trước — không thêm lời mới.',
+    'Dâng hoa lại từ danh sách để liên kết với lần dâng trước.',
   reofferBadge: 'dâng lại',
   btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
@@ -140,7 +140,7 @@ const zh: Dict = {
     '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 1 分钟到 10 分钟以上。其中 1 朵用于献上，纪念逝者；其余 107 朵交给 wLotus 开发者。',
   howWhyTitle: '为何 107 朵莲花交给 wLotus 开发者？',
   howWhyBody:
-    '每次发行莲花都需支付网络手续费，目前由 wLotus 开发者承担。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并维系系统运转，念珠上其余 107 颗交给开发者，分发给有缘人。',
+    '每次发行与献上莲花都需支付网络手续费。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并避免专业矿机挤占手机用户，念珠上其余 107 颗交给 wLotus 开发者，分发给有缘却未能寻得莲花的人。',
   etaEstimated: '预计时间 {eta}',
   noteLabel: '追思寄语…',
   notePlaceholder: '姓名或寄语',
