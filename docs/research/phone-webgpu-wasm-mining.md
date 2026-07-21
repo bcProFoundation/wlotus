@@ -40,7 +40,29 @@ Backend order when enabled:
 2. **Multi-worker** CPU (partitioned nonce stride, up to 4 workers)
 3. **Single worker** / main-thread fallback
 
-Console: `[wlotus] experimental pow backend: webgpu|multi-worker|worker`.
+Console (after starting an offer / search) — uses `console.info`:
+
+```text
+[wlotus] experimental pow backend: webgpu
+```
+
+- `webgpu` — phone GPU path  
+- `multi-worker` — WebGPU skipped/failed; multi-core CPU  
+- `worker` — single-worker fallback  
+
+**CI:** repo variable `VITE_EXPERIMENTAL_POW=1` is baked only when Deploy web (test) passes it into `web:build`. Until that deploy runs, enable immediately with:
+
+```js
+localStorage.setItem('wlotus.experimentalPow', '1'); location.reload();
+```
+
+Then confirm:
+
+```js
+import.meta.env?.VITE_EXPERIMENTAL_POW  // may be undefined until rebuild
+localStorage.getItem('wlotus.experimentalPow')  // '1'
+```
+
 
 ---
 

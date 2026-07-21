@@ -14,6 +14,7 @@
 #   VITE_CHRONIK_URLS         — comma-separated Chronik URLs
 #   VITE_TIP_POLL_MS          — tip-epoch poll while mining (ms); prefer Actions *variable*
 #                               (not sensitive). e.g. 1000 or 5000; app default 2000
+#   VITE_EXPERIMENTAL_POW     — set to 1 to enable phone WebGPU/multi-worker PoW (test only)
 #   MINT_MNEMONIC             — 12/24-word fee wallet; synced to /etc/wlotus/mint.env
 #                               (mint-api runtime still reads the server file, not Actions)
 #
@@ -66,7 +67,11 @@ jobs:
           # Tip-epoch poll while mining (ms). Prefer Actions variable; secret also ok.
           # Examples: 1000 (1s) or 5000 (5s). Default in app is 2000 if unset.
           VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
-        run: npm run web:build
+          # Experimental phone PoW (WebGPU → multi-worker). Prefer Actions *variable*.
+          VITE_EXPERIMENTAL_POW: ${{ vars.VITE_EXPERIMENTAL_POW }}
+        run: |
+          echo "Building test SPA (experimentalPow=${VITE_EXPERIMENTAL_POW:-0})"
+          npm run web:build
 
       - name: Require Contabo secrets
         env:
