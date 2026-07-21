@@ -179,7 +179,7 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
 ## Implementation notes
 
 - Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (107) + miner P2PKH (1); mint = 108 (mala). Fits ≤520 B / ≤201 ops (no memorial EMPP on mint — op budget).
-- **Memorial:** burn the miner **1** atom after remint (`WLBR` on burn tx). The on-chain burn is the gift — memorial and dana offered for all.
+- **Memorial:** burn the miner **1** atom after remint (`DANA` LOKAD on burn tx). The on-chain burn is the gift — memorial and dana offered for all.
 - Dryrun:
   ```bash
   TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token

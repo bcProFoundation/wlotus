@@ -1,7 +1,7 @@
 /**
  * Offering helpers (web + mint API).
- * WLotus: remint mints 100 (1 miner + 99 temple) → burn the miner 1 with WLBR.
- * Legacy Prayer memo path may still embed WLBR on mint without a burn tx.
+ * wLotus: remint mints 108 (1 miner + 107 temple) → burn the miner 1 with **DANA**.
+ * Legacy Prayer memo path may still embed memorial EMPP on mint without a burn tx.
  */
 import { ALP_TOKEN_TYPE_STANDARD, payment } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
@@ -15,9 +15,13 @@ export {
   memorialPushdata,
   parseMemorialPushdata,
   parseParentBurnTxidHex,
+  DANA_LOKAD,
   WLBR_LOKAD,
+  DANA_VERSION,
+  DANA_VERSION_PARENT,
   WLBR_VERSION,
   WLBR_VERSION_PARENT,
+  DANA_PARENT_TXID_LEN,
   WLBR_PARENT_TXID_LEN,
   OFFERING_ID_PRAYER,
   OFFERING_ID_WLOTUS,
@@ -25,13 +29,13 @@ export {
   type MemorialFields,
 } from './wlbrMemorial.js';
 
-/** Burn exactly 1 atom with on-chain memorial (WLBR). */
+/** Burn exactly 1 atom with on-chain memorial (**DANA** LOKAD). */
 export async function burnOnePrayer(opts: {
   wallet: Wallet;
   tokenId: string;
   note?: string;
   offeringId?: string;
-  /** Prior burn txid (hex) — encoded in WLBR v2 for dana explorer linkage. */
+  /** Prior burn txid (hex) — encoded in DANA v2 for dana explorer linkage. */
   parentBurnTxid?: string;
 }): Promise<{ txid: string }> {
   const note = (opts.note ?? '').trim();

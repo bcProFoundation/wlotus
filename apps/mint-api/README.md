@@ -3,9 +3,10 @@
 Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 
 **wLotus (live):** remint mints **108** (one mala: 1 → tip fee wallet, 107 → temple P2SH), then
-**burns the miner 1** with `WLBR` memorial. The on-chain burn is the gift
+**burns the miner 1** with `DANA` memorial (LOKAD `44414e41`). The on-chain burn is the gift
 (memorial + dana). Re-offers send `parentBurnTxid` (prior burn) and encode
-**WLBR v2** with empty note + 32-byte parent txid for dana explorer linkage.
+**DANA v2** with empty note + 32-byte parent txid for dana explorer linkage.
+Legacy `WLBR` burns are still parseable.
 
 Legacy Prayer memo path (mint 1 + WLBR on remint, no burn) still works if the
 loaded deployment is `tier=prayer`.
@@ -25,7 +26,7 @@ minted miner atom and must fund the burn fee.
 POST /api/challenge  { installId, note? }  → preimage + bits
   device mines nonce
 POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
-                     → remint (108) → burn miner 1 + WLBR
+                     → remint (108) → burn miner 1 + DANA
 ```
 
 Requires `deployments/mainnet-dryrun-wlotus.json` (or active) from

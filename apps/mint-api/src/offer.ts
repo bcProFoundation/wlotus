@@ -1,7 +1,7 @@
 /**
  * Offer API: device PoW → server fees/sign/broadcast.
  *
- * wLotus (temple): remint mint 108 (1 miner + 107 temple mala) → burn miner 1 with WLBR.
+ * wLotus (temple): remint mint 108 (1 miner + 107 temple mala) → burn miner 1 with DANA.
  * Legacy Prayer memo: remint mint 1 with WLBR in OP_RETURN (no burn tx).
  *
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
@@ -168,7 +168,7 @@ interface StoredChallenge {
   secondsPerExtraBit: number;
   note: string;
   /**
-   * Prior burn txid (hex). Temple path only — encoded in WLBR v2 on the
+   * Prior burn txid (hex). Temple path only — encoded in DANA v2 on the
    * burn-after-mint tx (empty note). Rejected on memo path (mint memorial budget).
    */
   parentBurnTxid?: string;
@@ -543,7 +543,7 @@ async function createChallengeOnce(opts: {
   const parentBurnTxid = opts.parentBurnTxid
     ? parseParentBurnTxidHex(opts.parentBurnTxid)
     : undefined;
-  // Re-offer: empty on-chain note; link via parentBurnTxid (WLBR v2 on burn).
+  // Re-offer: empty on-chain note; link via parentBurnTxid (DANA v2 on burn).
   const note = parentBurnTxid ? '' : opts.note.trim().slice(0, 80);
   if (parentBurnTxid && !temple) {
     throw new Error(

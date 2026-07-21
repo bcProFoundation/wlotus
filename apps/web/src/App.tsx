@@ -48,7 +48,7 @@ interface LocalOffer {
   powAttempts?: number;
   hashrateHps?: number;
   bits?: number;
-  /** Immediate parent burn this re-offer links to (on-chain WLBR v2). */
+  /** Immediate parent burn this re-offer links to (on-chain DANA v2). */
   parentBurnTxid?: string;
 }
 

@@ -1,16 +1,28 @@
 /**
- * WLBR memorial EMPP payload (pure; no wallet deps).
+ * Dana memorial EMPP payload (pure; no wallet deps).
  *
- *   v1: WLBR | ver=1 | idLen | id | noteLen | note
- *   v2: WLBR | ver=2 | idLen | id | noteLen | note | parentLen | parentTxid
+ * LOKAD: **DANA** (`44414e41`) — written on all new burns.
+ * Legacy **WLBR** payloads are still accepted by the parser.
+ *
+ *   v1: LOKAD | ver=1 | idLen | id | noteLen | note
+ *   v2: LOKAD | ver=2 | idLen | id | noteLen | note | parentLen | parentTxid
  *       parentLen is 0 or 32; parentTxid is 32 raw bytes when set.
  *       Re-offers use v2 with empty note + parent = prior burn txid.
  */
 
+export const DANA_LOKAD = new TextEncoder().encode('DANA');
+/** @deprecated legacy burn LOKAD — parser still accepts; new burns use DANA. */
 export const WLBR_LOKAD = new TextEncoder().encode('WLBR');
-export const WLBR_VERSION = 1;
-export const WLBR_VERSION_PARENT = 2;
-export const WLBR_PARENT_TXID_LEN = 32;
+
+export const DANA_VERSION = 1;
+export const DANA_VERSION_PARENT = 2;
+/** @deprecated use DANA_VERSION */
+export const WLBR_VERSION = DANA_VERSION;
+/** @deprecated use DANA_VERSION_PARENT */
+export const WLBR_VERSION_PARENT = DANA_VERSION_PARENT;
+export const DANA_PARENT_TXID_LEN = 32;
+/** @deprecated use DANA_PARENT_TXID_LEN */
+export const WLBR_PARENT_TXID_LEN = DANA_PARENT_TXID_LEN;
 
 export const OFFERING_ID_PRAYER = 'prayer' as const;
 export const OFFERING_ID_WLOTUS = 'wlotus' as const;
@@ -35,6 +47,14 @@ function bytesToHex(bytes: Uint8Array): string {
   return s;
 }
 
+function lokadEquals(data: Uint8Array, lokad: Uint8Array): boolean {
+  if (data.length < 4) return false;
+  for (let i = 0; i < 4; i++) {
+    if (data[i] !== lokad[i]) return false;
+  }
+  return true;
+}
+
 /** Normalize / validate a 32-byte txid hex string. */
 export function parseParentBurnTxidHex(
   raw: string | undefined | null,
@@ -52,11 +72,13 @@ export interface MemorialFields {
   version: number;
   offeringId: string;
   note: string;
-  /** Prior burn txid (hex), when WLBR v2 parent present. */
+  /** Prior burn txid (hex), when v2 parent present. */
   parentBurnTxid?: string;
+  /** Which LOKAD was on-chain (`DANA` or legacy `WLBR`). */
+  lokad: 'DANA' | 'WLBR';
 }
 
-/** EMPP memorial push — see file header for byte layout. */
+/** EMPP memorial push — always writes **DANA**. See file header for layout. */
 export function memorialPushdata(
   note: string,
   offeringId: string = OFFERING_ID_PRAYER,
@@ -72,12 +94,12 @@ export function memorialPushdata(
     ? parseParentBurnTxidHex(parentBurnTxidHex)
     : undefined;
   const parentBytes = parentHex ? hexToBytes(parentHex) : undefined;
-  if (parentBytes && parentBytes.length !== WLBR_PARENT_TXID_LEN) {
+  if (parentBytes && parentBytes.length !== DANA_PARENT_TXID_LEN) {
     throw new Error('parentBurnTxid must decode to 32 bytes');
   }
 
-  const version = parentBytes ? WLBR_VERSION_PARENT : WLBR_VERSION;
-  const parentLen = parentBytes ? WLBR_PARENT_TXID_LEN : 0;
+  const version = parentBytes ? DANA_VERSION_PARENT : DANA_VERSION;
+  const parentLen = parentBytes ? DANA_PARENT_TXID_LEN : 0;
   const out = new Uint8Array(
     4 +
       1 +
@@ -85,10 +107,10 @@ export function memorialPushdata(
       idBytes.length +
       1 +
       noteBytes.length +
-      (version >= WLBR_VERSION_PARENT ? 1 + parentLen : 0),
+      (version >= DANA_VERSION_PARENT ? 1 + parentLen : 0),
   );
   let o = 0;
-  out.set(WLBR_LOKAD, o);
+  out.set(DANA_LOKAD, o);
   o += 4;
   out[o++] = version;
   out[o++] = idBytes.length;
@@ -97,7 +119,7 @@ export function memorialPushdata(
   out[o++] = noteBytes.length;
   out.set(noteBytes, o);
   o += noteBytes.length;
-  if (version >= WLBR_VERSION_PARENT) {
+  if (version >= DANA_VERSION_PARENT) {
     out[o++] = parentLen;
     if (parentBytes) {
       out.set(parentBytes, o);
@@ -106,16 +128,18 @@ export function memorialPushdata(
   return out;
 }
 
-/** Decode a WLBR EMPP payload (v1 or v2). */
+/** Decode a DANA (or legacy WLBR) EMPP memorial payload (v1 or v2). */
 export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
   if (data.length < 6) throw new Error('memorial too short');
-  for (let i = 0; i < 4; i++) {
-    if (data[i] !== WLBR_LOKAD[i]) throw new Error('not WLBR');
-  }
+  let lokad: 'DANA' | 'WLBR';
+  if (lokadEquals(data, DANA_LOKAD)) lokad = 'DANA';
+  else if (lokadEquals(data, WLBR_LOKAD)) lokad = 'WLBR';
+  else throw new Error('not DANA/WLBR');
+
   let o = 4;
   const version = data[o++]!;
-  if (version !== WLBR_VERSION && version !== WLBR_VERSION_PARENT) {
-    throw new Error(`unsupported WLBR version ${version}`);
+  if (version !== DANA_VERSION && version !== DANA_VERSION_PARENT) {
+    throw new Error(`unsupported DANA version ${version}`);
   }
   const idLen = data[o++]!;
   if (o + idLen > data.length) throw new Error('offeringId truncated');
@@ -128,10 +152,10 @@ export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
   o += noteLen;
 
   let parentBurnTxid: string | undefined;
-  if (version >= WLBR_VERSION_PARENT) {
+  if (version >= DANA_VERSION_PARENT) {
     if (o >= data.length) throw new Error('parentLen missing');
     const parentLen = data[o++]!;
-    if (parentLen !== 0 && parentLen !== WLBR_PARENT_TXID_LEN) {
+    if (parentLen !== 0 && parentLen !== DANA_PARENT_TXID_LEN) {
       throw new Error(`invalid parentLen ${parentLen}`);
     }
     if (parentLen > 0) {
@@ -141,5 +165,5 @@ export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
     }
   }
 
-  return { version, offeringId, note, parentBurnTxid };
+  return { version, offeringId, note, parentBurnTxid, lokad };
 }
