@@ -167,4 +167,14 @@ Live dual-mint token: see `deployments/mainnet-dryrun-prayer.json`.
 
 **Prayer is priced in attention (phone minutes) + a dust XEC fee; the retained atom reimburses the fee payer; the burned atom is the white-lotus offering (memorial + dana). It is not an energy-backed MoE — and should not be.**
 
+### Launch alignment (wLotus mala)
+
+Canonical anti-farm + presence write-up: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
+
+| Intent | Mechanism |
+|--------|-----------|
+| Anti-farm vs commercial remint | **1/107** temple split + XEC fees (sponsored Offer always wins on fee math even if energy ≈ 0) |
+| Attention / ritual length | Soft timer `VITE_MIN_PRAY_MS` (default ~60s) if PoW finishes early |
+| Not token security | PoW does not secure the ledger; **eCash** does. Bits ≈ **24** for participation, not 32 “to harden” WLOTUS |
+
 Recompute fee tables anytime with `npm run pricing` (ladder still uses mint=1 Prayer UX bits today; update `pricing.ts` when mint=2 bootstrap is adopted).

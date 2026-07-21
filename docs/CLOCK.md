@@ -33,7 +33,7 @@ BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 | **Clock** | `+1` bit per **840** days. With whole-byte verify, remints only succeed when `extraBits ≡ 0 (mod 8)` — so difficulty is flat for ~840d×8 ≈ **18.4 years**, then jumps **+8** bits (same calendar as `bits = base + 8×floor(elapsed/period)` with period = 840d). |
 | **“Shift”** | `powBits = shift + mooreExtra` is just another name for `baseZeroBits`. It does not stretch the 128-bit ceiling. To last longer: **lower base** (e.g. 8/16 for a soft launch), and/or **larger `secondsPerExtraBit`**, and/or an explicit **+8-per-era** schedule. Restoring **bits=1** needs fractional PoW back (op-budget fight vs temple outputs / memorial). |
 
-wLotus dryrun uses **base 24** (phone-class). Golden Lotus can use a higher whole-byte base (e.g. 56/64) on a separate token — each token has its own `baseZeroBits` and 128 cap.
+wLotus dryrun uses **base 24** (phone-class participation / presence). Bits are **not** a substitute for anti-farming or L1 security — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent* (**1/107 + fees**, soft pray timer for attention). Golden Lotus can use a higher whole-byte base (e.g. 56/64) on a separate token — each token has its own `baseZeroBits` and 128 cap.
 
 ### Why `codeHash` + miner-supplied `nextRedeem`
 

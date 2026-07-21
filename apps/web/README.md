@@ -20,17 +20,25 @@ Open http://localhost:5173 — Vite proxies `/api` → `:8787`.
 
 `apps/web/.env.example` · root `.env` for `GENESIS_SK_HEX`.
 
-### Min prayer wait
+### Why soft pray wait (product intent)
 
-Official Offer uses **one CPU Web Worker**. If PoW finds a nonce early, the
-client waits until at least ~1 minute of wall time has passed before submit
-(configurable):
+Anti-farming is **on-chain economics** (wLotus **1/107** mala + XEC fees): temple-sponsored
+Offer beats commercial fee-paying miners even when electricity ≈ 0. Token hashrate does
+**not** secure WLOTUS — eCash does. See
+[docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
+
+What the soft timer adds is **attention**: PoW is a presence gate; if a nonce arrives
+early, the client still holds ~1 minute of wall time so the ritual does not collapse to
+seconds on a fast phone.
 
 ```bash
 VITE_MIN_PRAY_MS=60000   # default; set 0 to disable
 ```
 
 Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60000')`.
+
+Official Offer mining path: **one CPU Web Worker** for now (fairer early participation at
+~24 bits). Experimental WebGPU/multi-worker code remains for research only.
 
 ### Experimental phone PoW (research only)
 

@@ -14,8 +14,15 @@ selected from `mineInWorker`.
 
 Calibrate ritual search time against the **fastest realistic phone-class miner in the official PWA**, not against a slow single-thread JS loop.
 
-Target hardware: **phone GPU (WebGPU)** and **phone multi-core CPU** — not desktop GPUs/ASICs. Farming deterrence remains **1/107 temple split + XEC fees**.
+Target hardware: **phone GPU (WebGPU)** and **phone multi-core CPU** — not desktop GPUs/ASICs.
 
+**Farming / security (do not confuse with this research):**
+
+- Anti-farm = **1/107 + XEC fees** (temple-sponsored Offer wins vs commercial miners even if energy ≈ 0).
+- Ritual length on the official client = **soft timer** (`VITE_MIN_PRAY_MS`) + PoW presence — attention, not joules.
+- Token hashrate ≠ ledger security (eCash secures transfers). See [ECONOMICS_WLOTUS_GLOTUS.md](../ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
+
+This doc is only about measuring phone backends; it does not redefine anti-farm policy.
 ---
 
 ## Covenant constraint
