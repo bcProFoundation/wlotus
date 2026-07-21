@@ -22,11 +22,20 @@ Open http://localhost:5173 — Vite proxies `/api` → `:8787`.
 
 ### Experimental phone PoW (optional)
 
-Default mining stays a single Web Worker. For phone WebGPU / multi-core experiments:
+Default mining stays a single Web Worker. For experiments:
 
 ```bash
 VITE_EXPERIMENTAL_POW=1 npm run web
-# or: localStorage.setItem('wlotus.experimentalPow', '1')
+# multi-core CPU only (skip WebGPU):
+VITE_EXPERIMENTAL_POW=1 VITE_POW_BACKEND=multi-worker npm run web
+```
+
+Or in DevTools:
+
+```js
+localStorage.setItem('wlotus.experimentalPow', '1')
+localStorage.setItem('wlotus.powBackend', 'multi-worker')  // CPU multi-core
+location.reload()
 ```
 
 See [docs/research/phone-webgpu-wasm-mining.md](../../docs/research/phone-webgpu-wasm-mining.md).

@@ -14,6 +14,11 @@ interface ImportMetaEnv {
    * Default off — see docs/research/phone-webgpu-wasm-mining.md
    */
   readonly VITE_EXPERIMENTAL_POW?: string;
+  /**
+   * When experimental PoW is on: auto | webgpu | multi-worker | worker.
+   * Use multi-worker (or cpu) for multi-core CPU only.
+   */
+  readonly VITE_POW_BACKEND?: string;
 }
 
 interface ImportMeta {

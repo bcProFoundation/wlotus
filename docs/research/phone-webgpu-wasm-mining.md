@@ -25,42 +25,34 @@ Build-time:
 
 ```bash
 VITE_EXPERIMENTAL_POW=1 npm run web
+# multi-core CPU only (skip WebGPU):
+VITE_EXPERIMENTAL_POW=1 VITE_POW_BACKEND=multi-worker npm run web
 ```
 
 Runtime (no rebuild):
 
 ```js
 localStorage.setItem('wlotus.experimentalPow', '1')
-// disable: localStorage.setItem('wlotus.experimentalPow', '0')
+// Multi-worker CPU only — recommended for consistent phone UX:
+localStorage.setItem('wlotus.powBackend', 'multi-worker')
+location.reload()
+// disable experimental: localStorage.setItem('wlotus.experimentalPow', '0')
+// auto (WebGPU first): localStorage.setItem('wlotus.powBackend', 'auto')
 ```
 
-Backend order when enabled:
+Backend order when experimental is on:
 
-1. **WebGPU** SHA256d compute (if `navigator.gpu` works; CPU-verifies the nonce)
-2. **Multi-worker** CPU (partitioned nonce stride, up to 4 workers)
-3. **Single worker** / main-thread fallback
+| `powBackend` | Behavior |
+|--------------|----------|
+| `auto` (default) | WebGPU → multi-worker → single worker |
+| `multi-worker` / `cpu` | **Multi-core CPU only** (skip WebGPU) |
+| `webgpu` | WebGPU, then fall back |
+| `worker` | Single worker only |
 
-Console (after starting an offer / search) — uses `console.info`:
+Console after starting an offer:
 
 ```text
-[wlotus] experimental pow backend: webgpu
-```
-
-- `webgpu` — phone GPU path  
-- `multi-worker` — WebGPU skipped/failed; multi-core CPU  
-- `worker` — single-worker fallback  
-
-**CI:** repo variable `VITE_EXPERIMENTAL_POW=1` is baked only when Deploy web (test) passes it into `web:build`. Until that deploy runs, enable immediately with:
-
-```js
-localStorage.setItem('wlotus.experimentalPow', '1'); location.reload();
-```
-
-Then confirm:
-
-```js
-import.meta.env?.VITE_EXPERIMENTAL_POW  // may be undefined until rebuild
-localStorage.getItem('wlotus.experimentalPow')  // '1'
+[wlotus] experimental pow backend: multi-worker
 ```
 
 
