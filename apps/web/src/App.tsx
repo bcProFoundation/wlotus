@@ -520,33 +520,6 @@ export default function App() {
         </p>
         <p className="hint">{t('hintKeepScreen')}</p>
 
-        <details className="how-offer">
-          <summary>{t('howTitle')}</summary>
-          <ol>
-            {[
-              {
-                title: t('howPrayTitle'),
-                body: t('howPrayBody'),
-              },
-              {
-                title: t('howMintTitle', { ticker }),
-                body: t('howMintBody'),
-              },
-              {
-                title: t('howBurnTitle'),
-                body: t('howBurnBody'),
-              },
-            ]
-              .filter(step => step.title.trim() || step.body.trim())
-              .map((step, i) => (
-                <li key={i}>
-                  {step.title.trim() ? <strong>{step.title} </strong> : null}
-                  {step.body}
-                </li>
-              ))}
-          </ol>
-        </details>
-
         <p className="hint eta" aria-live="off">
           {t('etaEstimated', { eta: etaLabel })}
         </p>
@@ -588,6 +561,33 @@ export default function App() {
             {t('miningElapsed', { elapsed: elapsedDisplay })}
           </p>
         ) : null}
+
+        <details className="how-offer">
+          <summary>{t('howTitle')}</summary>
+          <ol>
+            {[
+              {
+                title: t('howPrayTitle'),
+                body: t('howPrayBody'),
+              },
+              {
+                title: t('howMintTitle', { ticker }),
+                body: t('howMintBody'),
+              },
+              {
+                title: t('howBurnTitle'),
+                body: t('howBurnBody'),
+              },
+            ]
+              .filter(step => step.title.trim() || step.body.trim())
+              .map((step, i) => (
+                <li key={i}>
+                  {step.title.trim() ? <strong>{step.title} </strong> : null}
+                  {step.body}
+                </li>
+              ))}
+          </ol>
+        </details>
 
         <p className="meta">
           {apiOnline === null
