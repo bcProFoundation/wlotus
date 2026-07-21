@@ -116,7 +116,7 @@ const vi: Dict = {
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng hoa lại từ danh sách này để liên kết với lần dâng trước.',
+    'Dâng hoa lại từ danh sách để liên kết với lần dâng trước.',
   reofferBadge: 'dâng lại',
   btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
