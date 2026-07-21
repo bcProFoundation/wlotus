@@ -17,7 +17,13 @@ describe('parseMinPrayMs', () => {
     expect(parseMinPrayMs('0')).toBe(0);
   });
 
-  it('clamps to 10 minutes max', () => {
+  it('treats 1–999 as seconds (VITE_MIN_PRAY_MS=60 → 60s)', () => {
+    expect(parseMinPrayMs('60')).toBe(60_000);
+    expect(parseMinPrayMs('90')).toBe(90_000);
+    expect(parseMinPrayMs('1')).toBe(1_000);
+  });
+
+  it('treats 1000+ as milliseconds and clamps to 10 min', () => {
     expect(parseMinPrayMs('60000')).toBe(60_000);
     expect(parseMinPrayMs('120000')).toBe(120_000);
     expect(parseMinPrayMs('999999')).toBe(MAX_MIN_PRAY_MS);

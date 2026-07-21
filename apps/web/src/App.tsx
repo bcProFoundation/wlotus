@@ -169,8 +169,8 @@ export default function App() {
   }, []);
 
   const busy = phase !== 'idle';
-  /** PoW or soft-pray hold — cancel still shown. */
-  const mining = phase === 'mining' || phase === 'holding';
+  /** Cancel during PoW search or soft-pray hold. */
+  const showCancel = phase === 'mining' || phase === 'holding';
   const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
     bits: baseZeroBits,
@@ -586,9 +586,9 @@ export default function App() {
   const buttonLabel =
     phase === 'challenge'
       ? t('btnPreparing')
-      : phase === 'mining' || phase === 'holding'
+      : phase === 'mining'
         ? t('btnPraying')
-        : phase === 'submit' || phase === 'burn'
+        : phase === 'holding' || phase === 'submit' || phase === 'burn'
           ? t('btnOffering')
           : t('btnOffer');
 
@@ -643,7 +643,7 @@ export default function App() {
           >
             {buttonLabel}
           </button>
-          {mining ? (
+          {showCancel ? (
             <button
               type="button"
               className="btn btn-danger"

@@ -28,28 +28,31 @@ Offer beats commercial fee-paying miners even when electricity ≈ 0. Token hash
 [docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
 
 What the soft timer adds is **attention**: PoW is a presence gate. Remint
-broadcasts **as soon as** a nonce is found (tip race). The client then holds
-~1 minute before the **memorial burn**. Cancel in that window skips the burn;
-the desk keeps the miner atom.
+broadcasts **as soon as** a nonce is found (tip race). The UI then shows
+**Offering…** (`Đang dâng hoa…`) until the soft floor elapses, then memorial burn.
+Cancel in that window skips the burn; the desk keeps the miner atom.
 
 ```bash
-VITE_MIN_PRAY_MS=60000   # default; set 0 to disable
+# Prefer seconds for Actions vars (60 = 60s). Milliseconds also work (60000).
+VITE_MIN_PRAY_MS=60
+# or: VITE_MIN_PRAY_MS=60000
 ```
 
-Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60000')`.
+Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60')`.
+
+**UX labels:** mining → Finding a lotus… · soft wait / burn → Offering…
 
 API: `POST /api/submit` returns `burnPending` + one-time `burnToken` → soft wait →
-`POST /api/burn` with that token. Cancel/abandon also requires `burnToken` (remintTxid
-alone is public on-chain and insufficient).
+`POST /api/burn` with that token. Cancel/abandon also requires `burnToken`.
 
-Official Offer mining path: **one CPU Web Worker** for now (fairer early participation at
-~24 bits). Experimental WebGPU/multi-worker code remains for research only.
+### WebGPU Offer mining (launch)
 
-### Experimental phone PoW (research only)
+```bash
+VITE_EXPERIMENTAL_POW=1 npm run web
+# optional: VITE_POW_BACKEND=webgpu|multi-worker|auto
+```
 
-Not used by the Offer button. Modules under `src/lib/pow/` remain for local
-measurement — see
-[docs/research/phone-webgpu-wasm-mining.md](../../docs/research/phone-webgpu-wasm-mining.md).
+Bake `VITE_EXPERIMENTAL_POW=1` in Actions for test/prod builds. Fallback: multi-worker → single CPU.
 
 ## Create dual-mint Prayer token
 
