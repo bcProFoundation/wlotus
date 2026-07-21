@@ -5,7 +5,7 @@
  *
  *   MINT_MNEMONIC="twelve words …" npm run mint-api
  *
- *   POST /api/challenge  { installId, note? }
+ *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  *   GET  /api/status?installId=
  *   GET  /health         → ok + deploy stamps (file mtime / git sha)
@@ -179,7 +179,16 @@ const server = createServer(async (req, res) => {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
       const note = String(body.note || '').trim().slice(0, 80);
-      const challenge = await enqueueChallenge({ installId, note });
+      const parentRaw = body.parentBurnTxid ?? body.parentBurnTxId;
+      const parentBurnTxid =
+        parentRaw != null && String(parentRaw).trim()
+          ? String(parentRaw).trim()
+          : undefined;
+      const challenge = await enqueueChallenge({
+        installId,
+        note,
+        parentBurnTxid,
+      });
       json(res, 200, challenge);
       return;
     }

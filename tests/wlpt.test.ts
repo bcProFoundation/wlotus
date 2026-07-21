@@ -37,13 +37,14 @@ describe('prayer tip Moore + tipLocktime', () => {
     ).toThrow(/rewind/);
   });
 
-  it('builds 19-byte WLPT v3 push', () => {
+  it('builds 19-byte DANA tip v3 push', () => {
     const s = computePrayerTipState(base.genesisUnix + 10, base);
     const push = wlptPushdata(s);
     expect(push.length).toBe(19);
     expect(Buffer.from(push.slice(0, 4)).equals(Buffer.from(WLPT_LOKAD))).toBe(
       true,
     );
+    expect(Buffer.from(push.slice(0, 4)).toString('ascii')).toBe('DANA');
     expect(push[4]).toBe(WLPT_VERSION);
     expect(push[5] | (push[6]! << 8)).toBe(s.bits);
   });

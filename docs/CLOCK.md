@@ -4,7 +4,7 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 
 ## Production dryrun covenant (`WlotusPowRemintMooreTip` / Memo / Temple)
 
-**This is the covenant family for Prayer / Candle / Flower / WLotus dryruns.** Dogfood Moore/Ergon/PrayerTip soft-bind toys are not used for production tiers.
+**This is the covenant family for Prayer / Candle / Flower / wLotus dryruns.** Dogfood Moore/Ergon/PrayerTip soft-bind toys are not used for production tiers.
 
 | Layer | Role |
 |-------|------|
@@ -12,9 +12,9 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 | **tipLocktime** | `locktime ≥ tip` — blocks past-cheat rewind on that baton |
 | **Hard next-P2SH** | `prefixHash`/`codeHash`; miner supplies `nextRedeem`; baton → `P2SH(hash160(nextRedeem))`. No honest-miner soft `batonHash`. |
 | **N batons** | Parallel remint lanes (scale without activity-based D) |
-| **WLotus temple** | `WlotusPowRemintMooreTipTemple` — mint **100** → **1** miner + **99** temple PKH |
+| **wLotus temple** | `WlotusPowRemintMooreTipTemple` — mint **108** → **1** miner + **107** temple P2SH (mala) |
 
-Tier dryrun bases: Prayer / WLotus **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
+Tier dryrun bases: Prayer / wLotus **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
 
 ```bash
 TIER=prayer npm run create-dryrun-token
@@ -33,7 +33,7 @@ BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 | **Clock** | `+1` bit per **840** days. With whole-byte verify, remints only succeed when `extraBits ≡ 0 (mod 8)` — so difficulty is flat for ~840d×8 ≈ **18.4 years**, then jumps **+8** bits (same calendar as `bits = base + 8×floor(elapsed/period)` with period = 840d). |
 | **“Shift”** | `powBits = shift + mooreExtra` is just another name for `baseZeroBits`. It does not stretch the 128-bit ceiling. To last longer: **lower base** (e.g. 8/16 for a soft launch), and/or **larger `secondsPerExtraBit`**, and/or an explicit **+8-per-era** schedule. Restoring **bits=1** needs fractional PoW back (op-budget fight vs temple outputs / memorial). |
 
-WLotus dryrun uses **base 24** (phone-class). Golden Lotus can use a higher whole-byte base (e.g. 56/64) on a separate token — each token has its own `baseZeroBits` and 128 cap.
+wLotus dryrun uses **base 24** (phone-class). Golden Lotus can use a higher whole-byte base (e.g. 56/64) on a separate token — each token has its own `baseZeroBits` and 128 cap.
 
 ### Why `codeHash` + miner-supplied `nextRedeem`
 

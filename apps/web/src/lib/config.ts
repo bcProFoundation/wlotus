@@ -1,9 +1,9 @@
 /**
  * White Lotus web — Offer client (mobile-first).
- * Device PoW; server pays fees; WLotus burns miner atom for memorial.
+ * Device PoW; server pays fees; wLotus burns miner atom for memorial.
  */
 
-/** Live dWLOTUS temple dryrun (mint 100 → burn 1) */
+/** Live dWLOTUS temple dryrun (mint 108 mala → burn 1) */
 export const DEFAULT_PRAYER_TOKEN_ID =
   (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
   'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';

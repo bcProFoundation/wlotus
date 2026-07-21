@@ -60,9 +60,9 @@ contract WlotusPowRemintPrayerTip(
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
-        // WLPT v3: Moore bits + tipLocktime (Agora-style beside ALP MINT)
-        [byte] wlpt =
-            0x574c5054 .
+        // DANA tip v3: Moore bits + tipLocktime (Agora-style beside ALP MINT)
+        [byte] danaTip =
+            0x44414e41 .
             0x03 .
             num2bin(bits, 2) .
             num2bin(extraBits, 4) .
@@ -80,8 +80,8 @@ contract WlotusPowRemintPrayerTip(
 
         [byte] opReturnScript =
             0x6a50 .
-            num2bin(size(wlpt), 1) .
-            wlpt .
+            num2bin(size(danaTip), 1) .
+            danaTip .
             num2bin(size(mintSection), 1) .
             mintSection;
 

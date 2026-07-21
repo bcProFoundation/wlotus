@@ -1,10 +1,10 @@
 /**
  * Offer API: device PoW → server fees/sign/broadcast.
  *
- * WLotus (temple): remint mint 100 (1 miner + 99 temple) → burn miner 1 with WLBR.
- * Legacy Prayer memo: remint mint 1 with WLBR in OP_RETURN (no burn tx).
+ * wLotus (temple): remint mint 108 (1 miner + 107 temple mala) → burn miner 1 with DANA.
+ * Legacy Prayer memo: remint mint 1 with DANA memorial in OP_RETURN (no burn tx).
  *
- *   POST /api/challenge  { installId, note? }
+ *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  */
 import { randomUUID } from 'node:crypto';
@@ -35,6 +35,7 @@ import {
   burnOnePrayer,
   memorialPushdata,
   OFFERING_ID_WLOTUS,
+  parseParentBurnTxidHex,
 } from '../../../src/offering/burnPrayer.js';
 import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
 import {
@@ -109,6 +110,8 @@ export interface ChallengePublic {
   tipFeeAddress: string;
   mintAtoms: string;
   note: string;
+  /** Set when this challenge is a re-offer linked to a prior burn. */
+  parentBurnTxid?: string;
 }
 
 interface BatonTip {
@@ -164,6 +167,11 @@ interface StoredChallenge {
   baseZeroBits: number;
   secondsPerExtraBit: number;
   note: string;
+  /**
+   * Prior burn txid (hex). Temple path only — encoded in DANA v2 on the
+   * burn-after-mint tx (empty note). Rejected on memo path (mint memorial budget).
+   */
+  parentBurnTxid?: string;
   /** Prayer memo path only. */
   memorialHex: string;
   templeScriptHashHex?: string;
@@ -271,6 +279,7 @@ async function burnMinerAtomAfterMint(opts: {
   wallet: Wallet;
   tokenId: string;
   note: string;
+  parentBurnTxid?: string;
 }): Promise<string> {
   let lastErr: unknown;
   for (let attempt = 0; attempt < 10; attempt++) {
@@ -291,6 +300,7 @@ async function burnMinerAtomAfterMint(opts: {
         tokenId: opts.tokenId,
         note: opts.note,
         offeringId: OFFERING_ID_WLOTUS,
+        parentBurnTxid: opts.parentBurnTxid,
       });
       return burned.txid;
     } catch (e) {
@@ -486,6 +496,7 @@ async function ensureTipSizedFuel(
 async function createChallengeOnce(opts: {
   installId: string;
   note: string;
+  parentBurnTxid?: string;
 }): Promise<ChallengePublic> {
   expireStaleChallenges();
   if (remainingOffersToday(opts.installId) <= 0) {
@@ -508,7 +519,7 @@ async function createChallengeOnce(opts: {
   if (temple) {
     if (mintAtoms !== WLOTUS_MINT_ATOMS) {
       throw new Error(
-        `WLotus deployment mintAtoms=${mintAtoms}; expected ${WLOTUS_MINT_ATOMS}`,
+        `wLotus deployment mintAtoms=${mintAtoms}; expected ${WLOTUS_MINT_ATOMS}`,
       );
     }
   } else if (mintAtoms !== 1n) {
@@ -529,11 +540,20 @@ async function createChallengeOnce(opts: {
           },
         ];
   const tipRec = pickTipRec(tips);
-  const note = opts.note.trim().slice(0, 80);
+  const parentBurnTxid = opts.parentBurnTxid
+    ? parseParentBurnTxidHex(opts.parentBurnTxid)
+    : undefined;
+  // Re-offer: empty on-chain note; link via parentBurnTxid (DANA v2 on burn).
+  const note = parentBurnTxid ? '' : opts.note.trim().slice(0, 80);
+  if (parentBurnTxid && !temple) {
+    throw new Error(
+      'parentBurnTxid (re-offer) requires the wLotus temple burn path',
+    );
+  }
   const memorial = memorialPushdata(note);
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
   if (temple && (!templeHashHex || templeHashHex.length !== 40)) {
-    throw new Error('WLotus deployment missing templeScriptHashHex');
+    throw new Error('wLotus deployment missing templeScriptHashHex');
   }
 
   const contract = temple
@@ -663,6 +683,7 @@ async function createChallengeOnce(opts: {
     baseZeroBits: dep.baseZeroBits,
     secondsPerExtraBit: dep.secondsPerExtraBit,
     note,
+    parentBurnTxid,
     memorialHex: toHex(memorial),
     templeScriptHashHex: temple ? templeHashHex! : undefined,
   };
@@ -688,6 +709,7 @@ async function createChallengeOnce(opts: {
     tipFeeAddress: tipFee.address,
     mintAtoms: stored.mintAtoms,
     note,
+    parentBurnTxid,
   };
 }
 
@@ -879,6 +901,7 @@ async function submitChallengeOnce(opts: {
       wallet: tipFee.wallet,
       tokenId: ch.tokenId,
       note: ch.note,
+      parentBurnTxid: ch.parentBurnTxid,
     });
     deskAtomsKept = 0;
   }
@@ -921,11 +944,13 @@ function withChainLock<T>(fn: () => Promise<T>): Promise<T> {
 export function enqueueChallenge(opts: {
   installId: string;
   note?: string;
+  parentBurnTxid?: string;
 }): Promise<ChallengePublic> {
   return withChainLock(() =>
     createChallengeOnce({
       installId: opts.installId,
       note: opts.note ?? '',
+      parentBurnTxid: opts.parentBurnTxid,
     }),
   );
 }

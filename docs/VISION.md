@@ -46,7 +46,7 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 | Layer | Name | Role |
 |-------|------|------|
 | **App title (human)** | **White Lotus** | Primary display name — flower + memorial meaning |
-| **Short / domain / tech** | **WLotus** | `wlotus.org`, tickers, repo, code |
+| **Short / domain / tech** | **wLotus** / ticker **WLOTUS** | `wlotus.org`, tickers, repo, code |
 | Logo | White lotus flower (B&W mark) | Icon only — botanical motif, not a temple mark |
 | Visual theme | **Black & white** | Monochrome UI; white lotus on black |
 | The act | **Offer / Burn** | One gesture, two gifts |
@@ -55,7 +55,7 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 | Issuance | Dual mint (2 atoms) | 1 burn + 1 desk keep for vault top-up sales |
 | Tiers (later) | Prayer first; Candle / Flower later | Scale of sacrifice |
 
-**Launch economics (decision):** ship **WLotus** (mint 100 → 1 prayer + 99 temple) and **Golden Lotus** (permissionless, premine, event burns) — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md). Prayer dryruns remain the technical lineage.
+**Launch economics (decision):** ship **wLotus** (mint 108 → 1 prayer + 107 temple mala) and **Golden Lotus** (permissionless, premine, event burns) — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md). Prayer dryruns remain the technical lineage.
 
 Resale of **same-origin** desk Prayer for profit is fine — liquidity for vault top-up, not a bug.
 
@@ -64,12 +64,12 @@ Resale of **same-origin** desk Prayer for profit is fine — liquidity for vault
 | Title | Pros | Cons |
 |-------|------|------|
 | **White Lotus** (recommended) | Matches flower + VN memorial; clear | HBO show association in English SEO |
-| **WLotus** | Domain-native; coined | Less emotional; needs explanation |
+| **wLotus** | Domain-native; coined | Balanced casing; ticker stays **WLOTUS** |
 | **White Lotus Offerings** | Clarifies the act | Longer |
 | **Lotus Offer** | Secular, action-led | Weaker “white” memorial cue |
 | **Sen Trắng** | Perfect VN | Weak globally |
 
-**Recommendation:** ship as **White Lotus**; keep **WLotus** for domain/tech. Subtitle: *Offer · Remember · Give.*
+**Recommendation:** ship as **wLotus** (UI short brand); ticker **WLOTUS**; optional long form *White Lotus*. Subtitle: *Offer · Remember · Give.*
 
 ### Messaging
 
@@ -85,7 +85,7 @@ Resale of **same-origin** desk Prayer for profit is fine — liquidity for vault
 
 - Claim the Vietnamese white-lotus memorial reading on purpose
 - Widen it with dana: memorial *and* community sacrifice
-- **White Lotus** as app title; **WLotus** for domain / tickers
+- **wLotus** as app title; **WLOTUS** ticker; domain `wlotus.org`
 - Black & white theme; white lotus flower as logo icon
 - Dual-mint desk keep for later vault sales (unmixed origin preferred)
 - Use dana / bố thí as meaning language, not a forced primary rename

@@ -1,7 +1,7 @@
 import { ALP_STANDARD, alpMint, emppScript, Script } from 'ecash-lib';
 import { wlptPushdata, type PrayerTipState } from './wlpt.js';
 
-/** Dual-push EMPP: WLPT + ALP MINT (Agora pattern). */
+/** Dual-push EMPP: DANA tip v3 + ALP MINT (Agora pattern). */
 export function expectedPrayerTipMintOpReturnScript(
   tokenId: string,
   mintAtoms: bigint,

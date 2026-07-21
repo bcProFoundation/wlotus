@@ -1,9 +1,9 @@
-// WLotus temple remint (launch dryrun): mint 100 → 1 miner + 99 temple P2SH.
+// wLotus temple remint: mint 108 (one mala) → 1 miner + 107 temple P2SH.
 // Same Moore tip / hard next-P2SH / whole-byte PoW as WlotusPowRemintMooreTip.
 // Redeem ≤520; non-push ops ≤201. Cap bits ≤ 128.
 // Ctor: templeScriptHash (20) — IFP-style immutable P2SH sink (multisig / cold).
-// Outputs: OP_RETURN | miner P2PKH (1) | temple P2SH (99) | baton P2SH
-// Layout: econHead(99) | 0x20 prefixHash | 0x04 tipLe | codeBytes
+// Outputs: OP_RETURN | miner P2PKH (1) | temple P2SH (107) | baton P2SH
+// Layout: econHead(99 bytes) | 0x20 prefixHash | 0x04 tipLe | codeBytes
 
 contract WlotusPowRemintMooreTipTemple(
     [byte;32] tokenIdRev,
@@ -44,7 +44,7 @@ contract WlotusPowRemintMooreTipTemple(
         ([byte] zpref, _) = solhash @ (bits / 8);
         verify bin2num(zpref) == 0;
 
-        // econHead length 99 (templeScriptHash instead of mintAtomsLe)
+        // econHead length 99 bytes (templeScriptHash instead of mintAtomsLe)
         ([byte] econHead, [byte] afterEcon) = nextRedeem @ 99;
         verify sha256(econHead) == Sha256(prefixHash);
         (_, [byte] afterMid) = afterEcon @ 33;
@@ -55,26 +55,27 @@ contract WlotusPowRemintMooreTipTemple(
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
-        [byte] wlpt =
-            0x574c5054 .
+        // DANA tip v4 (same LOKAD as burn memorial; ver=4 distinguishes tip state)
+        [byte] danaTip =
+            0x44414e41 .
             0x04 .
             num2bin(bits, 2) .
             num2bin(extraBits, 4) .
             num2bin(locktime, 4);
 
-        // ALP MINT: 2 amounts (1 miner, 99 temple) + 1 baton
+        // ALP MINT: 2 amounts (1 miner, 107 temple) + 1 baton — LE6
         [byte] mintSection =
             0x534c503200044d494e54 .
             tokenIdRev .
             0x02 .
             0x010000000000 .
-            0x630000000000 .
+            0x6b0000000000 .
             0x01;
 
         [byte] opReturnScript =
             0x6a50 .
-            num2bin(size(wlpt), 1) .
-            wlpt .
+            num2bin(size(danaTip), 1) .
+            danaTip .
             num2bin(size(mintSection), 1) .
             mintSection;
 

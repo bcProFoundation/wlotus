@@ -1,7 +1,7 @@
 import { ALP_STANDARD, alpMint, emppScript, Script } from 'ecash-lib';
 import { wlptV4Pushdata, type MooreTipState } from './mooreTip.js';
 
-/** Triple-push EMPP: WLPT v4 + ALP MINT + memorial (WLBR). */
+/** Triple-push EMPP: DANA tip v4 + ALP MINT + memorial (DANA v1/v2). */
 export function expectedMooreTipMemoMintOpReturnScript(
   tokenId: string,
   mintAtoms: bigint,

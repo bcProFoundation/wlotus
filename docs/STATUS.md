@@ -41,7 +41,7 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 ## Economics (production plan)
 
-**Launch (decision):** [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — **WLotus** (mint 100 → 1 prayer + 99 temple; ceremonial) + **Golden Lotus** (permissionless; premine; event burns; no platform mint tax).
+**Launch (decision):** [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — **wLotus** (mint 108 → 1 prayer + 107 temple mala; ceremonial) + **Golden Lotus** (permissionless; premine; event burns; no platform mint tax).
 
 Longer-term hardware ladder (background):
 
@@ -56,7 +56,7 @@ Longer-term hardware ladder (background):
 
 ## Vision
 
-Burn WLotus = white lotus **in memorial of the dead** + **dana** for everybody (wealth destroyed; unlike vàng mã, no seller captures the gift). Full thesis: [VISION.md](./VISION.md).
+Burn wLotus = white lotus **in memorial of the dead** + **dana** for everybody (wealth destroyed; unlike vàng mã, no seller captures the gift). Full thesis: [VISION.md](./VISION.md).
 
 ## Offerings app (`apps/web`)
 

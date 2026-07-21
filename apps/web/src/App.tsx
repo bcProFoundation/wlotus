@@ -48,6 +48,8 @@ interface LocalOffer {
   powAttempts?: number;
   hashrateHps?: number;
   bits?: number;
+  /** Immediate parent burn this re-offer links to (on-chain DANA v2). */
+  parentBurnTxid?: string;
 }
 
 interface StoredChallenge {
@@ -286,7 +288,18 @@ export default function App() {
     await releaseChallenge(id);
   }
 
-  async function onOffer() {
+  async function onOffer(opts?: {
+    parentBurnTxid?: string;
+    /** Local label for history; on-chain note is empty when re-offering. */
+    displayNote?: string;
+  }) {
+    const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
+    const isReoffer = Boolean(parentBurnTxid);
+    const challengeNote = isReoffer ? '' : note.trim();
+    const historyNote = isReoffer
+      ? (opts?.displayNote ?? '').trim()
+      : note.trim();
+
     const prevId = challengeIdRef.current;
     offerGenRef.current += 1;
     const gen = offerGenRef.current;
@@ -316,7 +329,8 @@ export default function App() {
           setPhase('challenge');
           const challenge = await fetchChallenge({
             installId,
-            note: note.trim(),
+            note: challengeNote,
+            parentBurnTxid,
           });
           if (offerGenRef.current !== gen || ac.signal.aborted) {
             await releaseChallenge(challenge.challengeId);
@@ -430,12 +444,13 @@ export default function App() {
             pushOffer({
               remintTxid: result.remintTxid,
               burnTxid: result.burnTxid,
-              note: note.trim(),
+              note: historyNote,
               at: new Date().toISOString(),
               powMs: uiPowMs,
               powAttempts: result.powAttempts || mined.attempts,
               hashrateHps: result.hashrateHps || mined.hashrateHps,
               bits: result.bits,
+              parentBurnTxid,
             }),
           );
           setNote('');
@@ -575,8 +590,8 @@ export default function App() {
                 body: t('howMintBody'),
               },
               {
-                title: t('howBurnTitle'),
-                body: t('howBurnBody'),
+                title: t('howWhyTitle'),
+                body: t('howWhyBody'),
               },
             ]
               .filter(step => step.title.trim() || step.body.trim())
@@ -615,28 +630,50 @@ export default function App() {
       {offers.length > 0 ? (
         <section className="panel">
           <h2>{t('recentTitle')}</h2>
+          <p className="hint">{t('reofferHint')}</p>
           <ul className="history">
             {offers.map(o => (
               <li key={o.burnTxid}>
-                <span>
-                  {o.note || t('offeringFallback')}
-                  {o.powMs != null ? (
-                    <span className="history-meta">
-                      {' '}
-                      · {formatActualDurationLocale(o.powMs / 1000, locale)}
-                      {o.hashrateHps
-                        ? ` · ${formatHashrateLabel(o.hashrateHps)}`
-                        : ''}
-                    </span>
-                  ) : null}
-                </span>
-                <a
-                  href={`https://explorer.e.cash/tx/${o.burnTxid}`}
-                  target="_blank"
-                  rel="noreferrer"
+                <div className="history-main">
+                  <span>
+                    {o.note || t('offeringFallback')}
+                    {o.parentBurnTxid ? (
+                      <span className="history-meta">
+                        {' '}
+                        · {t('reofferBadge')}
+                      </span>
+                    ) : null}
+                    {o.powMs != null ? (
+                      <span className="history-meta">
+                        {' '}
+                        · {formatActualDurationLocale(o.powMs / 1000, locale)}
+                        {o.hashrateHps
+                          ? ` · ${formatHashrateLabel(o.hashrateHps)}`
+                          : ''}
+                      </span>
+                    ) : null}
+                  </span>
+                  <a
+                    href={`https://explorer.e.cash/tx/${o.burnTxid}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {shortTx(o.burnTxid)}
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-reoffer"
+                  disabled={!canOffer}
+                  onClick={() =>
+                    void onOffer({
+                      parentBurnTxid: o.burnTxid,
+                      displayNote: o.note,
+                    })
+                  }
                 >
-                  {shortTx(o.burnTxid)}
-                </a>
+                  {t('btnReoffer')}
+                </button>
               </li>
             ))}
           </ul>

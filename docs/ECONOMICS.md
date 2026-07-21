@@ -1,13 +1,13 @@
 # Economics — Incense/Prayer (ritual) · Candle (GPU) · Flower (ASIC)
 
-> **Launch decision (2026-07):** primary product economics are **WLotus (temple, 100 mint → 1+99) + Golden Lotus (open)**.  
+> **Launch decision (2026-07):** primary product economics are **wLotus (temple, 108 mint → 1+107 mala) + Golden Lotus (open)**.  
 > See **[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md)**. The ladder below remains background / longer-term hardware tiers.
 
 ## Roles
 
 | Product | Economic? | Hardware | Role |
 |---------|-----------|----------|------|
-| **WLotus** (launch) | No (ceremonial) | Phone + temple fees | Prayer / memorial — [dual-token doc](./ECONOMICS_WLOTUS_GLOTUS.md) |
+| **wLotus** (launch) | No (ceremonial) | Phone + temple fees | Prayer / memorial — [dual-token doc](./ECONOMICS_WLOTUS_GLOTUS.md) |
 | **Golden Lotus** (launch) | Yes | Open PoW | Event burns / later commerce — same doc |
 | **Incense** | No | Fee / trivial | Everyday thắp hương |
 | **Prayer** | No | Phone ~30 s | Intention (dryrun lineage) |
