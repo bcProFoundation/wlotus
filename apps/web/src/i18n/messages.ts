@@ -55,7 +55,7 @@ const en: Dict = {
     'Finding WLOTUS yields 108 digital lotuses — one full mala round. Depending on your device, this may take from about a minute to over ten minutes. One lotus is offered in remembrance of the departed. The other 107 go to the wLotus developers.',
   howWhyTitle: 'Why do 107 flowers go to the wLotus developers?',
   howWhyBody:
-    'Issuing each lotus incurs network fees, which wLotus developers currently cover. Searching on a device also yields only a limited number of flowers. So that those with a sincere heart can still receive lotuses for remembrance — and so the system can keep running — the remaining 107 beads of the mala are sent to the developers for distribution.',
+    'Issuing and offering each lotus incurs network fees. Searching on a phone also yields only a limited number of flowers. So those with a sincere heart can still receive lotuses for remembrance — and so professional mining rigs do not crowd out phone users — the remaining 107 beads of the mala go to the wLotus developers to distribute to those with affinity who did not get a chance to find a lotus.',
   etaEstimated: 'Estimated time {eta}',
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name or dedication',
