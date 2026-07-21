@@ -40,16 +40,16 @@ const en: Dict = {
   tagline: 'Offer a white lotus in remembrance of someone dear.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
-    'A few minutes of remembrance on this device bring forth lotus flowers for merit and memory.',
+    'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
   hintKeepScreen:
     'Keep the app open while you pray so the flower offering can continue.',
-  howTitle: 'How does WLotus work?',
+  howTitle: 'How does WLOTUS work?',
   howPrayTitle: '',
   howPrayBody:
-    'Your phone searches for a digital WLOTUS lotus. Keep the app open and in the foreground so the search can continue. Use that time to remember someone who has passed. You can stop the search anytime.',
+    'Your phone searches for a digital WLOTUS. Keep the app open and in the foreground so the search can continue. Use that time to remember someone who has passed. You can stop the search anytime.',
   howMintTitle: '',
   howMintBody:
-    'Finding WLOTUS yields 100 digital lotuses. Depending on your device, this may take from about a minute to over ten minutes. One lotus is offered in remembrance of the departed. The other 99 are dedicated to WLotus — shared with those who find their way here, and to keep the system running.',
+    'Finding WLOTUS yields 100 digital WLOTUSes. Depending on your device, this may take from about a minute to over ten minutes. One WLOTUS is offered in remembrance of the departed. The other 99 are dedicated to WLOTUS developers — shared with those who find their way here, and to keep the system running.',
   howBurnTitle: '',
   howBurnBody: '',
   etaEstimated: 'Estimated time {eta}',
@@ -78,16 +78,16 @@ const vi: Dict = {
   tagline: 'Dâng một đóa sen tưởng nhớ người đã khuất.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
-    'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để công đức và tưởng nhớ.',
+    'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
   hintKeepScreen:
-    'Giữ ứng dụng luôn mở khi cầu nguyện để quá trình dâng hoa được tiếp tục.',
-  howTitle: 'WLotus hoạt động như thế nào?',
+    'Giữ ứng dụng luôn mở để quá trình tìm kiếm và dâng hoa được tiếp tục.',
+  howTitle: 'WLOTUS hoạt động như thế nào?',
   howPrayTitle: '',
   howPrayBody:
     'Điện thoại được dùng để tìm ra bông sen số WLOTUS. Bạn phải bật ứng dụng liên tục và không sử dụng ứng dụng khác để quá trình tìm kiếm bông sen số được tiếp tục. Trong lúc này, bạn có thể tưởng nhớ về người đã khuất. Bạn có thể dừng quá trình tìm kiếm này bất cứ lúc nào.',
   howMintTitle: '',
   howMintBody:
-    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 100 đóa sen số. Tùy theo năng lực của máy, quá trình này có thể từ 1 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 99 bông còn lại sẽ được công đức cho WLOTUS để phát hành cho những người có duyên và duy trì hệ thống.',
+    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 100 đóa sen số. Tùy theo năng lực của máy, quá trình này có thể từ 1 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 99 bông còn lại sẽ được công đức cho nhà phát triển WLOTUS để phát hành cho những người có duyên và duy trì hệ thống.',
   howBurnTitle: '',
   howBurnBody: '',
   etaEstimated: 'Thời gian ước tính {eta}',
