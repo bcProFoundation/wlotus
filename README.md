@@ -22,19 +22,21 @@ Production **Prayer dryrun** is live. Offerings UI:
 
 | Environment | URL / command |
 |-------------|----------------|
-| **Test (deployed)** | https://test.wlotus.org |
+| **Test (deployed)** | https://test.wlotus.org — `dWLOTUS` dryrun |
+| **Prod** | https://wlotus.org — live **WLOTUS** (tag releases); see [deploy/contabo/PROD.md](./deploy/contabo/PROD.md) |
 | **Local** | `npm run mint-api` + `npm run web` |
 
-Dual-mint Prayer (`dPRAYER` mint 2 → burn 1 + desk 1). Deploy guide: [deploy/contabo/README.md](./deploy/contabo/README.md)
+Test deploy: [deploy/contabo/README.md](./deploy/contabo/README.md) (`create-dryrun-token`).  
+Live genesis: [deploy/contabo/PROD.md](./deploy/contabo/PROD.md) (`npm run create-prod-token`).
 
 ```
 apps/web/           # wLotus offerings (migrated from Lotus Temple UX)
-deploy/contabo/     # Test VM bootstrap + nginx (CI → Contabo)
-.github/workflows/  # Deploy web (test)
+deploy/contabo/     # Test + prod VM bootstrap + nginx (CI → Contabo)
+.github/workflows/  # Deploy web (test) + Deploy web (prod)
 contracts/          # Spedn PoW remint covenants
 docs/               # Spec + research
 src/                # Params, covenant loaders, miners
-scripts/            # create-dryrun-token, mine-dryrun-once, …
+scripts/            # create-dryrun-token, create-prod-token, mine-dryrun-once, …
 deployments/        # Live mainnet records
 ```
 

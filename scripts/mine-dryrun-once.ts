@@ -89,7 +89,10 @@ async function ensureFuel(wallet: Wallet): Promise<void> {
 function loadDep(): { path: string; dep: DryrunDep } {
   const tier = process.env.TIER?.trim().toLowerCase();
   const candidates = [
+    // Live prod (WLOTUS) then dryrun
+    tier === 'wlotus' ? 'deployments/mainnet-wlotus.json' : '',
     tier ? `deployments/mainnet-dryrun-${tier}.json` : '',
+    'deployments/mainnet-wlotus.json',
     'deployments/mainnet-dryrun-active.json',
     'deployments/mainnet-dryrun-wlotus.json',
     'deployments/mainnet-dryrun-prayer.json',
@@ -101,7 +104,7 @@ function loadDep(): { path: string; dep: DryrunDep } {
     }
   }
   throw new Error(
-    'Missing dryrun deployment — run TIER=wlotus|prayer npm run create-dryrun-token',
+    'Missing deployment — run create-prod-token (LIVE) or TIER=wlotus|prayer create-dryrun-token',
   );
 }
 

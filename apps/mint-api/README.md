@@ -32,8 +32,14 @@ POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
                      → remint (108) → burn miner 1 + DANA
 ```
 
-Requires `deployments/mainnet-dryrun-wlotus.json` (or active) from
-`TIER=wlotus BATONS=28 npm run create-dryrun-token`.
+Requires a deployment JSON:
+
+| Env | File | Create with |
+|-----|------|-------------|
+| **Test** | `deployments/mainnet-dryrun-wlotus.json` | `TIER=wlotus BATONS=28 npm run create-dryrun-token` |
+| **Prod** | `deployments/mainnet-wlotus.json` | `LIVE=1 TIER=wlotus … npm run create-prod-token` (see [PROD.md](../../deploy/contabo/PROD.md)) |
+
+mint-api prefers **live** `mainnet-wlotus.json` when present.
 **Genesis baton count:** **28** (ALP max). Desk soft-serves **2** tips via env.
 
 ## Run

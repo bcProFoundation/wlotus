@@ -30,6 +30,7 @@
     "create-prayer-tip-pow-token": "tsx scripts/create-prayer-tip-pow-token.ts",
     "mine-prayer-tip-once": "tsx scripts/mine-prayer-tip-once.ts",
     "create-dryrun-token": "tsx scripts/create-dryrun-token.ts",
+    "create-prod-token": "LIVE=1 TIER=wlotus tsx scripts/create-dryrun-token.ts",
     "mine-dryrun-once": "tsx scripts/mine-dryrun-once.ts",
     "smoke-moore-tip-temple": "tsx scripts/smoke-moore-tip-temple.ts",
     "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts",

@@ -249,6 +249,8 @@ function consumeOfferSlot(installId: string): void {
 
 function loadDep(): { path: string; dep: DryrunDep } {
   const candidates = [
+    // Live prod first (ticker WLOTUS) — Contabo prod after create-prod-token
+    'deployments/mainnet-wlotus.json',
     'deployments/mainnet-dryrun-wlotus.json',
     'deployments/mainnet-dryrun-active.json',
     'deployments/mainnet-dryrun-prayer.json',
@@ -259,7 +261,9 @@ function loadDep(): { path: string; dep: DryrunDep } {
       return { path, dep: JSON.parse(readFileSync(path, 'utf8')) as DryrunDep };
     }
   }
-  throw new Error('Missing dryrun deployment (wlotus / active / prayer)');
+  throw new Error(
+    'Missing deployment JSON (mainnet-wlotus / dryrun-wlotus / active / prayer)',
+  );
 }
 
 function isTempleDep(dep: DryrunDep): boolean {
@@ -885,10 +889,15 @@ async function submitChallengeOnce(opts: {
   if (existsSync(active)) {
     writeFileSync(active, `${JSON.stringify(updated, null, 2)}\n`);
   }
-  // Keep wlotus json in sync when active was the load path
-  const wlotusPath = resolve(process.cwd(), 'deployments/mainnet-dryrun-wlotus.json');
-  if (existsSync(wlotusPath) && depPath !== wlotusPath && isTempleDep(dep)) {
-    writeFileSync(wlotusPath, `${JSON.stringify(updated, null, 2)}\n`);
+  // Keep canonical wLotus json in sync when a sibling path was loaded
+  for (const rel of [
+    'deployments/mainnet-wlotus.json',
+    'deployments/mainnet-dryrun-wlotus.json',
+  ]) {
+    const sibling = resolve(process.cwd(), rel);
+    if (existsSync(sibling) && depPath !== sibling && isTempleDep(dep)) {
+      writeFileSync(sibling, `${JSON.stringify(updated, null, 2)}\n`);
+    }
   }
 
   ch.status = 'done';
@@ -1027,7 +1036,7 @@ export function publicStatus(): {
     return {
       tokenId: dep.tokenId,
       mintAtoms: dep.mintAtomsPerRemint,
-      ticker: dep.ticker ?? (temple ? 'dWLOTUS' : 'dPRAYER'),
+      ticker: dep.ticker ?? (temple ? 'WLOTUS' : 'dPRAYER'),
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),

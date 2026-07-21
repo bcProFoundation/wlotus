@@ -235,9 +235,11 @@ npm run fund-tip-fee-wallets
 
 **wLotus temple (launch):** covenant pays 107 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
-### Create `dWLOTUS` dryrun (on Contabo)
+### Create `dWLOTUS` dryrun (on Contabo **test**)
 
-Do this **on the VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). Batons are immutable at genesis — mint the ALP max (**28**); desk soft-serves **2** tips via `MINT_SERVING_TIP_COUNT`.
+For **live WLOTUS** on prod, see **[PROD.md](./PROD.md)** (`npm run create-prod-token`).
+
+Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). Batons are immutable at genesis — mint the ALP max (**28**); desk soft-serves **2** tips via `MINT_SERVING_TIP_COUNT`.
 
 ```bash
 cd ~/wlotus/wlotus   # or /opt/wlotus
