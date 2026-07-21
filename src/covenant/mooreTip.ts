@@ -1,8 +1,10 @@
 /**
- * Production Moore + tip EMPP (WLPT v4).
+ * Production Moore + tip EMPP (**DANA** v4).
  *
  * Layout (15 bytes) — tipLocktime is enforced in-Script via ctor, not EMPP:
- *   WLPT (4) | ver u8=4 | bits u16 LE | extraBits u32 LE | locktime u32 LE
+ *   DANA (4) | ver u8=4 | bits u16 LE | extraBits u32 LE | locktime u32 LE
+ *
+ * Memorial burns use the same LOKAD with ver 1/2 (see `src/offering/wlbrMemorial.ts`).
  */
 
 import {
@@ -10,8 +12,15 @@ import {
   MOORE_DAYS_PER_EXTRA_BIT,
 } from '../params/consensus.js';
 
-export const WLPT_LOKAD = new TextEncoder().encode('WLPT');
-export const WLPT_VERSION = 4;
+/** Tip + memorial share LOKAD `DANA` (`44414e41`). */
+export const DANA_LOKAD = new TextEncoder().encode('DANA');
+/** Tip-state EMPP version (memorial uses 1/2). */
+export const DANA_TIP_VERSION = 4;
+
+/** @deprecated use DANA_LOKAD */
+export const WLPT_LOKAD = DANA_LOKAD;
+/** @deprecated use DANA_TIP_VERSION */
+export const WLPT_VERSION = DANA_TIP_VERSION;
 
 /** Production Moore clock: +1 bit / 840 days. */
 export const PROD_SECONDS_PER_EXTRA_BIT =
@@ -82,13 +91,16 @@ function u32Le(n: number): Uint8Array {
   ]);
 }
 
-/** Build the 15-byte WLPT v4 EMPP push (must match Spedn covenant). */
-export function wlptV4Pushdata(state: MooreTipState): Uint8Array {
+/** Build the 15-byte DANA tip v4 EMPP push (must match Spedn covenant). */
+export function danaTipV4Pushdata(state: MooreTipState): Uint8Array {
   const out = new Uint8Array(15);
-  out.set(WLPT_LOKAD, 0);
-  out[4] = WLPT_VERSION;
+  out.set(DANA_LOKAD, 0);
+  out[4] = DANA_TIP_VERSION;
   out.set(u16Le(state.bits), 5);
   out.set(u32Le(state.extraBits), 7);
   out.set(u32Le(state.locktime), 11);
   return out;
 }
+
+/** @deprecated use danaTipV4Pushdata */
+export const wlptV4Pushdata = danaTipV4Pushdata;

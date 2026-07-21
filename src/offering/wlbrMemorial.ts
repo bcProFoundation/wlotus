@@ -1,28 +1,21 @@
 /**
  * Dana memorial EMPP payload (pure; no wallet deps).
  *
- * LOKAD: **DANA** (`44414e41`) — written on all new burns.
- * Legacy **WLBR** payloads are still accepted by the parser.
- *
- *   v1: LOKAD | ver=1 | idLen | id | noteLen | note
- *   v2: LOKAD | ver=2 | idLen | id | noteLen | note | parentLen | parentTxid
+ * LOKAD: **DANA** (`44414e41`) — burns and (separately) remint tip ads share this LOKAD.
+ * Memorial layout (this file):
+ *   v1: DANA | ver=1 | idLen | id | noteLen | note
+ *   v2: DANA | ver=2 | idLen | id | noteLen | note | parentLen | parentTxid
  *       parentLen is 0 or 32; parentTxid is 32 raw bytes when set.
  *       Re-offers use v2 with empty note + parent = prior burn txid.
+ *
+ * Tip-state layout (ver=4, 15 bytes) lives in `src/covenant/mooreTip.ts`.
  */
 
 export const DANA_LOKAD = new TextEncoder().encode('DANA');
-/** @deprecated legacy burn LOKAD — parser still accepts; new burns use DANA. */
-export const WLBR_LOKAD = new TextEncoder().encode('WLBR');
 
 export const DANA_VERSION = 1;
 export const DANA_VERSION_PARENT = 2;
-/** @deprecated use DANA_VERSION */
-export const WLBR_VERSION = DANA_VERSION;
-/** @deprecated use DANA_VERSION_PARENT */
-export const WLBR_VERSION_PARENT = DANA_VERSION_PARENT;
 export const DANA_PARENT_TXID_LEN = 32;
-/** @deprecated use DANA_PARENT_TXID_LEN */
-export const WLBR_PARENT_TXID_LEN = DANA_PARENT_TXID_LEN;
 
 export const OFFERING_ID_PRAYER = 'prayer' as const;
 export const OFFERING_ID_WLOTUS = 'wlotus' as const;
@@ -74,11 +67,10 @@ export interface MemorialFields {
   note: string;
   /** Prior burn txid (hex), when v2 parent present. */
   parentBurnTxid?: string;
-  /** Which LOKAD was on-chain (`DANA` or legacy `WLBR`). */
-  lokad: 'DANA' | 'WLBR';
+  lokad: 'DANA';
 }
 
-/** EMPP memorial push — always writes **DANA**. See file header for layout. */
+/** EMPP memorial push — **DANA** LOKAD. See file header for layout. */
 export function memorialPushdata(
   note: string,
   offeringId: string = OFFERING_ID_PRAYER,
@@ -128,18 +120,15 @@ export function memorialPushdata(
   return out;
 }
 
-/** Decode a DANA (or legacy WLBR) EMPP memorial payload (v1 or v2). */
+/** Decode a DANA EMPP memorial payload (v1 or v2). */
 export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
   if (data.length < 6) throw new Error('memorial too short');
-  let lokad: 'DANA' | 'WLBR';
-  if (lokadEquals(data, DANA_LOKAD)) lokad = 'DANA';
-  else if (lokadEquals(data, WLBR_LOKAD)) lokad = 'WLBR';
-  else throw new Error('not DANA/WLBR');
+  if (!lokadEquals(data, DANA_LOKAD)) throw new Error('not DANA');
 
   let o = 4;
   const version = data[o++]!;
   if (version !== DANA_VERSION && version !== DANA_VERSION_PARENT) {
-    throw new Error(`unsupported DANA version ${version}`);
+    throw new Error(`unsupported DANA memorial version ${version}`);
   }
   const idLen = data[o++]!;
   if (o + idLen > data.length) throw new Error('offeringId truncated');
@@ -165,5 +154,5 @@ export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
     }
   }
 
-  return { version, offeringId, note, parentBurnTxid, lokad };
+  return { version, offeringId, note, parentBurnTxid, lokad: 'DANA' };
 }

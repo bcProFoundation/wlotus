@@ -360,7 +360,7 @@ async function main(): Promise<void> {
       tierName === 'wlotus'
         ? `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget).`
         : tierName === 'prayer'
-          ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
+          ? 'Prayer memo mint: 1 atom/remint to desk; DANA memorial in mint OP_RETURN (no burn tx).'
           : 'Candle/Flower use MooreTip without memorial push.',
       'Ergon not used for production tiers.',
     ],

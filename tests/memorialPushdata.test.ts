@@ -3,7 +3,6 @@ import {
   parseMemorialPushdata,
   parseParentBurnTxidHex,
   DANA_LOKAD,
-  WLBR_LOKAD,
   DANA_VERSION,
   DANA_VERSION_PARENT,
   OFFERING_ID_WLOTUS,
@@ -39,12 +38,12 @@ describe('DANA memorial pushdata', () => {
     expect(parsed.lokad).toBe('DANA');
   });
 
-  test('parser still accepts legacy WLBR payloads', () => {
+  test('parser rejects non-DANA LOKAD', () => {
     const note = new TextEncoder().encode('hi');
     const id = new TextEncoder().encode('wlotus');
     const raw = new Uint8Array(4 + 1 + 1 + id.length + 1 + note.length);
     let o = 0;
-    raw.set(WLBR_LOKAD, o);
+    raw.set(new TextEncoder().encode('WLBR'), o);
     o += 4;
     raw[o++] = 1;
     raw[o++] = id.length;
@@ -52,9 +51,7 @@ describe('DANA memorial pushdata', () => {
     o += id.length;
     raw[o++] = note.length;
     raw.set(note, o);
-    const parsed = parseMemorialPushdata(raw);
-    expect(parsed.lokad).toBe('WLBR');
-    expect(parsed.note).toBe('hi');
+    expect(() => parseMemorialPushdata(raw)).toThrow(/not DANA/);
   });
 
   test('parseParentBurnTxidHex rejects bad input', () => {

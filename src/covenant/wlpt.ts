@@ -1,8 +1,8 @@
 /**
  * Prayer tip state: Moore bits + tipLocktime (no activity).
  *
- * eMPP WLPT v3 layout (19 bytes):
- *   WLPT (4) | ver u8=3 | bits u16 LE | extraBits u32 LE | locktime u32 LE | tipLocktime u32 LE
+ * eMPP DANA tip v3 layout (19 bytes):
+ *   DANA (4) | ver u8=3 | bits u16 LE | extraBits u32 LE | locktime u32 LE | tipLocktime u32 LE
  */
 
 import {
@@ -12,8 +12,13 @@ import {
   type MooreBitsState,
 } from './wldf.js';
 
-export const WLPT_LOKAD = new TextEncoder().encode('WLPT');
-export const WLPT_VERSION = 3;
+export const DANA_LOKAD = new TextEncoder().encode('DANA');
+export const DANA_TIP_V3_VERSION = 3;
+
+/** @deprecated use DANA_LOKAD */
+export const WLPT_LOKAD = DANA_LOKAD;
+/** @deprecated use DANA_TIP_V3_VERSION */
+export const WLPT_VERSION = DANA_TIP_V3_VERSION;
 
 export { TEST_MOORE_SECONDS_PER_EXTRA_BIT };
 
@@ -61,14 +66,17 @@ function u32Le(n: number): Uint8Array {
   ]);
 }
 
-/** Build the 19-byte WLPT v3 EMPP push (must match Spedn covenant). */
-export function wlptPushdata(state: PrayerTipState): Uint8Array {
+/** Build the 19-byte DANA tip v3 EMPP push (must match Spedn covenant). */
+export function danaTipV3Pushdata(state: PrayerTipState): Uint8Array {
   const out = new Uint8Array(19);
-  out.set(WLPT_LOKAD, 0);
-  out[4] = WLPT_VERSION;
+  out.set(DANA_LOKAD, 0);
+  out[4] = DANA_TIP_V3_VERSION;
   out.set(u16Le(state.bits), 5);
   out.set(u32Le(state.extraBits), 7);
   out.set(u32Le(state.locktime), 11);
   out.set(u32Le(state.tipLocktime), 15);
   return out;
 }
+
+/** @deprecated use danaTipV3Pushdata */
+export const wlptPushdata = danaTipV3Pushdata;

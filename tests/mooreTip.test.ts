@@ -63,13 +63,14 @@ describe('MooreTip production covenant', () => {
     }
   });
 
-  it('WLPT v4 is 15 bytes', () => {
+  it('DANA tip v4 is 15 bytes', () => {
     const s = computeMooreTipState(genesis + 1, base);
     const push = wlptV4Pushdata(s);
     expect(push.length).toBe(15);
     expect(Buffer.from(push.slice(0, 4)).equals(Buffer.from(WLPT_LOKAD))).toBe(
       true,
     );
+    expect(Buffer.from(push.slice(0, 4)).toString('ascii')).toBe('DANA');
     expect(push[4]).toBe(WLPT_VERSION);
   });
 

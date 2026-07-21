@@ -1,4 +1,4 @@
-// Prayer MooreTip remint with on-chain memorial (WLBR) in the mint OP_RETURN.
+// Prayer MooreTip remint with on-chain memorial (DANA) in the mint OP_RETURN.
 // Same tip/Moore/hard-next-P2SH as WlotusPowRemintMooreTip.
 // Extra challenge arg `memorial` is CAT'd as a third EMPP push (minimal ops).
 // Redeem ≤520; non-push ops ≤201. Whole-byte PoW (bits % 8 == 0).
@@ -54,8 +54,9 @@ contract WlotusPowRemintMooreTipMemo(
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
-        [byte] wlpt =
-            0x574c5054 .
+        // DANA tip v4 (ver=4); memorial third push is also DANA (ver 1/2)
+        [byte] danaTip =
+            0x44414e41 .
             0x04 .
             num2bin(bits, 2) .
             num2bin(extraBits, 4) .
@@ -68,11 +69,11 @@ contract WlotusPowRemintMooreTipMemo(
             mintAtomsLe .
             0x01;
 
-        // memorial: third EMPP push (server builds WLBR; no in-Script parse — op budget).
+        // memorial: third EMPP push (server builds DANA; no in-Script parse — op budget).
         [byte] opReturnScript =
             0x6a50 .
-            num2bin(size(wlpt), 1) .
-            wlpt .
+            num2bin(size(danaTip), 1) .
+            danaTip .
             num2bin(size(mintSection), 1) .
             mintSection .
             num2bin(size(memorial), 1) .

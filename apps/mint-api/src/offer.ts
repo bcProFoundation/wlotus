@@ -2,7 +2,7 @@
  * Offer API: device PoW → server fees/sign/broadcast.
  *
  * wLotus (temple): remint mint 108 (1 miner + 107 temple mala) → burn miner 1 with DANA.
- * Legacy Prayer memo: remint mint 1 with WLBR in OP_RETURN (no burn tx).
+ * Legacy Prayer memo: remint mint 1 with DANA memorial in OP_RETURN (no burn tx).
  *
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }

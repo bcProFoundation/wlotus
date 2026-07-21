@@ -55,8 +55,9 @@ contract WlotusPowRemintMooreTipTemple(
         (_, [byte] tail40) = preimage @ (size(preimage) - 40);
         ([byte] hashOutputs, _) = tail40 @ 32;
 
-        [byte] wlpt =
-            0x574c5054 .
+        // DANA tip v4 (same LOKAD as burn memorial; ver=4 distinguishes tip state)
+        [byte] danaTip =
+            0x44414e41 .
             0x04 .
             num2bin(bits, 2) .
             num2bin(extraBits, 4) .
@@ -73,8 +74,8 @@ contract WlotusPowRemintMooreTipTemple(
 
         [byte] opReturnScript =
             0x6a50 .
-            num2bin(size(wlpt), 1) .
-            wlpt .
+            num2bin(size(danaTip), 1) .
+            danaTip .
             num2bin(size(mintSection), 1) .
             mintSection;
 

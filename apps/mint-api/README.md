@@ -4,12 +4,15 @@ Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 
 **wLotus (live):** remint mints **108** (one mala: 1 → tip fee wallet, 107 → temple P2SH), then
 **burns the miner 1** with `DANA` memorial (LOKAD `44414e41`). The on-chain burn is the gift
-(memorial + dana). Re-offers send `parentBurnTxid` (prior burn) and encode
+(memorial + dana). Remint tip EMPP also uses **`DANA` v4** (same LOKAD; ver distinguishes tip vs memorial).
+Re-offers send `parentBurnTxid` (prior burn) and encode
 **DANA v2** with empty note + 32-byte parent txid for dana explorer linkage.
-Legacy `WLBR` burns are still parseable.
 
-Legacy Prayer memo path (mint 1 + WLBR on remint, no burn) still works if the
+Legacy Prayer memo path (mint 1 + DANA memorial on remint, no burn) still works if the
 loaded deployment is `tier=prayer`.
+
+**After pulling this change:** recreate dry-run genesis (`TIER=wlotus … create-dryrun-token`) —
+old WLPT tip covenants will not match the new redeem.
 
 **Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
 tips (default **2**). First valid submit wins that tip; losers restart. Concurrent
