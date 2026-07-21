@@ -20,25 +20,23 @@ Open http://localhost:5173 — Vite proxies `/api` → `:8787`.
 
 `apps/web/.env.example` · root `.env` for `GENESIS_SK_HEX`.
 
-### Experimental phone PoW (optional)
+### Min prayer wait
 
-Default mining stays a single Web Worker. For experiments:
+Official Offer uses **one CPU Web Worker**. If PoW finds a nonce early, the
+client waits until at least ~1 minute of wall time has passed before submit
+(configurable):
 
 ```bash
-VITE_EXPERIMENTAL_POW=1 npm run web
-# multi-core CPU only (skip WebGPU):
-VITE_EXPERIMENTAL_POW=1 VITE_POW_BACKEND=multi-worker npm run web
+VITE_MIN_PRAY_MS=60000   # default; set 0 to disable
 ```
 
-Or in DevTools:
+Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60000')`.
 
-```js
-localStorage.setItem('wlotus.experimentalPow', '1')
-localStorage.setItem('wlotus.powBackend', 'multi-worker')  // CPU multi-core
-location.reload()
-```
+### Experimental phone PoW (research only)
 
-See [docs/research/phone-webgpu-wasm-mining.md](../../docs/research/phone-webgpu-wasm-mining.md).
+Not used by the Offer button. Modules under `src/lib/pow/` remain for local
+measurement — see
+[docs/research/phone-webgpu-wasm-mining.md](../../docs/research/phone-webgpu-wasm-mining.md).
 
 ## Create dual-mint Prayer token
 

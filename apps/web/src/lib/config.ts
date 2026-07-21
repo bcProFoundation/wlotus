@@ -14,6 +14,10 @@ export const PRAYER_TICKER =
   (import.meta.env.VITE_PRAYER_TICKER as string | undefined)?.trim() ||
   'dWLOTUS';
 
+import {
+  MIN_PRAY_MS_KEY,
+  parseMinPrayMs,
+} from './minPrayMs.js';
 import { parseTipPollMs } from './tipPollMs.js';
 
 /** Mint API base — empty = same origin (/api via Vite proxy or nginx). */
@@ -34,6 +38,27 @@ export const TIP_POLL_MS = parseTipPollMs(
 );
 
 export { parseTipPollMs };
+
+/**
+ * Minimum wall-clock prayer time (ms) before submit after PoW.
+ * Bake: `VITE_MIN_PRAY_MS=60000` (default). `0` disables.
+ * Runtime override: localStorage `wlotus.minPrayMs`.
+ */
+export const MIN_PRAY_MS = parseMinPrayMs(
+  import.meta.env.VITE_MIN_PRAY_MS as string | undefined,
+);
+
+export function getMinPrayMs(): number {
+  try {
+    const ls = localStorage.getItem(MIN_PRAY_MS_KEY);
+    if (ls != null && ls.trim() !== '') return parseMinPrayMs(ls);
+  } catch {
+    /* ignore quota / private mode */
+  }
+  return MIN_PRAY_MS;
+}
+
+export { parseMinPrayMs, MIN_PRAY_MS_KEY };
 
 export const INSTALL_ID_KEY = 'wlotus.installId';
 export const LOCAL_OFFERS_KEY = 'wlotus.web.offers';

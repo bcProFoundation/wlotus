@@ -1,7 +1,12 @@
 # Phone WebGPU / multi-core PoW mining (experimental)
 
-**Status:** long-term / experimental (2026-07-21)  
-**Not required for prod launch.** Default clients keep single Web Worker + `ecash-lib` SHA256d.
+**Status:** research / measurement only (2026-07-21)  
+**Not used by the official Offer path.** Prod/test clients use **single CPU Web Worker**
+plus a configurable **min pray wait** (`VITE_MIN_PRAY_MS`, default 60s) so early finds
+still take ~1 minute of wall time.
+
+Modules under `apps/web/src/lib/pow/` remain for local benchmarking; they are no longer
+selected from `mineInWorker`.
 
 ---
 
@@ -19,9 +24,13 @@ Remint PoW is **SHA256d** verified in Script (`sha256(preimage)` commit + nonce)
 
 ---
 
-## Enable (test / dogfood)
+## Enable (local measurement only)
 
-Build-time:
+These flags previously selected backends from `mineInWorker`. That wiring is off —
+call `mineExperimental` / workers directly from a scratch page or restore the
+branch if you need Offer-button experiments again.
+
+Build-time (legacy flags still parsed by `experimentalFlags.ts`):
 
 ```bash
 VITE_EXPERIMENTAL_POW=1 npm run web

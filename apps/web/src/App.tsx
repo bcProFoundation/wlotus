@@ -7,6 +7,7 @@ import {
 } from './i18n/format.js';
 import { useLocale } from './i18n/LocaleContext.js';
 import {
+  getMinPrayMs,
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
   PRAYER_TICKER,
@@ -21,6 +22,7 @@ import {
 } from './lib/offerApi.js';
 import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
+import { waitMinPray } from './lib/minPrayMs.js';
 import {
   isTipRaceLost,
   liveTipEpochFromStatus,
@@ -163,11 +165,14 @@ export default function App() {
 
   const busy = phase !== 'idle';
   const mining = phase === 'mining';
+  const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
     bits: baseZeroBits,
     hashesPerSec: deviceHashrateHps,
   });
-  const etaLabel = formatEstimateDurationLocale(powEta.seconds, locale);
+  /** ETA floor = max(PoW estimate, min pray) so early finds still feel ~1 min. */
+  const etaSeconds = Math.max(powEta.seconds, minPrayMs / 1000);
+  const etaLabel = formatEstimateDurationLocale(etaSeconds, locale);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -378,6 +383,7 @@ export default function App() {
           }
 
           let mined;
+          const prayStartedAt = Date.now();
           try {
             mined = await mineInWorker({
               powPrefixHex: challenge.powPrefixHex,
@@ -388,6 +394,12 @@ export default function App() {
                 rememberHashrate(p.hashrateHps);
                 setDeviceHashrateHps(p.hashrateHps);
               },
+            });
+            // Hold on mining UI if PoW finished early (default 1 min ritual floor).
+            await waitMinPray({
+              startedAtMs: prayStartedAt,
+              minPrayMs: getMinPrayMs(),
+              signal: ac.signal,
             });
           } catch (e) {
             if (
