@@ -98,7 +98,7 @@ const vi: Dict = {
     'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ 1 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 107 bông còn lại được chuyển đến nhà phát triển wLotus.',
   howWhyTitle: 'Tại sao 107 bông được chuyển đến nhà phát triển wLotus?',
   howWhyBody:
-    'Mỗi lần phát hành hoa sen đều tốn phí giao dịch trên mạng — hiện do các nhà phát triển wLotus chi trả. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để duy trì hệ thống, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên.',
+    'Mỗi lần phát hành và dâng hoa sen đều tốn phí giao dịch trên mạng. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để tránh các máy chuyên nghiệp làm ảnh hưởng đến việc dùng trên điện thoại, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên không có cơ may tìm kiếm được hoa sen.',
   etaEstimated: 'Thời gian ước tính {eta}',
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên hoặc lời tưởng niệm',
