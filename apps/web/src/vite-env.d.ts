@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
+/// <reference types="@webgpu/types" />
 
 interface ImportMetaEnv {
   readonly VITE_PRAYER_TOKEN_ID?: string;
@@ -8,6 +9,11 @@ interface ImportMetaEnv {
   readonly VITE_CHRONIK_URLS?: string;
   /** Tip-epoch poll interval while mining (ms). Default 2000. */
   readonly VITE_TIP_POLL_MS?: string;
+  /**
+   * Experimental phone PoW: WebGPU → multi-worker.
+   * Default off — see docs/research/phone-webgpu-wasm-mining.md
+   */
+  readonly VITE_EXPERIMENTAL_POW?: string;
 }
 
 interface ImportMeta {

@@ -20,6 +20,17 @@ Open http://localhost:5173 — Vite proxies `/api` → `:8787`.
 
 `apps/web/.env.example` · root `.env` for `GENESIS_SK_HEX`.
 
+### Experimental phone PoW (optional)
+
+Default mining stays a single Web Worker. For phone WebGPU / multi-core experiments:
+
+```bash
+VITE_EXPERIMENTAL_POW=1 npm run web
+# or: localStorage.setItem('wlotus.experimentalPow', '1')
+```
+
+See [docs/research/phone-webgpu-wasm-mining.md](../../docs/research/phone-webgpu-wasm-mining.md).
+
 ## Create dual-mint Prayer token
 
 ```bash

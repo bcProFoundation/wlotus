@@ -11,6 +11,10 @@ export type WorkerIn =
       powPrefixHex: string;
       bits: number;
       nonceLength?: number;
+      /** LE start nonce hex (multi-worker partition). */
+      nonceStartHex?: string;
+      /** Stride between attempts (multi-worker partition). */
+      nonceStride?: number;
     }
   | { type: 'abort'; jobId: number };
 
@@ -53,6 +57,8 @@ self.onmessage = (ev: MessageEvent<WorkerIn>) => {
     powPrefixHex: msg.powPrefixHex,
     bits: msg.bits,
     nonceLength: msg.nonceLength,
+    nonceStartHex: msg.nonceStartHex,
+    nonceStride: msg.nonceStride,
     signal,
     onProgress: p => {
       const out: WorkerOut = { type: 'progress', jobId, ...p };
