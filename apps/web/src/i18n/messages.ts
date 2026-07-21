@@ -39,23 +39,23 @@ export type MessageKey =
 type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
-  brand: 'White Lotus',
+  brand: 'wLotus',
   tagline: 'Offer a white lotus in remembrance of someone dear.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
   hintKeepScreen:
     'Keep the app open while you pray so the flower offering can continue.',
-  howTitle: 'How does WLOTUS work?',
+  howTitle: 'How does wLotus work?',
   howPrayTitle: '',
   howPrayBody:
     'Your phone searches for a digital WLOTUS. Keep the app open and in the foreground so the search can continue. Use that time to remember someone who has passed. You can stop the search anytime.',
   howMintTitle: '',
   howMintBody:
-    'Finding WLOTUS yields 100 digital lotuses. Depending on your device, this may take from about a minute to over ten minutes. One lotus is offered in remembrance of the departed. The other 99 go to the WLotus developers.',
-  howWhyTitle: 'Why do 99 flowers go to the WLotus developers?',
+    'Finding WLOTUS yields 108 digital lotuses — one full mala round. Depending on your device, this may take from about a minute to over ten minutes. One lotus is offered in remembrance of the departed. The other 107 go to the wLotus developers.',
+  howWhyTitle: 'Why do 107 flowers go to the wLotus developers?',
   howWhyBody:
-    'Issuing each lotus incurs network fees, which WLotus developers currently cover. Searching on a device also yields only a limited number of flowers. So that those with a sincere heart can still receive lotuses for remembrance — and so the system can keep running — the remaining 99 are sent to the developers for distribution.',
+    'Issuing each lotus incurs network fees, which wLotus developers currently cover. Searching on a device also yields only a limited number of flowers. So that those with a sincere heart can still receive lotuses for remembrance — and so the system can keep running — the remaining 107 beads of the mala are sent to the developers for distribution.',
   etaEstimated: 'Estimated time {eta}',
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name or dedication',
@@ -78,27 +78,27 @@ const en: Dict = {
   reofferBadge: 're-offer',
   btnReoffer: 'Re-offer',
   offeringFallback: 'Offering',
-  footerBrand: 'White Lotus',
+  footerBrand: 'wLotus',
 };
 
 const vi: Dict = {
-  brand: 'White Lotus',
+  brand: 'wLotus',
   tagline: 'Dâng một đóa sen tưởng nhớ người đã khuất.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
   hintKeepScreen:
     'Giữ ứng dụng luôn mở để quá trình tìm kiếm và dâng hoa được tiếp tục.',
-  howTitle: 'WLOTUS hoạt động như thế nào?',
+  howTitle: 'wLotus hoạt động như thế nào?',
   howPrayTitle: '',
   howPrayBody:
     'Điện thoại được dùng để tìm ra bông sen số WLOTUS. Bạn phải bật ứng dụng liên tục và không sử dụng ứng dụng khác để quá trình tìm kiếm bông sen số được tiếp tục. Trong lúc này, bạn có thể tưởng nhớ về người đã khuất. Bạn có thể dừng quá trình tìm kiếm này bất cứ lúc nào.',
   howMintTitle: '',
   howMintBody:
-    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 100 đóa sen số. Tùy theo năng lực của máy, quá trình này có thể từ 1 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 99 bông còn lại được chuyển đến nhà phát triển WLotus.',
-  howWhyTitle: 'Tại sao 99 bông được chuyển đến nhà phát triển WLotus?',
+    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ 1 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 107 bông còn lại được chuyển đến nhà phát triển wLotus.',
+  howWhyTitle: 'Tại sao 107 bông được chuyển đến nhà phát triển wLotus?',
   howWhyBody:
-    'Mỗi lần phát hành hoa sen đều tốn phí giao dịch trên mạng — hiện do các nhà phát triển WLotus chi trả. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để duy trì hệ thống, 99 bông còn lại được gửi cho nhà phát triển WLotus để phân phối tới những người hữu duyên.',
+    'Mỗi lần phát hành hoa sen đều tốn phí giao dịch trên mạng — hiện do các nhà phát triển wLotus chi trả. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để duy trì hệ thống, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên.',
   etaEstimated: 'Thời gian ước tính {eta}',
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên hoặc lời tưởng niệm',
@@ -120,27 +120,27 @@ const vi: Dict = {
   reofferBadge: 'dâng lại',
   btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
-  footerBrand: 'White Lotus',
+  footerBrand: 'wLotus',
 };
 
 const zh: Dict = {
-  brand: 'White Lotus',
+  brand: 'wLotus',
   tagline: '献上一朵白莲，纪念逝去的亲人。',
   offerTitle: '献花',
   hintPrayMine:
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',
   hintKeepScreen:
     '祈祷时请保持应用常开，以便献花过程得以继续。',
-  howTitle: 'WLotus 如何运作？',
+  howTitle: 'wLotus 如何运作？',
   howPrayTitle: '',
   howPrayBody:
     '手机用于寻找数字莲花 WLOTUS。请保持应用持续开启，且不要切换到其他应用，以便寻找过程继续。在此期间，您可以追思逝去的亲人。您可以随时停止寻找。',
   howMintTitle: '',
   howMintBody:
-    '寻找 WLOTUS 会生出 100 朵数字莲花。视设备性能，大约需要 1 分钟到 10 分钟以上。其中 1 朵用于献上，纪念逝者；其余 99 朵交给 WLotus 开发者。',
-  howWhyTitle: '为何 99 朵莲花交给 WLotus 开发者？',
+    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 1 分钟到 10 分钟以上。其中 1 朵用于献上，纪念逝者；其余 107 朵交给 wLotus 开发者。',
+  howWhyTitle: '为何 107 朵莲花交给 wLotus 开发者？',
   howWhyBody:
-    '每次发行莲花都需支付网络手续费，目前由 WLotus 开发者承担。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并维系系统运转，其余 99 朵交给开发者，分发给有缘人。',
+    '每次发行莲花都需支付网络手续费，目前由 wLotus 开发者承担。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并维系系统运转，念珠上其余 107 颗交给开发者，分发给有缘人。',
   etaEstimated: '预计时间 {eta}',
   noteLabel: '追思寄语…',
   notePlaceholder: '姓名或寄语',
@@ -161,7 +161,7 @@ const zh: Dict = {
   reofferBadge: '再献',
   btnReoffer: '再献',
   offeringFallback: '献花',
-  footerBrand: 'White Lotus',
+  footerBrand: 'wLotus',
 };
 
 export const MESSAGES: Record<Locale, Dict> = { en, vi, zh };

@@ -16,7 +16,7 @@ export const CANDLE_TICKER = 'CANDLE';
 export const CANDLE_NAME = 'Candle';
 
 export const PROD_TOKEN_TICKER = 'WLOTUS';
-export const PROD_TOKEN_NAME = 'WLotus';
+export const PROD_TOKEN_NAME = 'wLotus';
 export const FLOWER_TICKER = PROD_TOKEN_TICKER;
 export const FLOWER_NAME = 'Flower';
 

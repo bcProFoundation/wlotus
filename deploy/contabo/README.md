@@ -1,4 +1,4 @@
-# WLotus web deploy guide
+# wLotus web deploy guide
 
 **Live test site:** https://test.wlotus.org  
 **Production:** https://wlotus.org — tag releases only; see **[PROD.md](./PROD.md)**
@@ -233,7 +233,7 @@ set -a && source /etc/wlotus/mint.env && set +a
 npm run fund-tip-fee-wallets
 ```
 
-**WLotus temple (launch):** covenant pays 99 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
+**wLotus temple (launch):** covenant pays 107 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
 ### Create `dWLOTUS` dryrun (on Contabo)
 
@@ -307,7 +307,7 @@ Full guide: **[PROD.md](./PROD.md)** (separate VM, Environment `production`, `CO
 
 ```bash
 git checkout master && git pull
-git tag -a v1.0.0 -m "WLotus prod v1.0.0"
+git tag -a v1.0.0 -m "wLotus prod v1.0.0"
 git push origin v1.0.0
 ```
 

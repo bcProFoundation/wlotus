@@ -1,7 +1,7 @@
 /**
  * Offer API: device PoW → server fees/sign/broadcast.
  *
- * WLotus (temple): remint mint 100 (1 miner + 99 temple) → burn miner 1 with WLBR.
+ * wLotus (temple): remint mint 108 (1 miner + 107 temple mala) → burn miner 1 with WLBR.
  * Legacy Prayer memo: remint mint 1 with WLBR in OP_RETURN (no burn tx).
  *
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
@@ -519,7 +519,7 @@ async function createChallengeOnce(opts: {
   if (temple) {
     if (mintAtoms !== WLOTUS_MINT_ATOMS) {
       throw new Error(
-        `WLotus deployment mintAtoms=${mintAtoms}; expected ${WLOTUS_MINT_ATOMS}`,
+        `wLotus deployment mintAtoms=${mintAtoms}; expected ${WLOTUS_MINT_ATOMS}`,
       );
     }
   } else if (mintAtoms !== 1n) {
@@ -547,13 +547,13 @@ async function createChallengeOnce(opts: {
   const note = parentBurnTxid ? '' : opts.note.trim().slice(0, 80);
   if (parentBurnTxid && !temple) {
     throw new Error(
-      'parentBurnTxid (re-offer) requires the WLotus temple burn path',
+      'parentBurnTxid (re-offer) requires the wLotus temple burn path',
     );
   }
   const memorial = memorialPushdata(note);
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
   if (temple && (!templeHashHex || templeHashHex.length !== 40)) {
-    throw new Error('WLotus deployment missing templeScriptHashHex');
+    throw new Error('wLotus deployment missing templeScriptHashHex');
   }
 
   const contract = temple

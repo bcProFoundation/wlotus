@@ -1,6 +1,6 @@
-# WLotus
+# wLotus
 
-**WLotus** — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
+**wLotus** (ticker **WLOTUS**) — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
 
 Ergon-like ritual ALP token with permissionless PoW remint. This repository holds the **covenant, remint miner, and offerings app**.
 
@@ -28,7 +28,7 @@ Production **Prayer dryrun** is live. Offerings UI:
 Dual-mint Prayer (`dPRAYER` mint 2 → burn 1 + desk 1). Deploy guide: [deploy/contabo/README.md](./deploy/contabo/README.md)
 
 ```
-apps/web/           # WLotus offerings (migrated from Lotus Temple UX)
+apps/web/           # wLotus offerings (migrated from Lotus Temple UX)
 deploy/contabo/     # Test VM bootstrap + nginx (CI → Contabo)
 .github/workflows/  # Deploy web (test)
 contracts/          # Spedn PoW remint covenants

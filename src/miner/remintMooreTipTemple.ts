@@ -56,9 +56,9 @@ export function mooreTipTempleMinerBanner(
 ): string {
   const p = contract.params;
   return [
-    'MooreTipTemple WLotus miner',
+    'MooreTipTemple wLotus miner',
     `baseZeroBits=${p.baseZeroBits}`,
-    `mint=100 (1 miner + 99 temple)`,
+    `mint=108 (1 miner + 107 temple mala)`,
     `tipLocktime=${p.tipLocktime}`,
     'hard next-P2SH + tip anti-rewind',
   ].join(' | ');

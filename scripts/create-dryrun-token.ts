@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Dryrun genesis for production MooreTip tiers: Prayer | Candle | Flower | WLotus.
+ * Dryrun genesis for production MooreTip tiers: Prayer | Candle | Flower | wLotus.
  *
  * Usage:
  *   TIER=prayer npm run create-dryrun-token
@@ -9,7 +9,7 @@
  *   TIER=wlotus npm run create-dryrun-token
  *   TIER=wlotus TEMPLE_ADDRESS=ecash:p… BATONS=2 npm run create-dryrun-token
  *
- * WLotus: mint 100 → 1 miner + 99 temple **P2SH** (MooreTipTemple covenant).
+ * WLotus: mint 108 (one mala) → 1 miner + 107 temple **P2SH** (MooreTipTemple covenant).
  * TEMPLE_ADDRESS must be P2SH (IFP-style multisig / cold). If unset, dryrun wraps
  * the genesis wallet P2PKH in P2SH so the same key can spend by revealing redeem.
  * Uses hardened next-P2SH (codeHash) + tipLocktime. Moore clock: +1 bit / 840 days.
@@ -358,7 +358,7 @@ async function main(): Promise<void> {
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: production 840-day bit clock. Cap bits ≤ 128. Whole-byte PoW only.',
       tierName === 'wlotus'
-        ? `WLotus: mint ${WLOTUS_MINT_ATOMS} → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget).`
+        ? `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget).`
         : tierName === 'prayer'
           ? 'Prayer memo mint: 1 atom/remint to desk; WLBR memorial in mint OP_RETURN (no burn tx).'
           : 'Candle/Flower use MooreTip without memorial push.',
