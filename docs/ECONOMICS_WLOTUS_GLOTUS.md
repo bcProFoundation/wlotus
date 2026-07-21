@@ -49,6 +49,28 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 - Independent miners who pay their own fees still forfeit 99/100 — so **sponsored mobile remains advantaged** without claiming exclusive software.
 - WLotus is **not** positioned as money; temple concentration is acceptable for a ritual ledger.
 
+### Does 1/99 deter fee-paying miners? (yes, on XEC cost)
+
+Reference fee from the Prayer sheet: **~5.46 XEC** per remint (eCash miner fee). Burn-after-mint adds a second fee of similar order → **~11 XEC** desk cost per sponsored remint that leaves **99** temple inventory atoms (miner 1 burned).
+
+| Actor | XEC out | WLotus kept | Implied cost / lotus |
+|-------|--------:|------------:|---------------------:|
+| **Temple desk** (sponsor remint + burn) | ~11 | **99** inventory | **~0.11 XEC** (`11 / 99`) |
+| **Independent miner** (pays own remint; keeps the 1) | ≥ ~5.46 | **1** | **≥ ~5.46 XEC** |
+
+So:
+
+1. **Farming for inventory is uneconomic** vs buying from the desk at any retail price **below ~5.46 XEC / WLotus** (fee floor). Mining still costs presence time on top.
+2. Desk cost basis **~0.11 XEC / lotus**. Selling at **1 XEC / WLotus** is still **profitable vs cost** (~9× markup) **and** still **far below** the independent miner’s break-even (~5.46 XEC). Buyers who only want a lotus to burn should prefer the desk — that is the intended deterrence.
+3. **Correct reading of “> 5.46 lotus”:** if the market quotes WLotus near **1 XEC**, an independent miner’s fee alone is already **> 5.46 lotus-equivalent** before electricity/time. They cannot undercut a 1 XEC desk ask on fee math.
+
+Caveats (do not overclaim):
+
+- Deterrence is against **resale farming**, not ritual mining (sponsored phone path pays **0 XEC** by design).
+- If secondary price ever rises **above ~5.46 XEC**, fee-paying miners can become competitive again — raise bits / rate limits, or keep desk asks in a band under that floor.
+- Exact sats depend on fuel sizing (`REMINT_FUEL_SATS` peel) and network fee policy; use **~5.46 / ~11** as the working sheet, remeasure on live txs.
+- Covenant cannot stop copycat clients; **99→temple** is the on-chain tax that makes copycat mining a bad business.
+
 ### Non-miners and scale
 
 Mining does not scale to every memorial. Preferred path:
