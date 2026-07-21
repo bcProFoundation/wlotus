@@ -17,6 +17,8 @@ export interface ChallengeOk {
   tipIndex?: number;
   mintAtoms: string;
   note: string;
+  /** Prior burn txid when this challenge is a re-offer. */
+  parentBurnTxid?: string;
 }
 
 export interface OfferOk {
@@ -90,6 +92,8 @@ export async function fetchStatus(installId: string): Promise<StatusOk> {
 export async function fetchChallenge(opts: {
   installId: string;
   note: string;
+  /** Re-offer: link burn to this prior burn txid (no new memorial text). */
+  parentBurnTxid?: string;
 }): Promise<ChallengeOk> {
   const res = await fetch(apiUrl('/api/challenge'), {
     method: 'POST',
@@ -97,6 +101,9 @@ export async function fetchChallenge(opts: {
     body: JSON.stringify({
       installId: opts.installId,
       note: opts.note,
+      ...(opts.parentBurnTxid
+        ? { parentBurnTxid: opts.parentBurnTxid }
+        : {}),
     }),
   });
   const body = await readApiJson<ChallengeOk & { error?: string; ok?: boolean }>(

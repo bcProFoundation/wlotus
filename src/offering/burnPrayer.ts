@@ -5,39 +5,25 @@
  */
 import { ALP_TOKEN_TYPE_STANDARD, payment } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
+import {
+  memorialPushdata,
+  OFFERING_ID_PRAYER,
+  parseParentBurnTxidHex,
+} from './wlbrMemorial.js';
 
-export const WLBR_LOKAD = new TextEncoder().encode('WLBR');
-export const WLBR_VERSION = 1;
-
-export const OFFERING_ID_PRAYER = 'prayer' as const;
-export const OFFERING_ID_WLOTUS = 'wlotus' as const;
-/** @deprecated use OFFERING_ID_PRAYER */
-export const OFFERING_ID = OFFERING_ID_PRAYER;
-
-/** EMPP memorial push: WLBR | ver | offeringIdLen | offeringId | noteLen | noteUtf8 */
-export function memorialPushdata(
-  note: string,
-  offeringId: string = OFFERING_ID_PRAYER,
-): Uint8Array {
-  const idBytes = new TextEncoder().encode(offeringId);
-  const noteBytes = new TextEncoder().encode(note.slice(0, 80));
-  if (idBytes.length > 255 || noteBytes.length > 255) {
-    throw new Error('memorial fields too long');
-  }
-  const out = new Uint8Array(
-    4 + 1 + 1 + idBytes.length + 1 + noteBytes.length,
-  );
-  let o = 0;
-  out.set(WLBR_LOKAD, o);
-  o += 4;
-  out[o++] = WLBR_VERSION;
-  out[o++] = idBytes.length;
-  out.set(idBytes, o);
-  o += idBytes.length;
-  out[o++] = noteBytes.length;
-  out.set(noteBytes, o);
-  return out;
-}
+export {
+  memorialPushdata,
+  parseMemorialPushdata,
+  parseParentBurnTxidHex,
+  WLBR_LOKAD,
+  WLBR_VERSION,
+  WLBR_VERSION_PARENT,
+  WLBR_PARENT_TXID_LEN,
+  OFFERING_ID_PRAYER,
+  OFFERING_ID_WLOTUS,
+  OFFERING_ID,
+  type MemorialFields,
+} from './wlbrMemorial.js';
 
 /** Burn exactly 1 atom with on-chain memorial (WLBR). */
 export async function burnOnePrayer(opts: {
@@ -45,9 +31,14 @@ export async function burnOnePrayer(opts: {
   tokenId: string;
   note?: string;
   offeringId?: string;
+  /** Prior burn txid (hex) — encoded in WLBR v2 for dana explorer linkage. */
+  parentBurnTxid?: string;
 }): Promise<{ txid: string }> {
   const note = (opts.note ?? '').trim();
   const offeringId = opts.offeringId ?? OFFERING_ID_PRAYER;
+  const parentBurnTxid = opts.parentBurnTxid
+    ? parseParentBurnTxidHex(opts.parentBurnTxid)
+    : undefined;
   const action: payment.Action = {
     outputs: [{ sats: 0n }],
     tokenActions: [
@@ -59,7 +50,7 @@ export async function burnOnePrayer(opts: {
       },
       {
         type: 'DATA',
-        data: memorialPushdata(note, offeringId),
+        data: memorialPushdata(note, offeringId, parentBurnTxid),
       },
     ],
   };

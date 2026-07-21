@@ -30,6 +30,9 @@ export type MessageKey =
   | 'miningOnNewTip'
   | 'offeredIn'
   | 'recentTitle'
+  | 'reofferHint'
+  | 'reofferBadge'
+  | 'btnReoffer'
   | 'offeringFallback'
   | 'footerBrand';
 
@@ -69,6 +72,10 @@ const en: Dict = {
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Offered in {duration}',
   recentTitle: 'Recent',
+  reofferHint:
+    'Re-offer from this list to link a new burn to a prior one — no new message.',
+  reofferBadge: 're-offer',
+  btnReoffer: 'Re-offer',
   offeringFallback: 'Offering',
   footerBrand: 'White Lotus',
 };
@@ -106,6 +113,10 @@ const vi: Dict = {
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
+  reofferHint:
+    'Dâng lại từ danh sách này để liên kết lần đốt mới với lần trước — không thêm lời mới.',
+  reofferBadge: 'dâng lại',
+  btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
   footerBrand: 'White Lotus',
 };
@@ -143,6 +154,9 @@ const zh: Dict = {
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花完成 · {duration}',
   recentTitle: '最近',
+  reofferHint: '从列表再次献花，将新燃烧关联到先前一笔——暂不支持附加寄语。',
+  reofferBadge: '再献',
+  btnReoffer: '再献',
   offeringFallback: '献花',
   footerBrand: 'White Lotus',
 };

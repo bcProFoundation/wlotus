@@ -4,7 +4,8 @@ Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 
 **WLotus (live):** remint mints **100** (1 → tip fee wallet, 99 → temple P2SH), then
 **burns the miner 1** with `WLBR` memorial. The on-chain burn is the gift
-(memorial + dana).
+(memorial + dana). Re-offers send `parentBurnTxid` (prior burn) and encode
+**WLBR v2** with empty note + 32-byte parent txid for dana explorer linkage.
 
 Legacy Prayer memo path (mint 1 + WLBR on remint, no burn) still works if the
 loaded deployment is `tier=prayer`.
