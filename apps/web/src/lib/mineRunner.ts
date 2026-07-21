@@ -21,13 +21,7 @@ export async function mineInWorker(opts: {
   if (isExperimentalPowEnabled()) {
     try {
       const r = await mineExperimental(opts);
-<<<<<<< Updated upstream
-      if (typeof console !== 'undefined' && console.debug) {
-        console.debug('[wlotus] experimental pow backend:', r.backend);
-      }
-=======
       console.info('[wlotus] experimental pow backend:', r.backend);
->>>>>>> Stashed changes
       return r;
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
