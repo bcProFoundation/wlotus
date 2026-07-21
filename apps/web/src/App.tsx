@@ -590,8 +590,8 @@ export default function App() {
                 body: t('howMintBody'),
               },
               {
-                title: t('howBurnTitle'),
-                body: t('howBurnBody'),
+                title: t('howWhyTitle'),
+                body: t('howWhyBody'),
               },
             ]
               .filter(step => step.title.trim() || step.body.trim())
