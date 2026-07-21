@@ -7,6 +7,7 @@
  *
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
+ *   POST /api/burn       { installId, remintTxid } — temple memorial after soft pray
  *   GET  /api/status?installId=
  *   GET  /health         → ok + deploy stamps (file mtime / git sha)
  */
@@ -16,12 +17,14 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import {
+  enqueueBurn,
   enqueueCancel,
   enqueueChallenge,
   enqueueSubmit,
   publicStatus,
   remainingOffersToday,
 } from './offer.js';
+
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
@@ -229,11 +232,42 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/burn') {
+      const body = await readJson(req);
+      const installId = requireInstallId(body.installId);
+      const remintTxid = String(body.remintTxid || '').trim();
+      const burnToken = String(body.burnToken || '').trim();
+      if (!remintTxid) {
+        json(res, 400, { error: 'remintTxid required' });
+        return;
+      }
+      if (!burnToken || burnToken.length < 32) {
+        json(res, 400, { error: 'burnToken required' });
+        return;
+      }
+      const result = await enqueueBurn({ installId, remintTxid, burnToken });
+      json(res, 200, { ok: true, ...result });
+      return;
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/cancel') {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
       const challengeId = String(body.challengeId || '').trim() || undefined;
-      const result = await enqueueCancel({ installId, challengeId });
+      const remintTxid = String(body.remintTxid || '').trim() || undefined;
+      const burnToken = String(body.burnToken || '').trim() || undefined;
+      if (remintTxid && (!burnToken || burnToken.length < 32)) {
+        json(res, 400, {
+          error: 'burnToken required to abandon a pending memorial burn',
+        });
+        return;
+      }
+      const result = await enqueueCancel({
+        installId,
+        challengeId,
+        remintTxid,
+        burnToken,
+      });
       json(res, 200, result);
       return;
     }
@@ -251,7 +285,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee/i.test(
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn/i.test(
         msg,
       )
         ? 400

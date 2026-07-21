@@ -1,7 +1,12 @@
 # Phone WebGPU / multi-core PoW mining (experimental)
 
-**Status:** long-term / experimental (2026-07-21)  
-**Not required for prod launch.** Default clients keep single Web Worker + `ecash-lib` SHA256d.
+**Status:** research / measurement only (2026-07-21)  
+**Not used by the official Offer path.** Prod/test clients use **single CPU Web Worker**
+plus a configurable **min pray wait** (`VITE_MIN_PRAY_MS`, default 60s) so early finds
+still take ~1 minute of wall time.
+
+Modules under `apps/web/src/lib/pow/` remain for local benchmarking; they are no longer
+selected from `mineInWorker`.
 
 ---
 
@@ -9,8 +14,15 @@
 
 Calibrate ritual search time against the **fastest realistic phone-class miner in the official PWA**, not against a slow single-thread JS loop.
 
-Target hardware: **phone GPU (WebGPU)** and **phone multi-core CPU** — not desktop GPUs/ASICs. Farming deterrence remains **1/107 temple split + XEC fees**.
+Target hardware: **phone GPU (WebGPU)** and **phone multi-core CPU** — not desktop GPUs/ASICs.
 
+**Farming / security (do not confuse with this research):**
+
+- Anti-farm = **1/107 + XEC fees** (temple-sponsored Offer wins vs commercial miners even if energy ≈ 0).
+- Ritual length on the official client = **soft timer** (`VITE_MIN_PRAY_MS`) + PoW presence — attention, not joules.
+- Token hashrate ≠ ledger security (eCash secures transfers). See [ECONOMICS_WLOTUS_GLOTUS.md](../ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
+
+This doc is only about measuring phone backends; it does not redefine anti-farm policy.
 ---
 
 ## Covenant constraint
@@ -19,9 +31,13 @@ Remint PoW is **SHA256d** verified in Script (`sha256(preimage)` commit + nonce)
 
 ---
 
-## Enable (test / dogfood)
+## Enable (local measurement only)
 
-Build-time:
+These flags previously selected backends from `mineInWorker`. That wiring is off —
+call `mineExperimental` / workers directly from a scratch page or restore the
+branch if you need Offer-button experiments again.
+
+Build-time (legacy flags still parsed by `experimentalFlags.ts`):
 
 ```bash
 VITE_EXPERIMENTAL_POW=1 npm run web

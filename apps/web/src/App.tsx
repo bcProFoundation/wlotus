@@ -7,6 +7,7 @@ import {
 } from './i18n/format.js';
 import { useLocale } from './i18n/LocaleContext.js';
 import {
+  getMinPrayMs,
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
   PRAYER_TICKER,
@@ -14,13 +15,16 @@ import {
 } from './lib/config.js';
 import {
   cancelOfferChallenge,
+  completeOfferBurn,
   fetchChallenge,
   fetchStatus,
   shortTx,
   submitMinedOffer,
 } from './lib/offerApi.js';
+
 import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
+import { waitMinPray } from './lib/minPrayMs.js';
 import {
   isTipRaceLost,
   liveTipEpochFromStatus,
@@ -35,7 +39,7 @@ import {
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
 
-type Phase = 'idle' | 'challenge' | 'mining' | 'submit';
+type Phase = 'idle' | 'challenge' | 'mining' | 'submit' | 'holding' | 'burn';
 
 const ACTIVE_CHALLENGE_KEY = 'wlotus.activeChallenge';
 
@@ -139,6 +143,9 @@ export default function App() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const challengeIdRef = useRef<string | null>(null);
+  /** Remint awaiting memorial burn (soft pray); cancel abandons burn. */
+  const pendingBurnRemintRef = useRef<string | null>(null);
+  const pendingBurnTokenRef = useRef<string | null>(null);
   /** Bumps on cancel / new offer so a stale offer's finally cannot clobber UI. */
   const offerGenRef = useRef(0);
   /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
@@ -162,12 +169,16 @@ export default function App() {
   }, []);
 
   const busy = phase !== 'idle';
-  const mining = phase === 'mining';
+  /** PoW or soft-pray hold — cancel still shown. */
+  const mining = phase === 'mining' || phase === 'holding';
+  const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
     bits: baseZeroBits,
     hashesPerSec: deviceHashrateHps,
   });
-  const etaLabel = formatEstimateDurationLocale(powEta.seconds, locale);
+  /** ETA floor = max(PoW estimate, min pray) so early finds still feel ~1 min. */
+  const etaSeconds = Math.max(powEta.seconds, minPrayMs / 1000);
+  const etaLabel = formatEstimateDurationLocale(etaSeconds, locale);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -274,18 +285,43 @@ export default function App() {
     }
   }
 
+  async function abandonPendingBurn(
+    remintTxid: string | null,
+    burnToken: string | null,
+  ): Promise<void> {
+    if (!remintTxid || !burnToken) return;
+    if (pendingBurnRemintRef.current === remintTxid) {
+      pendingBurnRemintRef.current = null;
+      pendingBurnTokenRef.current = null;
+    }
+    try {
+      await cancelOfferChallenge({ installId, remintTxid, burnToken });
+    } catch {
+      /* best-effort — TTL also drops pending burns */
+    }
+  }
+
   async function onCancelMine() {
     const id = challengeIdRef.current;
+    const pendingRemint = pendingBurnRemintRef.current;
+    const pendingToken = pendingBurnTokenRef.current;
     offerGenRef.current += 1;
     challengeIdRef.current = null;
+    pendingBurnRemintRef.current = null;
+    pendingBurnTokenRef.current = null;
     clearRememberedChallenge();
     abortRef.current?.abort();
     abortRef.current = null;
     elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
-    setMsg({ kind: 'ok', text: tRef.current('miningCancelled') });
-    await releaseChallenge(id);
+    if (pendingRemint && pendingToken) {
+      setMsg({ kind: 'ok', text: tRef.current('memorialCancelled') });
+      await abandonPendingBurn(pendingRemint, pendingToken);
+    } else {
+      setMsg({ kind: 'ok', text: tRef.current('miningCancelled') });
+      await releaseChallenge(id);
+    }
   }
 
   async function onOffer(opts?: {
@@ -301,11 +337,18 @@ export default function App() {
       : note.trim();
 
     const prevId = challengeIdRef.current;
+    const prevPending = pendingBurnRemintRef.current;
+    const prevToken = pendingBurnTokenRef.current;
     offerGenRef.current += 1;
     const gen = offerGenRef.current;
     abortRef.current?.abort();
     challengeIdRef.current = null;
+    pendingBurnRemintRef.current = null;
+    pendingBurnTokenRef.current = null;
     clearRememberedChallenge();
+    if (prevPending && prevToken) {
+      await abandonPendingBurn(prevPending, prevToken);
+    }
     if (prevId) await releaseChallenge(prevId);
     if (offerGenRef.current !== gen) return;
 
@@ -378,6 +421,7 @@ export default function App() {
           }
 
           let mined;
+          const prayStartedAt = Date.now();
           try {
             mined = await mineInWorker({
               powPrefixHex: challenge.powPrefixHex,
@@ -421,6 +465,7 @@ export default function App() {
 
           rememberHashrate(mined.hashrateHps);
           setDeviceHashrateHps(mined.hashrateHps);
+          // Remint immediately — soft pray must not delay the tip race.
           setPhase('submit');
           const result = await submitMinedOffer({
             installId,
@@ -436,6 +481,44 @@ export default function App() {
           clearRememberedChallenge();
           mineChallengeId = null;
 
+          let burnTxid = result.burnTxid;
+          if (result.burnPending) {
+            const burnToken = result.burnToken?.trim() || '';
+            if (!burnToken) {
+              throw new Error('Mint API omit burnToken; cannot complete memorial');
+            }
+            pendingBurnRemintRef.current = result.remintTxid;
+            pendingBurnTokenRef.current = burnToken;
+            setPhase('holding');
+            try {
+              await waitMinPray({
+                startedAtMs: prayStartedAt,
+                minPrayMs: getMinPrayMs(),
+                signal: ac.signal,
+              });
+            } catch (e) {
+              if (e instanceof DOMException && e.name === 'AbortError') {
+                // onCancelMine abandons pending burn
+                return;
+              }
+              throw e;
+            }
+            if (offerGenRef.current !== gen || ac.signal.aborted) {
+              return;
+            }
+            setPhase('burn');
+            const burned = await completeOfferBurn({
+              installId,
+              remintTxid: result.remintTxid,
+              burnToken,
+            });
+            burnTxid = burned.burnTxid;
+            pendingBurnRemintRef.current = null;
+            pendingBurnTokenRef.current = null;
+          }
+
+          if (offerGenRef.current !== gen) return;
+
           elapsedClockRef.current.stop();
           const activeMs = elapsedClockRef.current.readMs();
           const uiPowMs = Math.max(activeMs, result.powMs || mined.elapsedMs);
@@ -443,7 +526,7 @@ export default function App() {
           setOffers(
             pushOffer({
               remintTxid: result.remintTxid,
-              burnTxid: result.burnTxid,
+              burnTxid,
               note: historyNote,
               at: new Date().toISOString(),
               powMs: uiPowMs,
@@ -503,9 +586,9 @@ export default function App() {
   const buttonLabel =
     phase === 'challenge'
       ? t('btnPreparing')
-      : phase === 'mining'
+      : phase === 'mining' || phase === 'holding'
         ? t('btnPraying')
-        : phase === 'submit'
+        : phase === 'submit' || phase === 'burn'
           ? t('btnOffering')
           : t('btnOffer');
 

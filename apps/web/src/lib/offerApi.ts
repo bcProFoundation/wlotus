@@ -24,12 +24,26 @@ export interface ChallengeOk {
 export interface OfferOk {
   ok: true;
   remintTxid: string;
+  /** Empty when `burnPending` — call {@link completeOfferBurn} after soft pray. */
   burnTxid: string;
+  burnPending: boolean;
+  /** Capability for burn/abandon; only from submit — keep in memory, never share. */
+  burnToken?: string;
   tokenId: string;
   bits: number;
   powAttempts: number;
   powMs: number;
   hashrateHps: number;
+  deskAtomsKept: number;
+  explorerRemint: string;
+  explorerBurn: string;
+}
+
+export interface BurnOk {
+  ok: true;
+  remintTxid: string;
+  burnTxid: string;
+  tokenId: string;
   deskAtomsKept: number;
   explorerRemint: string;
   explorerBurn: string;
@@ -142,21 +156,53 @@ export async function submitMinedOffer(opts: {
   return body as OfferOk;
 }
 
+/** Memorial burn after soft pray (temple path). Requires submit-issued burnToken. */
+export async function completeOfferBurn(opts: {
+  installId: string;
+  remintTxid: string;
+  burnToken: string;
+}): Promise<BurnOk> {
+  const res = await fetch(apiUrl('/api/burn'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      installId: opts.installId,
+      remintTxid: opts.remintTxid,
+      burnToken: opts.burnToken,
+    }),
+  });
+  const body = await readApiJson<BurnOk & { error?: string; ok?: boolean }>(
+    res,
+  );
+  if (!res.ok || !body.ok) {
+    throw new Error(body.error || `Burn failed (${res.status})`);
+  }
+  return body as BurnOk;
+}
+
 export async function cancelOfferChallenge(opts: {
   installId: string;
   challengeId?: string;
-}): Promise<{ ok: true; cancelled: number }> {
+  /** Abandon pending memorial burn after remint (requires burnToken). */
+  remintTxid?: string;
+  burnToken?: string;
+}): Promise<{ ok: true; cancelled: number; abandonedBurns?: number }> {
   const res = await fetch(apiUrl('/api/cancel'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       installId: opts.installId,
       challengeId: opts.challengeId,
+      remintTxid: opts.remintTxid,
+      burnToken: opts.burnToken,
     }),
   });
-  const body = await readApiJson<{ ok: true; cancelled: number; error?: string }>(
-    res,
-  );
+  const body = await readApiJson<{
+    ok: true;
+    cancelled: number;
+    abandonedBurns?: number;
+    error?: string;
+  }>(res);
   if (!res.ok || !body.ok) {
     throw new Error(body.error || `Cancel failed (${res.status})`);
   }

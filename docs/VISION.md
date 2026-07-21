@@ -57,6 +57,8 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 
 **Launch economics (decision):** ship **wLotus** (mint 108 → 1 prayer + 107 temple mala) and **Golden Lotus** (permissionless, premine, event burns) — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md). Prayer dryruns remain the technical lineage.
 
+**Anti-farm / presence:** **1/107 + XEC fees** beat commercial remint even when energy ≈ 0; official Offer adds a **soft pray timer** so attention stays the ritual tax. Token hashrate does not secure the ledger (eCash does) — § *Product intent* in that economics doc.
+
 Resale of **same-origin** desk Prayer for profit is fine — liquidity for vault top-up, not a bug.
 
 ### App title options

@@ -1,16 +1,13 @@
 import type { MineProgress, MineResult } from './clientMine.js';
-import {
-  getPowBackendPreference,
-  isExperimentalPowEnabled,
-  mineExperimental,
-} from './pow/experimentalMine.js';
 import { mineInWorkerSingle } from './singleWorkerMine.js';
 
 export { mineInWorkerSingle };
 
 /**
- * Mine Prayer PoW. Default: single Web Worker.
- * When experimental PoW is enabled: WebGPU → multi-worker → single worker.
+ * Mine Prayer PoW — single CPU Web Worker only (fairest ritual time).
+ *
+ * Experimental WebGPU / multi-worker backends remain in `pow/` for local
+ * research (`VITE_EXPERIMENTAL_POW`) but are not used on the official path.
  */
 export async function mineInWorker(opts: {
   powPrefixHex: string;
@@ -19,19 +16,5 @@ export async function mineInWorker(opts: {
   onProgress?: (p: MineProgress) => void;
   signal?: AbortSignal;
 }): Promise<MineResult> {
-  if (isExperimentalPowEnabled()) {
-    try {
-      const r = await mineExperimental(opts);
-      console.info(
-        '[wlotus] experimental pow backend:',
-        r.backend,
-        `(pref=${getPowBackendPreference()})`,
-      );
-      return r;
-    } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') throw e;
-      console.warn('[wlotus] experimental pow failed, using default worker:', e);
-    }
-  }
   return mineInWorkerSingle(opts);
 }

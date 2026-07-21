@@ -43,6 +43,7 @@ Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
 
 **Launch (decision):** [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — **wLotus** (mint 108 → 1 prayer + 107 temple mala; ceremonial) + **Golden Lotus** (permissionless; premine; event burns; no platform mint tax).
 
+**Intent (settled):** anti-farm = **1/107 + fees** (sponsored Offer wins vs commercial miners even if energy ≈ 0); ritual = **attention** via soft pray timer + ~**24**-bit presence — not token-hashrate “security.” Details: that doc § *Product intent*.
 Longer-term hardware ladder (background):
 
 | Product | Bits | Mint | Target HW | Market $/baton |

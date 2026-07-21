@@ -2,9 +2,12 @@
 
 Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 
-**wLotus (live):** remint mints **108** (one mala: 1 → tip fee wallet, 107 → temple P2SH), then
-**burns the miner 1** with `DANA` memorial (LOKAD `44414e41`). The on-chain burn is the gift
-(memorial + dana). Remint tip EMPP also uses **`DANA` v4** (same LOKAD; ver distinguishes tip vs memorial).
+**wLotus (live):** remint mints **108** (one mala: 1 → tip fee wallet, 107 → temple P2SH).
+Memorial burn of the miner 1 (`DANA`) is **deferred** until after the client soft pray
+window (`POST /api/burn`). Remint runs on submit so tip races are not delayed. Cancel
+during the soft wait abandons the burn — desk keeps the miner atom.
+The on-chain burn is the gift (memorial + dana). Remint tip EMPP also uses **`DANA` v4**
+(same LOKAD; ver distinguishes tip vs memorial).
 Re-offers send `parentBurnTxid` (prior burn) and encode
 **DANA v2** with empty note + 32-byte parent txid for dana explorer linkage.
 
@@ -28,8 +31,12 @@ minted miner atom and must fund the burn fee.
 ```
 POST /api/challenge  { installId, note? }  → preimage + bits
   device mines nonce
-POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
-                     → remint (108) → burn miner 1 + DANA
+POST /api/submit     { installId, challengeId, nonceHex, … }
+                     → remint (108); temple returns burnPending
+  soft pray wait (client)
+POST /api/burn       { installId, remintTxid, burnToken }
+                     → burn miner 1 + DANA
+  (cancel with remintTxid + burnToken abandons burn; desk keeps atom)
 ```
 
 Requires a deployment JSON:
@@ -80,8 +87,9 @@ fuel coin from the desk automatically — still prefer running the fund script f
 | GET | `/health` | `ok`, `startedAt`, `deployedAt` (source file mtime), `deploy.gitSha`, `features.raceOpen` |
 | GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, `raceOpen`, `tipFeeAccounts`, `deployedAt`, … |
 | POST | `/api/challenge` | `{ installId, note? }` → includes `tipFeeAddress` |
-| POST | `/api/submit` | `{ installId, challengeId, nonceHex, powMs?, powAttempts? }` |
-| POST | `/api/cancel` | `{ installId, challengeId? }` — release open challenge |
+| POST | `/api/submit` | `{ installId, challengeId, nonceHex, … }` → remint; temple may set `burnPending` |
+| POST | `/api/burn` | `{ installId, remintTxid, burnToken }` — memorial burn; `burnToken` from submit only |
+| POST | `/api/cancel` | `{ installId, challengeId?, remintTxid?, burnToken? }` — abandon pending burn needs token |
 | POST | `/api/offer` | **410** retired |
 
 ## Limits
@@ -90,6 +98,7 @@ fuel coin from the desk automatically — still prefer running the fund script f
 - `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
 - `MINT_SERVING_TIP_COUNT` (default **2**) — tips load-balanced for PoC; raise toward 28 at launch
 - Challenges expire after 15 minutes (or when that tip is reminted by someone else)
+- Pending memorial burns expire after 15 minutes if `/api/burn` is never called (desk keeps atom)
 
 ## Verify Contabo is on the open-race build
 

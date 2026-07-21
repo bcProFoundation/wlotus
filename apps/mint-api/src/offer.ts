@@ -6,8 +6,12 @@
  *
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
+ *                        → remint immediately; temple path returns burnPending
+ *   POST /api/burn       { installId, remintTxid, burnToken } — capability from submit
+ *   POST /api/cancel     { installId, challengeId?, remintTxid?, burnToken? }
+ *                        — abandon pending burn requires remintTxid + burnToken
  */
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fromHex, toHex } from 'ecash-lib';
@@ -70,18 +74,40 @@ const SERVING_TIP_COUNT = Math.max(
   Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 2) || 2,
 );
 const CHALLENGE_TTL_MS = 15 * 60_000;
+/** Pending memorial burns after remint (soft pray window). */
+const PENDING_BURN_TTL_MS = 15 * 60_000;
 
 export interface OfferResult {
   remintTxid: string;
-  /** Burn tx (WLotus) or same as remint (legacy Prayer memo). */
+  /**
+   * Burn tx when complete. Empty string when temple remint succeeded and
+   * memorial burn is still pending (`burnPending: true`).
+   */
   burnTxid: string;
+  /** Temple path: remint done; call POST /api/burn after soft pray (or abandon). */
+  burnPending: boolean;
+  /**
+   * One-time capability for `/api/burn` / abandon. Only returned to the submitter;
+   * remintTxid alone is public and insufficient.
+   */
+  burnToken?: string;
   tokenId: string;
   bits: number;
   powAttempts: number;
   powMs: number;
   hashrateHps: number;
-  /** 0 when miner atom was burned; 1 for legacy memo-keep. */
+  /** 0 when miner atom was burned; 1 when kept (memo path or abandoned burn). */
   deskAtomsKept: 0 | 1;
+  note: string;
+  explorerRemint: string;
+  explorerBurn: string;
+}
+
+export interface BurnResult {
+  remintTxid: string;
+  burnTxid: string;
+  tokenId: string;
+  deskAtomsKept: 0;
   note: string;
   explorerRemint: string;
   explorerBurn: string;
@@ -177,8 +203,22 @@ interface StoredChallenge {
   templeScriptHashHex?: string;
 }
 
+interface PendingBurn {
+  remintTxid: string;
+  installId: string;
+  /** Secret capability issued only on submit response. */
+  burnToken: string;
+  createdAt: number;
+  expiresAt: number;
+  tipIndex: number;
+  tokenId: string;
+  note: string;
+  parentBurnTxid?: string;
+}
+
 const offerCounts = new Map<string, Map<number, number>>();
 const challenges = new Map<string, StoredChallenge>();
+const pendingBurns = new Map<string, PendingBurn>();
 let chainLock: Promise<void> = Promise.resolve();
 
 function utcDay(now = Date.now()): number {
@@ -195,6 +235,21 @@ function tipKey(txid: string, outIdx: number): string {
 
 function tipEpochOf(tipRec: BatonTip): string {
   return tipRec.lastRemintTxid ?? `genesis:${tipRec.index}:${tipRec.tipLocktime}`;
+}
+
+function newBurnToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+function burnTokenMatches(expected: string, provided: string | undefined): boolean {
+  const a = expected;
+  const b = (provided ?? '').trim();
+  if (!a || !b || a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+  } catch {
+    return false;
+  }
 }
 
 
@@ -324,6 +379,9 @@ function expireStaleChallenges(now = Date.now()): void {
     if (ch.status === 'open' && ch.expiresAt <= now) {
       ch.status = 'expired';
     }
+  }
+  for (const [id, pb] of pendingBurns) {
+    if (pb.expiresAt <= now) pendingBurns.delete(id);
   }
 }
 
@@ -902,19 +960,6 @@ async function submitChallengeOnce(opts: {
 
   ch.status = 'done';
 
-  let burnTxid = remintTxid;
-  let deskAtomsKept: 0 | 1 = 1;
-  if (ch.mode === 'temple') {
-    const tipFee = await loadTipFeeWallet(chronik, ch.tipIndex);
-    burnTxid = await burnMinerAtomAfterMint({
-      wallet: tipFee.wallet,
-      tokenId: ch.tokenId,
-      note: ch.note,
-      parentBurnTxid: ch.parentBurnTxid,
-    });
-    deskAtomsKept = 0;
-  }
-
   const powMs =
     opts.powMs != null && opts.powMs > 0 ? Math.round(opts.powMs) : 0;
   const powAttempts =
@@ -926,19 +971,128 @@ async function submitChallengeOnce(opts: {
       ? Math.round(powAttempts / (powMs / 1000))
       : 0;
 
+  // Temple: remint now (tip race). Memorial burn is deferred to POST /api/burn
+  // after the client's soft pray wait — cancel abandons burn; desk keeps the atom.
+  if (ch.mode === 'temple') {
+    const remintKey = remintTxid.toLowerCase();
+    const burnToken = newBurnToken();
+    pendingBurns.set(remintKey, {
+      remintTxid,
+      installId: opts.installId,
+      burnToken,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + PENDING_BURN_TTL_MS,
+      tipIndex: ch.tipIndex,
+      tokenId: ch.tokenId,
+      note: ch.note,
+      parentBurnTxid: ch.parentBurnTxid,
+    });
+    return {
+      remintTxid,
+      burnTxid: '',
+      burnPending: true,
+      burnToken,
+      tokenId: dep.tokenId,
+      bits: built.tip.bits,
+      powAttempts,
+      powMs,
+      hashrateHps,
+      deskAtomsKept: 1,
+      note: ch.note,
+      explorerRemint: `https://explorer.e.cash/tx/${remintTxid}`,
+      explorerBurn: '',
+    };
+  }
+
   return {
     remintTxid,
-    burnTxid,
+    burnTxid: remintTxid,
+    burnPending: false,
     tokenId: dep.tokenId,
     bits: built.tip.bits,
     powAttempts,
     powMs,
     hashrateHps,
-    deskAtomsKept,
+    deskAtomsKept: 1,
     note: ch.note,
     explorerRemint: `https://explorer.e.cash/tx/${remintTxid}`,
+    explorerBurn: `https://explorer.e.cash/tx/${remintTxid}`,
+  };
+}
+
+async function completeBurnOnce(opts: {
+  installId: string;
+  remintTxid: string;
+  burnToken: string;
+}): Promise<BurnResult> {
+  expireStaleChallenges();
+  const remintTxid = opts.remintTxid.trim().toLowerCase();
+  const pb = pendingBurns.get(remintTxid);
+  if (!pb) {
+    throw new Error('No pending memorial burn for this remint (expired or abandoned)');
+  }
+  if (pb.installId !== opts.installId) {
+    throw new Error('remintTxid does not match installId');
+  }
+  if (!burnTokenMatches(pb.burnToken, opts.burnToken)) {
+    throw new Error('Invalid burnToken');
+  }
+  if (pb.expiresAt <= Date.now()) {
+    pendingBurns.delete(remintTxid);
+    throw new Error('Pending memorial burn expired; miner atom kept by desk');
+  }
+
+  const chronik = await createChronik('closest');
+  const tipFee = await loadTipFeeWallet(chronik, pb.tipIndex);
+  const burnTxid = await burnMinerAtomAfterMint({
+    wallet: tipFee.wallet,
+    tokenId: pb.tokenId,
+    note: pb.note,
+    parentBurnTxid: pb.parentBurnTxid,
+  });
+  pendingBurns.delete(remintTxid);
+
+  return {
+    remintTxid: pb.remintTxid,
+    burnTxid,
+    tokenId: pb.tokenId,
+    deskAtomsKept: 0,
+    note: pb.note,
+    explorerRemint: `https://explorer.e.cash/tx/${pb.remintTxid}`,
     explorerBurn: `https://explorer.e.cash/tx/${burnTxid}`,
   };
+}
+
+/**
+ * Drop pending memorial burn — remint already mined; desk keeps the miner atom.
+ * Abandoning a specific remint requires the submit-issued burnToken.
+ */
+function abandonPendingBurns(opts: {
+  installId: string;
+  remintTxid?: string;
+  burnToken?: string;
+}): number {
+  expireStaleChallenges();
+  let n = 0;
+  const want = opts.remintTxid?.trim().toLowerCase();
+  if (want) {
+    const pb = pendingBurns.get(want);
+    if (!pb || pb.installId !== opts.installId) return 0;
+    if (!burnTokenMatches(pb.burnToken, opts.burnToken)) {
+      throw new Error('Invalid burnToken');
+    }
+    pendingBurns.delete(want);
+    return 1;
+  }
+  // No remintTxid: only clear pending burns when burnToken matches each entry —
+  // do not mass-abandon by installId alone (installId is a weak bearer).
+  for (const [id, pb] of [...pendingBurns.entries()]) {
+    if (pb.installId !== opts.installId) continue;
+    if (!burnTokenMatches(pb.burnToken, opts.burnToken)) continue;
+    pendingBurns.delete(id);
+    n++;
+  }
+  return n;
 }
 
 function withChainLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -974,11 +1128,21 @@ export function enqueueSubmit(opts: {
   return withChainLock(() => submitChallengeOnce(opts));
 }
 
+export function enqueueBurn(opts: {
+  installId: string;
+  remintTxid: string;
+  burnToken: string;
+}): Promise<BurnResult> {
+  return withChainLock(() => completeBurnOnce(opts));
+}
+
 /** Release an open challenge (cancel mining / page reload cleanup). */
 export function cancelChallenge(opts: {
   installId: string;
   challengeId?: string;
-}): { ok: true; cancelled: number } {
+  remintTxid?: string;
+  burnToken?: string;
+}): { ok: true; cancelled: number; abandonedBurns: number } {
   expireStaleChallenges();
   let cancelled = 0;
   for (const ch of challenges.values()) {
@@ -988,14 +1152,21 @@ export function cancelChallenge(opts: {
     ch.status = 'expired';
     cancelled++;
   }
-  return { ok: true, cancelled };
+  const abandonedBurns = abandonPendingBurns({
+    installId: opts.installId,
+    remintTxid: opts.remintTxid,
+    burnToken: opts.burnToken,
+  });
+  return { ok: true, cancelled, abandonedBurns };
 }
 
 /** Serialize cancel with challenge/submit so a re-Offer cannot race a stale lock. */
 export function enqueueCancel(opts: {
   installId: string;
   challengeId?: string;
-}): Promise<{ ok: true; cancelled: number }> {
+  remintTxid?: string;
+  burnToken?: string;
+}): Promise<{ ok: true; cancelled: number; abandonedBurns: number }> {
   return withChainLock(async () => cancelChallenge(opts));
 }
 

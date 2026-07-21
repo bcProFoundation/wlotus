@@ -50,6 +50,20 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 - Independent miners who pay their own fees still forfeit 107/108 — so **sponsored mobile remains advantaged** without claiming exclusive software.
 - wLotus is **not** positioned as money; temple concentration is acceptable for a ritual ledger.
 
+### Product intent (anti-farm + presence) — read this first
+
+**Confirmed launch posture (2026-07-21):**
+
+| Mechanism | Role |
+|-----------|------|
+| **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
+| **Soft pray timer** (`VITE_MIN_PRAY_MS`, default ~60s) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
+| **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
+| **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
+
+**Do not claim:** “more WLOTUS hashrate = safer token” (Bitcoin/eCash analogy does not apply).  
+**Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**.
+
 ### Does 1/107 deter fee-paying miners? (yes, on XEC cost)
 
 Reference fee from the Prayer sheet: **~5.46 XEC** per remint (eCash miner fee). Burn-after-mint adds a second fee of similar order → **~11 XEC** desk cost per sponsored remint that leaves **107** temple inventory atoms (miner 1 burned).
@@ -61,9 +75,10 @@ Reference fee from the Prayer sheet: **~5.46 XEC** per remint (eCash miner fee).
 
 So:
 
-1. **Farming for inventory is uneconomic** vs buying from the desk at any retail price **below ~5.46 XEC / WLOTUS** (fee floor). Mining still costs presence time on top.
+1. **Farming for inventory is uneconomic** vs buying from the desk at any retail price **below ~5.46 XEC / WLOTUS** (fee floor). Energy near zero does **not** close that gap — the independent miner still pays the full remint fee for **one** atom.
 2. Desk cost basis **~0.10 XEC / lotus**. Selling at **1 XEC / WLOTUS** is still **profitable vs cost** (~10× markup) **and** still **far below** the independent miner’s break-even (~5.46 XEC). Buyers who only want a lotus to burn should prefer the desk — that is the intended deterrence.
 3. **Correct reading of “> 5.46 lotus”:** if the market quotes WLOTUS near **1 XEC**, an independent miner’s fee alone is already **> 5.46 lotus-equivalent** before electricity/time. They cannot undercut a 1 XEC desk ask on fee math.
+4. **Temple-sponsored mining always wins** the economic contest vs commercial miners on that fee sheet: user pays **attention** (PoW + soft timer), temple pays XEC, desk receives **107**.
 
 Caveats (do not overclaim):
 
@@ -71,6 +86,16 @@ Caveats (do not overclaim):
 - If secondary price ever rises **above ~5.46 XEC**, fee-paying miners can become competitive again — raise bits / rate limits, or keep desk asks in a band under that floor.
 - Exact sats depend on fuel sizing (`REMINT_FUEL_SATS` peel) and network fee policy; use **~5.46 / ~11** as the working sheet, remeasure on live txs.
 - Covenant cannot stop copycat clients; **107→temple** is the on-chain tax that makes copycat mining a bad business.
+- Soft timer is **client / mint-api product policy**, not a covenant rule — permissionless miners skip it and still lose on **1/107 + fees**.
+
+### Soft timer (attention), not hashrate security
+
+Phone electricity ≪ XEC fee ([ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)). Ritual value is **minutes of presence**, not SHA256d network work.
+
+- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
+- Cancel during the soft wait **skips the burn** (requires same `burnToken`); the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
+- Soft timer must **not** delay remint — that would lose tip races.
+- Aggregate token hashrate does not protect transfers or burns; eCash does. Bits stay near **24** at launch to encourage participation — not **32** “for security.”
 
 ### Non-miners and scale
 
@@ -86,9 +111,9 @@ Burning/giving is the scalable ritual; mining is the issuance + presence tax.
 | Who | XEC remint fee |
 |-----|----------------|
 | Official mobile / mint-api path | Temple may **sponsor** (rate-limited) |
-| Anyone else | Pays own XEC; still must mint **99→temple, 1→self** |
+| Anyone else | Pays own XEC; still must mint **107→temple, 1→self** |
 
-Caps, installId limits, and PoW difficulty remain product controls on the free lane — not chain exclusivity.
+Caps, installId limits, soft pray timer, and PoW difficulty remain product controls on the free lane — not chain exclusivity.
 
 ### Convertibility
 
@@ -160,7 +185,7 @@ Candle / Flower rows in [ECONOMICS.md](./ECONOMICS.md) remain a longer-term hard
 
 | Layer | Address type | Role |
 |-------|--------------|------|
-| Temple (in covenant) | **P2SH** (multisig / cold) | Receives 99/remint; IFP-style baked sink |
+| Temple (in covenant) | **P2SH** (multisig / cold) | Receives 107/remint; IFP-style baked sink |
 | Spends | Redeem + keys | Rare, intentional treasury moves — not a daily hot key |
 
 **Why P2SH (not hot P2PKH):** ops custody matches other eCash baked funds (e.g. IFP). Multisig reduces single-key loss; the redeem is public only when spending. Quantum / address-format risk is accepted the same way as other P2SH sinks — migrate via a **protocol fork** to a new format when needed, rather than encoding a forever-hot P2PKH.
@@ -186,7 +211,8 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
 - Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=2`.
-- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun.
+- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun (participation / presence — not security theater).
+- Soft pray timer: `VITE_MIN_PRAY_MS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
 - Golden Lotus: separate token; open remint; no temple mint tax.
 
-Open product decisions: bits/difficulty, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up.
+Open product decisions: bits/difficulty UX, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up. Anti-farm intent is settled: **1/107 + fees**; presence intent: **soft timer + ~24 bits**.

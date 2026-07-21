@@ -27,6 +27,7 @@ export type MessageKey =
   | 'apiOffline'
   | 'leftToday'
   | 'miningCancelled'
+  | 'memorialCancelled'
   | 'miningOnNewTip'
   | 'offeredIn'
   | 'recentTitle'
@@ -70,6 +71,8 @@ const en: Dict = {
     'Mint API offline — start mint-api on Contabo and proxy /api → :8787',
   leftToday: '{n} left today on this device',
   miningCancelled: 'Search cancelled.',
+  memorialCancelled:
+    'Memorial cancelled — lotus was minted; dedication burn skipped.',
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Offered in {duration}',
   recentTitle: 'Recent',
@@ -112,6 +115,8 @@ const vi: Dict = {
   apiOffline: 'API mint ngoại tuyến — kiểm tra mint-api trên Contabo.',
   leftToday: 'Còn {n} lần hôm nay trên thiết bị này',
   miningCancelled: 'Đã hủy tìm kiếm.',
+  memorialCancelled:
+    'Đã hủy tưởng niệm — sen đã được mint; chưa đốt dâng.',
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
@@ -154,6 +159,7 @@ const zh: Dict = {
   apiOffline: '铸造服务离线 — 请检查 Contabo 上的 mint-api。',
   leftToday: '本设备今日剩余 {n} 次',
   miningCancelled: '已取消寻找。',
+  memorialCancelled: '已取消献念——莲花已铸造；未完成燃烧献上。',
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花完成 · {duration}',
   recentTitle: '最近',
