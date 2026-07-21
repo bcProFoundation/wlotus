@@ -79,7 +79,35 @@ export const MOORE_NUM_OBSOLETE = 99826n;
 
 export const MOORE_DAY_BLOCKS = 144;
 export const MOORE_DAY_SECONDS = 86_400;
-export const MOORE_DAYS_PER_EXTRA_BIT = 840;
+
+/**
+ * Calendar days per +1 Moore bit (baked into covenant at genesis).
+ * Default **365** (~1 year) — more aggressive than classic ~840d Moore.
+ * Override at create time: `MOORE_DAYS_PER_EXTRA_BIT=365..730` (1–2 years).
+ * Existing deployments keep whatever `secondsPerExtraBit` was baked in JSON.
+ */
+export const MOORE_DAYS_PER_EXTRA_BIT = 365;
+
+/** Allowed range for genesis override (1–2 years). */
+export const MOORE_DAYS_PER_EXTRA_BIT_MIN = 365;
+export const MOORE_DAYS_PER_EXTRA_BIT_MAX = 730;
+
+/**
+ * Resolve days/bit for a new genesis. Clamps to 365–730.
+ * Env: `MOORE_DAYS_PER_EXTRA_BIT` (e.g. 365 or 730).
+ */
+export function resolveMooreDaysPerExtraBit(
+  raw: string | undefined = process.env.MOORE_DAYS_PER_EXTRA_BIT,
+): number {
+  const s = (raw ?? '').trim();
+  if (s === '') return MOORE_DAYS_PER_EXTRA_BIT;
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) return MOORE_DAYS_PER_EXTRA_BIT;
+  return Math.min(
+    MOORE_DAYS_PER_EXTRA_BIT_MAX,
+    Math.max(MOORE_DAYS_PER_EXTRA_BIT_MIN, Math.round(n)),
+  );
+}
 
 /** Economic peg only: 10 Candle tokens ≈ 1 Flower token. */
 export const CANDLE_PER_FLOWER = 10n;

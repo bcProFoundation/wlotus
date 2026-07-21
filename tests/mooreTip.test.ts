@@ -21,17 +21,17 @@ describe('MooreTip production covenant', () => {
     tipLocktime: genesis,
   };
 
-  it('uses production Moore clock (840d/bit) not activity', () => {
+  it('uses production Moore clock (+1 bit per period) not activity', () => {
     const day0 = computeMooreTipState(genesis, base);
     expect(day0.bits).toBe(22);
     expect(day0.extraBits).toBe(0);
 
-    const after840d = computeMooreTipState(
+    const afterOnePeriod = computeMooreTipState(
       genesis + PROD_SECONDS_PER_EXTRA_BIT,
       base,
     );
-    expect(after840d.extraBits).toBe(1);
-    expect(after840d.bits).toBe(23);
+    expect(afterOnePeriod.extraBits).toBe(1);
+    expect(afterOnePeriod.bits).toBe(23);
   });
 
   it('dryrun whole-byte bases stay under absolute cap', () => {

@@ -51,7 +51,7 @@ async function main() {
       templeScriptHash,
       genesisUnixLe: u32(1000),
       baseZeroBitsBin: Buffer.from([24]),
-      secondsPerExtraBitLe: u32(72576000),
+      secondsPerExtraBitLe: u32(365 * 86_400),
       codeHash: z,
       prefixHash: z,
       tipLocktimeLe: u32(1000),

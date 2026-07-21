@@ -13,7 +13,8 @@
  * wLotus: mint 108 (one mala) → 1 miner + 107 temple **P2SH** (MooreTipTemple).
  * LIVE=1 requires TEMPLE_ADDRESS (real IFP-style P2SH). Dryrun may omit it and
  * wrap the genesis P2PKH in P2SH for convenience.
- * Moore clock: +1 bit / 840 days. Hard next-P2SH + tipLocktime.
+ * Moore clock: +1 bit / year by default (override `MOORE_DAYS_PER_EXTRA_BIT=365..730`).
+ * Hard next-P2SH + tipLocktime.
  */
 import { resolve } from 'node:path';
 import {
@@ -45,7 +46,7 @@ import {
   WLOTUS_MINER_ATOMS,
   WLOTUS_TEMPLE_ATOMS,
 } from '../src/params/wlotusMint.js';
-import { PROD_SECONDS_PER_EXTRA_BIT } from '../src/covenant/mooreTip.js';
+import { resolveProdSecondsPerExtraBit } from '../src/covenant/mooreTip.js';
 import {
   CANDLE_MINT_ATOMS,
   CANDLE_NAME,
@@ -65,6 +66,10 @@ import {
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
 const LIVE = /^(1|true|yes)$/i.test(process.env.LIVE?.trim() || '');
+/** Baked into new genesis only — existing deployments keep their JSON value. */
+const SECONDS_PER_EXTRA_BIT = resolveProdSecondsPerExtraBit(
+  process.env.MOORE_DAYS_PER_EXTRA_BIT,
+);
 
 type Tier = 'prayer' | 'candle' | 'flower' | 'wlotus';
 
@@ -194,7 +199,7 @@ async function main(): Promise<void> {
         baseZeroBits: tier.bits,
         mintAtoms: Number(tier.mint),
         templeAddress: temple?.address ?? null,
-        secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+        secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
         genesisUnix,
         tipLocktime,
         batons,
@@ -238,7 +243,7 @@ async function main(): Promise<void> {
           templeScriptHash: temple!.scriptHash,
           genesisUnix,
           baseZeroBits: tier.bits,
-          secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+          secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
           tipLocktime,
         })
       : tierName === 'prayer'
@@ -247,7 +252,7 @@ async function main(): Promise<void> {
             mintAtoms: tier.mint,
             genesisUnix,
             baseZeroBits: tier.bits,
-            secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+            secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
             tipLocktime,
           })
         : await createPowRemintMooreTipContract({
@@ -255,7 +260,7 @@ async function main(): Promise<void> {
             mintAtoms: tier.mint,
             genesisUnix,
             baseZeroBits: tier.bits,
-            secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+            secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
             tipLocktime,
           });
   console.log(
@@ -343,7 +348,7 @@ async function main(): Promise<void> {
     tipValueOffset: contract.tipValueOffset,
     genesisUnix,
     baseZeroBits: tier.bits,
-    secondsPerExtraBit: PROD_SECONDS_PER_EXTRA_BIT,
+    secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
     tipLocktime,
     mintAtomsPerRemint: tier.mint.toString(),
     mintSplit:
@@ -372,7 +377,7 @@ async function main(): Promise<void> {
     explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
-      'Moore D: production 840-day bit clock. Cap bits ≤ 128. Whole-byte PoW only.',
+      'Moore D: +1 bit / year (override MOORE_DAYS_PER_EXTRA_BIT=365..730). Cap bits ≤ 128. Whole-byte PoW only.',
       tierName === 'wlotus'
         ? `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget). Remint tip + burn memorial use DANA LOKAD.`
         : tierName === 'prayer'
