@@ -1,0 +1,201 @@
+# Build apps/web and rsync to the Contabo **production** VM.
+#
+# Triggers when a version tag is pushed (and that commit is on master).
+# Example:
+#   git checkout master && git pull
+#   git tag -a v1.0.0 -m "WLotus prod v1.0.0"
+#   git push origin v1.0.0
+#
+# Required GitHub secrets (repo or Environment "production"):
+#   CONTABO_PROD_HOST
+#   CONTABO_PROD_USER
+#   CONTABO_PROD_SSH_PRIVATE_KEY
+#
+# Optional:
+#   CONTABO_PROD_SSH_PORT          — default 22
+#   CONTABO_PROD_DEPLOY_PATH       — default /var/www/wlotus
+#   CONTABO_PROD_REPO_PATH         — mint-api clone on VM; default /opt/wlotus
+#   CONTABO_PROD_SMOKE_URL         — e.g. https://wlotus.org/
+#   MINT_MNEMONIC_PROD             — synced to /etc/wlotus/mint.env on prod VM
+#
+# Build vars (prefer Environment "production" *variables*):
+#   VITE_PRAYER_TOKEN_ID           — live WLOTUS token id
+#   VITE_PRAYER_TICKER             — WLOTUS
+#   VITE_CHRONIK_URLS
+#   VITE_TIP_POLL_MS
+#
+# One-time VM setup: deploy/contabo/README.md § Production
+
+name: Deploy web (prod)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or SHA to deploy (e.g. v1.0.0). Empty = this workflow ref.'
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-web-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Resolve deploy ref
+        id: ref
+        run: |
+          if [ -n "${{ inputs.ref }}" ]; then
+            echo "ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${GITHUB_REF}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Ensure commit is on master
+        run: |
+          git fetch origin master
+          SHA="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$SHA" origin/master; then
+            echo "::error::Deploy ref $SHA is not an ancestor of origin/master. Only tag/deploy commits that are on master."
+            exit 1
+          fi
+          echo "OK: $SHA is on master"
+          git describe --tags --exact-match HEAD 2>/dev/null || echo "(not an exact tag — workflow_dispatch SHA ok)"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build web
+        env:
+          VITE_PRAYER_TOKEN_ID: ${{ vars.VITE_PRAYER_TOKEN_ID || secrets.VITE_PRAYER_TOKEN_ID }}
+          VITE_PRAYER_TICKER: ${{ vars.VITE_PRAYER_TICKER }}
+          VITE_CHRONIK_URLS: ${{ vars.VITE_CHRONIK_URLS || secrets.VITE_CHRONIK_URLS }}
+          VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
+        run: |
+          echo "Building prod SPA (ticker var=${VITE_PRAYER_TICKER:-<app default>})"
+          npm run web:build
+
+      - name: Require Contabo prod secrets
+        env:
+          CONTABO_PROD_HOST: ${{ secrets.CONTABO_PROD_HOST }}
+          CONTABO_PROD_USER: ${{ secrets.CONTABO_PROD_USER }}
+          CONTABO_PROD_SSH_PRIVATE_KEY: ${{ secrets.CONTABO_PROD_SSH_PRIVATE_KEY }}
+        run: |
+          missing=0
+          for name in CONTABO_PROD_HOST CONTABO_PROD_USER CONTABO_PROD_SSH_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name secret is not set (Environment: production)"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CONTABO_PROD_SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        env:
+          CONTABO_PROD_HOST: ${{ secrets.CONTABO_PROD_HOST }}
+          CONTABO_PROD_SSH_PORT: ${{ secrets.CONTABO_PROD_SSH_PORT }}
+        run: |
+          PORT="${CONTABO_PROD_SSH_PORT:-22}"
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$PORT" -H "$CONTABO_PROD_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync dist to Contabo prod
+        env:
+          CONTABO_PROD_HOST: ${{ secrets.CONTABO_PROD_HOST }}
+          CONTABO_PROD_USER: ${{ secrets.CONTABO_PROD_USER }}
+          CONTABO_PROD_SSH_PORT: ${{ secrets.CONTABO_PROD_SSH_PORT }}
+          CONTABO_PROD_DEPLOY_PATH: ${{ secrets.CONTABO_PROD_DEPLOY_PATH }}
+        run: |
+          PORT="${CONTABO_PROD_SSH_PORT:-22}"
+          DEST="${CONTABO_PROD_DEPLOY_PATH:-/var/www/wlotus}"
+          rsync -avz --delete \
+            -e "ssh -p ${PORT} -o StrictHostKeyChecking=yes" \
+            apps/web/dist/ \
+            "${CONTABO_PROD_USER}@${CONTABO_PROD_HOST}:${DEST}/"
+
+      - name: Sync mint fee wallet env (optional)
+        env:
+          CONTABO_PROD_HOST: ${{ secrets.CONTABO_PROD_HOST }}
+          CONTABO_PROD_USER: ${{ secrets.CONTABO_PROD_USER }}
+          CONTABO_PROD_SSH_PORT: ${{ secrets.CONTABO_PROD_SSH_PORT }}
+          MINT_MNEMONIC_PROD: ${{ secrets.MINT_MNEMONIC_PROD }}
+        run: |
+          if [ -z "$MINT_MNEMONIC_PROD" ]; then
+            echo "MINT_MNEMONIC_PROD not set — leave /etc/wlotus/mint.env unchanged"
+            exit 0
+          fi
+          PORT="${CONTABO_PROD_SSH_PORT:-22}"
+          ssh -p "$PORT" "${CONTABO_PROD_USER}@${CONTABO_PROD_HOST}" \
+            'sudo mkdir -p /etc/wlotus'
+          printf 'MINT_MNEMONIC="%s"\nMINT_API_PORT=8787\n' "$MINT_MNEMONIC_PROD" | \
+            ssh -p "$PORT" "${CONTABO_PROD_USER}@${CONTABO_PROD_HOST}" \
+              'sudo tee /etc/wlotus/mint.env > /dev/null && sudo chmod 600 /etc/wlotus/mint.env'
+          echo "Synced /etc/wlotus/mint.env on prod"
+
+      - name: Update mint-api checkout + restart
+        env:
+          CONTABO_PROD_HOST: ${{ secrets.CONTABO_PROD_HOST }}
+          CONTABO_PROD_USER: ${{ secrets.CONTABO_PROD_USER }}
+          CONTABO_PROD_SSH_PORT: ${{ secrets.CONTABO_PROD_SSH_PORT }}
+          CONTABO_PROD_REPO_PATH: ${{ secrets.CONTABO_PROD_REPO_PATH }}
+        run: |
+          PORT="${CONTABO_PROD_SSH_PORT:-22}"
+          REPO="${CONTABO_PROD_REPO_PATH:-/opt/wlotus}"
+          SHA="$(git rev-parse HEAD)"
+          TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+          ssh -p "$PORT" "${CONTABO_PROD_USER}@${CONTABO_PROD_HOST}" bash -s -- "$REPO" "$SHA" "$TAG" <<'REMOTE'
+          set -euo pipefail
+          REPO="$1"
+          SHA="$2"
+          TAG="$3"
+          if [ ! -d "$REPO/.git" ]; then
+            echo "No git clone at $REPO — skip mint-api update (bootstrap mint-api first)"
+            exit 0
+          fi
+          cd "$REPO"
+          git fetch --tags origin
+          if [ -n "$TAG" ]; then
+            git checkout --force "tags/$TAG" || git checkout --force "$TAG"
+          else
+            git checkout --force "$SHA"
+          fi
+          npm ci
+          sudo systemctl try-restart wlotus-mint-api.service || true
+          echo "mint-api at $(git rev-parse --short HEAD)"
+          REMOTE
+
+      - name: Smoke check (optional HTTP)
+        env:
+          CONTABO_PROD_SMOKE_URL: ${{ secrets.CONTABO_PROD_SMOKE_URL }}
+        run: |
+          URL="${CONTABO_PROD_SMOKE_URL:-}"
+          if [ -z "$URL" ]; then
+            echo "CONTABO_PROD_SMOKE_URL not set — skip smoke check"
+            exit 0
+          fi
+          curl -fsSL --retry 5 --retry-delay 2 "$URL" | head -c 200
+          echo
+          echo "Smoke OK: $URL"

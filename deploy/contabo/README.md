@@ -1,6 +1,7 @@
 # WLotus web deploy guide
 
-**Live test site:** https://test.wlotus.org
+**Live test site:** https://test.wlotus.org  
+**Production:** https://wlotus.org — tag releases only; see **[PROD.md](./PROD.md)**
 
 Static SPA (`apps/web`) — Prayer ALP burn, XEC fees from the browser wallet.
 
@@ -278,6 +279,8 @@ Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
 ## 4. Deploy / update the live site (CI)
 
+### Test — https://test.wlotus.org
+
 Workflow: **Deploy web (test)** — `.github/workflows/deploy-web-test.yml`
 
 | Trigger | When |
@@ -290,6 +293,23 @@ Feature branches do **not** trigger deploy (cost control).
 Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → VM.
 
 After a green run, https://test.wlotus.org serves the new build (hard-refresh if cached).
+
+### Production — https://wlotus.org
+
+Workflow: **Deploy web (prod)** — `.github/workflows/deploy-web-prod.yml`
+
+| Trigger | When |
+|---------|------|
+| **Automatic** | Push a **`v*` tag** whose commit is on **`master`** |
+| **Manual** | Actions → Deploy web (prod) → set `ref` to the tag |
+
+Full guide: **[PROD.md](./PROD.md)** (separate VM, Environment `production`, `CONTABO_PROD_*` secrets).
+
+```bash
+git checkout master && git pull
+git tag -a v1.0.0 -m "WLotus prod v1.0.0"
+git push origin v1.0.0
+```
 
 ---
 
