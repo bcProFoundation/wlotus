@@ -41,9 +41,41 @@ Creates `/var/www/wlotus`, nginx site `wlotus`, user `deploy`, ufw, limited sudo
 | Type | Name | Value |
 |------|------|-------|
 | A | `@` (wlotus.org) | Prod Contabo IPv4 |
-| A | `www` | Same IP (optional) |
+| A | `www` | **Same** Contabo IPv4 |
 
-### Deploy SSH key (separate from test)
+DNS only points `www` at the server. The **HTTP 301** to apex is done in nginx (see below) — registrars’ “URL redirect” records are optional and often break HTTPS.
+
+Verify:
+
+```bash
+dig +short wlotus.org A
+dig +short www.wlotus.org A   # must resolve to the same IP
+```
+
+### www → apex redirect
+
+Repo config already separates hosts: `www` returns `301 https://wlotus.org$request_uri`.
+
+**If the site is already live with Certbot**, do not overwrite the whole site file. On the prod VM:
+
+```bash
+cd /opt/wlotus && git pull origin master   # or copy files from laptop
+
+# 1) Ensure cert covers both names
+sudo certbot --nginx -d wlotus.org -d www.wlotus.org --expand
+
+# 2) Add www redirect servers (adjust ssl paths if certbot used a different live/ name)
+sudo cp deploy/contabo/nginx-www-redirect.conf /etc/nginx/sites-available/wlotus-www-redirect
+sudo ln -sfn /etc/nginx/sites-available/wlotus-www-redirect /etc/nginx/sites-enabled/
+
+# 3) On the main apex HTTPS server block, remove www.wlotus.org from server_name
+#    so only wlotus.org serves the SPA (www is handled by the redirect file).
+
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI https://www.wlotus.org/ | head -5   # expect 301 → https://wlotus.org/
+```
+
+**Fresh install:** `bootstrap-prod.sh` + `nginx-wlotus-prod.conf` already include the HTTP www redirect; after Certbot, add the HTTPS www block from `nginx-www-redirect.conf` if Certbot did not create a clean redirect.
 
 On your laptop:
 
