@@ -97,7 +97,7 @@ After Certbot, ensure `/api/` and `/health` exist in the **443** server block (s
 
 ---
 
-## 2. One-time: mint-api on prod
+## 2. One-time: mint-api + live **WLOTUS** genesis
 
 ```bash
 sudo mkdir -p /opt/wlotus /etc/wlotus
@@ -109,7 +109,50 @@ cd /opt/wlotus
 sudo -u deploy git checkout master
 sudo -u deploy npm ci
 
-# Fee wallet — use a NEW mnemonic (do not reuse test desk)
+# systemd — WorkingDirectory=/opt/wlotus
+sudo sed 's|/root/wlotus/wlotus|/opt/wlotus|g' deploy/contabo/wlotus-mint-api.service \
+  | sudo tee /etc/systemd/system/wlotus-mint-api.service >/dev/null
+sudo systemctl daemon-reload
+sudo systemctl enable wlotus-mint-api
+# Start after genesis + mint.env exist (below)
+```
+
+### Create live **WLOTUS** (on this prod VM)
+
+Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TIER=wlotus` → `dWLOTUS`).
+
+```bash
+cd /opt/wlotus   # or ~/wlotus/wlotus
+git pull origin master
+npm ci
+
+# 1) Genesis key (NEW — not the test Contabo key)
+#    If you already have GENESIS_SK_HEX for prod in .env, skip new-wallet.
+npm run new-wallet -- --force   # only if starting fresh; overwrites .env
+# Fund GENESIS_ADDRESS with ≥ ~900 XEC (BATONS=28 handoffs)
+
+# 2) Real temple P2SH (IFP-style multisig / cold) — required for LIVE
+export TEMPLE_ADDRESS=ecash:p…   # your prod temple
+
+# 3) Genesis ticker WLOTUS, name wLotus → deployments/mainnet-wlotus.json
+LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
+  npm run create-prod-token
+# Equivalent: LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS=… npm run create-dryrun-token
+
+# 4) Confirm on-chain record
+jq '{ticker,name,tokenId,mintAtomsPerRemint,mintSplit,templeAddress,role}' \
+  deployments/mainnet-wlotus.json
+# → ticker "WLOTUS", name "wLotus", mintAtoms "108", role "production"
+
+# Optional smoke remint (uses GENESIS wallet as miner+fuel):
+TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.json) \
+  npm run mine-dryrun-once
+```
+
+### Desk fees + start mint-api
+
+```bash
+# Fee wallet — NEW mnemonic (do not reuse test desk)
 sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
 MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787
@@ -117,15 +160,20 @@ MINT_SERVING_TIP_COUNT=2
 EOF
 sudo chmod 600 /etc/wlotus/mint.env
 
-# systemd — WorkingDirectory=/opt/wlotus
-sudo sed 's|/root/wlotus/wlotus|/opt/wlotus|g' deploy/contabo/wlotus-mint-api.service \
-  | sudo tee /etc/systemd/system/wlotus-mint-api.service >/dev/null
-sudo systemctl daemon-reload
+set -a && source /etc/wlotus/mint.env && set +a
+# Fund the desk address, then split fuel into tip accounts:
+npm run fund-tip-fee-wallets
+
 sudo systemctl enable --now wlotus-mint-api
+# or: sudo systemctl restart wlotus-mint-api
 curl -sS http://127.0.0.1:8787/health
+curl -sS https://wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,powBatonCount,memorialOnBurn}'
+# → ticker "WLOTUS", mintAtoms "108"
 ```
 
-Create / point the **live WLOTUS** deployment JSON on this clone (`deployments/…`), fund desk + tip wallets (`npm run fund-tip-fee-wallets`), restart mint-api. Do **not** copy test `dWLOTUS` secrets or mnemonics.
+mint-api prefers `deployments/mainnet-wlotus.json` over dryrun files. On prod, keep **no** `mainnet-dryrun-*.json` (or ensure the live file exists first).
+
+Set GitHub Environment variable `VITE_PRAYER_TOKEN_ID` to this **tokenId** before the first prod tag (see §3).
 
 ---
 
@@ -192,10 +240,11 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 
 ## 5. Checklist before first prod tag
 
-- [ ] Prod VM bootstrapped; DNS + TLS green
-- [ ] `/api/status` returns expected ticker / tokenId on prod
-- [ ] Tip fee wallets funded
-- [ ] GitHub Environment `production` secrets + vars set
+- [ ] Prod VM bootstrapped; DNS + TLS green; www → apex 301
+- [ ] Live genesis: `deployments/mainnet-wlotus.json` with ticker **WLOTUS**, mintAtoms **108**
+- [ ] `/api/status` returns that ticker / tokenId on prod
+- [ ] Tip fee wallets funded (`npm run fund-tip-fee-wallets`)
+- [ ] GitHub Environment `production` secrets + `VITE_PRAYER_TOKEN_ID` / `VITE_PRAYER_TICKER=WLOTUS`
 - [ ] Test site still deploys from master without touching prod
 - [ ] Tag only after master is green on test
 
@@ -210,3 +259,5 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
+| `dWLOTUS` on prod `/api/status` | You loaded a dryrun JSON — create live with `npm run create-prod-token` and ensure `mainnet-wlotus.json` exists |
+| `LIVE=1` errors without temple | Pass `TEMPLE_ADDRESS=ecash:p…` (required; no dryrun wrap on live) |

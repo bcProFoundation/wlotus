@@ -1,18 +1,19 @@
 #!/usr/bin/env tsx
 /**
- * Dryrun genesis for production MooreTip tiers: Prayer | Candle | Flower | wLotus.
+ * Genesis for MooreTip tiers: Prayer | Candle | Flower | wLotus.
  *
- * Usage:
+ * Test / dryrun (ticker prefixed with `d`):
  *   TIER=prayer npm run create-dryrun-token
- *   TIER=candle npm run create-dryrun-token
- *   TIER=flower npm run create-dryrun-token
- *   TIER=wlotus npm run create-dryrun-token
- *   TIER=wlotus TEMPLE_ADDRESS=ecash:p… BATONS=2 npm run create-dryrun-token
+ *   TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token
  *
- * WLotus: mint 108 (one mala) → 1 miner + 107 temple **P2SH** (MooreTipTemple covenant).
- * TEMPLE_ADDRESS must be P2SH (IFP-style multisig / cold). If unset, dryrun wraps
- * the genesis wallet P2PKH in P2SH so the same key can spend by revealing redeem.
- * Uses hardened next-P2SH (codeHash) + tipLocktime. Moore clock: +1 bit / 840 days.
+ * Live production WLOTUS (no `d` prefix) — Contabo prod only:
+ *   LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-prod-token
+ *   → deployments/mainnet-wlotus.json
+ *
+ * wLotus: mint 108 (one mala) → 1 miner + 107 temple **P2SH** (MooreTipTemple).
+ * LIVE=1 requires TEMPLE_ADDRESS (real IFP-style P2SH). Dryrun may omit it and
+ * wrap the genesis P2PKH in P2SH for convenience.
+ * Moore clock: +1 bit / 840 days. Hard next-P2SH + tipLocktime.
  */
 import { resolve } from 'node:path';
 import {
@@ -63,6 +64,8 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
+const LIVE = /^(1|true|yes)$/i.test(process.env.LIVE?.trim() || '');
+
 type Tier = 'prayer' | 'candle' | 'flower' | 'wlotus';
 
 const TIERS: Record<
@@ -92,7 +95,8 @@ const TIERS: Record<
     batons: POW_BATON_COUNT,
   },
   wlotus: {
-    ticker: `d${PROD_TOKEN_TICKER}`,
+    // LIVE=1 → ticker WLOTUS; otherwise dryrun dWLOTUS
+    ticker: LIVE ? PROD_TOKEN_TICKER : `d${PROD_TOKEN_TICKER}`,
     name: PROD_TOKEN_NAME,
     bits: 24,
     mint: WLOTUS_MINT_ATOMS,
@@ -144,6 +148,14 @@ async function main(): Promise<void> {
       `Unknown TIER=${tierName}; use prayer|candle|flower|wlotus`,
     );
   }
+  if (LIVE && tierName !== 'wlotus') {
+    throw new Error('LIVE=1 is only supported for TIER=wlotus (live WLOTUS)');
+  }
+  if (LIVE && !process.env.TEMPLE_ADDRESS?.trim()) {
+    throw new Error(
+      'LIVE=1 requires TEMPLE_ADDRESS=ecash:p… (real P2SH temple; no dryrun wrap)',
+    );
+  }
 
   const skHex = process.env.GENESIS_SK_HEX?.trim();
   if (!skHex || !/^[0-9a-fA-F]{64}$/.test(skHex)) {
@@ -176,6 +188,7 @@ async function main(): Promise<void> {
       {
         address: wallet.address,
         balanceXec: Number(wallet.balanceSats) / 100,
+        live: LIVE,
         tier: tierName,
         ticker: tier.ticker,
         baseZeroBits: tier.bits,
@@ -189,7 +202,9 @@ async function main(): Promise<void> {
         mtp,
         regime:
           tierName === 'wlotus'
-            ? 'production-moore-tip-temple-dryrun'
+            ? LIVE
+              ? 'production-moore-tip-temple'
+              : 'production-moore-tip-temple-dryrun'
             : 'production-moore-tip-dryrun',
       },
       null,
@@ -288,11 +303,12 @@ async function main(): Promise<void> {
 
   const depDir = resolve(process.cwd(), 'deployments');
   mkdirSync(depDir, { recursive: true });
-  const livePath = resolve(depDir, `mainnet-dryrun-${tierName}.json`);
+  const fileStem = LIVE ? `mainnet-${tierName}` : `mainnet-dryrun-${tierName}`;
+  const livePath = resolve(depDir, `${fileStem}.json`);
   if (existsSync(livePath)) {
     const archive = resolve(
       depDir,
-      `mainnet-dryrun-${tierName}-archived-${Date.now()}.json`,
+      `${fileStem}-archived-${Date.now()}.json`,
     );
     renameSync(livePath, archive);
     console.log('Archived', archive);
@@ -316,7 +332,7 @@ async function main(): Promise<void> {
         : tierName === 'prayer'
           ? 'moore-tip-memo-hard-bind'
           : 'moore-tip-hard-bind',
-    role: 'production-dryrun',
+    role: LIVE ? 'production' : 'production-dryrun',
     covenant: covenantName,
     decimals: 0,
     powAddress: contract.address,
@@ -358,22 +374,25 @@ async function main(): Promise<void> {
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: production 840-day bit clock. Cap bits ≤ 128. Whole-byte PoW only.',
       tierName === 'wlotus'
-        ? `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget).`
+        ? `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget). Remint tip + burn memorial use DANA LOKAD.`
         : tierName === 'prayer'
           ? 'Prayer memo mint: 1 atom/remint to desk; DANA memorial in mint OP_RETURN (no burn tx).'
           : 'Candle/Flower use MooreTip without memorial push.',
+      LIVE
+        ? 'LIVE genesis: ticker WLOTUS — do not copy test dWLOTUS secrets or mnemonics.'
+        : 'Dryrun genesis: ticker prefixed with d (e.g. dWLOTUS).',
       'Ergon not used for production tiers.',
     ],
   };
 
   writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
-  if (tierName === 'prayer' || tierName === 'wlotus') {
+  if (!LIVE && (tierName === 'prayer' || tierName === 'wlotus')) {
     writeFileSync(
       resolve(depDir, 'mainnet-dryrun-active.json'),
       `${JSON.stringify(record, null, 2)}\n`,
     );
   }
-  console.log('\nDryrun ready');
+  console.log(LIVE ? '\nLive WLOTUS ready' : '\nDryrun ready');
   console.log(JSON.stringify(record, null, 2));
 }
 
