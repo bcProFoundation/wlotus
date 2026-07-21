@@ -14,7 +14,7 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 | **N batons** | Parallel remint lanes (scale without activity-based D) |
 | **wLotus temple** | `WlotusPowRemintMooreTipTemple` — mint **108** → **1** miner + **107** temple P2SH (mala) |
 
-Tier dryrun bases: Prayer / WLotus **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
+Tier dryrun bases: Prayer / wLotus **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
 
 ```bash
 TIER=prayer npm run create-dryrun-token
