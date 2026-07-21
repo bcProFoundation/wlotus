@@ -176,7 +176,7 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `VITE_PRAYER_TICKER` | no | `dPRAYER` |
 | `VITE_CHRONIK_URLS` | no | Chronik URLs |
 | `VITE_TIP_POLL_MS` | no | Tip-epoch poll while mining (ms). Prefer an Actions **variable** (not sensitive): `1000` or `5000`. App default **2000** if unset. Secret also works. |
-| `VITE_MIN_PRAY_MS` | no | Soft pray floor: **`60`** (seconds) or **`60000`** (ms). Prefer Actions **variable**. App default **60s**; `0` disables. |
+| `VITE_MIN_PRAY_S` | no | Soft pray floor in **seconds** (e.g. `60`). Prefer Actions **variable**. App default **60**; `0` disables. Legacy `VITE_MIN_PRAY_MS` still accepted. |
 | `VITE_EXPERIMENTAL_POW` | no | Set `1` for WebGPU → multi-worker Offer mining. |
 | `MINT_MNEMONIC` | no* | 12/24-word **fee wallet** — synced to `/etc/wlotus/mint.env` |
 

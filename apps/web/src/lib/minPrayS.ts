@@ -1,35 +1,54 @@
 /**
- * Minimum wall-clock prayer time after Offer starts hashing.
+ * Soft pray floor (seconds) between remint and memorial burn.
  * Remint submits as soon as PoW finds a nonce (tip race). Soft wait only
  * delays the memorial burn; cancel during the wait skips burn and the desk
  * keeps the miner atom. Anti-farming is separate: wLotus 1/107 + XEC fees —
  * see docs/ECONOMICS_WLOTUS_GLOTUS.md § Product intent.
  *
- * Bake at build time:
- *   `VITE_MIN_PRAY_MS=60000`  (milliseconds) or
- *   `VITE_MIN_PRAY_MS=60`     (seconds — values 1–999 are treated as seconds)
- * `0` disables. Runtime override: localStorage `wlotus.minPrayMs`.
- * Clamped to 0–10 min; default 60s.
+ * Bake at build time: `VITE_MIN_PRAY_S=60` (default). `0` disables.
+ * Runtime override: localStorage `wlotus.minPrayS`.
+ * Clamped to 0–600 seconds (10 min).
+ *
+ * Legacy: `VITE_MIN_PRAY_MS` still read if `VITE_MIN_PRAY_S` unset —
+ * values ≥1000 treated as ms, else as seconds.
  */
 
-export const DEFAULT_MIN_PRAY_MS = 60_000;
-export const MAX_MIN_PRAY_MS = 600_000;
+export const DEFAULT_MIN_PRAY_S = 60;
+export const MAX_MIN_PRAY_S = 600;
+export const MIN_PRAY_S_KEY = 'wlotus.minPrayS';
+
+/** @deprecated use MIN_PRAY_S_KEY */
 export const MIN_PRAY_MS_KEY = 'wlotus.minPrayMs';
 
-/**
- * Parse env / localStorage.
- * - `0` → disabled
- * - `1`…`999` → seconds (so `60` means 60s, not 60ms)
- * - `1000`… → milliseconds
- */
-export function parseMinPrayMs(raw: string | undefined): number {
+export function parseMinPraySeconds(raw: string | undefined): number {
   const s = (raw ?? '').trim();
-  if (s === '') return DEFAULT_MIN_PRAY_MS;
+  if (s === '') return DEFAULT_MIN_PRAY_S;
   const n = Number(s);
-  if (!Number.isFinite(n) || n < 0) return DEFAULT_MIN_PRAY_MS;
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_MIN_PRAY_S;
   if (n === 0) return 0;
-  const ms = n > 0 && n < 1000 ? Math.round(n * 1000) : Math.round(n);
-  return Math.min(MAX_MIN_PRAY_MS, ms);
+  return Math.min(MAX_MIN_PRAY_S, Math.round(n));
+}
+
+/**
+ * Legacy Actions var `VITE_MIN_PRAY_MS`: prefer seconds; if ≥1000 treat as ms.
+ */
+export function parseLegacyMinPrayMsAsSeconds(
+  raw: string | undefined,
+): number | null {
+  const s = (raw ?? '').trim();
+  if (s === '') return null;
+  const n = Number(s);
+  if (!Number.isFinite(n) || n < 0) return null;
+  if (n === 0) return 0;
+  if (n >= 1000) {
+    return Math.min(MAX_MIN_PRAY_S, Math.round(n / 1000));
+  }
+  return Math.min(MAX_MIN_PRAY_S, Math.round(n));
+}
+
+export function minPraySecondsToMs(seconds: number): number {
+  if (!Number.isFinite(seconds) || seconds <= 0) return 0;
+  return Math.round(seconds * 1000);
 }
 
 export function remainingMinPrayMs(

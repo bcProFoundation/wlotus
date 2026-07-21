@@ -57,7 +57,7 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 | Mechanism | Role |
 |-----------|------|
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
-| **Soft pray timer** (`VITE_MIN_PRAY_MS`, default ~60s) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
+| **Soft pray timer** (`VITE_MIN_PRAY_S`, default 60s) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
 | **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
 
@@ -92,7 +92,7 @@ Caveats (do not overclaim):
 
 Phone electricity ≪ XEC fee ([ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)). Ritual value is **minutes of presence**, not SHA256d network work.
 
-- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
+- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_S`, seconds) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
 - Cancel during the soft wait **skips the burn** (requires same `burnToken`); the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
 - Soft timer must **not** delay remint — that would lose tip races.
 - Aggregate token hashrate does not protect transfers or burns; eCash does. Bits stay near **24** at launch to encourage participation — not **32** “for security.”
@@ -212,7 +212,7 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
   ```
 - Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=2`.
 - Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun (participation / presence — not security theater).
-- Soft pray timer: `VITE_MIN_PRAY_MS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
+- Soft pray timer: `VITE_MIN_PRAY_S` (seconds) on the Offer client ([apps/web/README.md](../apps/web/README.md)).
 - Golden Lotus: separate token; open remint; no temple mint tax.
 
 Open product decisions: bits/difficulty UX, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up. Anti-farm intent is settled: **1/107 + fees**; presence intent: **soft timer + ~24 bits**.

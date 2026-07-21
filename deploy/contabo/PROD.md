@@ -206,7 +206,7 @@ Keep **test** secrets (`CONTABO_HOST`, …) unchanged on the repository — they
 | `VITE_PRAYER_TICKER` | `WLOTUS` |
 | `VITE_CHRONIK_URLS` | Chronik URLs |
 | `VITE_TIP_POLL_MS` | `2000` |
-| `VITE_MIN_PRAY_MS` | `60` (seconds) or `60000` (ms) |
+| `VITE_MIN_PRAY_S` | `60` |
 | `VITE_EXPERIMENTAL_POW` | `1` (WebGPU launch path) |
 
 ---

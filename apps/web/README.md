@@ -33,12 +33,10 @@ broadcasts **as soon as** a nonce is found (tip race). The UI then shows
 Cancel in that window skips the burn; the desk keeps the miner atom.
 
 ```bash
-# Prefer seconds for Actions vars (60 = 60s). Milliseconds also work (60000).
-VITE_MIN_PRAY_MS=60
-# or: VITE_MIN_PRAY_MS=60000
+VITE_MIN_PRAY_S=60   # seconds; set 0 to disable
 ```
 
-Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60')`.
+Or in DevTools: `localStorage.setItem('wlotus.minPrayS', '60')`.
 
 **UX labels:** mining → Finding a lotus… · soft wait / burn → Offering…
 
