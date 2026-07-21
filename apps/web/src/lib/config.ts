@@ -40,9 +40,10 @@ export const TIP_POLL_MS = parseTipPollMs(
 export { parseTipPollMs };
 
 /**
- * Minimum wall-clock prayer time (ms) before submit after PoW.
+ * Minimum wall-clock prayer time (ms) between remint and memorial burn.
  * Bake: `VITE_MIN_PRAY_MS=60000` (default). `0` disables.
  * Runtime override: localStorage `wlotus.minPrayMs`.
+ * Remint always submits immediately; this only delays `/api/burn`.
  */
 export const MIN_PRAY_MS = parseMinPrayMs(
   import.meta.env.VITE_MIN_PRAY_MS as string | undefined,

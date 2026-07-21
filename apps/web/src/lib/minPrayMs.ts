@@ -1,8 +1,9 @@
 /**
  * Minimum wall-clock prayer time after Offer starts hashing.
- * If PoW finds a nonce early, the client waits out the remainder before submit
- * so ritual time stays an attention tax (not joules). Anti-farming is separate:
- * wLotus 1/107 + XEC fees — see docs/ECONOMICS_WLOTUS_GLOTUS.md § Product intent.
+ * Remint submits as soon as PoW finds a nonce (tip race). Soft wait only
+ * delays the memorial burn; cancel during the wait skips burn and the desk
+ * keeps the miner atom. Anti-farming is separate: wLotus 1/107 + XEC fees —
+ * see docs/ECONOMICS_WLOTUS_GLOTUS.md § Product intent.
  *
  * Bake at build time: `VITE_MIN_PRAY_MS=60000` (1 min). `0` disables.
  * Optional runtime override: localStorage `wlotus.minPrayMs`.

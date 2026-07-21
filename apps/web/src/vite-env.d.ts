@@ -10,8 +10,8 @@ interface ImportMetaEnv {
   /** Tip-epoch poll interval while mining (ms). Default 2000. */
   readonly VITE_TIP_POLL_MS?: string;
   /**
-   * Minimum wall-clock prayer time before submit (ms). Default 60000.
-   * Set to 0 to disable. Floor for early PoW finds on single-CPU mining.
+   * Soft pray wall time (ms) between remint and memorial burn. Default 60000.
+   * Set to 0 to disable. Remint still submits immediately on PoW success.
    */
   readonly VITE_MIN_PRAY_MS?: string;
   /**

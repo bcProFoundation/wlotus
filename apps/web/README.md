@@ -27,15 +27,19 @@ Offer beats commercial fee-paying miners even when electricity ≈ 0. Token hash
 **not** secure WLOTUS — eCash does. See
 [docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
 
-What the soft timer adds is **attention**: PoW is a presence gate; if a nonce arrives
-early, the client still holds ~1 minute of wall time so the ritual does not collapse to
-seconds on a fast phone.
+What the soft timer adds is **attention**: PoW is a presence gate. Remint
+broadcasts **as soon as** a nonce is found (tip race). The client then holds
+~1 minute before the **memorial burn**. Cancel in that window skips the burn;
+the desk keeps the miner atom.
 
 ```bash
 VITE_MIN_PRAY_MS=60000   # default; set 0 to disable
 ```
 
 Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60000')`.
+
+API: `POST /api/submit` (remint, may return `burnPending`) → soft wait →
+`POST /api/burn`. Cancel with `remintTxid` abandons the pending burn.
 
 Official Offer mining path: **one CPU Web Worker** for now (fairer early participation at
 ~24 bits). Experimental WebGPU/multi-worker code remains for research only.

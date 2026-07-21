@@ -57,7 +57,7 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 | Mechanism | Role |
 |-----------|------|
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
-| **Soft pray timer** (`VITE_MIN_PRAY_MS`, default ~60s) | **Time / attention tax.** PoW may finish early; the client still holds until a configurable wall-clock floor so ritual length stays meaningful. Attention matters more than joules on a phone. |
+| **Soft pray timer** (`VITE_MIN_PRAY_MS`, default ~60s) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
 | **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
 
@@ -92,8 +92,9 @@ Caveats (do not overclaim):
 
 Phone electricity ≪ XEC fee ([ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)). Ritual value is **minutes of presence**, not SHA256d network work.
 
-- Official Offer: device PoW (currently single CPU worker) + **`VITE_MIN_PRAY_MS`** floor before submit (see `apps/web`).
-- Early nonce finds still wait out the floor so top-end phones do not collapse the prayer to seconds.
+- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn**.
+- Cancel during the soft wait **skips the burn**; the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
+- Soft timer must **not** delay remint — that would lose tip races.
 - Aggregate token hashrate does not protect transfers or burns; eCash does. Bits stay near **24** at launch to encourage participation — not **32** “for security.”
 
 ### Non-miners and scale
