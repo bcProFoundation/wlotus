@@ -5,45 +5,22 @@
  * keeps the miner atom. Anti-farming is separate: wLotus 1/107 + XEC fees —
  * see docs/ECONOMICS_WLOTUS_GLOTUS.md § Product intent.
  *
- * Bake at build time: `VITE_MIN_PRAY_S=60` (default). `0` disables.
- * Runtime override: localStorage `wlotus.minPrayS`.
+ * Bake at build time: `VITE_MIN_PRAY_SECONDS=60` (default). `0` disables.
+ * Runtime override: localStorage `wlotus.minPraySeconds`.
  * Clamped to 0–600 seconds (10 min).
- *
- * Legacy: `VITE_MIN_PRAY_MS` still read if `VITE_MIN_PRAY_S` unset —
- * values ≥1000 treated as ms, else as seconds.
  */
 
-export const DEFAULT_MIN_PRAY_S = 60;
-export const MAX_MIN_PRAY_S = 600;
-export const MIN_PRAY_S_KEY = 'wlotus.minPrayS';
-
-/** @deprecated use MIN_PRAY_S_KEY */
-export const MIN_PRAY_MS_KEY = 'wlotus.minPrayMs';
+export const DEFAULT_MIN_PRAY_SECONDS = 60;
+export const MAX_MIN_PRAY_SECONDS = 600;
+export const MIN_PRAY_SECONDS_KEY = 'wlotus.minPraySeconds';
 
 export function parseMinPraySeconds(raw: string | undefined): number {
   const s = (raw ?? '').trim();
-  if (s === '') return DEFAULT_MIN_PRAY_S;
+  if (s === '') return DEFAULT_MIN_PRAY_SECONDS;
   const n = Number(s);
-  if (!Number.isFinite(n) || n < 0) return DEFAULT_MIN_PRAY_S;
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_MIN_PRAY_SECONDS;
   if (n === 0) return 0;
-  return Math.min(MAX_MIN_PRAY_S, Math.round(n));
-}
-
-/**
- * Legacy Actions var `VITE_MIN_PRAY_MS`: prefer seconds; if ≥1000 treat as ms.
- */
-export function parseLegacyMinPrayMsAsSeconds(
-  raw: string | undefined,
-): number | null {
-  const s = (raw ?? '').trim();
-  if (s === '') return null;
-  const n = Number(s);
-  if (!Number.isFinite(n) || n < 0) return null;
-  if (n === 0) return 0;
-  if (n >= 1000) {
-    return Math.min(MAX_MIN_PRAY_S, Math.round(n / 1000));
-  }
-  return Math.min(MAX_MIN_PRAY_S, Math.round(n));
+  return Math.min(MAX_MIN_PRAY_SECONDS, Math.round(n));
 }
 
 export function minPraySecondsToMs(seconds: number): number {

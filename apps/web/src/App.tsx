@@ -24,7 +24,7 @@ import {
 
 import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
-import { waitMinPray } from './lib/minPrayS.js';
+import { waitMinPray } from './lib/minPraySeconds.js';
 import {
   isTipRaceLost,
   liveTipEpochFromStatus,

@@ -13,9 +13,7 @@ interface ImportMetaEnv {
    * Soft pray floor in **seconds** between remint and memorial burn. Default 60.
    * Set to 0 to disable. Remint still submits immediately on PoW success.
    */
-  readonly VITE_MIN_PRAY_S?: string;
-  /** @deprecated Use VITE_MIN_PRAY_S (seconds). Still read if S unset. */
-  readonly VITE_MIN_PRAY_MS?: string;
+  readonly VITE_MIN_PRAY_SECONDS?: string;
   /**
    * Experimental phone PoW: WebGPU → multi-worker.
    * Default off — see docs/research/phone-webgpu-wasm-mining.md

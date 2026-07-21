@@ -15,12 +15,10 @@ export const PRAYER_TICKER =
   'dWLOTUS';
 
 import {
-  MIN_PRAY_MS_KEY,
-  MIN_PRAY_S_KEY,
+  MIN_PRAY_SECONDS_KEY,
   minPraySecondsToMs,
-  parseLegacyMinPrayMsAsSeconds,
   parseMinPraySeconds,
-} from './minPrayS.js';
+} from './minPraySeconds.js';
 import { parseTipPollMs } from './tipPollMs.js';
 
 /** Mint API base — empty = same origin (/api via Vite proxy or nginx). */
@@ -42,53 +40,33 @@ export const TIP_POLL_MS = parseTipPollMs(
 
 export { parseTipPollMs };
 
-function bakeMinPraySeconds(): number {
-  const primary = (import.meta.env.VITE_MIN_PRAY_S as string | undefined)?.trim();
-  if (primary != null && primary !== '') {
-    return parseMinPraySeconds(primary);
-  }
-  const legacy = parseLegacyMinPrayMsAsSeconds(
-    import.meta.env.VITE_MIN_PRAY_MS as string | undefined,
-  );
-  if (legacy != null) return legacy;
-  return parseMinPraySeconds(undefined);
-}
-
 /**
  * Soft pray floor in seconds (between remint and memorial burn).
- * Bake: `VITE_MIN_PRAY_S=60` (default). `0` disables.
- * Runtime override: localStorage `wlotus.minPrayS`.
+ * Bake: `VITE_MIN_PRAY_SECONDS=60` (default). `0` disables.
+ * Runtime override: localStorage `wlotus.minPraySeconds`.
  */
-export const MIN_PRAY_S = bakeMinPraySeconds();
-
-/** Soft pray floor in ms (internal timers). */
-export const MIN_PRAY_MS = minPraySecondsToMs(MIN_PRAY_S);
+export const MIN_PRAY_SECONDS = parseMinPraySeconds(
+  import.meta.env.VITE_MIN_PRAY_SECONDS as string | undefined,
+);
 
 export function getMinPraySeconds(): number {
   try {
-    const ls =
-      localStorage.getItem(MIN_PRAY_S_KEY) ??
-      localStorage.getItem(MIN_PRAY_MS_KEY);
-    if (ls != null && ls.trim() !== '') {
-      // Legacy localStorage key stored seconds-or-ms ambiguity; prefer S key.
-      if (localStorage.getItem(MIN_PRAY_S_KEY) != null) {
-        return parseMinPraySeconds(ls);
-      }
-      return parseLegacyMinPrayMsAsSeconds(ls) ?? parseMinPraySeconds(ls);
-    }
+    const ls = localStorage.getItem(MIN_PRAY_SECONDS_KEY);
+    if (ls != null && ls.trim() !== '') return parseMinPraySeconds(ls);
   } catch {
     /* ignore quota / private mode */
   }
-  return MIN_PRAY_S;
+  return MIN_PRAY_SECONDS;
 }
 
+/** Soft pray floor in ms (for timers only — not an env var). */
 export function getMinPrayMs(): number {
   return minPraySecondsToMs(getMinPraySeconds());
 }
 
 export {
   parseMinPraySeconds,
-  MIN_PRAY_S_KEY,
+  MIN_PRAY_SECONDS_KEY,
   minPraySecondsToMs,
 };
 

@@ -2,7 +2,7 @@
 
 **Status:** launch path when `VITE_EXPERIMENTAL_POW=1` (2026-07-21)  
 Offer mining: **WebGPU → multi-worker → single**, plus soft pray floor
-(`VITE_MIN_PRAY_S`, e.g. `60` seconds) so ritual wall time stays ~1 min after early finds.
+(`VITE_MIN_PRAY_SECONDS`, e.g. `60`) so ritual wall time stays ~1 min after early finds.
 
 ---
 
@@ -15,7 +15,7 @@ Target hardware: **phone GPU (WebGPU)** and **phone multi-core CPU** — not des
 **Farming / security (do not confuse with this research):**
 
 - Anti-farm = **1/107 + XEC fees** (temple-sponsored Offer wins vs commercial miners even if energy ≈ 0).
-- Ritual length on the official client = **soft timer** (`VITE_MIN_PRAY_S`) after remint, before memorial burn — attention, not joules.
+- Ritual length on the official client = **soft timer** (`VITE_MIN_PRAY_SECONDS`) after remint, before memorial burn — attention, not joules.
 - Token hashrate ≠ ledger security (eCash secures transfers). See [ECONOMICS_WLOTUS_GLOTUS.md](../ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
 
 ---

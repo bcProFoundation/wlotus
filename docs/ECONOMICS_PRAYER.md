@@ -174,7 +174,7 @@ Canonical anti-farm + presence write-up: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMIC
 | Intent | Mechanism |
 |--------|-----------|
 | Anti-farm vs commercial remint | **1/107** temple split + XEC fees (sponsored Offer always wins on fee math even if energy ≈ 0) |
-| Attention / ritual length | Soft timer `VITE_MIN_PRAY_S` (default 60s) **after remint**, before memorial burn; cancel skips burn |
+| Attention / ritual length | Soft timer `VITE_MIN_PRAY_SECONDS` (default 60) **after remint**, before memorial burn; cancel skips burn |
 | Not token security | PoW does not secure the ledger; **eCash** does. Bits ≈ **24** for participation, not 32 “to harden” WLOTUS |
 
 Recompute fee tables anytime with `npm run pricing` (ladder still uses mint=1 Prayer UX bits today; update `pricing.ts` when mint=2 bootstrap is adopted).
