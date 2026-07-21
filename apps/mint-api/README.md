@@ -34,9 +34,9 @@ POST /api/challenge  { installId, note? }  → preimage + bits
 POST /api/submit     { installId, challengeId, nonceHex, … }
                      → remint (108); temple returns burnPending
   soft pray wait (client)
-POST /api/burn       { installId, remintTxid }
+POST /api/burn       { installId, remintTxid, burnToken }
                      → burn miner 1 + DANA
-  (cancel with remintTxid abandons burn; desk keeps atom)
+  (cancel with remintTxid + burnToken abandons burn; desk keeps atom)
 ```
 
 Requires a deployment JSON:
@@ -88,8 +88,8 @@ fuel coin from the desk automatically — still prefer running the fund script f
 | GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, `raceOpen`, `tipFeeAccounts`, `deployedAt`, … |
 | POST | `/api/challenge` | `{ installId, note? }` → includes `tipFeeAddress` |
 | POST | `/api/submit` | `{ installId, challengeId, nonceHex, … }` → remint; temple may set `burnPending` |
-| POST | `/api/burn` | `{ installId, remintTxid }` — memorial burn after soft pray |
-| POST | `/api/cancel` | `{ installId, challengeId?, remintTxid? }` — open challenge and/or abandon pending burn |
+| POST | `/api/burn` | `{ installId, remintTxid, burnToken }` — memorial burn; `burnToken` from submit only |
+| POST | `/api/cancel` | `{ installId, challengeId?, remintTxid?, burnToken? }` — abandon pending burn needs token |
 | POST | `/api/offer` | **410** retired |
 
 ## Limits

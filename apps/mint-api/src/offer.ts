@@ -7,11 +7,11 @@
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  *                        → remint immediately; temple path returns burnPending
- *   POST /api/burn       { installId, remintTxid }  — memorial burn after soft pray
- *   POST /api/cancel     { installId, challengeId?, remintTxid? }
- *                        — abandons open challenge and/or pending burn
+ *   POST /api/burn       { installId, remintTxid, burnToken } — capability from submit
+ *   POST /api/cancel     { installId, challengeId?, remintTxid?, burnToken? }
+ *                        — abandon pending burn requires remintTxid + burnToken
  */
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fromHex, toHex } from 'ecash-lib';
@@ -86,6 +86,11 @@ export interface OfferResult {
   burnTxid: string;
   /** Temple path: remint done; call POST /api/burn after soft pray (or abandon). */
   burnPending: boolean;
+  /**
+   * One-time capability for `/api/burn` / abandon. Only returned to the submitter;
+   * remintTxid alone is public and insufficient.
+   */
+  burnToken?: string;
   tokenId: string;
   bits: number;
   powAttempts: number;
@@ -201,6 +206,8 @@ interface StoredChallenge {
 interface PendingBurn {
   remintTxid: string;
   installId: string;
+  /** Secret capability issued only on submit response. */
+  burnToken: string;
   createdAt: number;
   expiresAt: number;
   tipIndex: number;
@@ -228,6 +235,21 @@ function tipKey(txid: string, outIdx: number): string {
 
 function tipEpochOf(tipRec: BatonTip): string {
   return tipRec.lastRemintTxid ?? `genesis:${tipRec.index}:${tipRec.tipLocktime}`;
+}
+
+function newBurnToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+function burnTokenMatches(expected: string, provided: string | undefined): boolean {
+  const a = expected;
+  const b = (provided ?? '').trim();
+  if (!a || !b || a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+  } catch {
+    return false;
+  }
 }
 
 
@@ -953,9 +975,11 @@ async function submitChallengeOnce(opts: {
   // after the client's soft pray wait — cancel abandons burn; desk keeps the atom.
   if (ch.mode === 'temple') {
     const remintKey = remintTxid.toLowerCase();
+    const burnToken = newBurnToken();
     pendingBurns.set(remintKey, {
       remintTxid,
       installId: opts.installId,
+      burnToken,
       createdAt: Date.now(),
       expiresAt: Date.now() + PENDING_BURN_TTL_MS,
       tipIndex: ch.tipIndex,
@@ -967,6 +991,7 @@ async function submitChallengeOnce(opts: {
       remintTxid,
       burnTxid: '',
       burnPending: true,
+      burnToken,
       tokenId: dep.tokenId,
       bits: built.tip.bits,
       powAttempts,
@@ -998,6 +1023,7 @@ async function submitChallengeOnce(opts: {
 async function completeBurnOnce(opts: {
   installId: string;
   remintTxid: string;
+  burnToken: string;
 }): Promise<BurnResult> {
   expireStaleChallenges();
   const remintTxid = opts.remintTxid.trim().toLowerCase();
@@ -1007,6 +1033,9 @@ async function completeBurnOnce(opts: {
   }
   if (pb.installId !== opts.installId) {
     throw new Error('remintTxid does not match installId');
+  }
+  if (!burnTokenMatches(pb.burnToken, opts.burnToken)) {
+    throw new Error('Invalid burnToken');
   }
   if (pb.expiresAt <= Date.now()) {
     pendingBurns.delete(remintTxid);
@@ -1034,17 +1063,32 @@ async function completeBurnOnce(opts: {
   };
 }
 
-/** Drop pending memorial burn — remint already mined; desk keeps the miner atom. */
+/**
+ * Drop pending memorial burn — remint already mined; desk keeps the miner atom.
+ * Abandoning a specific remint requires the submit-issued burnToken.
+ */
 function abandonPendingBurns(opts: {
   installId: string;
   remintTxid?: string;
+  burnToken?: string;
 }): number {
   expireStaleChallenges();
   let n = 0;
   const want = opts.remintTxid?.trim().toLowerCase();
+  if (want) {
+    const pb = pendingBurns.get(want);
+    if (!pb || pb.installId !== opts.installId) return 0;
+    if (!burnTokenMatches(pb.burnToken, opts.burnToken)) {
+      throw new Error('Invalid burnToken');
+    }
+    pendingBurns.delete(want);
+    return 1;
+  }
+  // No remintTxid: only clear pending burns when burnToken matches each entry —
+  // do not mass-abandon by installId alone (installId is a weak bearer).
   for (const [id, pb] of [...pendingBurns.entries()]) {
     if (pb.installId !== opts.installId) continue;
-    if (want && id !== want) continue;
+    if (!burnTokenMatches(pb.burnToken, opts.burnToken)) continue;
     pendingBurns.delete(id);
     n++;
   }
@@ -1087,6 +1131,7 @@ export function enqueueSubmit(opts: {
 export function enqueueBurn(opts: {
   installId: string;
   remintTxid: string;
+  burnToken: string;
 }): Promise<BurnResult> {
   return withChainLock(() => completeBurnOnce(opts));
 }
@@ -1096,6 +1141,7 @@ export function cancelChallenge(opts: {
   installId: string;
   challengeId?: string;
   remintTxid?: string;
+  burnToken?: string;
 }): { ok: true; cancelled: number; abandonedBurns: number } {
   expireStaleChallenges();
   let cancelled = 0;
@@ -1109,6 +1155,7 @@ export function cancelChallenge(opts: {
   const abandonedBurns = abandonPendingBurns({
     installId: opts.installId,
     remintTxid: opts.remintTxid,
+    burnToken: opts.burnToken,
   });
   return { ok: true, cancelled, abandonedBurns };
 }
@@ -1118,6 +1165,7 @@ export function enqueueCancel(opts: {
   installId: string;
   challengeId?: string;
   remintTxid?: string;
+  burnToken?: string;
 }): Promise<{ ok: true; cancelled: number; abandonedBurns: number }> {
   return withChainLock(async () => cancelChallenge(opts));
 }

@@ -92,8 +92,8 @@ Caveats (do not overclaim):
 
 Phone electricity ≪ XEC fee ([ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)). Ritual value is **minutes of presence**, not SHA256d network work.
 
-- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn**.
-- Cancel during the soft wait **skips the burn**; the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
+- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
+- Cancel during the soft wait **skips the burn** (requires same `burnToken`); the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
 - Soft timer must **not** delay remint — that would lose tip races.
 - Aggregate token hashrate does not protect transfers or burns; eCash does. Bits stay near **24** at launch to encourage participation — not **32** “for security.”
 

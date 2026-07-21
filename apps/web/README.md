@@ -38,8 +38,9 @@ VITE_MIN_PRAY_MS=60000   # default; set 0 to disable
 
 Or in DevTools: `localStorage.setItem('wlotus.minPrayMs', '60000')`.
 
-API: `POST /api/submit` (remint, may return `burnPending`) → soft wait →
-`POST /api/burn`. Cancel with `remintTxid` abandons the pending burn.
+API: `POST /api/submit` returns `burnPending` + one-time `burnToken` → soft wait →
+`POST /api/burn` with that token. Cancel/abandon also requires `burnToken` (remintTxid
+alone is public on-chain and insufficient).
 
 Official Offer mining path: **one CPU Web Worker** for now (fairer early participation at
 ~24 bits). Experimental WebGPU/multi-worker code remains for research only.

@@ -145,6 +145,7 @@ export default function App() {
   const challengeIdRef = useRef<string | null>(null);
   /** Remint awaiting memorial burn (soft pray); cancel abandons burn. */
   const pendingBurnRemintRef = useRef<string | null>(null);
+  const pendingBurnTokenRef = useRef<string | null>(null);
   /** Bumps on cancel / new offer so a stale offer's finally cannot clobber UI. */
   const offerGenRef = useRef(0);
   /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
@@ -284,13 +285,17 @@ export default function App() {
     }
   }
 
-  async function abandonPendingBurn(remintTxid: string | null): Promise<void> {
-    if (!remintTxid) return;
+  async function abandonPendingBurn(
+    remintTxid: string | null,
+    burnToken: string | null,
+  ): Promise<void> {
+    if (!remintTxid || !burnToken) return;
     if (pendingBurnRemintRef.current === remintTxid) {
       pendingBurnRemintRef.current = null;
+      pendingBurnTokenRef.current = null;
     }
     try {
-      await cancelOfferChallenge({ installId, remintTxid });
+      await cancelOfferChallenge({ installId, remintTxid, burnToken });
     } catch {
       /* best-effort — TTL also drops pending burns */
     }
@@ -299,18 +304,20 @@ export default function App() {
   async function onCancelMine() {
     const id = challengeIdRef.current;
     const pendingRemint = pendingBurnRemintRef.current;
+    const pendingToken = pendingBurnTokenRef.current;
     offerGenRef.current += 1;
     challengeIdRef.current = null;
     pendingBurnRemintRef.current = null;
+    pendingBurnTokenRef.current = null;
     clearRememberedChallenge();
     abortRef.current?.abort();
     abortRef.current = null;
     elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
-    if (pendingRemint) {
+    if (pendingRemint && pendingToken) {
       setMsg({ kind: 'ok', text: tRef.current('memorialCancelled') });
-      await abandonPendingBurn(pendingRemint);
+      await abandonPendingBurn(pendingRemint, pendingToken);
     } else {
       setMsg({ kind: 'ok', text: tRef.current('miningCancelled') });
       await releaseChallenge(id);
@@ -331,13 +338,17 @@ export default function App() {
 
     const prevId = challengeIdRef.current;
     const prevPending = pendingBurnRemintRef.current;
+    const prevToken = pendingBurnTokenRef.current;
     offerGenRef.current += 1;
     const gen = offerGenRef.current;
     abortRef.current?.abort();
     challengeIdRef.current = null;
     pendingBurnRemintRef.current = null;
+    pendingBurnTokenRef.current = null;
     clearRememberedChallenge();
-    if (prevPending) await abandonPendingBurn(prevPending);
+    if (prevPending && prevToken) {
+      await abandonPendingBurn(prevPending, prevToken);
+    }
     if (prevId) await releaseChallenge(prevId);
     if (offerGenRef.current !== gen) return;
 
@@ -472,7 +483,12 @@ export default function App() {
 
           let burnTxid = result.burnTxid;
           if (result.burnPending) {
+            const burnToken = result.burnToken?.trim() || '';
+            if (!burnToken) {
+              throw new Error('Mint API omit burnToken; cannot complete memorial');
+            }
             pendingBurnRemintRef.current = result.remintTxid;
+            pendingBurnTokenRef.current = burnToken;
             setPhase('holding');
             try {
               await waitMinPray({
@@ -494,9 +510,11 @@ export default function App() {
             const burned = await completeOfferBurn({
               installId,
               remintTxid: result.remintTxid,
+              burnToken,
             });
             burnTxid = burned.burnTxid;
             pendingBurnRemintRef.current = null;
+            pendingBurnTokenRef.current = null;
           }
 
           if (offerGenRef.current !== gen) return;

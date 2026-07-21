@@ -27,6 +27,8 @@ export interface OfferOk {
   /** Empty when `burnPending` — call {@link completeOfferBurn} after soft pray. */
   burnTxid: string;
   burnPending: boolean;
+  /** Capability for burn/abandon; only from submit — keep in memory, never share. */
+  burnToken?: string;
   tokenId: string;
   bits: number;
   powAttempts: number;
@@ -154,10 +156,11 @@ export async function submitMinedOffer(opts: {
   return body as OfferOk;
 }
 
-/** Memorial burn after soft pray (temple path). */
+/** Memorial burn after soft pray (temple path). Requires submit-issued burnToken. */
 export async function completeOfferBurn(opts: {
   installId: string;
   remintTxid: string;
+  burnToken: string;
 }): Promise<BurnOk> {
   const res = await fetch(apiUrl('/api/burn'), {
     method: 'POST',
@@ -165,6 +168,7 @@ export async function completeOfferBurn(opts: {
     body: JSON.stringify({
       installId: opts.installId,
       remintTxid: opts.remintTxid,
+      burnToken: opts.burnToken,
     }),
   });
   const body = await readApiJson<BurnOk & { error?: string; ok?: boolean }>(
@@ -179,8 +183,9 @@ export async function completeOfferBurn(opts: {
 export async function cancelOfferChallenge(opts: {
   installId: string;
   challengeId?: string;
-  /** Abandon pending memorial burn after remint (desk keeps miner atom). */
+  /** Abandon pending memorial burn after remint (requires burnToken). */
   remintTxid?: string;
+  burnToken?: string;
 }): Promise<{ ok: true; cancelled: number; abandonedBurns?: number }> {
   const res = await fetch(apiUrl('/api/cancel'), {
     method: 'POST',
@@ -189,6 +194,7 @@ export async function cancelOfferChallenge(opts: {
       installId: opts.installId,
       challengeId: opts.challengeId,
       remintTxid: opts.remintTxid,
+      burnToken: opts.burnToken,
     }),
   });
   const body = await readApiJson<{

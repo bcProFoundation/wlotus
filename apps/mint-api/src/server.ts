@@ -236,11 +236,16 @@ const server = createServer(async (req, res) => {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
       const remintTxid = String(body.remintTxid || '').trim();
+      const burnToken = String(body.burnToken || '').trim();
       if (!remintTxid) {
         json(res, 400, { error: 'remintTxid required' });
         return;
       }
-      const result = await enqueueBurn({ installId, remintTxid });
+      if (!burnToken || burnToken.length < 32) {
+        json(res, 400, { error: 'burnToken required' });
+        return;
+      }
+      const result = await enqueueBurn({ installId, remintTxid, burnToken });
       json(res, 200, { ok: true, ...result });
       return;
     }
@@ -250,7 +255,19 @@ const server = createServer(async (req, res) => {
       const installId = requireInstallId(body.installId);
       const challengeId = String(body.challengeId || '').trim() || undefined;
       const remintTxid = String(body.remintTxid || '').trim() || undefined;
-      const result = await enqueueCancel({ installId, challengeId, remintTxid });
+      const burnToken = String(body.burnToken || '').trim() || undefined;
+      if (remintTxid && (!burnToken || burnToken.length < 32)) {
+        json(res, 400, {
+          error: 'burnToken required to abandon a pending memorial burn',
+        });
+        return;
+      }
+      const result = await enqueueCancel({
+        installId,
+        challengeId,
+        remintTxid,
+        burnToken,
+      });
       json(res, 200, result);
       return;
     }
@@ -268,7 +285,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending/i.test(
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn/i.test(
         msg,
       )
         ? 400
