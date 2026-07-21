@@ -6,16 +6,14 @@ export const LOCALE_STORAGE_KEY = 'wlotus.locale';
 
 export interface LocaleOption {
   locale: Locale;
-  /** ISO country flag emoji used as the switcher mark. */
-  flag: string;
-  /** Short label in that language. */
+  /** Short text label shown in the switcher (no flags — colors clash on dark UI). */
   label: string;
-  /** English name for accessibility. */
+  /** English name for accessibility / menu secondary. */
   nameEn: string;
 }
 
 export const LOCALE_OPTIONS: readonly LocaleOption[] = [
-  { locale: 'en', flag: '🇬🇧', label: 'EN', nameEn: 'English' },
-  { locale: 'vi', flag: '🇻🇳', label: 'VI', nameEn: 'Vietnamese' },
-  { locale: 'zh', flag: '🇨🇳', label: '中文', nameEn: 'Chinese' },
+  { locale: 'en', label: 'EN', nameEn: 'English' },
+  { locale: 'vi', label: 'VI', nameEn: 'Vietnamese' },
+  { locale: 'zh', label: '中文', nameEn: 'Chinese' },
 ] as const;
