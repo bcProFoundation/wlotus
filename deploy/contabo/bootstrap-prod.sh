@@ -105,8 +105,9 @@ Production bootstrap done.
 
 Next:
   1. Append CI public key to /home/$DEPLOY_USER/.ssh/authorized_keys
-  2. DNS A/AAAA for wlotus.org (and www) → this VM
+  2. DNS A for wlotus.org and www → this VM (same IP)
   3. TLS: certbot --nginx -d wlotus.org -d www.wlotus.org
+     Then enable HTTPS www→apex via nginx-www-redirect.conf if needed
   4. Mint-api: clone to /opt/wlotus, /etc/wlotus/mint.env, systemd (see README)
   5. GitHub Environment "production" secrets:
        CONTABO_PROD_HOST=<this host>
