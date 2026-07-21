@@ -69,8 +69,10 @@ jobs:
           VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
           # Experimental phone PoW (WebGPU → multi-worker). Prefer Actions *variable*.
           VITE_EXPERIMENTAL_POW: ${{ vars.VITE_EXPERIMENTAL_POW }}
+          # Optional: auto | webgpu | multi-worker | worker (skip GPU with multi-worker)
+          VITE_POW_BACKEND: ${{ vars.VITE_POW_BACKEND }}
         run: |
-          echo "Building test SPA (experimentalPow=${VITE_EXPERIMENTAL_POW:-0})"
+          echo "Building test SPA (experimentalPow=${VITE_EXPERIMENTAL_POW:-0} backend=${VITE_POW_BACKEND:-auto})"
           npm run web:build
 
       - name: Require Contabo secrets

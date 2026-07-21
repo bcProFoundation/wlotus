@@ -1,5 +1,6 @@
 import type { MineProgress, MineResult } from './clientMine.js';
 import {
+  getPowBackendPreference,
   isExperimentalPowEnabled,
   mineExperimental,
 } from './pow/experimentalMine.js';
@@ -21,7 +22,11 @@ export async function mineInWorker(opts: {
   if (isExperimentalPowEnabled()) {
     try {
       const r = await mineExperimental(opts);
-      console.info('[wlotus] experimental pow backend:', r.backend);
+      console.info(
+        '[wlotus] experimental pow backend:',
+        r.backend,
+        `(pref=${getPowBackendPreference()})`,
+      );
       return r;
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') throw e;
