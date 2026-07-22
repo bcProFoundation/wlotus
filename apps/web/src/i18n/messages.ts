@@ -65,7 +65,7 @@ const en: Dict = {
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
   btnCancel: 'Cancel',
-  miningElapsed: 'Search time · {elapsed}',
+  miningElapsed: '{elapsed}',
   connecting: 'Connecting…',
   apiOffline:
     'Mint API offline — start mint-api on Contabo and proxy /api → :8787',
