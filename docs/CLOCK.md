@@ -17,12 +17,18 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 Tier dryrun bases: **wLotus 0** (max sunset headroom), Prayer **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
 
 ```bash
-TIER=prayer npm run create-dryrun-token
-TIER=wlotus BATONS=2 npm run create-dryrun-token
-# Optional: gentler ramp (~2 years/bit)
-MOORE_DAYS_PER_EXTRA_BIT=730 TIER=wlotus BATONS=28 npm run create-dryrun-token
+# Test dryrun (same covenant as prod; ticker only differs)
+TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# or: npm run create-dryrun-wlotus
+
+# Live prod (default ticker WLOTUS)
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# or: npm run create-prod-token
+
 BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 ```
+
+Legacy Prayer / Candle / Flower dryruns: `TIER=prayer npm run create-dryrun-token`.
 
 `MOORE_DAYS_PER_EXTRA_BIT` defaults to **500** (五百罗汉 — one arhat-day per calendar day until the bit ticks). Override clamped to **365–730** (~1–2 years). Existing deployments keep their JSON `secondsPerExtraBit` (e.g. legacy **840** days).
 

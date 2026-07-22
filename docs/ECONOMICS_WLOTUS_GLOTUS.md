@@ -235,11 +235,13 @@ Candle / Flower rows in [ECONOMICS.md](./ECONOMICS.md) remain a longer-term hard
 
 **Why P2SH (not hot P2PKH):** ops custody matches other eCash baked funds (e.g. IFP). Multisig reduces single-key loss; the redeem is public only when spending. Quantum / address-format risk is accepted the same way as other P2SH sinks — migrate via a **protocol fork** to a new format when needed, rather than encoding a forever-hot P2PKH.
 
-**Dryrun convenience:** if `TEMPLE_ADDRESS` is unset, `create-dryrun-token` P2SH-wraps the genesis wallet’s P2PKH so the same key can spend by revealing redeem (`templeRedeemHex` in the deployment JSON). Launch should set `TEMPLE_ADDRESS` to a real multisig P2SH.
+**Dryrun convenience:** if `TEMPLE_ADDRESS` is unset and ticker is not `WLOTUS`, `create-wlotus-token` P2SH-wraps the genesis wallet’s P2PKH so the same key can spend by revealing redeem (`templeRedeemHex` in the deployment JSON). Launch / ticker `WLOTUS` must set `TEMPLE_ADDRESS` to a real multisig P2SH.
 
 ```bash
-# Launch / Contabo: bake a known multisig P2SH
-TIER=wlotus TEMPLE_ADDRESS=ecash:p… BATONS=2 npm run create-dryrun-token
+# Test
+TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# Prod (default ticker WLOTUS)
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
 ```
 
 If temple keys are compromised: stop mint-api, move remaining inventory with the redeem, serve a **new** covenant with a new `templeScriptHash`.
@@ -250,9 +252,9 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
 
 - Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (107) + miner P2PKH (1); mint = 108 (mala). Fits ≤520 B / ≤201 ops (no memorial EMPP on mint — op budget).
 - **Memorial:** burn the miner **1** atom after remint (`DANA` LOKAD on burn tx). The on-chain burn is the gift — memorial and dana offered for all.
-- Dryrun / prod genesis: **initial fungible mint = 108** (one mala), same as remint size; `baseZeroBits = 0`; Moore **500 d**/bit.
+- Dryrun / prod genesis: **same script** (`create-wlotus-token`); **initial fungible mint = 108**, `baseZeroBits = 0`, Moore **500 d**/bit. Only `TICKER` differs (`dWLOTUS` vs `WLOTUS`).
   ```bash
-  TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token
+  TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
 - Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=1` at launch (raise toward 28 if needed).

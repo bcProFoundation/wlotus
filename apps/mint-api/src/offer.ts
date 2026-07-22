@@ -305,7 +305,7 @@ function consumeOfferSlot(installId: string): void {
 
 function loadDep(): { path: string; dep: DryrunDep } {
   const candidates = [
-    // Live prod first (ticker WLOTUS) — Contabo prod after create-prod-token
+    // Live prod first (ticker WLOTUS) — Contabo prod after create-wlotus-token
     'deployments/mainnet-wlotus.json',
     'deployments/mainnet-dryrun-wlotus.json',
     'deployments/mainnet-dryrun-active.json',

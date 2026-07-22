@@ -14,8 +14,8 @@ Re-offers send `parentBurnTxid` (prior burn) and encode
 Legacy Prayer memo path (mint 1 + DANA memorial on remint, no burn) still works if the
 loaded deployment is `tier=prayer`.
 
-**After pulling this change:** recreate dry-run genesis (`TIER=wlotus … create-dryrun-token`) —
-old WLPT tip covenants will not match the new redeem.
+**After pulling this change:** recreate genesis (`TICKER=dWLOTUS … npm run create-wlotus-token`) —
+old tip covenants will not match the new redeem.
 
 **Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
 tips (default **1** at launch — bound fee burn; raise toward **28** if demand warrants).
@@ -44,8 +44,8 @@ Requires a deployment JSON:
 
 | Env | File | Create with |
 |-----|------|-------------|
-| **Test** | `deployments/mainnet-dryrun-wlotus.json` | `TIER=wlotus BATONS=28 npm run create-dryrun-token` |
-| **Prod** | `deployments/mainnet-wlotus.json` | `LIVE=1 TIER=wlotus … npm run create-prod-token` (see [PROD.md](../../deploy/contabo/PROD.md)) |
+| **Test** | `deployments/mainnet-dryrun-wlotus.json` | `TICKER=dWLOTUS BATONS=28 npm run create-wlotus-token` |
+| **Prod** | `deployments/mainnet-wlotus.json` | `BATONS=28 npm run create-wlotus-token` (default ticker WLOTUS; see [PROD.md](../../deploy/contabo/PROD.md)) |
 
 mint-api prefers **live** `mainnet-wlotus.json` when present.
 **Genesis baton count:** **28** (ALP max). Desk soft-serves **2** tips via env.

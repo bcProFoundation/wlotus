@@ -238,9 +238,9 @@ npm run fund-tip-fee-wallets
 
 ### Create `dWLOTUS` dryrun (on Contabo **test**)
 
-For **live WLOTUS** on prod, see **[PROD.md](./PROD.md)** (`npm run create-prod-token`).
+For **live WLOTUS** on prod, see **[PROD.md](./PROD.md)** (`npm run create-wlotus-token` / `create-prod-token`).
 
-Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it).
+Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). **Prod and dryrun use the same script** — only `TICKER` differs (`dWLOTUS` vs default `WLOTUS`).
 
 **Genesis parameters (immutable after create):**
 
@@ -275,14 +275,16 @@ export TEMPLE_ADDRESS=ecash:ppzc7slfa9juf4gfr950qm9fn9gvctptkqdhtvf08j
 # export MOORE_DAYS_PER_EXTRA_BIT=500
 
 TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
-  npm run create-dryrun-token
+  npm run create-dryrun-wlotus
+# Equivalent:
+#   TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" npm run create-wlotus-token
 # Writes deployments/mainnet-dryrun-wlotus.json
 # and copies it to deployments/mainnet-dryrun-active.json
 
 # Verify baked params:
 jq '{ticker,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,powBatonCount,templeAddress}' \
   deployments/mainnet-dryrun-wlotus.json
-# Expect: baseZeroBits=0, mintAtomsPerRemint="108", initialMintAtoms="108",
+# Expect: ticker=dWLOTUS, baseZeroBits=0, mintAtomsPerRemint="108", initialMintAtoms="108",
 #         secondsPerExtraBit=43200000  (500*86400)
 
 # Smoke one remint (optional; uses GENESIS wallet as miner+fuel):

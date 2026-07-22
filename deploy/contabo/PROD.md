@@ -119,7 +119,7 @@ sudo systemctl enable wlotus-mint-api
 
 ### Create live **WLOTUS** (on this prod VM)
 
-Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TIER=wlotus` → `dWLOTUS`).
+Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TICKER=dWLOTUS npm run create-wlotus-token`).
 
 ```bash
 cd /opt/wlotus   # or ~/wlotus/wlotus
@@ -135,9 +135,10 @@ npm run new-wallet -- --force   # only if starting fresh; overwrites .env
 export TEMPLE_ADDRESS=ecash:p…   # your prod temple
 
 # 3) Genesis ticker WLOTUS, name wLotus → deployments/mainnet-wlotus.json
-LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
-  npm run create-prod-token
-# Equivalent: LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS=… npm run create-dryrun-token
+#    Same script as test dryrun — only ticker differs (default WLOTUS).
+TEMPLE_ADDRESS="$TEMPLE_ADDRESS" BATONS=28 npm run create-wlotus-token
+# Equivalent: npm run create-prod-token
+# Test uses: TICKER=dWLOTUS … npm run create-wlotus-token
 
 # 4) Confirm on-chain record
 jq '{ticker,name,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,templeAddress,role}' \
@@ -260,5 +261,5 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
-| `dWLOTUS` on prod `/api/status` | You loaded a dryrun JSON — create live with `npm run create-prod-token` and ensure `mainnet-wlotus.json` exists |
-| `LIVE=1` errors without temple | Pass `TEMPLE_ADDRESS=ecash:p…` (required; no dryrun wrap on live) |
+| `dWLOTUS` on prod `/api/status` | You loaded a dryrun JSON — create live with `npm run create-wlotus-token` (default ticker WLOTUS) and ensure `mainnet-wlotus.json` exists |
+| Missing temple on WLOTUS | Pass `TEMPLE_ADDRESS=ecash:p…` (required for ticker WLOTUS; no dryrun wrap) |
