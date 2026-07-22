@@ -53,21 +53,28 @@ Assume mid-phone WebGPU ≈ **5 MH/s**, base **24** bits → raw PoW ≈ **~3 s*
 
 So **500 d/bit** is slightly gentler than 365 d, memorable (arhat calendar), and still more aggressive than legacy 840 d — low start with **slow** scarcity for long-term pray/invest. Soft pray does not soften on-chain PoW after finds get truly hard — desk / market / pagoda burns remain the scalable path.
 
-### Cap 128 bits — how long to mine on a phone (with Moore)?
+### Cap 128 bits — phone mine ETA projection (500 d/bit)
 
-From base **24** to cap **128** = **+104 bits** ≈ **~142 years** at 500 d/bit (104 × 500 / 365.25), or ~104 years at 365 d/bit.
+Assumptions: mid-phone WebGPU ≈ **5 MH/s** at genesis → raw PoW ≈ **~3 s** at base **24**; Moore ≈ **2× hashrate / 2 years**; soft pray ≈ **60 s** after remint. Felt PoW only changes on whole-byte eras (+8 bits).
 
-If phone hashrate doubles every **2 years** for the whole century:
+From base **24** → cap **128** = **+104 bits** ≈ **~142 years** calendar (104 × 500 / 365.25).
 
-| | |
-|--|--|
-| Difficulty growth | × **2^104** |
-| Hashrate growth (Moore) | × **2^(104/2) = 2^52** |
-| Net mine time vs genesis | × **2^52** ≈ **4.5×10^15** |
+| Bits | ~Year | Diff vs genesis | Phone HR (Moore) | Raw PoW ETA (Moore) | Raw PoW (frozen phone) | UX |
+|------|------:|----------------:|-----------------:|--------------------:|-----------------------:|----|
+| **24** | 0 | ×1 | ×1 | **~3 s** | ~3 s | soft pray (~60 s) dominates |
+| **32** | 11 | ×256 | ×~45 | **~17 s** | ~13 min | soft pray still covers |
+| **40** | 22 | ×2^16 | ×~2k | **~1.7 min** | ~2.3 d | PoW noticeable |
+| **48** | 33 | ×2^24 | ×~88k | **~10 min** | ~1.6 y | phone fringe |
+| **56** | 44 | ×2^32 | ×~4M | **~55 min** | centuries | phone fringe |
+| **64** | 55 | ×2^40 | ×~170M | **~5 h** | — | desk / pagoda path |
+| **72** | 66 | ×2^48 | ×~8B | **~1.3 d** | — | desk / pagoda |
+| **80** | 77 | ×2^56 | ×~350B | **~1 week** | — | desk / pagoda |
+| **96** | 99 | ×2^72 | ×~7×10^14 | **~8 months** | never | desk / pagoda |
+| **128** | 142 | ×2^104 | ×~3×10^21 | **~700 y** | never | Script cap only |
 
-Genesis ~3 s × 2^52 ≈ **~4×10^8 years** of continuous hashing — **not mineable on any phone**. Soft timer is irrelevant; PoW never finishes.
+At **128** with Moore: difficulty ×2^104, hashrate ×2^(142/2)≈2^71 → net ×**~10^9** vs genesis → ~3 s × 10^9 ≈ **centuries** of continuous hashing. Soft timer is irrelevant; phones do not finish.
 
-**Takeaway:** the 128-bit ceiling is a Script/safety cap, not a “phones still pray in 100 years” promise. Long before that, issuance shifts to desk inventory / burns; Golden Lotus can use a separate higher base.
+**Takeaway:** phone mining is comfortable for **~10–20 years**, fringe by **~30–45 years**, then impractical. The 128-bit ceiling is a Script/safety cap, not a “phones still pray in 100 years” promise. Long before that, the product path is **buy / desk inventory / burn through the pagoda** (recirculating demand while Moore keeps fresh mining dear). Golden Lotus can use a separate higher base.
 
 ### Can bits start at 1? Can we “shift” to last longer under the 128 cap?
 
