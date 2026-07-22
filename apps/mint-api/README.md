@@ -47,8 +47,8 @@ Requires a deployment JSON:
 | **Test** | `deployments/mainnet-dryrun-wlotus.json` | `TICKER=dWLOTUS BATONS=28 npm run create-wlotus-token` |
 | **Prod** | `deployments/mainnet-wlotus.json` | `BATONS=28 npm run create-wlotus-token` (default ticker WLOTUS; see [PROD.md](../../deploy/contabo/PROD.md)) |
 
-mint-api prefers **live** `mainnet-wlotus.json` when present.
-**Genesis baton count:** **28** (ALP max). Desk soft-serves **2** tips via env.
+mint-api prefers **live** `mainnet-wlotus.json` when present. On Contabo **prod**, set `MINT_REQUIRE_LIVE=1` so dryrun JSON cannot be loaded by mistake.
+**Genesis baton count:** **28** (ALP max). Desk soft-serves **1** tip via `MINT_SERVING_TIP_COUNT` (raise toward 28 if demand warrants).
 
 ## Run
 

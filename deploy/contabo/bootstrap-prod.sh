@@ -81,10 +81,15 @@ usermod -aG www-data "$DEPLOY_USER"
 # Passwordless sudo for mint-api restart + mint.env (CI)
 if [[ ! -f /etc/sudoers.d/wlotus-deploy ]]; then
   cat >/etc/sudoers.d/wlotus-deploy <<EOF
-${DEPLOY_USER} ALL=(root) NOPASSWD: /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/mint.env
+${DEPLOY_USER} ALL=(root) NOPASSWD: /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/mint.env, /bin/chown -R ${DEPLOY_USER}\:${DEPLOY_USER} /opt/wlotus, /bin/rm -rf /opt/wlotus/node_modules
 EOF
   chmod 440 /etc/sudoers.d/wlotus-deploy
 fi
+# Keep sudoers current on re-bootstrap (idempotent replace for known path)
+cat >/etc/sudoers.d/wlotus-deploy <<EOF
+${DEPLOY_USER} ALL=(root) NOPASSWD: /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/mint.env, /bin/chown -R ${DEPLOY_USER}\:${DEPLOY_USER} /opt/wlotus, /bin/rm -rf /opt/wlotus/node_modules
+EOF
+chmod 440 /etc/sudoers.d/wlotus-deploy
 
 mkdir -p "/home/$DEPLOY_USER/.ssh"
 chmod 700 "/home/$DEPLOY_USER/.ssh"

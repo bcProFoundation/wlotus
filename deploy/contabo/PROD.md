@@ -277,6 +277,7 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Job fails “not an ancestor of master” | Tag a commit that is already merged to master |
 | Permission denied on mint-api restart | Re-run bootstrap or fix `/etc/sudoers.d/wlotus-deploy` |
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
+| `npm ci` EACCES on `/opt/wlotus/node_modules` | Repo was installed as **root**; CI user `deploy` cannot delete packages. Fix once: `sudo chown -R deploy:deploy /opt/wlotus` then re-run the deploy. Also refresh sudoers: `sudo bash deploy/contabo/bootstrap-prod.sh` (or append NOPASSWD `chown`/`rm` for `/opt/wlotus` as in that script). |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
 | `dWLOTUS` on prod `/api/status` | Live genesis missing — mint-api fell back to committed dryrun JSON. Create `mainnet-wlotus.json` with `npm run create-wlotus-token`, set `MINT_REQUIRE_LIVE=1` in `/etc/wlotus/mint.env`, restart mint-api |
