@@ -98,7 +98,7 @@ Caveats (do not overclaim):
 
 Phone electricity ≪ XEC fee ([ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)). Ritual value is **minutes of presence**, not SHA256d network work.
 
-- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
+- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_SECONDS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
 - Cancel during the soft wait **skips the burn** (requires same `burnToken`); the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
 - Soft timer must **not** delay remint — that would lose tip races.
 - Aggregate token hashrate does not protect transfers or burns; eCash does. Bits stay near **24** at launch to encourage participation — not **32** “for security.”
@@ -257,8 +257,13 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
   TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
+<<<<<<< HEAD
 - Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=1` at launch (raise toward 28 if needed).
 - Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **0** for wLotus (max 128 headroom — presence via soft pray / 1/107, not launch hashrate).
+=======
+- Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=2`.
+- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun (participation / presence — not security theater).
+>>>>>>> origin/cursor/min-pray-wait-58ff
 - Soft pray timer: `VITE_MIN_PRAY_SECONDS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
 - Golden Lotus: separate token; open remint; no temple mint tax.
 

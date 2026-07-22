@@ -176,7 +176,8 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `VITE_PRAYER_TICKER` | no | `dPRAYER` |
 | `VITE_CHRONIK_URLS` | no | Chronik URLs |
 | `VITE_TIP_POLL_MS` | no | Tip-epoch poll while mining (ms). Prefer an Actions **variable** (not sensitive): `1000` or `5000`. App default **2000** if unset. Secret also works. |
-| `VITE_MIN_PRAY_MS` | no | Min wall-clock pray before submit if PoW finishes early (ms). Prefer Actions **variable**. App default **60000**; `0` disables. |
+| `VITE_MIN_PRAY_SECONDS` | no | Soft pray floor in **seconds** (e.g. `60`). Prefer Actions **variable**. App default **60**; `0` disables. |
+| `VITE_EXPERIMENTAL_POW` | no | Set `1` for WebGPU → multi-worker Offer mining. |
 | `MINT_MNEMONIC` | no* | 12/24-word **fee wallet** — synced to `/etc/wlotus/mint.env` |
 
 \*Mint fee wallet **must** exist on the VM for `mint-api`. Prefer writing `/etc/wlotus/mint.env` once on Contabo. GitHub `MINT_MNEMONIC` is only an optional way to refresh that file on deploy — Actions alone cannot pay fees.

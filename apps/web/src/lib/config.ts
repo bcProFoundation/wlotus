@@ -15,9 +15,10 @@ export const PRAYER_TICKER =
   'dWLOTUS';
 
 import {
-  MIN_PRAY_MS_KEY,
-  parseMinPrayMs,
-} from './minPrayMs.js';
+  MIN_PRAY_SECONDS_KEY,
+  minPraySecondsToMs,
+  parseMinPraySeconds,
+} from './minPraySeconds.js';
 import { parseTipPollMs } from './tipPollMs.js';
 
 /** Mint API base — empty = same origin (/api via Vite proxy or nginx). */
@@ -40,26 +41,34 @@ export const TIP_POLL_MS = parseTipPollMs(
 export { parseTipPollMs };
 
 /**
- * Minimum wall-clock prayer time (ms) between remint and memorial burn.
- * Bake: `VITE_MIN_PRAY_MS=60000` (default). `0` disables.
- * Runtime override: localStorage `wlotus.minPrayMs`.
- * Remint always submits immediately; this only delays `/api/burn`.
+ * Soft pray floor in seconds (between remint and memorial burn).
+ * Bake: `VITE_MIN_PRAY_SECONDS=60` (default). `0` disables.
+ * Runtime override: localStorage `wlotus.minPraySeconds`.
  */
-export const MIN_PRAY_MS = parseMinPrayMs(
-  import.meta.env.VITE_MIN_PRAY_MS as string | undefined,
+export const MIN_PRAY_SECONDS = parseMinPraySeconds(
+  import.meta.env.VITE_MIN_PRAY_SECONDS as string | undefined,
 );
 
-export function getMinPrayMs(): number {
+export function getMinPraySeconds(): number {
   try {
-    const ls = localStorage.getItem(MIN_PRAY_MS_KEY);
-    if (ls != null && ls.trim() !== '') return parseMinPrayMs(ls);
+    const ls = localStorage.getItem(MIN_PRAY_SECONDS_KEY);
+    if (ls != null && ls.trim() !== '') return parseMinPraySeconds(ls);
   } catch {
     /* ignore quota / private mode */
   }
-  return MIN_PRAY_MS;
+  return MIN_PRAY_SECONDS;
 }
 
-export { parseMinPrayMs, MIN_PRAY_MS_KEY };
+/** Soft pray floor in ms (for timers only — not an env var). */
+export function getMinPrayMs(): number {
+  return minPraySecondsToMs(getMinPraySeconds());
+}
+
+export {
+  parseMinPraySeconds,
+  MIN_PRAY_SECONDS_KEY,
+  minPraySecondsToMs,
+};
 
 export const INSTALL_ID_KEY = 'wlotus.installId';
 export const LOCAL_OFFERS_KEY = 'wlotus.web.offers';

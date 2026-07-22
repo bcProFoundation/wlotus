@@ -14,8 +14,9 @@
 #   VITE_CHRONIK_URLS         — comma-separated Chronik URLs
 #   VITE_TIP_POLL_MS          — tip-epoch poll while mining (ms); prefer Actions *variable*
 #                               (not sensitive). e.g. 1000 or 5000; app default 2000
-#   VITE_MIN_PRAY_MS          — min wall-clock pray before submit (ms); default 60000; 0=off
-#   VITE_EXPERIMENTAL_POW     — research only (Offer path is always single CPU worker)
+#   VITE_MIN_PRAY_SECONDS      — soft pray floor in seconds (e.g. 60); 0=off
+#   VITE_EXPERIMENTAL_POW     — set to 1 for WebGPU → multi-worker Offer mining
+#   VITE_POW_BACKEND          — auto | webgpu | multi-worker | worker (when experimental on)
 #   MINT_MNEMONIC             — 12/24-word fee wallet; synced to /etc/wlotus/mint.env
 #                               (mint-api runtime still reads the server file, not Actions)
 #
@@ -68,10 +69,13 @@ jobs:
           # Tip-epoch poll while mining (ms). Prefer Actions variable; secret also ok.
           # Examples: 1000 (1s) or 5000 (5s). Default in app is 2000 if unset.
           VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
-          # Min prayer wall time if PoW finishes early (ms). Default in app is 60000.
-          VITE_MIN_PRAY_MS: ${{ vars.VITE_MIN_PRAY_MS }}
+          # Soft pray floor in seconds (e.g. 60). Default 60.
+          VITE_MIN_PRAY_SECONDS: ${{ vars.VITE_MIN_PRAY_SECONDS }}
+          # WebGPU / multi-worker Offer path (launch). Prefer Actions *variable*.
+          VITE_EXPERIMENTAL_POW: ${{ vars.VITE_EXPERIMENTAL_POW }}
+          VITE_POW_BACKEND: ${{ vars.VITE_POW_BACKEND }}
         run: |
-          echo "Building test SPA (minPrayMs=${VITE_MIN_PRAY_MS:-60000})"
+          echo "Building test SPA (minPraySeconds=${VITE_MIN_PRAY_SECONDS:-60} experimentalPow=${VITE_EXPERIMENTAL_POW:-0} backend=${VITE_POW_BACKEND:-auto})"
           npm run web:build
 
       - name: Require Contabo secrets
