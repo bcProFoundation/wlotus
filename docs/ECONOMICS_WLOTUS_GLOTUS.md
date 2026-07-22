@@ -59,8 +59,11 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
 | **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default 60) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
 | **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
-| **Moore clock (+1 bit / 500 days)** | 五百罗汉 calendar — slow scarcity so new issuance dearens over years; supports gentle long-term value for buy/pray/invest while burns through the pagoda recirculate demand. See [CLOCK.md](./CLOCK.md). |
+| **Moore clock (+1 bit / 500 days)** | 五百罗汉 — one arhat-day until the bit ticks. Easy to remember; tighter than legacy **840** (too loose / not linked). Low genesis PoW + slow ramp so the token can stay **gently profitable long-term** for holders who buy, pray, or invest. See [CLOCK.md](./CLOCK.md). |
+| **Pagoda burn → remint loop** | New atoms are not free mint forever: memorial **burns through the pagoda** (and related dana paths) recirculate demand while Moore makes fresh mining dearer. Desk inventory (107/108) bridges non-miners. |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
+
+**Long-term value thesis (not a moonshot):** start **very low** (base 24 + soft pray) so phones can mine at launch; scarcity ticks up on a 500-day arhat calendar so new issuance gets slightly dearer over years — **slight appreciation**, not a speculative rocket. People can **buy and pray**, or **hold / invest**, while pagoda burns keep ritual demand alive and feed the remint economy.
 
 **Do not claim:** “more WLOTUS hashrate = safer token” (Bitcoin/eCash analogy does not apply).  
 **Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**; scarcity rises **slowly** for holders who stay with the temple ledger.

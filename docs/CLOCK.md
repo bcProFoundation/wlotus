@@ -30,7 +30,7 @@ BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 
 Short-term UX is **`VITE_MIN_PRAY_SECONDS`** (attention floor after remint). Moore period is the **long-term** difficulty ramp. They are independent.
 
-**Product intent:** start easy on phone GPU (base **24** + soft pray). Difficulty rises slowly so new issuance gets dearer over years — people who **buy, pray, or burn through the pagoda** can see a **gentle** scarcity tailwind (not a speculative rocket). Mining stays the presence path; pagoda burns recirculate memorial demand; desk inventory serves non-miners.
+**Product intent:** start **very low** on phone GPU (base **24** + soft pray) so launch mining is easy. Difficulty rises on a **500-day** arhat clock (not legacy **840** — too loose and not symbolically linked) so new issuance gets **slightly** dearer over years. Thesis: a token that can stay **gently profitable long-term** — people **buy and pray**, or **invest** for slight appreciation — while **burns through the pagoda** recirculate memorial demand and keep remints meaningful. Mining stays the presence path; desk inventory serves non-miners.
 
 Assume mid-phone WebGPU ≈ **5 MH/s**, base **24** bits → raw PoW ≈ **~3 s** (soft timer still holds ~60 s). Classic **Moore** ≈ **2× hashrate / 2 years**.
 
