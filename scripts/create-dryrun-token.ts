@@ -13,7 +13,7 @@
  * wLotus: mint 108 (one mala) → 1 miner + 107 temple **P2SH** (MooreTipTemple).
  * LIVE=1 requires TEMPLE_ADDRESS (real IFP-style P2SH). Dryrun may omit it and
  * wrap the genesis P2PKH in P2SH for convenience.
- * Moore clock: +1 bit / year by default (override `MOORE_DAYS_PER_EXTRA_BIT=365..730`).
+ * Moore clock: +1 bit / 500 days by default (五百罗汉; override `MOORE_DAYS_PER_EXTRA_BIT=365..730`).
  * Hard next-P2SH + tipLocktime.
  */
 import { resolve } from 'node:path';
@@ -377,7 +377,7 @@ async function main(): Promise<void> {
     explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
-      'Moore D: +1 bit / year (override MOORE_DAYS_PER_EXTRA_BIT=365..730). Cap bits ≤ 128. Whole-byte PoW only.',
+      'Moore D: +1 bit / 500 days (五百罗汉; override MOORE_DAYS_PER_EXTRA_BIT=365..730). Cap bits ≤ 128. Whole-byte PoW only.',
       tierName === 'wlotus'
         ? `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH (IFP-style). Temple spends are rare multisig/ops. No memorial EMPP (op budget). Remint tip + burn memorial use DANA LOKAD.`
         : tierName === 'prayer'

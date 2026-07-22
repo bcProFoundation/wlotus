@@ -57,12 +57,13 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 | Mechanism | Role |
 |-----------|------|
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
-| **Soft pray timer** (`VITE_MIN_PRAY_MS`, default ~60s) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
+| **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default 60) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
 | **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
+| **Moore clock (+1 bit / 500 days)** | 五百罗汉 calendar — slow scarcity so new issuance dearens over years; supports gentle long-term value for buy/pray/invest while burns through the pagoda recirculate demand. See [CLOCK.md](./CLOCK.md). |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
 
 **Do not claim:** “more WLOTUS hashrate = safer token” (Bitcoin/eCash analogy does not apply).  
-**Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**.
+**Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**; scarcity rises **slowly** for holders who stay with the temple ledger.
 
 ### Does 1/107 deter fee-paying miners? (yes, on XEC cost)
 

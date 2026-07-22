@@ -82,19 +82,19 @@ export const MOORE_DAY_SECONDS = 86_400;
 
 /**
  * Calendar days per +1 Moore bit (baked into covenant at genesis).
- * Default **365** (~1 year) — more aggressive than classic ~840d Moore.
- * Override at create time: `MOORE_DAYS_PER_EXTRA_BIT=365..730` (1–2 years).
+ * Default **500** — 五百罗汉 (Five Hundred Arhats): one arhat-day per calendar day
+ * until the bit ticks. Override: `MOORE_DAYS_PER_EXTRA_BIT=365..730`.
  * Existing deployments keep whatever `secondsPerExtraBit` was baked in JSON.
  */
-export const MOORE_DAYS_PER_EXTRA_BIT = 365;
+export const MOORE_DAYS_PER_EXTRA_BIT = 500;
 
-/** Allowed range for genesis override (1–2 years). */
+/** Allowed range for genesis override (~1–2 years). */
 export const MOORE_DAYS_PER_EXTRA_BIT_MIN = 365;
 export const MOORE_DAYS_PER_EXTRA_BIT_MAX = 730;
 
 /**
  * Resolve days/bit for a new genesis. Clamps to 365–730.
- * Env: `MOORE_DAYS_PER_EXTRA_BIT` (e.g. 365 or 730).
+ * Env: `MOORE_DAYS_PER_EXTRA_BIT` (default 500).
  */
 export function resolveMooreDaysPerExtraBit(
   raw: string | undefined = process.env.MOORE_DAYS_PER_EXTRA_BIT,

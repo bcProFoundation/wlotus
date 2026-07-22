@@ -27,7 +27,7 @@ export const WLPT_VERSION = DANA_TIP_VERSION;
 export const PROD_SECONDS_PER_EXTRA_BIT =
   MOORE_DAYS_PER_EXTRA_BIT * MOORE_DAY_SECONDS;
 
-/** Resolve seconds/bit for a new genesis (env `MOORE_DAYS_PER_EXTRA_BIT`, 365–730). */
+/** Resolve seconds/bit for a new genesis (env `MOORE_DAYS_PER_EXTRA_BIT`, default 500). */
 export function resolveProdSecondsPerExtraBit(
   raw?: string,
 ): number {
