@@ -93,6 +93,12 @@ chown -R "$DEPLOY_USER:$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh"
 chown -R "$DEPLOY_USER:www-data" "$DEPLOY_PATH"
 chmod -R g+rwX "$DEPLOY_PATH"
 
+# Mint-api clone: always owned by deploy (CI npm ci). Safe if missing.
+if [[ -d /opt/wlotus ]]; then
+  chown -R "$DEPLOY_USER:$DEPLOY_USER" /opt/wlotus
+  echo "Fixed ownership: /opt/wlotus → $DEPLOY_USER"
+fi
+
 cat <<EOF
 
 Production bootstrap done.
@@ -100,6 +106,10 @@ Production bootstrap done.
   Web root:     $DEPLOY_PATH
   Nginx site:   ${SITE_NAME} (server_name=$SERVER_NAME)
   Deploy user:  $DEPLOY_USER
+
+If mint-api lives at /opt/wlotus and CI hits npm EACCES:
+  sudo chown -R $DEPLOY_USER:$DEPLOY_USER /opt/wlotus
+  (bootstrap now does this automatically when /opt/wlotus exists)
 
 Next:
   1. Append CI public key to /home/$DEPLOY_USER/.ssh/authorized_keys

@@ -184,16 +184,27 @@ jobs:
           else
             git checkout --force "$SHA"
           fi
-          # node_modules is often root-owned after manual `npm` as root → EACCES on npm ci
-          if [ -d node_modules ]; then
-            if sudo -n chown -R "$(id -u):$(id -g)" "$REPO" 2>/dev/null; then
-              echo "Fixed ownership of $REPO for $(whoami)"
-            elif sudo -n rm -rf node_modules 2>/dev/null; then
-              echo "Removed root-owned node_modules"
-            else
-              echo "::warning::Cannot fix $REPO/node_modules ownership. On the VM run:"
-              echo "  sudo chown -R $(whoami):$(whoami) $REPO"
+          # node_modules is often root-owned after manual `npm` as root → EACCES on npm ci.
+          # sudoers (bootstrap-prod) allows ONLY these exact commands for /opt/wlotus:
+          #   /bin/chown -R deploy:deploy /opt/wlotus
+          #   /bin/rm -rf /opt/wlotus/node_modules
+          ME="$(whoami)"
+          if [ "$REPO" = /opt/wlotus ]; then
+            sudo -n /bin/chown -R "$ME:$ME" /opt/wlotus \
+              && echo "chown $ME:$ME /opt/wlotus OK" \
+              || echo "chown skipped (sudoers missing or not /opt/wlotus owner fix)"
+            if [ -d /opt/wlotus/node_modules ] && [ ! -w /opt/wlotus/node_modules ]; then
+              sudo -n /bin/rm -rf /opt/wlotus/node_modules \
+                && echo "removed root-owned /opt/wlotus/node_modules" \
+                || true
             fi
+          fi
+          if [ -d node_modules ] && [ ! -w node_modules ]; then
+            echo "::error::$REPO/node_modules is not writable by $ME (still root-owned?)."
+            echo "On the VM as root run once:"
+            echo "  sudo chown -R $ME:$ME $REPO"
+            echo "Then refresh sudoers from master bootstrap-prod.sh and re-tag/redeploy."
+            exit 1
           fi
           npm ci
           sudo systemctl try-restart wlotus-mint-api.service || true
