@@ -200,6 +200,8 @@ async function main(): Promise<void> {
         ticker: tier.ticker,
         baseZeroBits: tier.bits,
         mintAtoms: Number(tier.mint),
+        initialMintAtoms:
+          tierName === 'wlotus' ? Number(WLOTUS_MINT_ATOMS) : 1000,
         templeAddress: temple?.address ?? null,
         secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
         genesisUnix,
@@ -232,7 +234,9 @@ async function main(): Promise<void> {
     name: tier.name,
     url: TOKEN_URL,
     decimals: 0,
-    initialMintAtoms: 1_000n,
+    // wLotus: exactly one mala (108) as genesis fungible supply — same as remint size.
+    // Other dryrun tiers keep a small desk float for smoke tests.
+    initialMintAtoms: tierName === 'wlotus' ? WLOTUS_MINT_ATOMS : 1_000n,
     powBatonCount: batons,
   });
   console.log('Genesis', genesis.tokenId);
@@ -353,6 +357,8 @@ async function main(): Promise<void> {
     secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
     tipLocktime,
     mintAtomsPerRemint: tier.mint.toString(),
+    initialMintAtoms:
+      tierName === 'wlotus' ? WLOTUS_MINT_ATOMS.toString() : '1000',
     mintSplit:
       tierName === 'wlotus'
         ? {

@@ -240,41 +240,74 @@ npm run fund-tip-fee-wallets
 
 For **live WLOTUS** on prod, see **[PROD.md](./PROD.md)** (`npm run create-prod-token`).
 
-Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). Batons are immutable at genesis — mint the ALP max (**28**); desk soft-serves **1** tip via `MINT_SERVING_TIP_COUNT` at launch (raise later if demand warrants).
+Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it).
+
+**Genesis parameters (immutable after create):**
+
+| Param | Value |
+|-------|------:|
+| Remint mint | **108** (1 miner + 107 temple) |
+| **Initial fungible mint** | **108** (exactly one mala) |
+| `baseZeroBits` | **0** |
+| Moore period | **500 days**/bit (五百罗汉) |
+| Batons | **28** (ALP max; desk may serve fewer) |
+| Hard sunset | remints fail when bits would be **> 128** |
+
+Desk / rate limits (soft, changeable):
+
+| Env | Launch default |
+|-----|---------------:|
+| `MINT_SERVING_TIP_COUNT` | **1** |
+| `MINT_MAX_OFFERS_PER_DAY` | **20** / `installId` (device) |
 
 ```bash
 cd ~/wlotus/wlotus   # or /opt/wlotus
-git pull origin master
+git fetch origin
+# After PR merge: git pull origin master
+# Or test this branch: git checkout cursor/moore-1y-bit-58ff && git pull
 npm ci
 
 # Fund GENESIS_ADDRESS with ≥ ~900 XEC before BATONS=28 (handoffs).
 # Temple must be P2SH (IFP-style), e.g. test temple:
 export TEMPLE_ADDRESS=ecash:ppzc7slfa9juf4gfr950qm9fn9gvctptkqdhtvf08j
 
+# Optional: pin Moore period (default is already 500)
+# export MOORE_DAYS_PER_EXTRA_BIT=500
+
 TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
   npm run create-dryrun-token
 # Writes deployments/mainnet-dryrun-wlotus.json
 # and copies it to deployments/mainnet-dryrun-active.json
 
+# Verify baked params:
+jq '{ticker,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,powBatonCount,templeAddress}' \
+  deployments/mainnet-dryrun-wlotus.json
+# Expect: baseZeroBits=0, mintAtomsPerRemint="108", initialMintAtoms="108",
+#         secondsPerExtraBit=43200000  (500*86400)
+
 # Smoke one remint (optional; uses GENESIS wallet as miner+fuel):
 TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
 
-# Tip fee wallets still sized for the soft tip count (2):
+# Tip fee wallets for the soft tip count:
 set -a && source /etc/wlotus/mint.env && set +a
-# ensure: MINT_SERVING_TIP_COUNT=1
+# ensure in mint.env:
+#   MINT_SERVING_TIP_COUNT=1
+#   MINT_MAX_OFFERS_PER_DAY=20
 npm run fund-tip-fee-wallets
 sudo systemctl restart wlotus-mint-api
 ```
 
-Until mint-api is restarted with this repo’s burn-after-mint wiring, `/api/status` may lag. After deploy:
+Until mint-api is restarted with the new deployment JSON, `/api/status` may show the old `tokenId`. After deploy:
 
 ```bash
 git pull
 npm ci
 # ensure deployments/mainnet-dryrun-wlotus.json (or active) is present
 sudo systemctl restart wlotus-mint-api
-curl -sS https://test.wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,memorialOnBurn,servingTipCount,powBatonCount}'
+curl -sS https://test.wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,baseZeroBits,memorialOnBurn,servingTipCount,powBatonCount,maxOffersPerDay}'
 ```
+
+**Web (test):** merge to `master` (or run **Deploy web (test)** workflow) so the Offer client picks up env (`VITE_MIN_PRAY_SECONDS`, etc.). Hard-refresh https://test.wlotus.org.
 
 Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
