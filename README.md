@@ -2,72 +2,65 @@
 
 **wLotus** (ticker **WLOTUS**) — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
 
-Ergon-like ritual ALP token with permissionless PoW remint. This repository holds the **covenant, remint miner, and offerings app**.
+Companion economic token: **Golden Lotus** (ticker **GLOTUS**) — permissionless remint, premine, event burns. See [docs/ECONOMICS_WLOTUS_GLOTUS.md](./docs/ECONOMICS_WLOTUS_GLOTUS.md).
+
+This repository holds the **covenant, remint miner, mint-api, and offerings app**.
 
 ## Design (short)
 
 | Piece | Choice |
 |-------|--------|
-| Meaning | Memorial (hoa sen trắng) + dana — see [docs/VISION.md](./docs/VISION.md) |
+| Meaning | Memorial (hoa sen trắng) + dana — [docs/VISION.md](./docs/VISION.md) |
 | Host | eCash (XEC) |
 | Token | ALP (`SLP2` / eMPP) |
-| Issuance | MooreTip PoW remint (calendar D + tipLocktime + hard next-P2SH) |
+| Issuance | MooreTip PoW remint — mint **108** → **1** miner + **107** temple (mala) |
 | Burn | Intentional ALP burn — `apps/web` (XEC fees; postage later) |
-
-See [docs/VISION.md](./docs/VISION.md), [docs/ECONOMICS_WLOTUS_GLOTUS.md](./docs/ECONOMICS_WLOTUS_GLOTUS.md), [docs/SPEC.md](./docs/SPEC.md), and [docs/STATUS.md](./docs/STATUS.md).
+| Clock | Base **0** bits; +1 bit / **500** days; hard sunset at **128** |
 
 ## Status
 
-Production **Prayer dryrun** is live. Offerings UI:
-
-| Environment | URL / command |
-|-------------|----------------|
-| **Test (deployed)** | https://test.wlotus.org — `dWLOTUS` dryrun |
-| **Prod** | https://wlotus.org — live **WLOTUS** (tag releases); see [deploy/contabo/PROD.md](./deploy/contabo/PROD.md) |
+| Environment | URL / notes |
+|-------------|-------------|
+| **Test** | https://test.wlotus.org — ticker **dWLOTUS** |
+| **Prod** | https://wlotus.org — live **WLOTUS** (tag releases) |
 | **Local** | `npm run mint-api` + `npm run web` |
 
-Test deploy: [deploy/contabo/README.md](./deploy/contabo/README.md) (`create-wlotus-token` / `create-dryrun-wlotus`).  
-Live genesis: [deploy/contabo/PROD.md](./deploy/contabo/PROD.md) (`npm run create-wlotus-token` / `create-prod-token`).
+Docs: [VISION](./docs/VISION.md) · [ECONOMICS](./docs/ECONOMICS_WLOTUS_GLOTUS.md) · [SPEC](./docs/SPEC.md) · [STATUS](./docs/STATUS.md) · [CLOCK](./docs/CLOCK.md)
+
+Deploy: [test Contabo](./deploy/contabo/README.md) · [prod Contabo](./deploy/contabo/PROD.md)
 
 ```
-apps/web/           # wLotus offerings (migrated from Lotus Temple UX)
-deploy/contabo/     # Test + prod VM bootstrap + nginx (CI → Contabo)
+apps/web/           # Offerings SPA
+apps/mint-api/      # Sponsored remint + burn desk
+deploy/contabo/     # Test + prod VM bootstrap + nginx
 .github/workflows/  # Deploy web (test) + Deploy web (prod)
 contracts/          # Spedn PoW remint covenants
 docs/               # Spec + research
 src/                # Params, covenant loaders, miners
-scripts/            # create-wlotus-token, create-dryrun-token (prayer/candle/flower), mine-dryrun-once, …
-deployments/        # Live mainnet records
+scripts/            # create-wlotus-token, mine-dryrun-once, …
+deployments/        # Mainnet records
 ```
-
-Test deploy: [deploy/contabo/README.md](./deploy/contabo/README.md)
 
 ## Quick start
 
 ```bash
 npm install
 npm test
-npm run moore -- --days 365   # print M after 365 wall-days
+npm run moore -- --days 365   # print required bits after 365 wall-days
 ```
 
-## Create the low-difficulty test token (mainnet)
-
-Target economics: **~$0.000001 / token** now; later raise PoW toward **~$0.01 / token**.
-
-Chronik fleet: `chronik.e.cash`, `xec.paybutton.org`, `chronik.pay2stay.com/xec`.
+### Create test / prod token
 
 ```bash
-npm run new-wallet            # writes .env + deployments/pending-funding.json
-# Send ≥ 200 XEC to the printed address
-npm run create-test-token     # ALP GENESIS → deployments/mainnet-test-token.json
-```
+# Test dryrun (same covenant as prod; ticker only differs)
+TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# or: npm run create-dryrun-wlotus
 
-Ticker for this dogfood deployment: **`mWLPOW`**. Keep **`WLOTUS`** for the later ~$0.01 launch
-(1000:1 energy peg). See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
+# Live prod (default ticker WLOTUS)
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# or: npm run create-prod-token
 
-```bash
-npm run create-pow-token   # mWLPOW genesis + handoff to covenant P2SH
-npm run mine-once          # one permissionless remint (100 tokens)
+BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 ```
 
 ## License

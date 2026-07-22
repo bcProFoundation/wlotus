@@ -1,33 +1,33 @@
-# Test / incubation deployments (mainnet)
+# Test token — dWLOTUS
 
-## Mine and burn this: **mWLPOW**
-
-Incubation token ≈ **1/1000** of future `WLOTUS` energy/price.
+Use **`dWLOTUS`** for Contabo test / local dogfood. Same covenant as prod **WLOTUS**; only the ticker (and deployment JSON) differ.
 
 | Field | Value |
 |-------|-------|
-| Ticker | `mWLPOW` |
-| Decimals | **0** |
-| Tokens / remint | **Always 100** |
-| PoW | 1 leading zero byte |
-| Target | ~**$0.00001** / token |
-| Conversion | 1000 mWLPOW ≈ 1 WLOTUS (later) |
+| Ticker | `dWLOTUS` |
+| Covenant | `WlotusPowRemintMooreTipTemple` |
+| Mint / remint | **108** → **1** miner + **107** temple |
+| Base bits | **0** |
+| Moore | **+1 bit / 500 days** |
+| Batons | **28** |
 
-Record: [`deployments/mainnet-mwlpow.json`](../deployments/mainnet-mwlpow.json) (also `mainnet-pow-token.json`).
+Record: [`deployments/mainnet-dryrun-wlotus.json`](../deployments/mainnet-dryrun-wlotus.json)
 
 ```bash
-npm run create-pow-token
-npm run mine-once
+TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# or: npm run create-dryrun-wlotus
+
+BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 ```
 
-Economics: [ECONOMICS.md](./ECONOMICS.md)
+Prod genesis (do not use on the test desk):
 
-## Older dogfood (do not use for new mining)
+```bash
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# or: npm run create-prod-token
+```
 
-| Token | Notes |
-|-------|-------|
-| mWLOTUS | Accidental 2-dec deploy while waiting on funding |
-| WLPOW / WLTEST | Earlier plumbing / custodial tests |
+Economics: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) · Clock: [CLOCK.md](./CLOCK.md)
 
 ## Chronik
 
