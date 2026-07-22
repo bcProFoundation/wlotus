@@ -184,6 +184,17 @@ jobs:
           else
             git checkout --force "$SHA"
           fi
+          # node_modules is often root-owned after manual `npm` as root → EACCES on npm ci
+          if [ -d node_modules ]; then
+            if sudo -n chown -R "$(id -u):$(id -g)" "$REPO" 2>/dev/null; then
+              echo "Fixed ownership of $REPO for $(whoami)"
+            elif sudo -n rm -rf node_modules 2>/dev/null; then
+              echo "Removed root-owned node_modules"
+            else
+              echo "::warning::Cannot fix $REPO/node_modules ownership. On the VM run:"
+              echo "  sudo chown -R $(whoami):$(whoami) $REPO"
+            fi
+          fi
           npm ci
           sudo systemctl try-restart wlotus-mint-api.service || true
           echo "mint-api at $(git rev-parse --short HEAD)"
