@@ -36,6 +36,33 @@ sudo bash deploy/contabo/bootstrap-prod.sh wlotus.org
 
 Creates `/var/www/wlotus`, nginx site `wlotus`, user `deploy`, ufw, limited sudo for mint-api restart.
 
+**Do not re-run `bootstrap-prod.sh` after Certbot.** Older versions overwrote the TLS site and rewrote every `server_name` to `wlotus.org www.wlotus.org`, which merges the www→apex `return 301` onto apex and causes an infinite HTTPS redirect loop. Current bootstrap **skips** nginx overwrite when `listen 443` / `ssl_certificate` is present (safe for sudoers / `/opt/wlotus` chown refresh).
+
+### Fix: https://wlotus.org returns 301 to itself
+
+On the prod VM as root:
+
+```bash
+# Confirm loop
+curl -sI https://wlotus.org/ | head -5   # Location: https://wlotus.org/ → broken
+
+cd /opt/wlotus && git pull   # or copy nginx-wlotus-prod-tls.conf from this repo
+sudo cp /etc/nginx/sites-available/wlotus "/etc/nginx/sites-available/wlotus.bak.$(date +%s)"
+sudo cp deploy/contabo/nginx-wlotus-prod-tls.conf /etc/nginx/sites-available/wlotus
+
+# If cert live/ name differs:
+sudo certbot certificates
+# edit ssl_certificate paths in sites-available/wlotus if needed
+
+# Disable a separate www-redirect site if it also names apex (optional)
+# sudo rm -f /etc/nginx/sites-enabled/wlotus-www-redirect
+
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI https://wlotus.org/ | head -5          # expect HTTP/2 200
+curl -sI https://www.wlotus.org/ | head -5      # expect 301 → https://wlotus.org/
+curl -sS https://wlotus.org/api/status | head -c 200
+```
+
 ### DNS
 
 | Type | Name | Value |
@@ -277,7 +304,7 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Job fails “not an ancestor of master” | Tag a commit that is already merged to master |
 | Permission denied on mint-api restart | Re-run bootstrap or fix `/etc/sudoers.d/wlotus-deploy` |
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
-| `npm ci` EACCES on `/opt/wlotus/node_modules` | Repo was installed as **root**; CI user `deploy` cannot delete packages. Fix once: `sudo chown -R deploy:deploy /opt/wlotus` then re-run the deploy. Also refresh sudoers: `sudo bash deploy/contabo/bootstrap-prod.sh` (or append NOPASSWD `chown`/`rm` for `/opt/wlotus` as in that script). |
+| `npm ci` EACCES on `/opt/wlotus/node_modules` | Repo owned by **root**; CI user `deploy` cannot delete packages. **Fix once as root:** `sudo chown -R deploy:deploy /opt/wlotus`. Re-run bootstrap from **latest master** so sudoers matches CI (`chown -R deploy:deploy /opt/wlotus`). Prod deploys run the workflow from the **tag** — cut a new `v*` tag after this fix lands on master. |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
 | `dWLOTUS` on prod `/api/status` | Live genesis missing — mint-api fell back to committed dryrun JSON. Create `mainnet-wlotus.json` with `npm run create-wlotus-token`, set `MINT_REQUIRE_LIVE=1` in `/etc/wlotus/mint.env`, restart mint-api |
