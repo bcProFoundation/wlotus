@@ -304,21 +304,39 @@ function consumeOfferSlot(installId: string): void {
 }
 
 function loadDep(): { path: string; dep: DryrunDep } {
-  const candidates = [
-    // Live prod first (ticker WLOTUS) — Contabo prod after create-wlotus-token
-    'deployments/mainnet-wlotus.json',
-    'deployments/mainnet-dryrun-wlotus.json',
-    'deployments/mainnet-dryrun-active.json',
-    'deployments/mainnet-dryrun-prayer.json',
-  ];
+  const requireLive = /^(1|true|yes)$/i.test(
+    process.env.MINT_REQUIRE_LIVE?.trim() || '',
+  );
+  const explicit = process.env.MINT_DEPLOYMENT_JSON?.trim();
+  const candidates = explicit
+    ? [explicit]
+    : requireLive
+      ? ['deployments/mainnet-wlotus.json']
+      : [
+          // Live prod first (ticker WLOTUS) — Contabo prod after create-wlotus-token
+          'deployments/mainnet-wlotus.json',
+          'deployments/mainnet-dryrun-wlotus.json',
+          'deployments/mainnet-dryrun-active.json',
+          'deployments/mainnet-dryrun-prayer.json',
+        ];
   for (const rel of candidates) {
     const path = resolve(process.cwd(), rel);
-    if (existsSync(path)) {
-      return { path, dep: JSON.parse(readFileSync(path, 'utf8')) as DryrunDep };
+    if (!existsSync(path)) continue;
+    const dep = JSON.parse(readFileSync(path, 'utf8')) as DryrunDep;
+    const ticker = (dep.ticker ?? '').trim().toUpperCase();
+    if (requireLive && ticker && ticker !== 'WLOTUS') {
+      throw new Error(
+        `MINT_REQUIRE_LIVE=1 but ${rel} has ticker=${dep.ticker} (want WLOTUS). ` +
+          `Create live genesis: TEMPLE_ADDRESS=… npm run create-wlotus-token`,
+      );
     }
+    return { path, dep };
   }
   throw new Error(
-    'Missing deployment JSON (mainnet-wlotus / dryrun-wlotus / active / prayer)',
+    requireLive || explicit
+      ? `Missing live deployment JSON (${explicit || 'deployments/mainnet-wlotus.json'}). ` +
+        `Run create-wlotus-token on prod (default ticker WLOTUS).`
+      : 'Missing deployment JSON (mainnet-wlotus / dryrun-wlotus / active / prayer)',
   );
 }
 

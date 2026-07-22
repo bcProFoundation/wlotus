@@ -112,5 +112,7 @@ systemctl restart wlotus-mint-api
 curl -sS https://test.wlotus.org/health | jq .
 ```
 
-Expect `features.raceOpen: true`, `features.servingTipCount: 2`, and a fresh `startedAt` / `deployedAt`.
+Expect `features.raceOpen: true`, `features.servingTipCount: 1` (or your `MINT_SERVING_TIP_COUNT`), and a fresh `startedAt` / `deployedAt`.
 Old builds only return `{"ok":true}` from `/health` and omit `raceOpen` from `/api/status`.
+
+**Prod must not serve `dWLOTUS`:** set `MINT_REQUIRE_LIVE=1` in `/etc/wlotus/mint.env` and ensure `deployments/mainnet-wlotus.json` exists (see [PROD.md](../../deploy/contabo/PROD.md)).

@@ -158,6 +158,9 @@ sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
 MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787
 MINT_SERVING_TIP_COUNT=1
+# Fail closed: never load dWLOTUS / dryrun JSON on this host
+MINT_REQUIRE_LIVE=1
+MINT_DEPLOYMENT_JSON=deployments/mainnet-wlotus.json
 EOF
 sudo chmod 600 /etc/wlotus/mint.env
 
@@ -172,7 +175,21 @@ curl -sS https://wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,powBatonC
 # → ticker "WLOTUS", mintAtoms "108"
 ```
 
-mint-api prefers `deployments/mainnet-wlotus.json` over dryrun files. On prod, keep **no** `mainnet-dryrun-*.json` (or ensure the live file exists first).
+mint-api prefers `deployments/mainnet-wlotus.json` over dryrun files. **On Contabo prod**, set `MINT_REQUIRE_LIVE=1` (and ideally `MINT_DEPLOYMENT_JSON=deployments/mainnet-wlotus.json`) so a missing live genesis cannot silently fall back to committed `dWLOTUS` dryrun JSON.
+
+If `/api/status` shows `ticker: "dWLOTUS"` on **wlotus.org**, the live file is missing and dryrun was loaded — create genesis + restart:
+
+```bash
+cd /opt/wlotus
+ls deployments/mainnet-wlotus.json   # must exist
+# If missing:
+#   export TEMPLE_ADDRESS=ecash:p…   # real prod P2SH
+#   BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" npm run create-wlotus-token
+# Optionally move dryrun JSON out of the way:
+#   mkdir -p deployments/archive && mv deployments/mainnet-dryrun-*.json deployments/archive/
+sudo systemctl restart wlotus-mint-api
+curl -sS https://wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms}'
+```
 
 Set GitHub Environment variable `VITE_PRAYER_TOKEN_ID` to this **tokenId** before the first prod tag (see §3).
 
@@ -262,5 +279,6 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
-| `dWLOTUS` on prod `/api/status` | You loaded a dryrun JSON — create live with `npm run create-wlotus-token` (default ticker WLOTUS) and ensure `mainnet-wlotus.json` exists |
+| `dWLOTUS` on prod `/api/status` | Live genesis missing — mint-api fell back to committed dryrun JSON. Create `mainnet-wlotus.json` with `npm run create-wlotus-token`, set `MINT_REQUIRE_LIVE=1` in `/etc/wlotus/mint.env`, restart mint-api |
 | Missing temple on WLOTUS | Pass `TEMPLE_ADDRESS=ecash:p…` (required for ticker WLOTUS; no dryrun wrap) |
+| `mintAtoms: "100"` on status | Old dryrun deployment — recreate with create-wlotus-token (expect **108**) |
