@@ -8,7 +8,7 @@
  *   3. On each tip wallet, peels REMINT_FUEL_SATS coins for remints
  *
  * Usage (Contabo or local):
- *   MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=2 npm run fund-tip-fee-wallets
+ *   MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
  *
  * Dry-run (addresses + balances only):
  *   FUND_DRY_RUN=1 MINT_MNEMONIC="…" npm run fund-tip-fee-wallets
@@ -35,7 +35,7 @@ loadEnv({ path: '/etc/wlotus/mint.env', override: true });
 
 const SERVING = Math.max(
   1,
-  Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 2) || 2,
+  Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 1) || 1,
 );
 const DRY = /^(1|true|yes)$/i.test(process.env.FUND_DRY_RUN?.trim() || '');
 /** Keep this much pure XEC on the desk after equal split (sats). */

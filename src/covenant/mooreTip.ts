@@ -10,6 +10,7 @@
 import {
   MOORE_DAY_SECONDS,
   MOORE_DAYS_PER_EXTRA_BIT,
+  resolveMooreDaysPerExtraBit,
 } from '../params/consensus.js';
 
 /** Tip + memorial share LOKAD `DANA` (`44414e41`). */
@@ -22,9 +23,16 @@ export const WLPT_LOKAD = DANA_LOKAD;
 /** @deprecated use DANA_TIP_VERSION */
 export const WLPT_VERSION = DANA_TIP_VERSION;
 
-/** Production Moore clock: +1 bit / 840 days. */
+/** Production Moore clock default: +1 bit / {@link MOORE_DAYS_PER_EXTRA_BIT} days. */
 export const PROD_SECONDS_PER_EXTRA_BIT =
   MOORE_DAYS_PER_EXTRA_BIT * MOORE_DAY_SECONDS;
+
+/** Resolve seconds/bit for a new genesis (env `MOORE_DAYS_PER_EXTRA_BIT`, default 500). */
+export function resolveProdSecondsPerExtraBit(
+  raw?: string,
+): number {
+  return resolveMooreDaysPerExtraBit(raw) * MOORE_DAY_SECONDS;
+}
 
 /** Absolute bit ceiling in WlotusPowRemintMooreTip.spedn. */
 export const MOORE_TIP_MAX_BITS = 128;

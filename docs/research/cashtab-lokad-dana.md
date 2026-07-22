@@ -88,6 +88,6 @@ Until that ships and Cashtab is released, explorers/wallets will keep saying **U
 
 - [ ] Remint OP_RETURN first push starts with `44 41 4e 41` + `04` (DANA tip v4)
 - [ ] Burn OP_RETURN memorial push starts with `44 41 4e 41` (`DANA`)
-- [ ] Recreate dry-run token: `TIER=wlotus … npm run create-dryrun-token`
+- [ ] Recreate token: `TICKER=dWLOTUS … npm run create-wlotus-token`
 - [ ] Open Bitcoin-ABC diff adding `dana` to `appPrefixesHex`
 - [ ] After Cashtab release: confirm history shows **wLotus** / **Dana** instead of Unknown App

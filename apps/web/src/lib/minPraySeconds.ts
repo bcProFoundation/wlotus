@@ -1,26 +1,31 @@
 /**
- * Minimum wall-clock prayer time after Offer starts hashing.
+ * Soft pray floor (seconds) between remint and memorial burn.
  * Remint submits as soon as PoW finds a nonce (tip race). Soft wait only
  * delays the memorial burn; cancel during the wait skips burn and the desk
  * keeps the miner atom. Anti-farming is separate: wLotus 1/107 + XEC fees —
  * see docs/ECONOMICS_WLOTUS_GLOTUS.md § Product intent.
  *
- * Bake at build time: `VITE_MIN_PRAY_MS=60000` (1 min). `0` disables.
- * Optional runtime override: localStorage `wlotus.minPrayMs`.
- * Clamped to 0–10 min; default 60s.
+ * Bake at build time: `VITE_MIN_PRAY_SECONDS=60` (default). `0` disables.
+ * Runtime override: localStorage `wlotus.minPraySeconds`.
+ * Clamped to 0–600 seconds (10 min).
  */
 
-export const DEFAULT_MIN_PRAY_MS = 60_000;
-export const MAX_MIN_PRAY_MS = 600_000;
-export const MIN_PRAY_MS_KEY = 'wlotus.minPrayMs';
+export const DEFAULT_MIN_PRAY_SECONDS = 60;
+export const MAX_MIN_PRAY_SECONDS = 600;
+export const MIN_PRAY_SECONDS_KEY = 'wlotus.minPraySeconds';
 
-export function parseMinPrayMs(raw: string | undefined): number {
+export function parseMinPraySeconds(raw: string | undefined): number {
   const s = (raw ?? '').trim();
-  if (s === '') return DEFAULT_MIN_PRAY_MS;
+  if (s === '') return DEFAULT_MIN_PRAY_SECONDS;
   const n = Number(s);
-  if (!Number.isFinite(n) || n < 0) return DEFAULT_MIN_PRAY_MS;
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_MIN_PRAY_SECONDS;
   if (n === 0) return 0;
-  return Math.min(MAX_MIN_PRAY_MS, Math.round(n));
+  return Math.min(MAX_MIN_PRAY_SECONDS, Math.round(n));
+}
+
+export function minPraySecondsToMs(seconds: number): number {
+  if (!Number.isFinite(seconds) || seconds <= 0) return 0;
+  return Math.round(seconds * 1000);
 }
 
 export function remainingMinPrayMs(

@@ -81,7 +81,7 @@ export function mooreDaysFromUnix(
 
 /**
  * Required leading zero *bits* after `days` (Koomey-style schedule).
- * +1 bit ≈ 2× hashes every MOORE_DAYS_PER_EXTRA_BIT (~840d ≈ 2.3y).
+ * +1 bit ≈ 2× hashes every MOORE_DAYS_PER_EXTRA_BIT (default 500d — 五百罗汉).
  */
 export function requiredZeroBits(
   days: number,

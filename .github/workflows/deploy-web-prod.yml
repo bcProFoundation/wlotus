@@ -23,7 +23,7 @@
 #   VITE_PRAYER_TICKER             — WLOTUS
 #   VITE_CHRONIK_URLS
 #   VITE_TIP_POLL_MS
-#   VITE_MIN_PRAY_MS               — min pray wall time (ms); default 60000; 0=off
+#   VITE_MIN_PRAY_SECONDS           — soft pray floor in seconds (e.g. 60); 0=off
 #
 # One-time VM setup: deploy/contabo/README.md § Production
 
@@ -90,9 +90,9 @@ jobs:
           VITE_PRAYER_TICKER: ${{ vars.VITE_PRAYER_TICKER }}
           VITE_CHRONIK_URLS: ${{ vars.VITE_CHRONIK_URLS || secrets.VITE_CHRONIK_URLS }}
           VITE_TIP_POLL_MS: ${{ vars.VITE_TIP_POLL_MS || secrets.VITE_TIP_POLL_MS }}
-          VITE_MIN_PRAY_MS: ${{ vars.VITE_MIN_PRAY_MS }}
+          VITE_MIN_PRAY_SECONDS: ${{ vars.VITE_MIN_PRAY_SECONDS }}
         run: |
-          echo "Building prod SPA (ticker var=${VITE_PRAYER_TICKER:-<app default>} minPrayMs=${VITE_MIN_PRAY_MS:-60000})"
+          echo "Building prod SPA (ticker var=${VITE_PRAYER_TICKER:-<app default>} minPraySeconds=${VITE_MIN_PRAY_SECONDS:-60})"
           npm run web:build
 
       - name: Require Contabo prod secrets

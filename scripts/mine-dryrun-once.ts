@@ -104,7 +104,7 @@ function loadDep(): { path: string; dep: DryrunDep } {
     }
   }
   throw new Error(
-    'Missing deployment — run create-prod-token (LIVE) or TIER=wlotus|prayer create-dryrun-token',
+    'Missing deployment — run create-wlotus-token (TICKER=dWLOTUS|WLOTUS) or TIER=prayer create-dryrun-token',
   );
 }
 

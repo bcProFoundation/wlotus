@@ -10,14 +10,15 @@ Whole-byte PoW only (`bits % 8 == 0`) so the redeem fits eCash’s **201-op** li
 
 | Tier | Dryrun bits | Mint | Script |
 |------|-------------|------|--------|
+| **wLotus** | **0** | **108** | `TICKER=dWLOTUS npm run create-wlotus-token` (prod: default `WLOTUS`) |
 | Prayer | 24 | 1 | `TIER=prayer npm run create-dryrun-token` |
 | Candle | 40 | 1 | `TIER=candle npm run create-dryrun-token` |
 | Flower | 56 | 100 | `TIER=flower npm run create-dryrun-token` |
 
 ```bash
+TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
 TIER=prayer npm run create-dryrun-token
 BATON_INDEX=0 npm run mine-dryrun-once
-BATON_INDEX=1 npm run mine-dryrun-once
 ```
 
 See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-*.json`.

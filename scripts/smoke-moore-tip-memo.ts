@@ -49,7 +49,7 @@ async function main() {
       mintAtomsLe,
       genesisUnixLe: u32(1784445978),
       baseZeroBitsBin: Buffer.from([24]),
-      secondsPerExtraBitLe: u32(72576000),
+      secondsPerExtraBitLe: u32(500 * 86_400),
       codeHash: dummy32,
       prefixHash: dummy32,
       tipLocktimeLe: u32(1784445978),

@@ -119,7 +119,7 @@ sudo systemctl enable wlotus-mint-api
 
 ### Create live **WLOTUS** (on this prod VM)
 
-Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TIER=wlotus` → `dWLOTUS`).
+Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TICKER=dWLOTUS npm run create-wlotus-token`).
 
 ```bash
 cd /opt/wlotus   # or ~/wlotus/wlotus
@@ -135,14 +135,15 @@ npm run new-wallet -- --force   # only if starting fresh; overwrites .env
 export TEMPLE_ADDRESS=ecash:p…   # your prod temple
 
 # 3) Genesis ticker WLOTUS, name wLotus → deployments/mainnet-wlotus.json
-LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
-  npm run create-prod-token
-# Equivalent: LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS=… npm run create-dryrun-token
+#    Same script as test dryrun — only ticker differs (default WLOTUS).
+TEMPLE_ADDRESS="$TEMPLE_ADDRESS" BATONS=28 npm run create-wlotus-token
+# Equivalent: npm run create-prod-token
+# Test uses: TICKER=dWLOTUS … npm run create-wlotus-token
 
 # 4) Confirm on-chain record
-jq '{ticker,name,tokenId,mintAtomsPerRemint,mintSplit,templeAddress,role}' \
+jq '{ticker,name,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,templeAddress,role}' \
   deployments/mainnet-wlotus.json
-# → ticker "WLOTUS", name "wLotus", mintAtoms "108", role "production"
+# → ticker "WLOTUS", baseZeroBits 0, mintAtomsPerRemint "108", initialMintAtoms "108", role "production"
 
 # Optional smoke remint (uses GENESIS wallet as miner+fuel):
 TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.json) \
@@ -156,7 +157,7 @@ TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.j
 sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
 MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787
-MINT_SERVING_TIP_COUNT=2
+MINT_SERVING_TIP_COUNT=1
 EOF
 sudo chmod 600 /etc/wlotus/mint.env
 
@@ -206,7 +207,8 @@ Keep **test** secrets (`CONTABO_HOST`, …) unchanged on the repository — they
 | `VITE_PRAYER_TICKER` | `WLOTUS` |
 | `VITE_CHRONIK_URLS` | Chronik URLs |
 | `VITE_TIP_POLL_MS` | `2000` |
-| `VITE_MIN_PRAY_MS` | `60000` |
+| `VITE_MIN_PRAY_SECONDS` | `60` |
+| `VITE_EXPERIMENTAL_POW` | `1` (WebGPU launch path) |
 
 ---
 
@@ -260,5 +262,5 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
-| `dWLOTUS` on prod `/api/status` | You loaded a dryrun JSON — create live with `npm run create-prod-token` and ensure `mainnet-wlotus.json` exists |
-| `LIVE=1` errors without temple | Pass `TEMPLE_ADDRESS=ecash:p…` (required; no dryrun wrap on live) |
+| `dWLOTUS` on prod `/api/status` | You loaded a dryrun JSON — create live with `npm run create-wlotus-token` (default ticker WLOTUS) and ensure `mainnet-wlotus.json` exists |
+| Missing temple on WLOTUS | Pass `TEMPLE_ADDRESS=ecash:p…` (required for ticker WLOTUS; no dryrun wrap) |

@@ -39,7 +39,7 @@ Each successful remint mints **108** wLotus atoms — **one mala round** (108 pr
 | **1** | Prayer / miner | Presence bead — kept or later burned/given |
 | **107** | Temple **P2SH** (IFP-style multisig / cold) | Rest of the mala — fee reimbursement & inventory; spends are rare ops |
 
-This is **not** “app-only mining.” Anyone may satisfy the covenant (including copied clients) **if they pay their own XEC fees** and accept the **99→temple / 1→miner** outputs. The temple cannot stop that on a public chain — and does not need to.
+This is **not** “app-only mining.” Anyone may satisfy the covenant (including copied clients) **if they pay their own XEC fees** and accept the **107→temple / 1→miner** outputs (pagoda keeps **≈99%** of each mala). The temple cannot stop that on a public chain — and does not need to.
 
 **Launch custody:** temple sink in Script is **P2SH** (dryrun and production), same pattern as eCash’s baked IFP address. Redeem is revealed only on spend; quantum threats are handled by a future address-format fork, not by baking a single hot P2PKH. See [Temple custody](#temple-custody-dryrun--launch-decision).
 
@@ -57,12 +57,18 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 | Mechanism | Role |
 |-----------|------|
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
-| **Soft pray timer** (`VITE_MIN_PRAY_MS`, default ~60s) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
-| **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
+| **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default 60) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
+| **PoW bits (base 0, whole-byte)** | Launch presence is **soft pray + 1/107 + fees**, not hashrate. Base **0** maximizes headroom to the 128 sunset (~**+33 y** vs old base 24). PoW only becomes a tip gate after Moore climbs. **Not** base 1 — whole-byte only (`bits % 8 == 0`). |
+| **Moore clock (+1 bit / 500 days)** | 五百罗汉 — intentional dearening for **WLotus as bootstrap / investable ritual stock**. Not “PoW easy forever” (that fits permissionless **GLotus** better). See [CLOCK.md](./CLOCK.md). |
+| **128-bit hard sunset** | Covenant `verify bits <= 128` — when calendar would require bits **> 128**, remints **fail**. No more mining; WLotus becomes a **legacy / historical** mala; new ritual tokens (or GLotus) carry the living economy. |
+| **Desk tips at launch** | Serve **1 tip** first (fee ceiling ~**2.9–5.7M XEC/mo** if saturated @ 10–5 s/cycle). Genesis still **28** batons so the desk can raise `MINT_SERVING_TIP_COUNT` if demand outruns one lane — buyers use pagoda; others may mine permissionlessly on remaining tips. |
+| **Pagoda burn → remint loop** | Memorial **burns through the pagoda** recirculate demand while Moore makes fresh mining dearer. Desk inventory (107/108) bridges non-miners. |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
 
+**Long-term value thesis (not a moonshot):** start at **base 0** (PoW free at genesis — we do not need mining as a gate) so the 128-bit sunset lasts ~**175 years**; scarcity ticks up on a 500-day arhat calendar so new issuance eventually dearens — **WLotus bootstraps the platform**, then **dries toward GLotus**. People **buy and pray**, or **hold / invest**, while pagoda burns keep ritual demand alive. Soft pray + baton caps + 1/107 carry early presence/anti-farm; phones stay mineable far longer than a base-24 launch.
+
 **Do not claim:** “more WLOTUS hashrate = safer token” (Bitcoin/eCash analogy does not apply).  
-**Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**.
+**Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**; scarcity rises **slowly** for holders who stay with the temple ledger.
 
 ### Does 1/107 deter fee-paying miners? (yes, on XEC cost)
 
@@ -92,7 +98,7 @@ Caveats (do not overclaim):
 
 Phone electricity ≪ XEC fee ([ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)). Ritual value is **minutes of presence**, not SHA256d network work.
 
-- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_MS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
+- Official Offer: device PoW → **remint immediately** (win the tip race) → soft pray floor (`VITE_MIN_PRAY_SECONDS`) → **memorial burn** (`burnToken` capability from submit; remintTxid alone is not enough).
 - Cancel during the soft wait **skips the burn** (requires same `burnToken`); the miner atom stays with the tip fee / desk wallet (developer keeps the mint). Remint (107 temple) already settled.
 - Soft timer must **not** delay remint — that would lose tip races.
 - Aggregate token hashrate does not protect transfers or burns; eCash does. Bits stay near **24** at launch to encourage participation — not **32** “for security.”
@@ -105,6 +111,45 @@ Mining does not scale to every memorial. Preferred path:
 2. Recipient **offers / burns** on-platform (memorial + dana).
 
 Burning/giving is the scalable ritual; mining is the issuance + presence tax.
+
+### Capped free-mine issuance vs pagoda burn demand
+
+**Yes — this is a valid appreciation path even if PoW stays easy (flat Moore / legacy 840).**  
+Batons cap **how fast** new atoms can appear; pagoda burns (bought or gifted then destroyed) are the **demand** valve. Pagoda keeps **107/108 ≈ 99%** of each remint as desk stock; the miner **1** is presence (often burned on Offer).
+
+Definitions (1 burn = 1 atom destroyed; desk ask \(P\) XEC/atom; sponsor cost ≈ **11 XEC**/remint; independent fee floor ≈ **5.46 XEC**/atom kept):
+
+| Condition | Formula | Meaning |
+|-----------|---------|---------|
+| **XEC cashflow ≥ 0** | \(B \ge 11 R / P\) | Sale revenue covers sponsor fees (“positive cashflow”) |
+| **Desk inventory flat** | \(B \ge 107 R\) | Burns offset temple refill — stronger scarcity / price pressure |
+| **Price parity (mine floor)** | desk ask \(P \to 5.46\) | Buyers pay what an independent miner burns in fees for **1** atom |
+
+\(R\) = remints/day (≤ baton ceiling). \(B\) = atoms burned/day from **purchased** desk stock (or equivalent demand).
+
+**Baton ceiling (physics, not typical load):**
+
+| Setup | \(R_{\max}\)/day (\(T{\approx}10\)s) | Temple +107/day | Burns/day to flat desk | Burns/day cashflow @ \(P{=}1\) | @ \(P{=}5.46\) (parity) |
+|-------|-------------------------------------:|----------------:|-----------------------:|------------------------------:|------------------------:|
+| Desk **2** tips | ~**17k** | ~**1.85M** | ~**1.85M** | ~**190k** | ~**35k** |
+| Full **28** tips | ~**242k** | ~**26M** | ~**26M** | ~**2.7M** | ~**487k** |
+
+Saturated 24/7 reminting needs **huge** burn volume to drain inventory — unrealistic as a steady state. **Practical scarcity** comes from remints **not** sitting at the ceiling (attention, `MINT_MAX_OFFERS_PER_DAY`, fuel, how many people actually mine) while memorial burns continue.
+
+**Worked examples (realistic \(R\), 1 burn / user / day):**
+
+| Remints/day | Desk +107/day | Burners for inventory flat | Burners for cashflow @ 1 XEC | @ 5.46 XEC parity |
+|------------:|--------------:|---------------------------:|-----------------------------:|------------------:|
+| **100** | 10.7k | **~11k** | **~1.1k** | **~200** |
+| **1,000** | 107k | **~107k** | **~11k** | **~2k** |
+| **5,000** | 535k | **~535k** | **~55k** | **~10k** |
+
+Readout:
+
+1. **Thesis holds:** if burn-purchases exceed net desk refill, inventory tightens → temple can raise \(P\) toward the **5.46 XEC** mine-fee floor → gentle appreciation **without** needing PoW to get harder.
+2. **Cashflow is easier than scarcity:** at \(P{=}1\), only ~\(11R\) burners cover fees; inventory flat needs ~\(107R\) (~10× more).
+3. **Moore is optional reinforcement**, not the only float valve. Easy mining (840-like) is compatible with this path **if** product caps keep \(R\) below burn demand; hard Moore (500d) adds a second scarcity channel on fresh mine supply.
+4. **Temple controls the bind:** sponsor less when inventory is fat; sell from desk to burners; rate-limit the free lane. Baton math is the ceiling — policy sets the actual issuance.
 
 ### Mobile fee policy (off-chain)
 
@@ -190,11 +235,13 @@ Candle / Flower rows in [ECONOMICS.md](./ECONOMICS.md) remain a longer-term hard
 
 **Why P2SH (not hot P2PKH):** ops custody matches other eCash baked funds (e.g. IFP). Multisig reduces single-key loss; the redeem is public only when spending. Quantum / address-format risk is accepted the same way as other P2SH sinks — migrate via a **protocol fork** to a new format when needed, rather than encoding a forever-hot P2PKH.
 
-**Dryrun convenience:** if `TEMPLE_ADDRESS` is unset, `create-dryrun-token` P2SH-wraps the genesis wallet’s P2PKH so the same key can spend by revealing redeem (`templeRedeemHex` in the deployment JSON). Launch should set `TEMPLE_ADDRESS` to a real multisig P2SH.
+**Dryrun convenience:** if `TEMPLE_ADDRESS` is unset and ticker is not `WLOTUS`, `create-wlotus-token` P2SH-wraps the genesis wallet’s P2PKH so the same key can spend by revealing redeem (`templeRedeemHex` in the deployment JSON). Launch / ticker `WLOTUS` must set `TEMPLE_ADDRESS` to a real multisig P2SH.
 
 ```bash
-# Launch / Contabo: bake a known multisig P2SH
-TIER=wlotus TEMPLE_ADDRESS=ecash:p… BATONS=2 npm run create-dryrun-token
+# Test
+TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+# Prod (default ticker WLOTUS)
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
 ```
 
 If temple keys are compromised: stop mint-api, move remaining inventory with the redeem, serve a **new** covenant with a new `templeScriptHash`.
@@ -205,14 +252,19 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
 
 - Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (107) + miner P2PKH (1); mint = 108 (mala). Fits ≤520 B / ≤201 ops (no memorial EMPP on mint — op budget).
 - **Memorial:** burn the miner **1** atom after remint (`DANA` LOKAD on burn tx). The on-chain burn is the gift — memorial and dana offered for all.
-- Dryrun:
+- Dryrun / prod genesis: **same script** (`create-wlotus-token`); **initial fungible mint = 108**, `baseZeroBits = 0`, Moore **500 d**/bit. Only `TICKER` differs (`dWLOTUS` vs `WLOTUS`).
   ```bash
-  TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token
+  TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
+<<<<<<< HEAD
+- Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=1` at launch (raise toward 28 if needed).
+- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **0** for wLotus (max 128 headroom — presence via soft pray / 1/107, not launch hashrate).
+=======
 - Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=2`.
 - Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun (participation / presence — not security theater).
-- Soft pray timer: `VITE_MIN_PRAY_MS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
+>>>>>>> origin/cursor/min-pray-wait-58ff
+- Soft pray timer: `VITE_MIN_PRAY_SECONDS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
 - Golden Lotus: separate token; open remint; no temple mint tax.
 
-Open product decisions: bits/difficulty UX, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up. Anti-farm intent is settled: **1/107 + fees**; presence intent: **soft timer + ~24 bits**.
+Open product decisions: premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up. Anti-farm intent is settled: **1/107 + fees**; presence intent: **soft timer + base 0 Moore ramp**.
