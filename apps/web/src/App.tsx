@@ -701,7 +701,7 @@ export default function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                {shortTx(tokenId)}
+                {ticker} {shortTx(tokenId)}
               </a>
             </>
           ) : null}
