@@ -34,19 +34,23 @@ Assume mid-phone WebGPU ≈ **5 MH/s**, base **24** bits → raw PoW ≈ **~3 s*
 
 | Period | Formula tick | Whole-byte *felt* jump (+8 bits) | vs Moore (2×/2y) |
 |--------|--------------|----------------------------------|------------------|
-| **365 d (1 y)** default | +1 bit/year | every **~8 years** (×256 work) | Aggressive: work outruns Moore |
-| **730 d (2 y)** | +1 bit/2y | every **~16 years** | Matches Moore → raw time ~flat between jumps |
+| **365 d (1 y)** default | +1 bit/year | every **~8 years** (×256 work) | Aggressive vs Moore, but **HW gains dampen the jump** (below) |
+| **730 d (2 y)** | +1 bit/2y | every **~16 years** | Matches Moore → raw time ~flat across jumps too |
 | **840 d (legacy)** | +1 bit/~2.3y | every **~18.4 years** | Slightly easier over time than Moore |
 
-**Whole-byte caveat:** Script only accepts `bits % 8 == 0`. So the tip formula can tick +1/year, but **PoW difficulty only changes every 8 ticks** (+8 bits = **256×** harder). Between jumps, bits in the tip state still rise, but remints fail until `extraBits ≡ 0 (mod 8)` — same as a staircase of eras.
+**Whole-byte caveat:** Script only accepts `bits % 8 == 0`. Tip formula can tick +1/year, but **PoW difficulty only changes every 8 ticks** (+8 bits = **256×** harder). Between jumps remints wait until `extraBits ≡ 0 (mod 8)` — a staircase of eras. During each flat era, phones keep getting faster; that growth is sitting ready when the jump hits.
 
-**When mobile GPU leaves the ~2–5 min band (1 y/bit, whole-byte):**
+**Hardware dampens the +8 “pump” (do not ignore Moore):**
 
-- Year **0**: ~3 s raw → soft timer dominates.
-- Year **~8** (first +8 jump): difficulty ×256; Moore ×~16 → net ~**×16** → ~**1 min** raw. Still OK with soft timer.
-- Year **~16** (second jump): net ~**×256** vs genesis → ~**15 min** raw — past the comfortable phone band unless hashrate beat Moore.
+Over **8 years**, Moore ≈ **4 doublings** → hashrate ×**16** (not a small factor).
 
-So **1 year/bit stays phone-friendly for on the order of one whole-byte era (~8–16 years)**, then desk / market paths matter more. Soft pray does not soften on-chain PoW — it only floors attention after a find.
+| Era | Difficulty vs genesis | Hashrate vs genesis (Moore) | Net raw time vs ~3 s genesis |
+|-----|----------------------|-----------------------------|------------------------------|
+| Year **0** | ×1 | ×1 | ~**3 s** — soft timer dominates |
+| Year **~8** (first +8) | ×256 | ×16 | ×**16** → ~**45–60 s** — still **≪ 2–5 min**; soft pray (~60 s) still covers UX |
+| Year **~16** (second +8) | ×2^16 | ×256 | ×**256** → ~**15 min** — past comfortable phone band unless HW beat Moore |
+
+So the first whole-byte jump is **not** a 2–5 minute shock: hardware growth during the flat era absorbs most of the 256× step. **1 year/bit stays phone-friendly through at least the first era (~8 years)** with soft pray masking the ~1 min raw PoW. Soft pray still does not soften on-chain work after that — desk / market take over when raw time grows.
 
 ### Cap 128 bits — how long to mine on a phone (with Moore)?
 
