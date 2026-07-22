@@ -40,7 +40,7 @@ export type MessageKey =
 type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
-  brand: 'wLotus',
+  brand: 'White Lotus',
   tagline: 'Offer a white lotus in remembrance of someone dear.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
@@ -85,7 +85,7 @@ const en: Dict = {
 };
 
 const vi: Dict = {
-  brand: 'wLotus',
+  brand: 'White Lotus',
   tagline: 'Dâng một đóa sen tưởng nhớ người đã khuất.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
@@ -129,7 +129,7 @@ const vi: Dict = {
 };
 
 const zh: Dict = {
-  brand: 'wLotus',
+  brand: 'White Lotus',
   tagline: '献上一朵白莲，纪念逝去的亲人。',
   offerTitle: '献花',
   hintPrayMine:
