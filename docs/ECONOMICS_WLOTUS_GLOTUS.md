@@ -110,6 +110,45 @@ Mining does not scale to every memorial. Preferred path:
 
 Burning/giving is the scalable ritual; mining is the issuance + presence tax.
 
+### Capped free-mine issuance vs pagoda burn demand
+
+**Yes — this is a valid appreciation path even if PoW stays easy (flat Moore / legacy 840).**  
+Batons cap **how fast** new atoms can appear; pagoda burns (bought or gifted then destroyed) are the **demand** valve. Pagoda keeps **107/108 ≈ 99%** of each remint as desk stock; the miner **1** is presence (often burned on Offer).
+
+Definitions (1 burn = 1 atom destroyed; desk ask \(P\) XEC/atom; sponsor cost ≈ **11 XEC**/remint; independent fee floor ≈ **5.46 XEC**/atom kept):
+
+| Condition | Formula | Meaning |
+|-----------|---------|---------|
+| **XEC cashflow ≥ 0** | \(B \ge 11 R / P\) | Sale revenue covers sponsor fees (“positive cashflow”) |
+| **Desk inventory flat** | \(B \ge 107 R\) | Burns offset temple refill — stronger scarcity / price pressure |
+| **Price parity (mine floor)** | desk ask \(P \to 5.46\) | Buyers pay what an independent miner burns in fees for **1** atom |
+
+\(R\) = remints/day (≤ baton ceiling). \(B\) = atoms burned/day from **purchased** desk stock (or equivalent demand).
+
+**Baton ceiling (physics, not typical load):**
+
+| Setup | \(R_{\max}\)/day (\(T{\approx}10\)s) | Temple +107/day | Burns/day to flat desk | Burns/day cashflow @ \(P{=}1\) | @ \(P{=}5.46\) (parity) |
+|-------|-------------------------------------:|----------------:|-----------------------:|------------------------------:|------------------------:|
+| Desk **2** tips | ~**17k** | ~**1.85M** | ~**1.85M** | ~**190k** | ~**35k** |
+| Full **28** tips | ~**242k** | ~**26M** | ~**26M** | ~**2.7M** | ~**487k** |
+
+Saturated 24/7 reminting needs **huge** burn volume to drain inventory — unrealistic as a steady state. **Practical scarcity** comes from remints **not** sitting at the ceiling (attention, `MINT_MAX_OFFERS_PER_DAY`, fuel, how many people actually mine) while memorial burns continue.
+
+**Worked examples (realistic \(R\), 1 burn / user / day):**
+
+| Remints/day | Desk +107/day | Burners for inventory flat | Burners for cashflow @ 1 XEC | @ 5.46 XEC parity |
+|------------:|--------------:|---------------------------:|-----------------------------:|------------------:|
+| **100** | 10.7k | **~11k** | **~1.1k** | **~200** |
+| **1,000** | 107k | **~107k** | **~11k** | **~2k** |
+| **5,000** | 535k | **~535k** | **~55k** | **~10k** |
+
+Readout:
+
+1. **Thesis holds:** if burn-purchases exceed net desk refill, inventory tightens → temple can raise \(P\) toward the **5.46 XEC** mine-fee floor → gentle appreciation **without** needing PoW to get harder.
+2. **Cashflow is easier than scarcity:** at \(P{=}1\), only ~\(11R\) burners cover fees; inventory flat needs ~\(107R\) (~10× more).
+3. **Moore is optional reinforcement**, not the only float valve. Easy mining (840-like) is compatible with this path **if** product caps keep \(R\) below burn demand; hard Moore (500d) adds a second scarcity channel on fresh mine supply.
+4. **Temple controls the bind:** sponsor less when inventory is fat; sell from desk to burners; rate-limit the free lane. Baton math is the ceiling — policy sets the actual issuance.
+
 ### Mobile fee policy (off-chain)
 
 | Who | XEC remint fee |

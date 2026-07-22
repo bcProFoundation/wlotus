@@ -65,7 +65,9 @@ Under classic Moore (2× / 2 y) and whole-byte jumps (+8 bits = ×256):
 | **730 d** | ~16 | ×**~1** → ~**3 s** | Flat forever under Moore |
 | **840 d** legacy | ~18 | ×**~0.4** → **easier** | Hardware outruns difficulty |
 
-So **840 does not buy “mobile forever” in a useful sense** — it freezes (or eases) PoW and **removes** the slight long-term scarcity thesis. Phone mining capacity under load is still **≤ 28 wins / cycle** (see [ARCHITECTURE.md](./ARCHITECTURE.md) § concurrent miners). Forever participation for devotees is **buy / desk / pagoda burn**, not an infinite easy PoW clock.
+So **840 does not buy “mobile forever” in a useful sense** — it freezes (or eases) PoW and **removes** difficulty-based scarcity. Phone mining capacity under load is still **≤ 28 wins / cycle** (see [ARCHITECTURE.md](./ARCHITECTURE.md) § concurrent miners).
+
+**Demand-side caveat:** capped remints still mean capped issuance. If pagoda **buy→burn** demand exceeds temple refill (**107 × remints/day**), desk inventory tightens and price can rise **even when PoW is flat** — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) § *Capped free-mine issuance vs pagoda burn demand*. Forever participation for devotees remains **buy / desk / pagoda burn**; Moore is optional reinforcement, not the only float valve.
 
 ### Cap 128 bits — phone mine ETA projection (500 d/bit)
 
