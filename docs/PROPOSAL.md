@@ -1,6 +1,9 @@
-# Proposal: White Lotus — Ergon-like ritual coin
+# Proposal: White Lotus on eCash
 
 **Recommendation: build White Lotus as an Ergon-like ALP token on eCash first. Do not launch an L1 unless the token proves ritual demand and outgrows eCash rails.**
+
+Canonical brand: [VISION.md](./VISION.md).  
+Canonical economics: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md).
 
 ---
 
@@ -11,9 +14,7 @@
 | **A. White Lotus on eCash (ALP + PoW remint)** | **Primary — ship this** |
 | **B. White Lotus L1 (eCash/Ergon-style fork)** | Contingency only — after product-market fit |
 
-Ritual need (**vàng mã–style memorial sacrifice** + **dana to the commons** + rebirth) is satisfied by **issuance rules**, not by owning a blockchain. eCash already gives maintenance, Chronik, wallets, and Agora. An L1 buys fork-fairness and sovereign monetary policy at the cost of becoming a chain operator.
-
-See **[VISION.md](./VISION.md)** for the memorial + dana brand thesis.
+Ritual need (**vàng mã–style memorial sacrifice** + **dana to the commons** + rebirth) is satisfied by **issuance rules**, not by owning a blockchain. eCash already gives maintenance, Chronik, wallets, and Agora.
 
 ---
 
@@ -21,16 +22,11 @@ See **[VISION.md](./VISION.md)** for the memorial + dana brand thesis.
 
 | Criterion | ALP on eCash | New L1 |
 |-----------|--------------|--------|
-| Work-elastic issuance | Yes — remint *frequency* ∝ hashrate (+ Moore) | Yes — `GetBlockSubsidy ∝ difficulty` (+ Moore) |
-| Vàng mã burn + rebirth | Yes — burn + perpetual baton(s) | Yes — native burn + subsidy |
-| Holder-capture vs Lotus `log(D)` | Avoided (issuance answers work) | Avoided if subsidy ∝ `D` |
-| Ops burden | App + covenant + miner | Full node, miners, explorers, upgrades forever |
-| User acquisition of offering | XEC → Agora/desk → burn | Need exchange/liquidity for new coin |
-| Maintenance of base chain | Bitcoin ABC / eCash | You |
-| Fork-energy fairness | Soft (token PoW) | Strong (L1 work) |
-| Time to a working temple | Much shorter | Much longer |
-
-Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns** enriched holders. Fix issuance, don’t fork a nation-state chain on day one.
+| Work-elastic issuance | Yes — remint frequency ∝ hashrate (+ Moore) | Yes — subsidy ∝ difficulty (+ Moore) |
+| Memorial burn + rebirth | Yes — burn + perpetual baton(s) | Yes — native burn + subsidy |
+| Ops burden | App + covenant + miner | Full node, miners, explorers forever |
+| User acquisition | XEC → desk/Agora → burn | Need exchange liquidity for new coin |
+| Time to a working product | Much shorter | Much longer |
 
 ---
 
@@ -38,14 +34,11 @@ Lotus Temple already showed: **elastic but inelastic issuance (`log D`) + burns*
 
 ### 3.1 Narrative
 
-Canonical vision: **[VISION.md](./VISION.md)**.
-
-- **WLotus** — the burnable white lotus (hoa sen trắng): Vietnamese memorial flower  
-- **One burn, two gifts:** memorial for the dead **and** dana (bố thí) for everybody — wealth destroyed, not sold  
-- **Vs vàng mã:** same memorial spirit; unlike paper offerings, no maker/seller captures the gift — the burn *is* the sacrifice for the community  
-- Cycle: *effort remints the flower → devotee burns it (memory + dana) → merit is public → flower can bloom again*  
-- Cumulative burned = spiritual ledger; circulating supply is secondary  
-- Public brand stays **WLotus**; dana is meaning / later category language (not an early rename)
+- **WLotus** — burnable white lotus (hoa sen trắng): Vietnamese memorial flower
+- **One burn, two gifts:** memorial for the dead **and** dana for everybody — wealth destroyed, not sold
+- **Vs vàng mã:** same memorial spirit; no maker/seller captures the gift
+- Cycle: *effort remints the lotus → devotee burns it (memory + dana) → merit is public → lotus can bloom again*
+- Companion: **GLOTUS** (Golden Lotus) for scarce event / commerce value
 
 ### 3.2 Token
 
@@ -53,117 +46,67 @@ Canonical vision: **[VISION.md](./VISION.md)**.
 |------|--------|
 | Host | eCash (XEC) |
 | Protocol | **ALP** (`SLP2` / eMPP) |
-| Ticker (example) | `WLOTUS` / `WLTS` |
-| Mint authority | **Permissionless PoW covenants** on **multiple** mint batons |
-| Burn | Intentional `alpBurn` + memorial metadata (person / temple / offering tier) |
+| Tickers | `WLOTUS` (ceremonial) · `GLOTUS` (economic, later) · `dWLOTUS` (test) |
+| Mint authority | **Permissionless PoW covenants** on **28** mint batons |
+| wLotus split | **108** → **1** miner + **107** temple P2SH |
+| Burn | Intentional `alpBurn` + memorial metadata |
 | Indexer | Chronik |
-| Liquidity | Agora + optional temple desk (XEC ↔ token) |
 
-### 3.3 Issuance — ritual offer ladder + Moore on work
+### 3.3 Issuance — mala remint + Moore on work
 
-**Canonical model:** see [ECONOMICS.md](./ECONOMICS.md).
-
-- **Offer tiers** (prestige high → low): **Flower (WLotus)** → **Candle** → **Incense** → **Prayer**
-- **Non-economic:** Prayer · Incense  
-- **Candle:** **1**/baton, soft **~1/10** Flower token, **~43 bits** (GPU hours; not ASIC-targeted)  
-- **Flower:** **100**/baton, **$1**, **~59 bits** (ASIC)  
-- Fine grain → mFlower later
-- **Moore / Koomey (`δ = 99918/100000`)** adjusts **required work / difficulty**
-- **Many remints per eCash block** + **N ≥ 2 batons** ⇒ coins/time ∝ hashrate
-- Burn / **offer** destroys supply; remint = pure PoW rebirth
+- **wLotus:** fixed mint **108** / remint; temple tax **107/108**; base bits **0**; Moore **+1 bit / 500 days**; sunset at **128**
+- **GLOTUS:** permissionless; **no** temple mint tax; premine disclosed; own difficulty schedule
+- **Moore / Koomey reference** `δ = 99918/100000` (Ergon corrected) — never obsolete `99826`
+- Many remints per eCash block via **N = 28** batons; desk may serve fewer tips
 
 ```
-coins/time ≈ N_batons × (hashrate_per_baton / hashes_per_solution) × mint_atoms_tier
+coins/time ≈ N_served × (1 / T_cycle) × 108
 ```
 
-**Flower** target **market** price is **$1/baton** ($0.01/token) with Ergon-style business stack (**~40%** new-market risk margin). Launch with **Incense** (or **Prayer**); tiers may run in parallel. See [ECONOMICS.md](./ECONOMICS.md).
-
-#### Moore / Koomey — Ergon **post-launch** constant only
-
-Ergon’s daily correction in [`validation.cpp` (GetBlockSubsidy)](https://github.com/Ergon-moe/Bitcoin-Static/blob/2e8d5f7635c899cc99e71f06dedbe72b3ff7f07b/src/validation.cpp#L978):
-
-```cpp
-// Pre-EMA (obsolete ~1.1y half-life) — DO NOT USE FOR WLOTUS
-aWork *= 99826; aWork /= 100000;
-
-// Post-EMA / corrected (~2.3y half-life) — USE THIS
-aWork *= 99918; aWork /= 100000;
-```
-
-Bitcoin Static release notes fixed Moore from **1.1y → 2.3y**. **WLOTUS ships `δ = 99918/100000` from genesis** — never the old `99826` factor.
-
-| Symbol | WLOTUS | Notes |
-|--------|--------|-------|
-| `δ` | **`99918 / 100000`** | Ergon corrected daily factor |
-| Day step | ~1 wall day | 144 eCash blocks or median-time day |
-| Mint | **Fixed 100** | Do **not** apply δ to mint atoms |
-| Work | `requiredBits(k)` grows with k | Library + future stateful covenant |
-| Clock | **eCash height / median time** | **Not** token-mint height |
-
-#### Canonical knobs
+#### Canonical knobs (wLotus)
 
 | Knob | Setting | Role |
 |------|---------|------|
-| PoW difficulty `D` | Tunable (+ Moore on work) | Effort per remint solution |
-| Mint | Fixed **100.00** | Predictable offering size |
-| Batons `N` | **≥ 2** at genesis | Parallel remints (§3.5) |
-| Moore `δ` | **99918/100000** | Koomey correction on work (~2.3y) |
-| Host CLTV 1-mint/block | **Off** | Hashrate → issuance elasticity |
-| Supply cap | **None** | Batons never die |
-
-**Skip unless needed later:** token-local DAA; `mintAmount ∝ work(D)`.
-
-Tune `D` / `N` from burn demand and miner contention. Each remint pays XEC fees (anti-spam).
+| Base bits | **0** | Max headroom to 128 sunset |
+| Mint | Fixed **108** | One mala |
+| Split | **1 + 107** | Anti-farm + desk inventory |
+| Batons `N` | **28** | Parallel remints |
+| Moore period | **500 days** / bit | Slow dearening |
+| Desk tips | **1** at launch | Fee ceiling |
+| Soft pray | `VITE_MIN_PRAY_SECONDS` | Attention tax (off-chain) |
 
 ### 3.4 App flow
 
 ```
-Devotee opens memorial page
-  → acquires WLOTUS (Agora / desk / gifted)
-  → chooses offering (flower / incense / candle = burn tiers)
-  → alpBurn + eMPP memorial payload
-  → Chronik + API update cumulative merit
+Devotee opens Offer
+  → device PoW → mint-api remint (sponsored XEC)
+  → soft pray hold → alpBurn (memorial + dana)
+  → Chronik + API update
 
 Parallel:
-  Miners race across N PoW batons → remint → sell / provide liquidity
+  Permissionless miners may remint on remaining tips (pay own XEC; 107→temple)
 ```
 
-Reuse `app-lotus-temple` UX; retarget settlement from XPI burns to ALP burns on eCash.
+### 3.5 Multiple mint batons
 
-### 3.5 Multiple mint batons (first-class parallelization)
+- Genesis creates **28** identical PoW covenant batons (ALP max).
+- Each successful spend: PoW OK → mint **108** (1+107) → **return one baton** (conserve `N`).
+- Desk serves a subset of tips without stranding future parallelism.
 
-ALP allows **many mint batons** (SLP allowed only one). White Lotus treats multi-baton as **core design**.
-
-**A. PoW baton set (canonical issuance)**
-
-- Genesis creates **`N ≥ 2` identical PoW covenant batons** (independent tips, same rules).  
-- Miners remint **in parallel** in the same eCash block — not merely a serial chain on one tip.  
-- Each successful spend: PoW OK → mint exactly **100** → **return one baton** to the next covenant state (**conserve `N`**).  
-- Choose `N` at genesis (e.g. 4–16); change only via a deliberate migration if ever required.
-
-This is how “multiple mints per block” becomes **true parallelization** and matches frequency-elasticity in §3.3. A single baton alone still serializes and wastes work under load.
-
-**B. Optional temple baton (bootstrap only)**
-
-- Separate rate-limited / multi-sig baton for cold-start or emergency.  
-- Prefer destroying it once PoW batons + Agora liquidity exist.
-
-**Invariant:** PoW batons are never burned; temple baton may be retired.
+**Invariant:** PoW batons are never burned.
 
 ---
 
 ## 4. Option B — L1 (when, and only when)
 
-Consider a White Lotus / Ergon-like L1 **only if**:
+Consider an L1 **only if**:
 
-1. Temple has sustained burn volume and cultural adoption  
-2. eCash fee / policy / tooling constraints block the ritual  
-3. You accept permanent chain ops (or a funded commons to run them)  
-4. You want hard fork-fairness (“energy can’t be counted twice”) as a first-class property  
+1. Sustained burn volume and cultural adoption
+2. eCash fee / policy / tooling constraints block the ritual
+3. You accept permanent chain ops
+4. You want hard fork-fairness as a first-class property
 
-Then: fork a maintained UTXO codebase, set work-elastic subsidy + **`δ = 99918/100000` Moore**, **0% founder fund**, fee burn optional. Port the temple app to native burns.
-
-Until then, L1 is premature optimization of sovereignty.
+Until then, L1 is premature.
 
 ---
 
@@ -171,27 +114,27 @@ Until then, L1 is premature optimization of sovereignty.
 
 | Phase | Deliverable |
 |-------|-------------|
-| **0** | Spec: covenant rules, `M(t)` with `δ=99918/100000`, burn LOKAD, **`N` baton policy** |
-| **1** | GENESIS (`N` PoW batons) + Chronik + temple burn UI (custodial remint OK to dogfood) |
-| **2** | PoW remint covenant + miner (fixed `D`, Moore on wall-time, **multi-baton parallel**, no 1-mint/block CLTV) |
-| **3** | Agora market + public cumulative-burn explorer |
-| **4** | Retune `D` / `M₀` / `N` from burn & hashrate data |
-| **5** | Revisit L1 only with evidence from 1–4 |
+| **0** | Spec + MooreTip temple covenant + clock |
+| **1** | `dWLOTUS` dryrun + Offer UI + mint-api desk |
+| **2** | Live `WLOTUS` genesis + prod deploy |
+| **3** | Agora / desk liquidity + public burn explorer |
+| **4** | `GLOTUS` genesis (premine + open remint) |
+| **5** | Revisit L1 only with evidence |
 
 ---
 
 ## 6. Explicit non-goals (v1)
 
-- USD stablecoin  
-- Fixed max supply  
-- Lotus-style `log(D)` inelastic subsidy  
-- Ergon’s obsolete Moore factor `99826/100000`  
-- Mist-style 1-mint-per-host-block CLTV  
-- Launching a new L1 to “build community faster”  
-- Relying on TBP (not needed on eCash)  
+- USD stablecoin
+- Fixed max supply
+- Lotus-style `log(D)` inelastic subsidy
+- Ergon’s obsolete Moore factor `99826/100000`
+- Mist-style 1-mint-per-host-block CLTV
+- Launching a new L1 to “build community faster”
+- Multi-tier product ladder (retired)
 
 ---
 
 ## 7. One-line decision
 
-**White Lotus = ALP on eCash with parallel PoW remint batons, fixed `D`, Moore `δ=99918/100000`, and burn-as-vàng-mã. L1 only after the ritual works.**
+**White Lotus = ALP on eCash with parallel PoW remint batons, mala mint (108 → 1+107), Moore calendar bits, and burn-as-memorial+dana. GLOTUS is the economic companion. L1 only after the ritual works.**

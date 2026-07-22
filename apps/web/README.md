@@ -1,13 +1,13 @@
-# WLotus web — Prayer offering (dual mint)
+# WLotus web — Offer / burn
 
-Minimal mobile-first UI: one **Prayer** offering, no browser wallet yet.
+Minimal mobile-first UI for **WLOTUS** / **dWLOTUS**. No browser wallet yet — remint via mint-api.
 
-Flow: device → mint API → remint **2** dPRAYER → **burn 1** (memorial) → **keep 1** (desk).
+Flow: device PoW → mint API remint (**108** → **1** miner + **107** temple) → soft pray hold → **burn 1** (memorial + dana).
 
 ## Local
 
 ```bash
-# terminal 1 — mint API (needs GENESIS_SK_HEX + dual-mint deployment)
+# terminal 1 — mint API (needs GENESIS_SK_HEX + deployment JSON)
 npm run mint-api
 
 # terminal 2 — web UI
@@ -52,10 +52,11 @@ VITE_EXPERIMENTAL_POW=1 npm run web
 
 Bake `VITE_EXPERIMENTAL_POW=1` in Actions for test/prod builds. Fallback: multi-worker → single CPU.
 
-## Create dual-mint Prayer token
+## Create test / prod token
 
 ```bash
-TIER=prayer npm run create-dryrun-token   # mintAtoms=2
+TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token   # prod WLOTUS
 ```
 
-See [docs/ECONOMICS_PRAYER.md](../../docs/ECONOMICS_PRAYER.md) and [docs/VISION.md](../../docs/VISION.md).
+See [docs/VISION.md](../../docs/VISION.md) and [docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md).

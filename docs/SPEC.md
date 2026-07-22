@@ -1,97 +1,82 @@
-# WLOTUS / mWLPOW Consensus Parameters (v0.3 draft)
+# WLOTUS consensus parameters
 
-See also **[ECONOMICS.md](./ECONOMICS.md)** for hash work, energy, and price detail.
+Canonical economics: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md).  
+Clock: [CLOCK.md](./CLOCK.md).
 
-## Identity — incubation genesis (live)
+## Identity
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| Ticker | `mWLPOW` | milli White Lotus PoW (~1/1000 of future WLOTUS) |
-| Name | `milli White Lotus PoW` | |
-| Token ID | `cc2ee91c0ed43da44fc115283ec4b5e523da9f1549f27eacc06b0a3e7dc1494f` | Mainnet |
+| Ticker (prod) | `WLOTUS` | Live memorial / dana token |
+| Ticker (test) | `dWLOTUS` | Same covenant; separate genesis |
+| Companion | `GLOTUS` | Golden Lotus — separate token when shipped |
 | Protocol | ALP standard (`SLP2`) | eCash |
-| Decimals | `0` | Whole tokens; fixed mint size |
+| Decimals | `0` | Whole tokens |
+| Covenant | `WlotusPowRemintMooreTipTemple` | MooreTip + temple split |
 
 ## PoW remint
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| Tokens / remint | **Always 100** | `BASE_MINT_ATOMS = 100` |
-| PoW predicate | `hash256(preimage ‖ nonce)` | BIP143 preimage + 4-byte nonce |
-| `POW_LEADING_ZERO_BYTES` (`D`) | **`1`** | First byte of hash must be `0x00` |
-| **Expected hashes / remint** | **\(256^{D} = 256\)** | Geometric; mean attempts ≈ 256 |
-| Expected hashes / token | **≈ 2.56** | 256 / 100 |
-| Target market price | **~$0.00001 / token** | Soft UX-tier market intent — see ECONOMICS |
-| Target / remint | **~$0.001** | 100 × per-token target |
-| Moore / Koomey | On **work**, not mint size | `δ = 99918/100000` |
-| Host 1-mint/block CLTV | **disabled** | Frequency elasticity |
-| Supply cap | **none** | PoW batons never die |
+| Tokens / remint | **108** | One mala |
+| Split | **1** miner + **107** temple P2SH | Covenant-enforced |
+| PoW predicate | `hash256(preimage ‖ nonce)` | BIP143 preimage + nonce |
+| `baseZeroBits` | **0** | Whole-byte only (`bits % 8 == 0`) |
+| Moore | **+1 bit / 500 days** | Override `MOORE_DAYS_PER_EXTRA_BIT` 365–730 |
+| Hard sunset | **bits ≤ 128** | Remints fail beyond |
+| Supply cap | **none** | Batons never die; sunset ends remints |
 
 ### Work formula
 
 ```
-P(success)     = 1 / 256^D
-E[hashes]      = 256^D          # D = leading zero bytes
-tokens/remint  = 100            # fixed
-E[hashes]/tok  = 256^D / 100
+bits           = baseZeroBits + floor(elapsed_days / MOORE_DAYS_PER_EXTRA_BIT)
+P(success)     ≈ 1 / 2^bits   (whole-byte eras only change felt difficulty every +8)
+tokens/remint  = 108
 ```
 
-| `D` (bytes) | E[hashes] / remint | vs D=1 |
-|-------------|--------------------|--------|
-| 1 (live dogfood) | 256 | 1× |
-| 2 | 65_536 | 256× |
-| 3 | 16_777_216 | 65_536× |
-
-At **D = 1**, PoW joules are negligible; **XEC fees** dominate on-chain cost. Production WLotus difficulty is **bit-based (~59 bits)**, not “~1000× dogfood bytes” — see ECONOMICS.
+At **bits = 0**, the PoW prefix check is vacuous; tip race is network/API limited until Moore climbs. XEC fees dominate early on-chain cost.
 
 ## Parallel batons
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| `POW_BATON_COUNT` (`N`) | **28** | ALP genesis max (`ALP_POLICY_MAX_OUTPUTS` 29 − 1 fungible mint). **Immutable after genesis.** |
-| Desk MVP | Serve **1** tip (launch) | Bound XEC fees; open race; 1 fee UTXO/tip; raise `MINT_SERVING_TIP_COUNT` toward 28 if demand warrants |
+| `POW_BATON_COUNT` (`N`) | **28** | ALP genesis max. **Immutable after genesis.** |
+| Desk launch | Serve **1** tip | `MINT_SERVING_TIP_COUNT=1`; raise toward 28 if demand warrants |
 
-Each remint spends one PoW baton and recreates one (conserve `N`). Always genesis at the ALP maximum — the desk may serve fewer tips without stranding future parallelism.
+Each remint spends one PoW baton and recreates one (conserve `N`).
 
-## Moore on difficulty (Ergon post-fix δ)
+## Moore δ (Ergon post-fix)
 
 Source: [Ergon `validation.cpp` L978](https://github.com/Ergon-moe/Bitcoin-Static/blob/2e8d5f7635c899cc99e71f06dedbe72b3ff7f07b/src/validation.cpp#L978)
 
 | Param | Value | Notes |
 |-------|-------|-------|
-| `MOORE_NUM` / `MOORE_DEN` | **`99918` / `100000`** | ~2.3y half-life |
+| `MOORE_NUM` / `MOORE_DEN` | **`99918` / `100000`** | ~2.3y half-life (reference constant) |
 | Obsolete | `99826/100000` | **Forbidden** |
-| Day step | 144 blocks or 86400s | Host clock |
-| Mint atoms | **Fixed 100** | Do not apply δ to mint |
-
-Library schedule (miners / future stateful covenant):
+| Day step | wall-time via tip locktime | Not eCash height |
+| Mint atoms | **Fixed 108** | Do not apply δ to mint size |
 
 ```
 requiredZeroBits(k) = POW_BASE_ZERO_BITS + floor(k / MOORE_DAYS_PER_EXTRA_BIT)
 k = floor(elapsed_days since genesis)
 ```
 
-Incubation covenant enforces genesis **fixed** `D = 1`. Stateful Moore-on-D (bit/target) plus Agora-style eMPP announcement ships with a later genesis/handoff — see [research/alp-empp-difficulty-state.md](./research/alp-empp-difficulty-state.md).
+## GLOTUS (separate genesis)
 
-## Future Flower (WLotus) + offer ladder
+| Param | Intent |
+|-------|--------|
+| Ticker | `GLOTUS` |
+| Mint tax to temple | **None** |
+| Premine | Disclosed % + vesting |
+| PoW / Moore | Own schedule (may use higher base bits) |
+| Role | Event burns / later commerce |
 
-| Param | Value |
-|-------|-------|
-| **Flower market price** | **$0.01/token = $1/baton** (business clearing price) |
-| Flower mint | **100** / baton |
-| Candle mint | **1** / baton (GPU tier) |
-| Incense mint | **100** / baton (non-economic) |
-| Prayer mint | **1** / baton (non-economic) |
-| Difficulty | Incense **8** · Prayer **22** · Candle **43** · Flower **59** |
-| Peg | **10 Candle ≈ 1 Flower** (soft); Prayer/Incense unpegged |
-| Flower market | **$1/baton** |
+Details TBD at GLOTUS launch; see economics doc § Golden Lotus.
 
-Prestige: **Flower > Candle > Incense > Prayer** (Flower is highest — unlike Lotus Temple’s amount tiers). Ergon-style remint is for-profit; **~40%** new-market risk margin on Flower. See [ECONOMICS.md](./ECONOMICS.md).
+## Explicit non-goals
 
-## Explicit non-goals (v0.3)
-
-- `mintAmount ∝ work(D)` / token DAA  
-- Fixed max supply  
-- Mist 1-mint-per-block CLTV  
-- USD price oracle on-chain  
-- Temple app (separate repo; needs this PoW token first)
+- `mintAmount ∝ work(D)` / token DAA
+- Fixed max supply
+- USD price oracle on-chain
+- Temple mint tax on GLOTUS
+- Multi-tier product ladder (retired)

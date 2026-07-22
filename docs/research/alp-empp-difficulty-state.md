@@ -1,5 +1,7 @@
 # ALP / eMPP for fine-grained PoW difficulty
 
+> **Historical research.** Live product tokens are **WLOTUS** / **dWLOTUS** (MooreTip temple mala) and planned **GLOTUS**. Early incubation tickers mentioned below are archive-only.
+
 **Insight (ALP author):** difficulty/app state is not an ALP-baton field — **eMPP supports it**, the same way Agora attaches an ad push beside ALP.
 
 Canonical code:
@@ -47,7 +49,7 @@ Chronik / wallets discover offers from the **`AGR0`** push; ALP coloring only lo
 
 ---
 
-## What this means for mWLPOW / WLOTUS
+## What this means for WLOTUS (and early incubation experiments)
 
 ### Confirmed
 
@@ -105,7 +107,7 @@ Moore step options (either is Ergon-closer than +1 **byte**):
 
 ---
 
-## Live mWLPOW today
+## Early incubation Moore-bit dogfood (archived)
 
 | Item | Fixed-D (archived) | Moore-bit + WLDF (**live**) |
 |------|-------------------|-------------------|

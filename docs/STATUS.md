@@ -2,90 +2,69 @@
 
 Canonical home: **https://github.com/bcProFoundation/wlotus**
 
-## Production dryrun (MooreTip hard-bind)
+## Tokens
 
-Covenant: `WlotusPowRemintMooreTip` — Moore calendar D + tipLocktime + **hard next-P2SH** (`prefixHash`/`codeHash`).
+| Token | Ticker | Role | Status |
+|-------|--------|------|--------|
+| **wLotus** | `WLOTUS` | Memorial + dana (ceremonial) | Prod: https://wlotus.org |
+| **wLotus dryrun** | `dWLOTUS` | Same covenant; test desk | https://test.wlotus.org |
+| **Golden Lotus** | `GLOTUS` | Economic / event burns | Design — [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) |
 
-Whole-byte PoW only (`bits % 8 == 0`) so the redeem fits eCash’s **201-op** limit together with hard bind. Dryrun bases (nearby the phone/GPU/ASIC targets):
+## Covenant (production)
 
-| Tier | Dryrun bits | Mint | Script |
-|------|-------------|------|--------|
-| **wLotus** | **0** | **108** | `TICKER=dWLOTUS npm run create-wlotus-token` (prod: default `WLOTUS`) |
-| Prayer | 24 | 1 | `TIER=prayer npm run create-dryrun-token` |
-| Candle | 40 | 1 | `TIER=candle npm run create-dryrun-token` |
-| Flower | 56 | 100 | `TIER=flower npm run create-dryrun-token` |
+`WlotusPowRemintMooreTipTemple` — Moore calendar D + tipLocktime + hard next-P2SH + temple split.
+
+| Param | Value |
+|-------|-------|
+| Mint / remint | **108** atoms (one mala) |
+| Split | **1** miner + **107** temple P2SH |
+| Base bits | **0** (whole-byte only; `bits % 8 == 0`) |
+| Moore | **+1 bit / 500 days** (override 365–730) |
+| Sunset | remint fails when bits would exceed **128** |
+| Batons | **28** at genesis (ALP max; immutable) |
+| Desk launch tips | **1** (`MINT_SERVING_TIP_COUNT`; raise toward 28 if needed) |
 
 ```bash
 TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
-TIER=prayer npm run create-dryrun-token
-BATON_INDEX=0 npm run mine-dryrun-once
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token   # prod WLOTUS
+BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 ```
 
-See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-*.json`.
-
-### Live Prayer dual-mint dryrun (mainnet)
-
-| | |
-|--|--|
-| Token | [`d9004b41…ca5b`](https://explorer.e.cash/tx/d9004b411d4cbcd2ec16235d506efd6e266186153bd1a2b1db3a1d5118c2ca5b) (`dPRAYER`) |
-| Mint / remint | **2** atoms → burn 1 + desk keep 1 |
-| Bits | 24 (phone ~2 min class) |
-| Prior mint=1 dryrun | archived under `deployments/mainnet-dryrun-prayer-archived-*.json` |
-
-Hard next-P2SH + tipLocktime anti-rewind confirmed on-chain (no Ergon).
+See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-wlotus.json`, `deployments/mainnet-wlotus.json` (after live genesis).
 
 ### Not for production
 
-- **Ergon** (`WlotusPowRemintErgon`) — dogfood only  
-- **Legacy Moore** (`WlotusPowRemintMoore`) — soft batonHash, +8 cap  
-- Soft **PrayerTip** — superseded  
+- **Ergon** (`WlotusPowRemintErgon`) — dogfood only
+- **Legacy Moore** (`WlotusPowRemintMoore`) — soft batonHash, +8 cap
 
-## Economics (production plan)
+## Economics
 
-**Launch (decision):** [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — **wLotus** (mint 108 → 1 prayer + 107 temple mala; ceremonial) + **Golden Lotus** (permissionless; premine; event burns; no platform mint tax).
-
-**Intent (settled):** anti-farm = **1/107 + fees** (sponsored Offer wins vs commercial miners even if energy ≈ 0); ritual = **attention** via soft pray timer + ~**24**-bit presence — not token-hashrate “security.” Details: that doc § *Product intent*.
-Longer-term hardware ladder (background):
-
-| Product | Bits | Mint | Target HW | Market $/baton |
-|---------|------|------|-----------|----------------|
-| Incense | 8 | 100 | fee | — (non-econ) |
-| Prayer | 22 | 1 | phone | — (non-econ) |
-| Candle | 43 | 1 | GPU ~2.4 h | ~$0.001 |
-| Flower | 59 | 100 | ASIC ~1.6 h | **$1** |
-
-[ECONOMICS.md](./ECONOMICS.md) · `npm run pricing`
+[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — anti-farm = **1/107 + XEC fees**; presence = soft pray timer + base-0 Moore ramp; token hashrate does not secure the ledger (eCash does).
 
 ## Vision
 
-Burn wLotus = white lotus **in memorial of the dead** + **dana** for everybody (wealth destroyed; unlike vàng mã, no seller captures the gift). Full thesis: [VISION.md](./VISION.md).
+Burn wLotus = white lotus **in memorial of the dead** + **dana** for everybody. [VISION.md](./VISION.md).
 
 ## Offerings app (`apps/web`)
 
-Minimal **Prayer-only** UI (mobile-first). No browser wallet yet — offerings via mint API.
+Mobile-first Offer / burn UI. No browser wallet yet — remint via mint-api.
 
 | | |
 |--|--|
-| **Test site** | https://test.wlotus.org |
+| **Test** | https://test.wlotus.org (`dWLOTUS`) |
+| **Prod** | https://wlotus.org (`WLOTUS`) |
 | **Local** | `npm run mint-api` + `npm run web` |
-| **Token** | memorial mint `dPRAYER` `173e0260…6078` |
 
-Desk MVP: **open race on 2 tips** (dPRAYER PoC), 1 fee UTXO/tip, `MINT_MAX_OPEN_CHALLENGES` caps concurrent jobs. Launch genesis must use **`POW_BATON_COUNT=28`** (ALP max; immutable).
+## Hosting
 
-Defaults to live memorial dryrun. See [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md).
-
-## Test hosting (Contabo)
-
-**Live:** https://test.wlotus.org
-
-CI/CD: GitHub Actions → rsync → nginx on Contabo (`/var/www/wlotus-test`).
-
-- Workflow: `.github/workflows/deploy-web-test.yml`
-- Guide (local vs VM vs CI): [deploy/contabo/README.md](../deploy/contabo/README.md)
+| Env | Guide |
+|-----|-------|
+| Test Contabo | [deploy/contabo/README.md](../deploy/contabo/README.md) |
+| Prod Contabo | [deploy/contabo/PROD.md](../deploy/contabo/PROD.md) |
 
 ## Next
 
-1. Adopt Prayer bootstrap (phone PoW → server mint 2: burn + inventory) — [ECONOMICS_PRAYER.md](./ECONOMICS_PRAYER.md)  
-2. Dryrun Candle / Flower when funded for longer PoW  
-3. Postage server for fee sponsorship  
-4. Fractional-bit PoW if/when eCash raises the 201-op limit  
+1. Live **WLOTUS** genesis on prod (`create-wlotus-token` + `MINT_REQUIRE_LIVE=1`)
+2. Postage / fee sponsorship polish
+3. **GLOTUS** genesis when economic layer ships
+4. Fractional-bit PoW if/when eCash raises the 201-op limit
