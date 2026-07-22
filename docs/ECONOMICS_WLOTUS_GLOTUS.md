@@ -39,7 +39,7 @@ Each successful remint mints **108** wLotus atoms — **one mala round** (108 pr
 | **1** | Prayer / miner | Presence bead — kept or later burned/given |
 | **107** | Temple **P2SH** (IFP-style multisig / cold) | Rest of the mala — fee reimbursement & inventory; spends are rare ops |
 
-This is **not** “app-only mining.” Anyone may satisfy the covenant (including copied clients) **if they pay their own XEC fees** and accept the **99→temple / 1→miner** outputs. The temple cannot stop that on a public chain — and does not need to.
+This is **not** “app-only mining.” Anyone may satisfy the covenant (including copied clients) **if they pay their own XEC fees** and accept the **107→temple / 1→miner** outputs (pagoda keeps **≈99%** of each mala). The temple cannot stop that on a public chain — and does not need to.
 
 **Launch custody:** temple sink in Script is **P2SH** (dryrun and production), same pattern as eCash’s baked IFP address. Redeem is revealed only on spend; quantum threats are handled by a future address-format fork, not by baking a single hot P2PKH. See [Temple custody](#temple-custody-dryrun--launch-decision).
 
@@ -59,11 +59,13 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
 | **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default 60) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
 | **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
-| **Moore clock (+1 bit / 500 days)** | 五百罗汉 — one arhat-day until the bit ticks. Easy to remember; tighter than legacy **840** (too loose / not linked). Low genesis PoW + slow ramp so the token can stay **gently profitable long-term** for holders who buy, pray, or invest. See [CLOCK.md](./CLOCK.md). |
-| **Pagoda burn → remint loop** | New atoms are not free mint forever: memorial **burns through the pagoda** (and related dana paths) recirculate demand while Moore makes fresh mining dearer. Desk inventory (107/108) bridges non-miners. |
+| **Moore clock (+1 bit / 500 days)** | 五百罗汉 — intentional dearening for **WLotus as bootstrap / investable ritual stock**. Not “PoW easy forever” (that fits permissionless **GLotus** better). See [CLOCK.md](./CLOCK.md). |
+| **128-bit hard sunset** | Covenant `verify bits <= 128` — when calendar would require bits **> 128**, remints **fail**. No more mining; WLotus becomes a **legacy / historical** mala; new ritual tokens (or GLotus) carry the living economy. |
+| **Desk tips at launch** | Serve **1 tip** first (fee ceiling ~**2.9–5.7M XEC/mo** if saturated @ 10–5 s/cycle). Genesis still **28** batons so the desk can raise `MINT_SERVING_TIP_COUNT` if demand outruns one lane — buyers use pagoda; others may mine permissionlessly on remaining tips. |
+| **Pagoda burn → remint loop** | Memorial **burns through the pagoda** recirculate demand while Moore makes fresh mining dearer. Desk inventory (107/108) bridges non-miners. |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
 
-**Long-term value thesis (not a moonshot):** start **very low** (base 24 + soft pray) so phones can mine at launch; scarcity ticks up on a 500-day arhat calendar so new issuance gets slightly dearer over years — **slight appreciation**, not a speculative rocket. People can **buy and pray**, or **hold / invest**, while pagoda burns keep ritual demand alive and feed the remint economy.
+**Long-term value thesis (not a moonshot):** start **very low** (base 24 + soft pray) so phones can mine at launch; scarcity ticks up on a 500-day arhat calendar so new issuance gets slightly dearer — **WLotus bootstraps the platform**, then **dries toward GLotus** as the living economic layer. People **buy and pray**, or **hold / invest**, while pagoda burns keep ritual demand alive. After the 128-bit sunset (~**142 years** @ 500 d from base 24 — in practice phone mining dies decades earlier), WLotus is a **symbol**, not an infinite mint.
 
 **Do not claim:** “more WLOTUS hashrate = safer token” (Bitcoin/eCash analogy does not apply).  
 **Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**; scarcity rises **slowly** for holders who stay with the temple ledger.
@@ -253,7 +255,7 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
   TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
-- Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=2`.
+- Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=1` at launch (raise toward 28 if needed).
 - Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun (participation / presence — not security theater).
 - Soft pray timer: `VITE_MIN_PRAY_MS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
 - Golden Lotus: separate token; open remint; no temple mint tax.

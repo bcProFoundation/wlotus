@@ -156,7 +156,7 @@ TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.j
 sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
 MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787
-MINT_SERVING_TIP_COUNT=2
+MINT_SERVING_TIP_COUNT=1
 EOF
 sudo chmod 600 /etc/wlotus/mint.env
 

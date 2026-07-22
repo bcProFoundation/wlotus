@@ -66,12 +66,13 @@ const MAX_OPEN_CHALLENGES = Math.max(
   Number(process.env.MINT_MAX_OPEN_CHALLENGES?.trim() || 32) || 32,
 );
 /**
- * How many baton tips the desk serves (PoC default 2 — matches live dPRAYER).
- * Launch tokens still genesis at POW_BATON_COUNT=28; raise this later.
+ * How many baton tips the desk serves.
+ * Launch default **1** (bound XEC fee burn); genesis still has 28 batons —
+ * raise `MINT_SERVING_TIP_COUNT` when demand warrants.
  */
 const SERVING_TIP_COUNT = Math.max(
   1,
-  Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 2) || 2,
+  Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 1) || 1,
 );
 const CHALLENGE_TTL_MS = 15 * 60_000;
 /** Pending memorial burns after remint (soft pray window). */

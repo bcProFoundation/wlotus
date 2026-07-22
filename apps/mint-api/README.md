@@ -18,8 +18,9 @@ loaded deployment is `tier=prayer`.
 old WLPT tip covenants will not match the new redeem.
 
 **Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
-tips (default **2**). First valid submit wins that tip; losers restart. Concurrent
-open challenges are capped for desk CPU.
+tips (default **1** at launch — bound fee burn; raise toward **28** if demand warrants).
+First valid submit wins that tip; losers restart. Concurrent open challenges are capped
+for desk CPU. Genesis still creates **28** batons so parallelism stays available.
 
 **Fee wallets:** the main desk (`MINT_MNEMONIC`) holds treasury XEC. Each tip has its
 own HD fee account (`m/44'/1899'/(tipIndex+1)'/0/0`). The tip fee wallet receives the
@@ -61,7 +62,7 @@ After depositing XEC to the **desk** address:
 
 ```bash
 # Preview addresses / planned sends
-FUND_DRY_RUN=1 MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=2 npm run fund-tip-fee-wallets
+FUND_DRY_RUN=1 MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
 
 # Equalize tip balances from desk surplus, peel ~40 XEC fuel coins on each tip
 MINT_MNEMONIC="…" npm run fund-tip-fee-wallets
@@ -96,7 +97,7 @@ fuel coin from the desk automatically — still prefer running the fund script f
 
 - `MINT_MAX_OFFERS_PER_DAY` (default **20** on test)
 - `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
-- `MINT_SERVING_TIP_COUNT` (default **2**) — tips load-balanced for PoC; raise toward 28 at launch
+- `MINT_SERVING_TIP_COUNT` (default **1**) — tips load-balanced; raise toward **28** if demand warrants
 - Challenges expire after 15 minutes (or when that tip is reminted by someone else)
 - Pending memorial burns expire after 15 minutes if `/api/burn` is never called (desk keeps atom)
 

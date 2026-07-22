@@ -49,7 +49,7 @@ At **D = 1**, PoW joules are negligible; **XEC fees** dominate on-chain cost. Pr
 | Param | Value | Notes |
 |-------|-------|-------|
 | `POW_BATON_COUNT` (`N`) | **28** | ALP genesis max (`ALP_POLICY_MAX_OUTPUTS` 29 − 1 fungible mint). **Immutable after genesis.** |
-| Desk MVP | Serve **2** tips (PoC) | Open race; 1 fee UTXO/tip; raise `MINT_SERVING_TIP_COUNT` later toward 28 |
+| Desk MVP | Serve **1** tip (launch) | Bound XEC fees; open race; 1 fee UTXO/tip; raise `MINT_SERVING_TIP_COUNT` toward 28 if demand warrants |
 
 Each remint spends one PoW baton and recreates one (conserve `N`). Always genesis at the ALP maximum — the desk may serve fewer tips without stranding future parallelism.
 

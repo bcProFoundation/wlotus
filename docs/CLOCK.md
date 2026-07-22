@@ -90,7 +90,9 @@ From base **24** → cap **128** = **+104 bits** ≈ **~142 years** calendar (10
 
 At **128** with Moore: difficulty ×2^104, hashrate ×2^(142/2)≈2^71 → net ×**~10^9** vs genesis → ~3 s × 10^9 ≈ **centuries** of continuous hashing. Soft timer is irrelevant; phones do not finish.
 
-**Takeaway:** phone mining is comfortable for **~10–20 years**, fringe by **~30–45 years**, then impractical. The 128-bit ceiling is a Script/safety cap, not a “phones still pray in 100 years” promise. Long before that, the product path is **buy / desk inventory / burn through the pagoda** (recirculating demand while Moore keeps fresh mining dear). Golden Lotus can use a separate higher base.
+**Hard sunset (not a soft ceiling):** Script does `verify bits <= 128` with `bits = base + floor((locktime − genesis) / period)`. While bits **= 128** (one Moore period, ~500 d), remints are still *legal* but practically impossible. When calendar would make bits **> 128**, remints **fail forever** on that token — no clamp-and-continue. That is the intended **end of WLotus mining**: legacy / historical symbol; living issuance moves to **GLotus** (or a successor token). Genesis still uses **28** batons so the desk can scale tips; launch may serve **1** tip to bound XEC fee burn (~**5M XEC/mo** if one tip is saturated at ~5 s/cycle).
+
+**Takeaway:** phone mining is comfortable for **~10–20 years**, fringe by **~30–45 years**, then impractical long before the Script sunset. Product path after that era: **buy / desk / pagoda burn** while stock lasts; GLotus carries permissionless economics.
 
 ### Can bits start at 1? Can we “shift” to last longer under the 128 cap?
 

@@ -240,7 +240,7 @@ npm run fund-tip-fee-wallets
 
 For **live WLOTUS** on prod, see **[PROD.md](./PROD.md)** (`npm run create-prod-token`).
 
-Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). Batons are immutable at genesis — mint the ALP max (**28**); desk soft-serves **2** tips via `MINT_SERVING_TIP_COUNT`.
+Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK_HEX` in `.env` (or export it). Batons are immutable at genesis — mint the ALP max (**28**); desk soft-serves **1** tip via `MINT_SERVING_TIP_COUNT` at launch (raise later if demand warrants).
 
 ```bash
 cd ~/wlotus/wlotus   # or /opt/wlotus
@@ -261,7 +261,7 @@ TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
 
 # Tip fee wallets still sized for the soft tip count (2):
 set -a && source /etc/wlotus/mint.env && set +a
-# ensure: MINT_SERVING_TIP_COUNT=2
+# ensure: MINT_SERVING_TIP_COUNT=1
 npm run fund-tip-fee-wallets
 sudo systemctl restart wlotus-mint-api
 ```

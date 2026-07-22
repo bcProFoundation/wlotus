@@ -42,11 +42,11 @@ At genesis (base **24**, phone ~5 MH/s): \(T_{\text{PoW}}\approx 3\,\text{s}\), 
 
 | Setup | \(N\) | ~Wins / min | Concurrent hashers |
 |-------|------:|------------:|--------------------|
-| Desk PoC | **2** | **~12–24** | Many; losers waste PoW on the same 2 tips |
+| Desk PoC / **launch** | **1–2** | **~6–24** | Start with **1** tip to bound fees; raise toward 28 if demand warrants |
 | Full desk / permissionless | **28** | **~170–340** | Same formula; load-balance across tips |
 | Soft-pray myth (60 s holds baton) | — | **wrong** | Soft pray does not serialize remints |
 
-Desk extras (not chain physics): `MINT_MAX_OPEN_CHALLENGES` (default **32** open jobs), `MINT_MAX_OFFERS_PER_DAY` (**20**/installId), in-process `withChainLock` (serializes challenge/submit/burn on one mint-api until scaled). Raise `MINT_SERVING_TIP_COUNT` toward **28** for launch parallelism.
+Desk extras (not chain physics): `MINT_MAX_OPEN_CHALLENGES` (default **32** open jobs), `MINT_MAX_OFFERS_PER_DAY` (**20**/installId), in-process `withChainLock` (serializes challenge/submit/burn on one mint-api until scaled). Launch serves **1** tip; raise `MINT_SERVING_TIP_COUNT` toward **28** if demand warrants.
 
 Atoms minted/min ≈ \(108 \times R\) (1 miner + 107 temple). Moore period (**500 vs 840**) does **not** change this short-term capacity — only long-term PoW wall time.
 
