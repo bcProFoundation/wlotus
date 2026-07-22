@@ -250,7 +250,7 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
 
 - Covenant: `WlotusPowRemintMooreTipTemple` — **P2SH** temple (107) + miner P2PKH (1); mint = 108 (mala). Fits ≤520 B / ≤201 ops (no memorial EMPP on mint — op budget).
 - **Memorial:** burn the miner **1** atom after remint (`DANA` LOKAD on burn tx). The on-chain burn is the gift — memorial and dana offered for all.
-- Dryrun:
+- Dryrun / prod genesis: **initial fungible mint = 108** (one mala), same as remint size; `baseZeroBits = 0`; Moore **500 d**/bit.
   ```bash
   TIER=wlotus BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-dryrun-token
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once

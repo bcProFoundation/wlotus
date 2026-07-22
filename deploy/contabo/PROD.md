@@ -140,9 +140,9 @@ LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
 # Equivalent: LIVE=1 TIER=wlotus BATONS=28 TEMPLE_ADDRESS=… npm run create-dryrun-token
 
 # 4) Confirm on-chain record
-jq '{ticker,name,tokenId,mintAtomsPerRemint,mintSplit,templeAddress,role}' \
+jq '{ticker,name,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,templeAddress,role}' \
   deployments/mainnet-wlotus.json
-# → ticker "WLOTUS", name "wLotus", mintAtoms "108", role "production"
+# → ticker "WLOTUS", baseZeroBits 0, mintAtomsPerRemint "108", initialMintAtoms "108", role "production"
 
 # Optional smoke remint (uses GENESIS wallet as miner+fuel):
 TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.json) \
