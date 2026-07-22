@@ -58,14 +58,14 @@ This is **not** “app-only mining.” Anyone may satisfy the covenant (includin
 |-----------|------|
 | **1 miner / 107 temple (mala)** | **Practical anti-farming.** Independent / commercial remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. Even if electricity ≈ 0, fee math favors the temple lane. |
 | **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default 60) | **Time / attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
-| **PoW bits (base 24, whole-byte)** | Presence gate + tip fairness among remints — **not** L1-style security. |
+| **PoW bits (base 0, whole-byte)** | Launch presence is **soft pray + 1/107 + fees**, not hashrate. Base **0** maximizes headroom to the 128 sunset (~**+33 y** vs old base 24). PoW only becomes a tip gate after Moore climbs. **Not** base 1 — whole-byte only (`bits % 8 == 0`). |
 | **Moore clock (+1 bit / 500 days)** | 五百罗汉 — intentional dearening for **WLotus as bootstrap / investable ritual stock**. Not “PoW easy forever” (that fits permissionless **GLotus** better). See [CLOCK.md](./CLOCK.md). |
 | **128-bit hard sunset** | Covenant `verify bits <= 128` — when calendar would require bits **> 128**, remints **fail**. No more mining; WLotus becomes a **legacy / historical** mala; new ritual tokens (or GLotus) carry the living economy. |
 | **Desk tips at launch** | Serve **1 tip** first (fee ceiling ~**2.9–5.7M XEC/mo** if saturated @ 10–5 s/cycle). Genesis still **28** batons so the desk can raise `MINT_SERVING_TIP_COUNT` if demand outruns one lane — buyers use pagoda; others may mine permissionlessly on remaining tips. |
 | **Pagoda burn → remint loop** | Memorial **burns through the pagoda** recirculate demand while Moore makes fresh mining dearer. Desk inventory (107/108) bridges non-miners. |
 | **Token network hashrate** | Does **not** secure WLOTUS (double-spends / ownership still ride **eCash**). Raising bits or chasing MH/s does not “harden” the memorial ledger. |
 
-**Long-term value thesis (not a moonshot):** start **very low** (base 24 + soft pray) so phones can mine at launch; scarcity ticks up on a 500-day arhat calendar so new issuance gets slightly dearer — **WLotus bootstraps the platform**, then **dries toward GLotus** as the living economic layer. People **buy and pray**, or **hold / invest**, while pagoda burns keep ritual demand alive. After the 128-bit sunset (~**142 years** @ 500 d from base 24 — in practice phone mining dies decades earlier), WLotus is a **symbol**, not an infinite mint.
+**Long-term value thesis (not a moonshot):** start at **base 0** (PoW free at genesis — we do not need mining as a gate) so the 128-bit sunset lasts ~**175 years**; scarcity ticks up on a 500-day arhat calendar so new issuance eventually dearens — **WLotus bootstraps the platform**, then **dries toward GLotus**. People **buy and pray**, or **hold / invest**, while pagoda burns keep ritual demand alive. Soft pray + baton caps + 1/107 carry early presence/anti-farm; phones stay mineable far longer than a base-24 launch.
 
 **Do not claim:** “more WLOTUS hashrate = safer token” (Bitcoin/eCash analogy does not apply).  
 **Do claim:** sponsored Offer wins vs commercial fee-paying miners on **XEC cost**; sincere users pay **attention**; non-miners **buy / receive / burn**; scarcity rises **slowly** for holders who stay with the temple ledger.
@@ -256,8 +256,8 @@ If temple keys are compromised: stop mint-api, move remaining inventory with the
   TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
   ```
 - Mint-api / web: temple remint → burn miner atom; `memorialOnBurn: true`. Soft tip count `MINT_SERVING_TIP_COUNT=1` at launch (raise toward 28 if needed).
-- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **24** for wLotus dryrun (participation / presence — not security theater).
-- Soft pray timer: `VITE_MIN_PRAY_MS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
+- Bits: whole-byte only; see [CLOCK.md](./CLOCK.md). Base **0** for wLotus (max 128 headroom — presence via soft pray / 1/107, not launch hashrate).
+- Soft pray timer: `VITE_MIN_PRAY_SECONDS` on the Offer client ([apps/web/README.md](../apps/web/README.md)).
 - Golden Lotus: separate token; open remint; no temple mint tax.
 
-Open product decisions: bits/difficulty UX, premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up. Anti-farm intent is settled: **1/107 + fees**; presence intent: **soft timer + ~24 bits**.
+Open product decisions: premine %, cold multisig policy, convertibility, memorial-on-mint if op budget frees up. Anti-farm intent is settled: **1/107 + fees**; presence intent: **soft timer + base 0 Moore ramp**.

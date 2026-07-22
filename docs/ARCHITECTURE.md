@@ -38,7 +38,7 @@ R_{\text{wins/min}} \approx \frac{N_{\text{served}}}{T_{\text{cycle}}} \times 60
 T_{\text{cycle}} \approx T_{\text{PoW}} + T_{\text{broadcast+tip sync}}
 \]
 
-At genesis (base **24**, phone ~5 MH/s): \(T_{\text{PoW}}\approx 3\,\text{s}\), \(T_{\text{net}}\sim 2\text{–}7\,\text{s}\) → \(T_{\text{cycle}}\sim 5\text{–}10\,\text{s}\).
+At genesis (wLotus base **0**, PoW instant; cycle ≈ broadcast+tip sync): \(T_{\text{net}}\sim 2\text{–}7\,\text{s}\) → \(T_{\text{cycle}}\sim 5\text{–}10\,\text{s}\) still. Later Moore eras add \(T_{\text{PoW}}\).
 
 | Setup | \(N\) | ~Wins / min | Concurrent hashers |
 |-------|------:|------------:|--------------------|

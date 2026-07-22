@@ -35,11 +35,19 @@ describe('MooreTip production covenant', () => {
   });
 
   it('dryrun whole-byte bases stay under absolute cap', () => {
-    for (const bits of [24, 40, 56]) {
+    for (const bits of [0, 24, 40, 56]) {
       const s = computeMooreTipState(genesis, { ...base, baseZeroBits: bits });
       expect(s.bits % 8).toBe(0);
       expect(s.bits).toBeLessThanOrEqual(MOORE_TIP_MAX_BITS);
     }
+  });
+
+  it('wLotus base 0 is legal and maximizes sunset headroom', () => {
+    const s = computeMooreTipState(genesis, { ...base, baseZeroBits: 0 });
+    expect(s.bits).toBe(0);
+    expect(s.extraBits).toBe(0);
+    // +128 bits @ 500d ≈ 175y calendar headroom to hard fail (bits > 128)
+    expect(MOORE_TIP_MAX_BITS - 0).toBe(128);
   });
 
   it('rejects tip rewind', () => {

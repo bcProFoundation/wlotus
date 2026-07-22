@@ -101,9 +101,11 @@ const TIERS: Record<
   },
   wlotus: {
     // LIVE=1 → ticker WLOTUS; otherwise dryrun dWLOTUS
+    // Base **0**: max headroom to 128 (~+33y vs base 24). Presence = soft pray +
+    // 1/107 + fees; PoW is tip fairness later, not a launch gate.
     ticker: LIVE ? PROD_TOKEN_TICKER : `d${PROD_TOKEN_TICKER}`,
     name: PROD_TOKEN_NAME,
-    bits: 24,
+    bits: 0,
     mint: WLOTUS_MINT_ATOMS,
     batons: POW_BATON_COUNT,
   },

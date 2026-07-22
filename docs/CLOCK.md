@@ -14,7 +14,7 @@ eCash Script **cannot read mother-chain height** (or MTP, or headers). Remint co
 | **N batons** | Parallel remint lanes (scale without activity-based D) |
 | **wLotus temple** | `WlotusPowRemintMooreTipTemple` — mint **108** → **1** miner + **107** temple P2SH (mala) |
 
-Tier dryrun bases: Prayer / wLotus **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
+Tier dryrun bases: **wLotus 0** (max sunset headroom), Prayer **24**, Candle **40**, Flower **56** (economics targets remain 22/43/59).
 
 ```bash
 TIER=prayer npm run create-dryrun-token
@@ -30,9 +30,7 @@ BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 
 Short-term UX is **`VITE_MIN_PRAY_SECONDS`** (attention floor after remint). Moore period is the **long-term** difficulty ramp. They are independent.
 
-**Product intent:** start **very low** on phone GPU (base **24** + soft pray) so launch mining is easy. Difficulty rises on a **500-day** arhat clock (not legacy **840** — too loose and not symbolically linked) so new issuance gets **slightly** dearer over years. Thesis: a token that can stay **gently profitable long-term** — people **buy and pray**, or **invest** for slight appreciation — while **burns through the pagoda** recirculate memorial demand and keep remints meaningful. Mining stays the presence path; desk inventory serves non-miners.
-
-Assume mid-phone WebGPU ≈ **5 MH/s**, base **24** bits → raw PoW ≈ **~3 s** (soft timer still holds ~60 s). Classic **Moore** ≈ **2× hashrate / 2 years**.
+**Product intent:** start at **base 0** for wLotus (PoW free at genesis — presence is soft pray + 1/107 + fees). Difficulty rises on a **500-day** arhat clock so issuance eventually dearens. Base 0 vs 24 adds **+24 bits ≈ +33 years** to the 128 sunset and roughly **doubles+** the phone-mineable calendar. Thesis: bootstrap / invest / pagoda burns; mining stays optional presence, not a launch gate.
 
 | Period | Meaning | Whole-byte *felt* jump (+8 bits) |
 |--------|---------|----------------------------------|
@@ -69,43 +67,44 @@ So **840 does not buy “mobile forever” in a useful sense** — it freezes (o
 
 **Demand-side caveat:** capped remints still mean capped issuance. If pagoda **buy→burn** demand exceeds temple refill (**107 × remints/day**), desk inventory tightens and price can rise **even when PoW is flat** — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) § *Capped free-mine issuance vs pagoda burn demand*. Forever participation for devotees remains **buy / desk / pagoda burn**; Moore is optional reinforcement, not the only float valve.
 
-### Cap 128 bits — phone mine ETA projection (500 d/bit)
+### Cap 128 bits — phone mine ETA (base **0**, 500 d/bit)
 
-Assumptions: mid-phone WebGPU ≈ **5 MH/s** at genesis → raw PoW ≈ **~3 s** at base **24**; Moore ≈ **2× hashrate / 2 years**; soft pray ≈ **60 s** after remint. Felt PoW only changes on whole-byte eras (+8 bits).
+Assumptions: mid-phone WebGPU ≈ **5 MH/s**; Moore ≈ **2× / 2 years**; soft pray ≈ **60 s**. Felt PoW only on whole-byte eras. Base **0** is covenant-legal (`bits % 8 == 0`); **base 1 is not** (fractional remBits dropped for 201-op budget). At bits **0**, the PoW prefix check is vacuous (any nonce) — tip race is network/API limited until Moore climbs.
 
-From base **24** → cap **128** = **+104 bits** ≈ **~142 years** calendar (104 × 500 / 365.25).
+From base **0** → cap **128** = **+128 bits** ≈ **~175 years** calendar (128 × 500 / 365.25). Vs old base **24**: **+33 years** sunset, and today's “launch difficulty” (24 bits) only arrives ~year **33**.
 
-| Bits | ~Year | Diff vs genesis | Phone HR (Moore) | Raw PoW ETA (Moore) | Raw PoW (frozen phone) | UX |
-|------|------:|----------------:|-----------------:|--------------------:|-----------------------:|----|
-| **24** | 0 | ×1 | ×1 | **~3 s** | ~3 s | soft pray (~60 s) dominates |
-| **32** | 11 | ×256 | ×~45 | **~17 s** | ~13 min | soft pray still covers |
-| **40** | 22 | ×2^16 | ×~2k | **~1.7 min** | ~2.3 d | PoW noticeable |
-| **48** | 33 | ×2^24 | ×~88k | **~10 min** | ~1.6 y | phone fringe |
-| **56** | 44 | ×2^32 | ×~4M | **~55 min** | centuries | phone fringe |
-| **64** | 55 | ×2^40 | ×~170M | **~5 h** | — | desk / pagoda path |
-| **72** | 66 | ×2^48 | ×~8B | **~1.3 d** | — | desk / pagoda |
-| **80** | 77 | ×2^56 | ×~350B | **~1 week** | — | desk / pagoda |
-| **96** | 99 | ×2^72 | ×~7×10^14 | **~8 months** | never | desk / pagoda |
-| **128** | 142 | ×2^104 | ×~3×10^21 | **~700 y** | never | Script cap only |
+| Bits | ~Year (base 0) | Raw PoW @ 5 MH/s (Moore) | UX |
+|------|---------------:|-------------------------:|----|
+| **0** | 0 | instant | soft pray + 1 tip serialize |
+| **8** | 11 | instant | same |
+| **16** | 22 | ~instant | same |
+| **24** | 33 | ~instant* | still soft-pray dominated |
+| **32** | 44 | ~instant* | same |
+| **40** | 55 | ~ms | same |
+| **48** | 66 | ~ms–s | soft pray covers |
+| **64** | 88 | ~sub-second* | still easy under Moore |
+| **128** | 175 | centuries | hard sunset follows |
 
-At **128** with Moore: difficulty ×2^104, hashrate ×2^(142/2)≈2^71 → net ×**~10^9** vs genesis → ~3 s × 10^9 ≈ **centuries** of continuous hashing. Soft timer is irrelevant; phones do not finish.
+\*Moore hashrate growth dominates early whole-byte steps when starting from 0 — PoW stays easy far longer than a base-24 launch (where fringe began ~year 30–45).
 
-**Hard sunset (not a soft ceiling):** Script does `verify bits <= 128` with `bits = base + floor((locktime − genesis) / period)`. While bits **= 128** (one Moore period, ~500 d), remints are still *legal* but practically impossible. When calendar would make bits **> 128**, remints **fail forever** on that token — no clamp-and-continue. That is the intended **end of WLotus mining**: legacy / historical symbol; living issuance moves to **GLotus** (or a successor token). Genesis still uses **28** batons so the desk can scale tips; launch may serve **1** tip to bound XEC fee burn (~**5M XEC/mo** if one tip is saturated at ~5 s/cycle).
+**Hard sunset:** `verify bits <= 128` — when calendar would make bits **> 128**, remints **fail forever**. WLotus → legacy; GLotus carries living economics.
 
-**Takeaway:** phone mining is comfortable for **~10–20 years**, fringe by **~30–45 years**, then impractical long before the Script sunset. Product path after that era: **buy / desk / pagoda burn** while stock lasts; GLotus carries permissionless economics.
+**Why base 0 (not 24):** we do not need mining as a launch gate; soft pray + temple tax + 1-tip fee ceiling already bound issuance. Lower base stretches the investable / phone-mineable era without keeping an 840-style flat forever (500 d still dearens, just from a lower floor).
 
-### Can bits start at 1? Can we “shift” to last longer under the 128 cap?
+### Can bits start at 0? At 1?
 
-**Short answer:** Not on the current MooreTip family without a new covenant. A rename/`shift` ctor param does **not** add calendar years by itself.
+**Base 0 — yes (and preferred for wLotus).** Whole-byte legal; maximizes `128 − base` headroom (~**175 y** sunset @ 500 d). PoW check is vacuous until Moore leaves 0.
+
+**Base 1 — no** on current MooreTip (need `bits % 8 == 0`). Use **0 / 8 / 16 / 24 / …**.
 
 | Constraint | Effect |
 |------------|--------|
-| **Whole-byte PoW** (`bits % 8 == 0`) | Legal bases are **0, 8, 16, 24, …** — **not 1**. Fractional `remBits` was dropped to fit hard next-P2SH under eCash’s **201-op** limit. |
-| **Cap `bits ≤ 128`** | Headroom = `128 − baseZeroBits`. Lower base ⇒ more years of ramp. |
-| **Clock** | Default **+1 bit / 500 days** (五百罗汉; override 365–730). With whole-byte verify, remints only succeed when `extraBits ≡ 0 (mod 8)` — flat for **8 periods**, then **+8** bits. |
-| **“Shift”** | `powBits = shift + mooreExtra` is just another name for `baseZeroBits`. It does not stretch the 128-bit ceiling. To last longer: **lower base** (e.g. 8/16 for a soft launch), and/or **larger `secondsPerExtraBit`** (up to 2 years), and/or an explicit **+8-per-era** schedule. Restoring **bits=1** needs fractional PoW back (op-budget fight vs temple outputs / memorial). |
+| **Whole-byte PoW** (`bits % 8 == 0`) | Legal bases **0, 8, 16, 24, …** — **not 1**. |
+| **Cap `bits ≤ 128`** | Headroom = `128 − baseZeroBits`. Lower base ⇒ more years. |
+| **Clock** | Default **+1 bit / 500 days**. Felt PoW jumps every **8** periods. |
+| **Launch gate** | Soft pray + 1/107 + 1-tip fee ceiling — not base-24 hashrate. |
 
-wLotus dryrun uses **base 24** (phone-class participation / presence). Bits are **not** a substitute for anti-farming or L1 security — see [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent* (**1/107 + fees**, soft pray timer for attention). Golden Lotus can use a higher whole-byte base (e.g. 56/64) on a separate token — each token has its own `baseZeroBits` and 128 cap.
+wLotus genesis uses **base 0**. Prayer dryrun may stay **24**; Golden Lotus can use a higher whole-byte base on its own token.
 
 ### Why `codeHash` + miner-supplied `nextRedeem`
 
