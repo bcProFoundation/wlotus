@@ -53,6 +53,20 @@ Assume mid-phone WebGPU ≈ **5 MH/s**, base **24** bits → raw PoW ≈ **~3 s*
 
 So **500 d/bit** is slightly gentler than 365 d, memorable (arhat calendar), and still more aggressive than legacy 840 d — low start with **slow** scarcity for long-term pray/invest. Soft pray does not soften on-chain PoW after finds get truly hard — desk / market / pagoda burns remain the scalable path.
 
+### Does 840 d “keep mobile mining forever”? (no — and it kills scarcity)
+
+Baton count (**28**) caps **wins/min**, not phone mineability. Moore period only stretches how long raw PoW stays short.
+
+Under classic Moore (2× / 2 y) and whole-byte jumps (+8 bits = ×256):
+
+| Period | First +8 (~year) | Net raw time vs ~3 s | Effect |
+|--------|-----------------:|---------------------:|--------|
+| **500 d** | ~11 | ×**~6** → ~**20 s** | Gentle dearening — intended |
+| **730 d** | ~16 | ×**~1** → ~**3 s** | Flat forever under Moore |
+| **840 d** legacy | ~18 | ×**~0.4** → **easier** | Hardware outruns difficulty |
+
+So **840 does not buy “mobile forever” in a useful sense** — it freezes (or eases) PoW and **removes** the slight long-term scarcity thesis. Phone mining capacity under load is still **≤ 28 wins / cycle** (see [ARCHITECTURE.md](./ARCHITECTURE.md) § concurrent miners). Forever participation for devotees is **buy / desk / pagoda burn**, not an infinite easy PoW clock.
+
 ### Cap 128 bits — phone mine ETA projection (500 d/bit)
 
 Assumptions: mid-phone WebGPU ≈ **5 MH/s** at genesis → raw PoW ≈ **~3 s** at base **24**; Moore ≈ **2× hashrate / 2 years**; soft pray ≈ **60 s** after remint. Felt PoW only changes on whole-byte eras (+8 bits).
