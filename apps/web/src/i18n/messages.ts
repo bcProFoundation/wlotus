@@ -14,6 +14,8 @@ export type MessageKey =
   | 'howMintBody'
   | 'howWhyTitle'
   | 'howWhyBody'
+  | 'howEternalTitle'
+  | 'howEternalBody'
   | 'etaEstimated'
   | 'noteLabel'
   | 'notePlaceholder'
@@ -51,7 +53,7 @@ type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
   brand: 'White Lotus',
-  tagline: 'Offer a white lotus in remembrance of someone dear.',
+  tagline: 'Offer an eternal lotus in remembrance of someone who has passed.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
@@ -67,6 +69,9 @@ const en: Dict = {
   howWhyTitle: 'Why do 107 flowers go to the wLotus developers?',
   howWhyBody:
     'Issuing and offering each lotus incurs network fees. Searching on a phone also yields only a limited number of flowers. So those with a sincere heart can still receive lotuses for remembrance — and so professional mining rigs do not crowd out phone users — the remaining 107 beads of the mala go to the wLotus developers to distribute to those with affinity who did not get a chance to find a lotus.',
+  howEternalTitle: '',
+  howEternalBody:
+    'Each offering is recorded forever on the blockchain — a mark of lasting reverence.',
   etaEstimated: 'Estimated time {eta}',
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name, dedication, or paste a wLotus link',
@@ -105,7 +110,7 @@ const en: Dict = {
 
 const vi: Dict = {
   brand: 'White Lotus',
-  tagline: 'Dâng một đóa sen tưởng nhớ người đã khuất.',
+  tagline: 'Dâng một đóa sen vĩnh hằng tưởng nhớ người đã khuất.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
@@ -121,6 +126,9 @@ const vi: Dict = {
   howWhyTitle: 'Tại sao 107 bông được chuyển đến nhà phát triển wLotus?',
   howWhyBody:
     'Mỗi lần phát hành và dâng hoa sen đều tốn phí giao dịch trên mạng. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để tránh các máy chuyên nghiệp làm ảnh hưởng đến việc dùng trên điện thoại, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên không có cơ may tìm kiếm được hoa sen.',
+  howEternalTitle: '',
+  howEternalBody:
+    'Mỗi lần dâng sen được ghi lại mãi mãi trên chuỗi khối, đánh dấu cho lòng thành kính vĩnh hằng.',
   etaEstimated: 'Thời gian ước tính {eta}',
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên, lời tưởng niệm, hoặc dán liên kết wLotus',
@@ -158,7 +166,7 @@ const vi: Dict = {
 
 const zh: Dict = {
   brand: 'White Lotus',
-  tagline: '献上一朵白莲，纪念逝去的亲人。',
+  tagline: '献上一朵永恒莲花，纪念逝去的亲人。',
   offerTitle: '献花',
   hintPrayMine:
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',
@@ -174,6 +182,9 @@ const zh: Dict = {
   howWhyTitle: '为何 107 朵莲花交给 wLotus 开发者？',
   howWhyBody:
     '每次发行与献上莲花都需支付网络手续费。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并避免专业矿机挤占手机用户，念珠上其余 107 颗交给 wLotus 开发者，分发给有缘却未能寻得莲花的人。',
+  howEternalTitle: '',
+  howEternalBody:
+    '每一次献花都会永久记在区块链上，铭刻一份永恒的敬意。',
   etaEstimated: '预计时间 {eta}',
   noteLabel: '追思寄语…',
   notePlaceholder: '姓名、寄语，或粘贴 wLotus 链接',
