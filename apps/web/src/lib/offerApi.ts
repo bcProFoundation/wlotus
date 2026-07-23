@@ -106,7 +106,7 @@ export async function fetchStatus(installId: string): Promise<StatusOk> {
 export async function fetchChallenge(opts: {
   installId: string;
   note: string;
-  /** Re-offer: link burn to this prior burn txid (no new memorial text). */
+  /** Re-offer: link burn to the original dedication burn txid (no new memorial text). */
   parentBurnTxid?: string;
 }): Promise<ChallengeOk> {
   const res = await fetch(apiUrl('/api/challenge'), {

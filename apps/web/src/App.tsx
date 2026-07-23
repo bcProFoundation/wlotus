@@ -30,6 +30,10 @@ import {
   liveTipEpochFromStatus,
 } from './lib/tipRace.js';
 import {
+  groupOffersByOriginal,
+  type LocalOffer,
+} from './lib/groupOffers.js';
+import {
   estimatePrayerPow,
   formatHashrateLabel,
   loadCachedHashrate,
@@ -42,19 +46,6 @@ type Msg = { kind: 'ok' | 'err'; text: string } | null;
 type Phase = 'idle' | 'challenge' | 'mining' | 'submit' | 'holding' | 'burn';
 
 const ACTIVE_CHALLENGE_KEY = 'wlotus.activeChallenge';
-
-interface LocalOffer {
-  remintTxid: string;
-  burnTxid: string;
-  note: string;
-  at: string;
-  powMs?: number;
-  powAttempts?: number;
-  hashrateHps?: number;
-  bits?: number;
-  /** Immediate parent burn this re-offer links to (on-chain DANA v2). */
-  parentBurnTxid?: string;
-}
 
 interface StoredChallenge {
   challengeId: string;
@@ -715,50 +706,60 @@ export default function App() {
           <h2>{t('recentTitle')}</h2>
           <p className="hint">{t('reofferHint')}</p>
           <ul className="history">
-            {offers.map(o => (
-              <li key={o.burnTxid}>
-                <div className="history-main">
-                  <span>
-                    {o.note || t('offeringFallback')}
-                    {o.parentBurnTxid ? (
+            {groupOffersByOriginal(offers).map(g => {
+              const last = g.latest;
+              return (
+                <li key={g.original.burnTxid}>
+                  <div className="history-main">
+                    <span>
+                      {g.note || t('offeringFallback')}
+                      {last.powMs != null ? (
+                        <span className="history-meta">
+                          {' '}
+                          ·{' '}
+                          {formatActualDurationLocale(
+                            last.powMs / 1000,
+                            locale,
+                          )}
+                          {last.hashrateHps
+                            ? ` · ${formatHashrateLabel(last.hashrateHps)}`
+                            : ''}
+                        </span>
+                      ) : null}
                       <span className="history-meta">
                         {' '}
-                        · {t('reofferBadge')}
+                        · {t('burnTotal', { n: g.totalBurns })}
                       </span>
-                    ) : null}
-                    {o.powMs != null ? (
-                      <span className="history-meta">
-                        {' '}
-                        · {formatActualDurationLocale(o.powMs / 1000, locale)}
-                        {o.hashrateHps
-                          ? ` · ${formatHashrateLabel(o.hashrateHps)}`
-                          : ''}
-                      </span>
-                    ) : null}
-                  </span>
-                  <a
-                    href={`https://explorer.e.cash/tx/${o.burnTxid}`}
-                    target="_blank"
-                    rel="noreferrer"
+                    </span>
+                    <a
+                      href={`https://explorer.e.cash/tx/${last.burnTxid}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={
+                        g.totalBurns > 1
+                          ? t('latestBurnLink')
+                          : undefined
+                      }
+                    >
+                      {shortTx(last.burnTxid)}
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-reoffer"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      void onOffer({
+                        parentBurnTxid: g.original.burnTxid,
+                        displayNote: g.note,
+                      })
+                    }
                   >
-                    {shortTx(o.burnTxid)}
-                  </a>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-reoffer"
-                  disabled={!canOffer}
-                  onClick={() =>
-                    void onOffer({
-                      parentBurnTxid: o.burnTxid,
-                      displayNote: o.note,
-                    })
-                  }
-                >
-                  {t('btnReoffer')}
-                </button>
-              </li>
-            ))}
+                    {t('btnReoffer')}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
