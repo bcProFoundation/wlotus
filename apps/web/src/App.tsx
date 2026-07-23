@@ -132,6 +132,11 @@ export default function App() {
   );
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+  /** Active offer overlay (new or re-offer) — keeps timer/cancel on screen. */
+  const [session, setSession] = useState<{
+    reoffer: boolean;
+    note: string;
+  } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const challengeIdRef = useRef<string | null>(null);
   /** Remint awaiting memorial burn (soft pray); cancel abandons burn. */
@@ -306,6 +311,7 @@ export default function App() {
     elapsedClockRef.current.stop();
     setMineStartedAt(null);
     setPhase('idle');
+    setSession(null);
     if (pendingRemint && pendingToken) {
       setMsg({ kind: 'ok', text: tRef.current('memorialCancelled') });
       await abandonPendingBurn(pendingRemint, pendingToken);
@@ -326,6 +332,11 @@ export default function App() {
     const historyNote = isReoffer
       ? (opts?.displayNote ?? '').trim()
       : note.trim();
+
+    setSession({
+      reoffer: isReoffer,
+      note: historyNote,
+    });
 
     const prevId = challengeIdRef.current;
     const prevPending = pendingBurnRemintRef.current;
@@ -566,10 +577,20 @@ export default function App() {
         elapsedClockRef.current.stop();
         setPhase('idle');
         setMineStartedAt(null);
+        setSession(null);
         if (abortRef.current === ac) abortRef.current = null;
       }
     }
   }
+
+  useEffect(() => {
+    if (!busy) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [busy]);
 
   const canOffer =
     !busy && apiOnline === true && (remaining === null || remaining > 0);
@@ -632,24 +653,9 @@ export default function App() {
             disabled={!canOffer}
             onClick={() => void onOffer()}
           >
-            {buttonLabel}
+            {t('btnOffer')}
           </button>
-          {showCancel ? (
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={() => void onCancelMine()}
-            >
-              {t('btnCancel')}
-            </button>
-          ) : null}
         </div>
-
-        {mineStartedAt != null ? (
-          <p className="mine-progress" aria-live="polite">
-            {t('miningElapsed', { elapsed: elapsedDisplay })}
-          </p>
-        ) : null}
 
         <details className="how-offer">
           <summary>{t('howTitle')}</summary>
@@ -698,7 +704,9 @@ export default function App() {
           ) : null}
         </p>
 
-        {msg && <div className={`msg ${msg.kind}`}>{msg.text}</div>}
+        {!busy && msg ? (
+          <div className={`msg ${msg.kind}`}>{msg.text}</div>
+        ) : null}
       </section>
 
       {offers.length > 0 ? (
@@ -736,9 +744,7 @@ export default function App() {
                       target="_blank"
                       rel="noreferrer"
                       title={
-                        g.totalBurns > 1
-                          ? t('latestBurnLink')
-                          : undefined
+                        g.totalBurns > 1 ? t('latestBurnLink') : undefined
                       }
                     >
                       {shortTx(last.burnTxid)}
@@ -762,6 +768,49 @@ export default function App() {
             })}
           </ul>
         </section>
+      ) : null}
+
+      {busy && session ? (
+        <div
+          className="offer-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="offer-session-title"
+        >
+          <div className="offer-modal-card">
+            <h2 id="offer-session-title">
+              {session.reoffer
+                ? t('reofferSessionTitle')
+                : t('offerSessionTitle')}
+            </h2>
+            <p className="offer-session-label">{t('sessionNoteLabel')}</p>
+            <p className="offer-session-note">
+              {session.note.trim() || t('offeringFallback')}
+            </p>
+            <p className="offer-session-status" aria-live="polite">
+              {buttonLabel}
+            </p>
+            {mineStartedAt != null ? (
+              <p className="mine-progress offer-session-elapsed" aria-live="polite">
+                {t('miningElapsed', { elapsed: elapsedDisplay })}
+              </p>
+            ) : null}
+            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+            <p className="hint">{t('hintKeepScreen')}</p>
+            <div className="offer-actions offer-session-actions">
+              {showCancel ? (
+                <button
+                  type="button"
+                  className="btn btn-danger btn-session-cancel"
+                  onClick={() => void onCancelMine()}
+                >
+                  {t('btnCancel')}
+                </button>
+              ) : null}
+            </div>
+            {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
+          </div>
+        </div>
       ) : null}
 
       <footer className="footer">

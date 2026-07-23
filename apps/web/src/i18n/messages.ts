@@ -37,6 +37,9 @@ export type MessageKey =
   | 'latestBurnLink'
   | 'btnReoffer'
   | 'offeringFallback'
+  | 'offerSessionTitle'
+  | 'reofferSessionTitle'
+  | 'sessionNoteLabel'
   | 'footerBrand';
 
 type Dict = Record<MessageKey, string>;
@@ -78,13 +81,15 @@ const en: Dict = {
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Offered in {duration}',
   recentTitle: 'Recent',
-  reofferHint:
-    'Re-offers link on-chain to the original dedication. Each row shows the last search time and total burns — no new message.',
+  reofferHint: 'Re-offer a lotus from your recent list.',
   reofferBadge: 're-offer',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
   btnReoffer: 'Re-offer',
   offeringFallback: 'Offering',
+  offerSessionTitle: 'Offering a flower',
+  reofferSessionTitle: 'Re-offering',
+  sessionNoteLabel: 'In remembrance',
   footerBrand: 'wLotus',
 };
 
@@ -124,13 +129,15 @@ const vi: Dict = {
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
-  reofferHint:
-    'Dâng lại gắn on-chain với lần dâng gốc. Mỗi dòng hiện thời gian tìm kiếm gần nhất và tổng số lần dâng — không thêm lời mới.',
+  reofferHint: 'Dâng lại hoa sen theo danh sách gần nhất.',
   reofferBadge: 'dâng lại',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
   btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
+  offerSessionTitle: 'Đang dâng hoa',
+  reofferSessionTitle: 'Đang dâng lại',
+  sessionNoteLabel: 'Lời tưởng niệm',
   footerBrand: 'wLotus',
 };
 
@@ -169,13 +176,15 @@ const zh: Dict = {
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花完成 · {duration}',
   recentTitle: '最近',
-  reofferHint:
-    '再献在链上关联到原初献花。每行显示最近一次寻找耗时与总献花次数——暂不支持附加寄语。',
+  reofferHint: '从最近列表再次献上莲花。',
   reofferBadge: '再献',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
   btnReoffer: '再献',
   offeringFallback: '献花',
+  offerSessionTitle: '正在献花',
+  reofferSessionTitle: '正在再献',
+  sessionNoteLabel: '追思寄语',
   footerBrand: 'wLotus',
 };
 
