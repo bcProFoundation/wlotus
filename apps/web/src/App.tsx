@@ -750,7 +750,7 @@ export default function App() {
                     disabled={!canOffer}
                     onClick={() =>
                       void onOffer({
-                        parentBurnTxid: last.burnTxid,
+                        parentBurnTxid: g.original.burnTxid,
                         displayNote: g.note,
                       })
                     }

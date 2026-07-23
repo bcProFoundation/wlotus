@@ -89,6 +89,37 @@ describe('groupOffersByOriginal', () => {
     expect(groups[1]!.note).toBe('for dad');
   });
 
+  it('groups star re-offers that all point at the original', () => {
+    const a = offer({
+      burnTxid: 'A',
+      note: 'for mom',
+      at: '2026-01-01T10:00:00.000Z',
+      powMs: 90_000,
+    });
+    const b = offer({
+      burnTxid: 'B',
+      parentBurnTxid: 'A',
+      note: 'for mom',
+      at: '2026-01-02T10:00:00.000Z',
+      powMs: 40_000,
+      hashrateHps: 2e6,
+    });
+    const c = offer({
+      burnTxid: 'C',
+      parentBurnTxid: 'A',
+      note: 'for mom',
+      at: '2026-01-03T10:00:00.000Z',
+      powMs: 20_000,
+      hashrateHps: 4e6,
+    });
+    const groups = groupOffersByOriginal([c, b, a]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.original.burnTxid).toBe('A');
+    expect(groups[0]!.latest.burnTxid).toBe('C');
+    expect(groups[0]!.totalBurns).toBe(3);
+    expect(groups[0]!.latest.powMs).toBe(20_000);
+  });
+
   it('treats a burn with missing parent as its own original', () => {
     const orphan = offer({
       burnTxid: 'O',

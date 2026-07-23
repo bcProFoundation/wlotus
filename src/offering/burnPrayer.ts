@@ -31,7 +31,7 @@ export async function burnOnePrayer(opts: {
   tokenId: string;
   note?: string;
   offeringId?: string;
-  /** Prior burn txid (hex) — encoded in DANA v2 for dana explorer linkage. */
+  /** Original dedication burn txid (hex) — DANA v2 star link for explorers. */
   parentBurnTxid?: string;
 }): Promise<{ txid: string }> {
   const note = (opts.note ?? '').trim();

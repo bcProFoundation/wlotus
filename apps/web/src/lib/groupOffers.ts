@@ -8,7 +8,7 @@ export interface LocalOffer {
   powAttempts?: number;
   hashrateHps?: number;
   bits?: number;
-  /** Immediate parent burn this re-offer links to (on-chain DANA v2). */
+  /** Original dedication burn this re-offer links to (on-chain DANA v2). */
   parentBurnTxid?: string;
 }
 
@@ -30,9 +30,9 @@ function byTimeDesc(a: LocalOffer, b: LocalOffer): number {
 }
 
 /**
- * Walk parentBurnTxid until the earliest burn still present in `byTxid`.
- * Missing parents (not in local history) stop the walk — that burn is the
- * local "original" for grouping.
+ * Walk parentBurnTxid to the dedication root still present in `byTxid`.
+ * Re-offers point at the **original** burn (star), so this is usually one hop.
+ * Older tip-chain records (parent = previous re-offer) still resolve correctly.
  */
 export function resolveOriginalTxid(
   offer: LocalOffer,

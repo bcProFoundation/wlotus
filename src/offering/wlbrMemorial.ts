@@ -6,7 +6,8 @@
  *   v1: DANA | ver=1 | idLen | id | noteLen | note
  *   v2: DANA | ver=2 | idLen | id | noteLen | note | parentLen | parentTxid
  *       parentLen is 0 or 32; parentTxid is 32 raw bytes when set.
- *       Re-offers use v2 with empty note + parent = prior burn txid.
+ *       Re-offers use v2 with empty note + parent = **original** dedication
+ *       burn txid (star topology for dana explorers).
  *
  * Tip-state layout (ver=4, 15 bytes) lives in `src/covenant/mooreTip.ts`.
  */

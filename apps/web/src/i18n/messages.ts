@@ -79,7 +79,7 @@ const en: Dict = {
   offeredIn: 'Offered in {duration}',
   recentTitle: 'Recent',
   reofferHint:
-    'Re-offers stay with the original dedication. Each row shows the last search time and total burns — no new message.',
+    'Re-offers link on-chain to the original dedication. Each row shows the last search time and total burns — no new message.',
   reofferBadge: 're-offer',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
@@ -125,7 +125,7 @@ const vi: Dict = {
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng lại gắn với lần dâng gốc. Mỗi dòng hiện thời gian tìm kiếm gần nhất và tổng số lần dâng — không thêm lời mới.',
+    'Dâng lại gắn on-chain với lần dâng gốc. Mỗi dòng hiện thời gian tìm kiếm gần nhất và tổng số lần dâng — không thêm lời mới.',
   reofferBadge: 'dâng lại',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
@@ -170,7 +170,7 @@ const zh: Dict = {
   offeredIn: '献花完成 · {duration}',
   recentTitle: '最近',
   reofferHint:
-    '再献归入原初献花。每行显示最近一次寻找耗时与总献花次数——暂不支持附加寄语。',
+    '再献在链上关联到原初献花。每行显示最近一次寻找耗时与总献花次数——暂不支持附加寄语。',
   reofferBadge: '再献',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',

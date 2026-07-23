@@ -137,7 +137,7 @@ export interface ChallengePublic {
   tipFeeAddress: string;
   mintAtoms: string;
   note: string;
-  /** Set when this challenge is a re-offer linked to a prior burn. */
+  /** Set when this challenge is a re-offer linked to the original dedication burn. */
   parentBurnTxid?: string;
 }
 
@@ -195,8 +195,9 @@ interface StoredChallenge {
   secondsPerExtraBit: number;
   note: string;
   /**
-   * Prior burn txid (hex). Temple path only — encoded in DANA v2 on the
-   * burn-after-mint tx (empty note). Rejected on memo path (mint memorial budget).
+   * Original dedication burn txid (hex). Temple path only — encoded in DANA v2
+   * on the burn-after-mint tx (empty note). Star topology for explorers.
+   * Rejected on memo path (mint memorial budget).
    */
   parentBurnTxid?: string;
   /** Prayer memo path only. */
@@ -624,7 +625,7 @@ async function createChallengeOnce(opts: {
   const parentBurnTxid = opts.parentBurnTxid
     ? parseParentBurnTxidHex(opts.parentBurnTxid)
     : undefined;
-  // Re-offer: empty on-chain note; link via parentBurnTxid (DANA v2 on burn).
+  // Re-offer: empty on-chain note; link via parentBurnTxid → original dedication (DANA v2).
   const note = parentBurnTxid ? '' : opts.note.trim().slice(0, 80);
   if (parentBurnTxid && !temple) {
     throw new Error(
