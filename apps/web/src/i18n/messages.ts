@@ -33,6 +33,8 @@ export type MessageKey =
   | 'recentTitle'
   | 'reofferHint'
   | 'reofferBadge'
+  | 'burnTotal'
+  | 'latestBurnLink'
   | 'btnReoffer'
   | 'offeringFallback'
   | 'footerBrand';
@@ -77,8 +79,10 @@ const en: Dict = {
   offeredIn: 'Offered in {duration}',
   recentTitle: 'Recent',
   reofferHint:
-    'Re-offer from this list to link a new burn to a prior one — no new message.',
+    'Re-offers stay with the original dedication. Each row shows the last search time and total burns — no new message.',
   reofferBadge: 're-offer',
+  burnTotal: '{n} burns',
+  latestBurnLink: 'Latest burn',
   btnReoffer: 'Re-offer',
   offeringFallback: 'Offering',
   footerBrand: 'wLotus',
@@ -121,8 +125,10 @@ const vi: Dict = {
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng hoa lại từ danh sách để liên kết với lần dâng trước.',
+    'Dâng lại gắn với lần dâng gốc. Mỗi dòng hiện thời gian tìm kiếm gần nhất và tổng số lần dâng — không thêm lời mới.',
   reofferBadge: 'dâng lại',
+  burnTotal: '{n} lần dâng',
+  latestBurnLink: 'Lần dâng gần nhất',
   btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
   footerBrand: 'wLotus',
@@ -163,8 +169,11 @@ const zh: Dict = {
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花完成 · {duration}',
   recentTitle: '最近',
-  reofferHint: '从列表再次献花，将新燃烧关联到先前一笔——暂不支持附加寄语。',
+  reofferHint:
+    '再献归入原初献花。每行显示最近一次寻找耗时与总献花次数——暂不支持附加寄语。',
   reofferBadge: '再献',
+  burnTotal: '{n} 次献花',
+  latestBurnLink: '最近一次献花',
   btnReoffer: '再献',
   offeringFallback: '献花',
   footerBrand: 'wLotus',
