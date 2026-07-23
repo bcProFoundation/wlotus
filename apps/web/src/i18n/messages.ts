@@ -100,7 +100,7 @@ const en: Dict = {
   shareLookupFailed: 'Could not find that dedication on-chain.',
   btnShare: 'Share',
   shareCopied: 'Link copied',
-  footerBrand: 'wLotus',
+  footerBrand: 'White Lotus',
 };
 
 const vi: Dict = {
@@ -153,7 +153,7 @@ const vi: Dict = {
   shareLookupFailed: 'Không tìm thấy lời tưởng niệm trên chuỗi.',
   btnShare: 'Chia sẻ',
   shareCopied: 'Đã sao chép liên kết',
-  footerBrand: 'wLotus',
+  footerBrand: 'White Lotus',
 };
 
 const zh: Dict = {
@@ -205,7 +205,7 @@ const zh: Dict = {
   shareLookupFailed: '链上未找到该追思。',
   btnShare: '分享',
   shareCopied: '链接已复制',
-  footerBrand: 'wLotus',
+  footerBrand: 'White Lotus',
 };
 
 export const MESSAGES: Record<Locale, Dict> = { en, vi, zh };

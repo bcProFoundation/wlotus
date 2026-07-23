@@ -997,7 +997,7 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        {t('footerBrand')} · {ticker} ·{' '}
+        {t('footerBrand')} ·{' '}
         <a href="https://wlotus.org">wlotus.org</a>
       </footer>
     </div>
