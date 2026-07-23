@@ -16,6 +16,7 @@ export default defineConfig({
         'images/wlotus-icon-maskable-512.png',
       ],
       manifest: {
+        id: '/',
         name: 'White Lotus',
         short_name: 'White Lotus',
         description: 'Offer a white lotus — memorial and dana on eCash',
@@ -25,6 +26,11 @@ export default defineConfig({
         orientation: 'portrait-primary',
         start_url: '/',
         scope: '/',
+        // Installed Android PWA: in-scope https://wlotus.org/<txid> opens the
+        // app (same path Universal Links / App Links will use for a store app).
+        launch_handler: {
+          client_mode: 'navigate-existing',
+        },
         icons: [
           {
             src: '/images/wlotus-icon-192.png',

@@ -18,7 +18,6 @@ export type MessageKey =
   | 'noteLabel'
   | 'notePlaceholder'
   | 'btnOffer'
-  | 'btnPreparing'
   | 'btnPraying'
   | 'btnOffering'
   | 'btnCancel'
@@ -72,7 +71,6 @@ const en: Dict = {
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name, dedication, or paste a wLotus link',
   btnOffer: 'Offer a Flower',
-  btnPreparing: 'Preparing…',
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
   btnCancel: 'Cancel',
@@ -127,7 +125,6 @@ const vi: Dict = {
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên, lời tưởng niệm, hoặc dán liên kết wLotus',
   btnOffer: 'Dâng Hoa',
-  btnPreparing: 'Đang chuẩn bị…',
   btnPraying: 'Đang tìm hoa sen…',
   btnOffering: 'Đang dâng hoa…',
   btnCancel: 'Hủy',
@@ -181,7 +178,6 @@ const zh: Dict = {
   noteLabel: '追思寄语…',
   notePlaceholder: '姓名、寄语，或粘贴 wLotus 链接',
   btnOffer: '献花',
-  btnPreparing: '准备中…',
   btnPraying: '正在寻找莲花…',
   btnOffering: '正在献花…',
   btnCancel: '取消',

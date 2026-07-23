@@ -31,6 +31,18 @@ describe('shareLink', () => {
     expect(normalizeBurnTxid(`  ${id.toUpperCase()}  `)).toBe(id);
   });
 
+  it('accepts future native schemes but shares HTTPS only', () => {
+    const id =
+      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    expect(extractBurnTxid(`wlotus://${id}`)).toBe(id);
+    expect(extractBurnTxid(`wlotus://burn/${id}`)).toBe(id);
+    expect(extractBurnTxid(`web+wlotus://${id}`)).toBe(id);
+    expect(looksLikeShareInput(`wlotus://burn/${id}`)).toBe(true);
+    expect(dedicationShareUrl(id, 'https://wlotus.org')).toBe(
+      `https://wlotus.org/${id}`,
+    );
+  });
+
   it('clearDedicationPath is a no-op without matching path', () => {
     expect(() => clearDedicationPath()).not.toThrow();
   });

@@ -745,15 +745,13 @@ export default function App() {
   }
 
   const buttonLabel =
-    phase === 'challenge'
-      ? t('btnPreparing')
-      : phase === 'mining'
-        ? t('btnPraying')
-        : phase === 'holding' || phase === 'submit' || phase === 'burn'
-          ? t('btnOffering')
-          : linkedParentBurnTxid
-            ? t('btnReoffer')
-            : t('btnOffer');
+    phase === 'challenge' || phase === 'mining'
+      ? t('btnPraying')
+      : phase === 'holding' || phase === 'submit' || phase === 'burn'
+        ? t('btnOffering')
+        : linkedParentBurnTxid
+          ? t('btnReoffer')
+          : t('btnOffer');
 
   return (
     <div className="app">
