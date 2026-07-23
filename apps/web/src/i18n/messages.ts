@@ -18,7 +18,6 @@ export type MessageKey =
   | 'noteLabel'
   | 'notePlaceholder'
   | 'btnOffer'
-  | 'btnPreparing'
   | 'btnPraying'
   | 'btnOffering'
   | 'btnCancel'
@@ -40,6 +39,12 @@ export type MessageKey =
   | 'offerSessionTitle'
   | 'reofferSessionTitle'
   | 'sessionNoteLabel'
+  | 'shareHint'
+  | 'shareLookingUp'
+  | 'shareLinked'
+  | 'shareLookupFailed'
+  | 'btnShare'
+  | 'shareCopied'
   | 'footerBrand';
 
 type Dict = Record<MessageKey, string>;
@@ -64,9 +69,8 @@ const en: Dict = {
     'Issuing and offering each lotus incurs network fees. Searching on a phone also yields only a limited number of flowers. So those with a sincere heart can still receive lotuses for remembrance — and so professional mining rigs do not crowd out phone users — the remaining 107 beads of the mala go to the wLotus developers to distribute to those with affinity who did not get a chance to find a lotus.',
   etaEstimated: 'Estimated time {eta}',
   noteLabel: 'Words of remembrance…',
-  notePlaceholder: 'Name or dedication',
+  notePlaceholder: 'Name, dedication, or paste a wLotus link',
   btnOffer: 'Offer a Flower',
-  btnPreparing: 'Preparing…',
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
   btnCancel: 'Cancel',
@@ -90,7 +94,13 @@ const en: Dict = {
   offerSessionTitle: 'Offering a flower',
   reofferSessionTitle: 'Re-offering',
   sessionNoteLabel: 'In remembrance',
-  footerBrand: 'wLotus',
+  shareHint: 'Paste a wLotus link to continue that dedication.',
+  shareLookingUp: 'Looking up dedication…',
+  shareLinked: 'Linked · {name}',
+  shareLookupFailed: 'Could not find that dedication on-chain.',
+  btnShare: 'Share',
+  shareCopied: 'Link copied',
+  footerBrand: 'White Lotus',
 };
 
 const vi: Dict = {
@@ -113,9 +123,8 @@ const vi: Dict = {
     'Mỗi lần phát hành và dâng hoa sen đều tốn phí giao dịch trên mạng. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để tránh các máy chuyên nghiệp làm ảnh hưởng đến việc dùng trên điện thoại, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển wLotus để phân phối tới những người hữu duyên không có cơ may tìm kiếm được hoa sen.',
   etaEstimated: 'Thời gian ước tính {eta}',
   noteLabel: 'Lời tưởng niệm...',
-  notePlaceholder: 'Tên hoặc lời tưởng niệm',
+  notePlaceholder: 'Tên, lời tưởng niệm, hoặc dán liên kết wLotus',
   btnOffer: 'Dâng Hoa',
-  btnPreparing: 'Đang chuẩn bị…',
   btnPraying: 'Đang tìm hoa sen…',
   btnOffering: 'Đang dâng hoa…',
   btnCancel: 'Hủy',
@@ -138,7 +147,13 @@ const vi: Dict = {
   offerSessionTitle: 'Đang dâng hoa',
   reofferSessionTitle: 'Đang dâng lại',
   sessionNoteLabel: 'Lời tưởng niệm',
-  footerBrand: 'wLotus',
+  shareHint: 'Dán liên kết wLotus để tiếp tục lời tưởng niệm đó.',
+  shareLookingUp: 'Đang tìm lời tưởng niệm…',
+  shareLinked: 'Đã liên kết · {name}',
+  shareLookupFailed: 'Không tìm thấy lời tưởng niệm trên chuỗi.',
+  btnShare: 'Chia sẻ',
+  shareCopied: 'Đã sao chép liên kết',
+  footerBrand: 'White Lotus',
 };
 
 const zh: Dict = {
@@ -161,9 +176,8 @@ const zh: Dict = {
     '每次发行与献上莲花都需支付网络手续费。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并避免专业矿机挤占手机用户，念珠上其余 107 颗交给 wLotus 开发者，分发给有缘却未能寻得莲花的人。',
   etaEstimated: '预计时间 {eta}',
   noteLabel: '追思寄语…',
-  notePlaceholder: '姓名或寄语',
+  notePlaceholder: '姓名、寄语，或粘贴 wLotus 链接',
   btnOffer: '献花',
-  btnPreparing: '准备中…',
   btnPraying: '正在寻找莲花…',
   btnOffering: '正在献花…',
   btnCancel: '取消',
@@ -185,7 +199,13 @@ const zh: Dict = {
   offerSessionTitle: '正在献花',
   reofferSessionTitle: '正在再献',
   sessionNoteLabel: '追思寄语',
-  footerBrand: 'wLotus',
+  shareHint: '粘贴 wLotus 链接以继续该追思。',
+  shareLookingUp: '正在查找追思…',
+  shareLinked: '已关联 · {name}',
+  shareLookupFailed: '链上未找到该追思。',
+  btnShare: '分享',
+  shareCopied: '链接已复制',
+  footerBrand: 'White Lotus',
 };
 
 export const MESSAGES: Record<Locale, Dict> = { en, vi, zh };

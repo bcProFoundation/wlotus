@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+} from 'react';
 import { LangSwitch } from './components/LangSwitch.js';
 import {
   formatActualDurationLocale,
@@ -33,6 +39,13 @@ import {
   groupOffersByOriginal,
   type LocalOffer,
 } from './lib/groupOffers.js';
+import {
+  burnTxidFromLocation,
+  clearDedicationPath,
+  dedicationShareUrl,
+  extractBurnTxid,
+  looksLikeShareInput,
+} from './lib/shareLink.js';
 import {
   estimatePrayerPow,
   formatHashrateLabel,
@@ -137,6 +150,11 @@ export default function App() {
     reoffer: boolean;
     note: string;
   } | null>(null);
+  /** On-chain original burn when note was resolved from a share link / path. */
+  const [linkedParentBurnTxid, setLinkedParentBurnTxid] = useState<
+    string | null
+  >(null);
+  const [shareLookingUp, setShareLookingUp] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const challengeIdRef = useRef<string | null>(null);
   /** Remint awaiting memorial burn (soft pray); cancel abandons burn. */
@@ -147,6 +165,15 @@ export default function App() {
   /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
   const elapsedClockRef = useRef(new MineElapsedClock());
   const tipMsgClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shareLookupGenRef = useRef(0);
+  const shareLookupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  /** Path deeplink: auto-start re-offer once mint-api is online. */
+  const [pendingDeeplinkOffer, setPendingDeeplinkOffer] = useState<{
+    parentBurnTxid: string;
+    displayNote: string;
+  } | null>(null);
   const tRef = useRef(t);
   const localeRef = useRef(locale);
   tRef.current = t;
@@ -238,12 +265,63 @@ export default function App() {
       .finally(() => clearRememberedChallenge());
   }, [installId]);
 
+  const applyDedicationLink = useCallback(
+    async (raw: string, opts?: { autoStart?: boolean }) => {
+      const txid = extractBurnTxid(raw);
+      if (!txid) return false;
+      const gen = ++shareLookupGenRef.current;
+      setShareLookingUp(true);
+      setMsg({ kind: 'ok', text: tRef.current('shareLookingUp') });
+      try {
+        const { lookupDedication } = await import('./lib/lookupDedication.js');
+        const d = await lookupDedication(txid);
+        if (shareLookupGenRef.current !== gen) return true;
+        const displayNote = d.note.trim();
+        setNote(displayNote);
+        setLinkedParentBurnTxid(d.originalBurnTxid);
+        setMsg({
+          kind: 'ok',
+          text: tRef.current('shareLinked', {
+            name: displayNote || tRef.current('offeringFallback'),
+          }),
+        });
+        if (opts?.autoStart) {
+          setPendingDeeplinkOffer({
+            parentBurnTxid: d.originalBurnTxid,
+            displayNote,
+          });
+        }
+        return true;
+      } catch {
+        if (shareLookupGenRef.current !== gen) return true;
+        setLinkedParentBurnTxid(null);
+        setMsg({ kind: 'err', text: tRef.current('shareLookupFailed') });
+        return true;
+      } finally {
+        if (shareLookupGenRef.current === gen) setShareLookingUp(false);
+      }
+    },
+    [],
+  );
+
+  /** Deeplink: /<original-burn-txid> → lookup note → auto re-offer when online. */
+  useEffect(() => {
+    const txid = burnTxidFromLocation();
+    if (!txid) return;
+    clearDedicationPath();
+    void applyDedicationLink(txid, { autoStart: true });
+  }, [applyDedicationLink]);
+
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
       if (tipMsgClearRef.current != null) {
         clearTimeout(tipMsgClearRef.current);
         tipMsgClearRef.current = null;
+      }
+      if (shareLookupTimerRef.current != null) {
+        clearTimeout(shareLookupTimerRef.current);
+        shareLookupTimerRef.current = null;
       }
     };
   }, []);
@@ -345,6 +423,7 @@ export default function App() {
       reoffer: isReoffer,
       note: historyNote,
     });
+    setLinkedParentBurnTxid(null);
 
     const prevId = challengeIdRef.current;
     const prevPending = pendingBurnRemintRef.current;
@@ -610,13 +689,68 @@ export default function App() {
   const canOffer =
     !busy && apiOnline === true && (remaining === null || remaining > 0);
 
+  /** Path deeplink: start re-offer once the desk is reachable. */
+  useEffect(() => {
+    if (!canOffer || !pendingDeeplinkOffer) return;
+    const pending = pendingDeeplinkOffer;
+    setPendingDeeplinkOffer(null);
+    void onOffer({
+      parentBurnTxid: pending.parentBurnTxid,
+      displayNote: pending.displayNote,
+    });
+    // onOffer is intentionally not a dep — fires when lookup + online are ready.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canOffer, pendingDeeplinkOffer]);
+
+  function onNoteInput(value: string) {
+    setNote(value.slice(0, 80));
+    setLinkedParentBurnTxid(null);
+    if (shareLookupTimerRef.current != null) {
+      clearTimeout(shareLookupTimerRef.current);
+      shareLookupTimerRef.current = null;
+    }
+    if (!looksLikeShareInput(value)) return;
+    shareLookupTimerRef.current = setTimeout(() => {
+      shareLookupTimerRef.current = null;
+      void applyDedicationLink(value);
+    }, 450);
+  }
+
+  function onNotePaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const text = e.clipboardData.getData('text');
+    if (!looksLikeShareInput(text)) return;
+    e.preventDefault();
+    void applyDedicationLink(text);
+  }
+
+  async function shareDedication(originalBurnTxid: string, label: string) {
+    const url = dedicationShareUrl(originalBurnTxid);
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({
+          title: label || t('offeringFallback'),
+          url,
+        });
+        return;
+      }
+    } catch {
+      /* fall through to clipboard */
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setMsg({ kind: 'ok', text: t('shareCopied') });
+    } catch {
+      setMsg({ kind: 'err', text: url });
+    }
+  }
+
   const buttonLabel =
-    phase === 'challenge'
-      ? t('btnPreparing')
-      : phase === 'mining'
-        ? t('btnPraying')
-        : phase === 'holding' || phase === 'submit' || phase === 'burn'
-          ? t('btnOffering')
+    phase === 'challenge' || phase === 'mining'
+      ? t('btnPraying')
+      : phase === 'holding' || phase === 'submit' || phase === 'burn'
+        ? t('btnOffering')
+        : linkedParentBurnTxid
+          ? t('btnReoffer')
           : t('btnOffer');
 
   return (
@@ -656,19 +790,38 @@ export default function App() {
             rows={2}
             maxLength={80}
             value={note}
-            onChange={e => setNote(e.target.value)}
+            onChange={e => onNoteInput(e.target.value)}
+            onPaste={onNotePaste}
             placeholder={t('notePlaceholder')}
-            disabled={busy || apiOnline === false}
+            disabled={busy || apiOnline === false || shareLookingUp}
           />
+          <p className="hint share-hint">
+            {shareLookingUp
+              ? t('shareLookingUp')
+              : linkedParentBurnTxid
+                ? t('shareLinked', {
+                    name: note.trim() || t('offeringFallback'),
+                  })
+                : t('shareHint')}
+          </p>
         </div>
 
         <div className="offer-actions">
           <button
             className="btn btn-primary btn-offer"
-            disabled={!canOffer}
-            onClick={() => void onOffer()}
+            disabled={!canOffer || shareLookingUp}
+            onClick={() =>
+              void onOffer(
+                linkedParentBurnTxid
+                  ? {
+                      parentBurnTxid: linkedParentBurnTxid,
+                      displayNote: note,
+                    }
+                  : undefined,
+              )
+            }
           >
-            {t('btnOffer')}
+            {buttonLabel}
           </button>
         </div>
 
@@ -765,19 +918,34 @@ export default function App() {
                       {shortTx(last.burnTxid)}
                     </a>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-reoffer"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      void onOffer({
-                        parentBurnTxid: g.original.burnTxid,
-                        displayNote: g.note,
-                      })
-                    }
-                  >
-                    {t('btnReoffer')}
-                  </button>
+                  <div className="history-actions">
+                    <button
+                      type="button"
+                      className="btn btn-reoffer"
+                      disabled={busy}
+                      onClick={() =>
+                        void shareDedication(
+                          g.original.burnTxid,
+                          g.note || t('offeringFallback'),
+                        )
+                      }
+                    >
+                      {t('btnShare')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-reoffer"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        void onOffer({
+                          parentBurnTxid: g.original.burnTxid,
+                          displayNote: g.note,
+                        })
+                      }
+                    >
+                      {t('btnReoffer')}
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -829,7 +997,7 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        {t('footerBrand')} · {ticker} ·{' '}
+        {t('footerBrand')} ·{' '}
         <a href="https://wlotus.org">wlotus.org</a>
       </footer>
     </div>
