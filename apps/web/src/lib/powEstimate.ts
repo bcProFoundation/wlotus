@@ -4,19 +4,21 @@
  * Post-mint stats come from the mint API (actual PoW wall time).
  */
 
-import { sha256d } from 'ecash-lib';
-import { HASHRATE_CACHE_KEY } from './config.js';
+/** Keep in sync with `HASHRATE_CACHE_KEY` in config.ts (avoid Vite import.meta here for Jest). */
+const HASHRATE_CACHE_KEY = 'wlotus.deviceHashrateHps';
 
 /** Phone-class SHA256d UX hashrate (matches `UX_PHONE_HASHRATE_H_S` in pricing). */
 export const PHONE_UX_HASHRATE_H_S = 150_000;
 
-/** Fallback when status API has not returned bits yet (live dual-mint Prayer). */
-export const DEFAULT_PRAYER_BASE_BITS = 24;
+/** Fallback when status API has not returned bits yet (wLotus genesis = 0). */
+export const DEFAULT_PRAYER_BASE_BITS = 0;
 
 /** Inflate ETA so users usually finish sooner than the label suggests. */
 export const ETA_BUFFER = 1.3;
 
 export function expectedHashesFromBits(bits: number): number {
+  // bits=0 → any nonce works (vacuous PoW); treat as 1 hash of work for ETA.
+  if (!Number.isFinite(bits) || bits <= 0) return 1;
   return 2 ** bits;
 }
 
@@ -48,7 +50,8 @@ export function formatActualDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '—';
   if (seconds < 1) return `${Math.round(seconds * 1000)} ms`;
   if (seconds < 60) {
-    const rounded = seconds >= 10 ? Math.round(seconds) : Math.round(seconds * 10) / 10;
+    const rounded =
+      seconds >= 10 ? Math.round(seconds) : Math.round(seconds * 10) / 10;
     return `${rounded} s`;
   }
   if (seconds < 3600) {
@@ -96,8 +99,9 @@ export function estimatePrayerPow(opts?: {
   hashrateLabel: string;
   measured: boolean;
 } {
+  // baseZeroBits = 0 is valid (wLotus genesis). Do not treat 0 as "missing".
   const bits =
-    opts?.bits != null && Number.isFinite(opts.bits) && opts.bits > 0
+    opts?.bits != null && Number.isFinite(opts.bits) && opts.bits >= 0
       ? opts.bits
       : DEFAULT_PRAYER_BASE_BITS;
   const measured =
@@ -142,42 +146,4 @@ export function saveCachedHashrate(hashesPerSec: number): void {
   } catch {
     /* ignore quota / private mode */
   }
-}
-
-/**
- * Short browser SHA256d probe approximating Prayer PoW hash work
- * (sha256d over a fixed prefix || nonce). Yields so the UI stays responsive.
- * Prefer {@link loadCachedHashrate} / mining rates over re-probing.
- */
-export async function measureDeviceHashrate(opts?: {
-  durationMs?: number;
-  batchSize?: number;
-}): Promise<number> {
-  const durationMs = opts?.durationMs ?? 450;
-  const batchSize = opts?.batchSize ?? 250;
-  const prefix = new Uint8Array(32);
-  for (let i = 0; i < prefix.length; i++) prefix[i] = (i * 17) & 0xff;
-  const nonce = new Uint8Array(4);
-  const buf = new Uint8Array(prefix.length + nonce.length);
-  buf.set(prefix, 0);
-
-  let attempts = 0;
-  const t0 = performance.now();
-  while (performance.now() - t0 < durationMs) {
-    for (let i = 0; i < batchSize; i++) {
-      for (let j = 0; j < nonce.length; j++) {
-        nonce[j] = (nonce[j] + 1) & 0xff;
-        if (nonce[j] !== 0) break;
-      }
-      buf.set(nonce, prefix.length);
-      sha256d(buf);
-      attempts++;
-    }
-    await new Promise<void>(r => {
-      setTimeout(r, 0);
-    });
-  }
-  const elapsedSec = (performance.now() - t0) / 1000;
-  if (elapsedSec <= 0 || attempts < 1) return PHONE_UX_HASHRATE_H_S;
-  return Math.round(attempts / elapsedSec);
 }

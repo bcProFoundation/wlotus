@@ -37,9 +37,9 @@ import {
   estimatePrayerPow,
   formatHashrateLabel,
   loadCachedHashrate,
-  measureDeviceHashrate,
   saveCachedHashrate,
 } from './lib/powEstimate.js';
+import { measureDeviceHashrate } from './lib/powMeasure.js';
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
 
