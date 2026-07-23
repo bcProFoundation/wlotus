@@ -167,12 +167,16 @@ jobs:
           PORT="${CONTABO_PROD_SSH_PORT:-22}"
           REPO="${CONTABO_PROD_REPO_PATH:-/opt/wlotus}"
           SHA="$(git rev-parse HEAD)"
+          # Empty when workflow_dispatch on an untagged master SHA — must still be
+          # passed to the remote. SSH drops trailing empty argv, so use env vars
+          # (not bash -s -- … "$TAG") to avoid `set -u` → `$3: unbound variable`.
           TAG="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
-          ssh -p "$PORT" "${CONTABO_PROD_USER}@${CONTABO_PROD_HOST}" bash -s -- "$REPO" "$SHA" "$TAG" <<'REMOTE'
+          ssh -p "$PORT" "${CONTABO_PROD_USER}@${CONTABO_PROD_HOST}" \
+            env REPO="$REPO" SHA="$SHA" TAG="$TAG" \
+            bash -s <<'REMOTE'
           set -euo pipefail
-          REPO="$1"
-          SHA="$2"
-          TAG="$3"
+          : "${REPO:?REPO required}" "${SHA:?SHA required}"
+          TAG="${TAG-}"
           if [ ! -d "$REPO/.git" ]; then
             echo "No git clone at $REPO — skip mint-api update (bootstrap mint-api first)"
             exit 0
@@ -208,7 +212,7 @@ jobs:
           fi
           npm ci
           sudo systemctl try-restart wlotus-mint-api.service || true
-          echo "mint-api at $(git rev-parse --short HEAD)"
+          echo "mint-api at $(git rev-parse --short HEAD) tag=${TAG:-none}"
           REMOTE
 
       - name: Smoke check (optional HTTP)
