@@ -10,8 +10,9 @@ interface ImportMetaEnv {
   /** Tip-epoch poll interval while mining (ms). Default 2000. */
   readonly VITE_TIP_POLL_MS?: string;
   /**
-   * Soft pray floor in **seconds** between remint and memorial burn. Default 60.
-   * Set to 0 to disable. Remint still submits immediately on PoW success.
+   * Soft pray floor in **seconds** between remint and memorial burn. Default 108
+   * (~2 min — one second per mala bead). Set to 0 to disable. Remint still
+   * submits immediately on PoW success.
    */
   readonly VITE_MIN_PRAY_SECONDS?: string;
   /**

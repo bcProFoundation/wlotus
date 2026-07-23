@@ -32,11 +32,13 @@ broadcasts **as soon as** a nonce is found (tip race). The UI then shows
 **Offering…** (`Đang dâng hoa…`) until the soft floor elapses, then memorial burn.
 Cancel in that window skips the burn; the desk keeps the miner atom.
 
+Default **108 s** ≈ one second per mala bead (~2 min presence).
+
 ```bash
-VITE_MIN_PRAY_SECONDS=60   # set 0 to disable
+VITE_MIN_PRAY_SECONDS=108   # set 0 to disable
 ```
 
-Or in DevTools: `localStorage.setItem('wlotus.minPraySeconds', '60')`.
+Or in DevTools: `localStorage.setItem('wlotus.minPraySeconds', '108')`.
 
 **UX labels:** mining → Finding a lotus… · soft wait / burn → Offering…
 

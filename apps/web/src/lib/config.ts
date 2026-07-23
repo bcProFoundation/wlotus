@@ -42,7 +42,7 @@ export { parseTipPollMs };
 
 /**
  * Soft pray floor in seconds (between remint and memorial burn).
- * Bake: `VITE_MIN_PRAY_SECONDS=60` (default). `0` disables.
+ * Bake: `VITE_MIN_PRAY_SECONDS=108` (default). `0` disables.
  * Runtime override: localStorage `wlotus.minPraySeconds`.
  */
 export const MIN_PRAY_SECONDS = parseMinPraySeconds(

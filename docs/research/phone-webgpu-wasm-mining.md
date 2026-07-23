@@ -2,7 +2,7 @@
 
 **Status:** launch path when `VITE_EXPERIMENTAL_POW=1` (2026-07-21)  
 Offer mining: **WebGPU → multi-worker → single**, plus soft pray floor
-(`VITE_MIN_PRAY_SECONDS`, e.g. `60`) so ritual wall time stays ~1 min after early finds.
+(`VITE_MIN_PRAY_SECONDS`, default `108`) so ritual wall time stays ~2 min after early finds.
 
 ---
 
