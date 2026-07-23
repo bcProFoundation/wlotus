@@ -165,8 +165,16 @@ export default function App() {
   }, []);
 
   const busy = phase !== 'idle';
-  /** Cancel during PoW search or soft-pray hold. */
-  const showCancel = phase === 'mining' || phase === 'holding';
+  /**
+   * Keep Cancel mounted for the whole offer session (except final burn).
+   * Hiding it only in `mining`|`holding` flickered: with bits=0, mining is
+   * instant → submit hides Cancel for the remint RTT → holding shows it again.
+   */
+  const showCancel =
+    phase === 'challenge' ||
+    phase === 'mining' ||
+    phase === 'submit' ||
+    phase === 'holding';
   const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
     bits: baseZeroBits,
@@ -477,7 +485,14 @@ export default function App() {
             powAttempts: mined.attempts,
           });
 
-          if (offerGenRef.current !== gen) return;
+          if (offerGenRef.current !== gen) {
+            // Cancelled during submit — remint may already be pending memorial.
+            if (result.burnPending) {
+              const tok = result.burnToken?.trim();
+              if (tok) await abandonPendingBurn(result.remintTxid, tok);
+            }
+            return;
+          }
 
           challengeIdRef.current = null;
           clearRememberedChallenge();
