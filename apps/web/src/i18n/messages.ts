@@ -42,7 +42,10 @@ export type MessageKey =
   | 'reofferSessionTitle'
   | 'sessionNoteLabel'
   | 'reofferSessionMsg'
-  | 'reofferSessionMsgPray'
+  | 'reofferExtraNoteLabel'
+  | 'reofferExtraNotePlaceholder'
+  | 'btnOfferLotus'
+  | 'btnClose'
   | 'shareHint'
   | 'shareLookingUp'
   | 'shareLinked'
@@ -99,12 +102,14 @@ const en: Dict = {
   btnReoffer: 'Re-offer',
   offeringFallback: 'Offering',
   offerSessionTitle: 'Offering a flower',
-  reofferSessionTitle: 'Re-offering',
+  reofferSessionTitle: 'Offer a lotus for:',
   sessionNoteLabel: 'In remembrance',
   reofferSessionMsg:
     'Continuing this memorial altar — the dedication stays linked on the chain.',
-  reofferSessionMsgPray:
-    'Take a quiet moment to remember before the flower is offered.',
+  reofferExtraNoteLabel: 'Words of remembrance',
+  reofferExtraNotePlaceholder: 'Optional…',
+  btnOfferLotus: 'Offer a lotus',
+  btnClose: 'Close',
   shareHint: 'Paste a wLotus link to continue that dedication.',
   shareLookingUp: 'Looking up dedication…',
   shareLinked: 'Linked · {name}',
@@ -159,12 +164,14 @@ const vi: Dict = {
   btnReoffer: 'Dâng lại',
   offeringFallback: 'Lần dâng hoa',
   offerSessionTitle: 'Đang dâng hoa',
-  reofferSessionTitle: 'Đang dâng lại',
+  reofferSessionTitle: 'Dâng hoa sen cho:',
   sessionNoteLabel: 'Lời tưởng niệm',
   reofferSessionMsg:
     'Tiếp tục bàn thờ tưởng niệm này — lời dâng vẫn liên kết trên chuỗi.',
-  reofferSessionMsgPray:
-    'Hãy dành một lúc yên lặng để tưởng nhớ trước khi dâng hoa.',
+  reofferExtraNoteLabel: 'Lời tưởng niệm',
+  reofferExtraNotePlaceholder: 'Tuỳ chọn…',
+  btnOfferLotus: 'Dâng hoa sen',
+  btnClose: 'Đóng',
   shareHint: 'Dán liên kết wLotus để tiếp tục lời tưởng niệm đó.',
   shareLookingUp: 'Đang tìm lời tưởng niệm…',
   shareLinked: 'Đã liên kết · {name}',
@@ -218,10 +225,13 @@ const zh: Dict = {
   btnReoffer: '再献',
   offeringFallback: '献花',
   offerSessionTitle: '正在献花',
-  reofferSessionTitle: '正在再献',
+  reofferSessionTitle: '为TA献上莲花：',
   sessionNoteLabel: '追思寄语',
   reofferSessionMsg: '继续这座追思坛——献花仍与链上原祭文相连。',
-  reofferSessionMsgPray: '请静心片刻追思，然后再献上莲花。',
+  reofferExtraNoteLabel: '追思寄语',
+  reofferExtraNotePlaceholder: '可选…',
+  btnOfferLotus: '献上莲花',
+  btnClose: '关闭',
   shareHint: '粘贴 wLotus 链接以继续该追思。',
   shareLookingUp: '正在查找追思…',
   shareLinked: '已关联 · {name}',
