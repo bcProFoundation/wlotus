@@ -158,6 +158,8 @@ export default function App() {
     originalNote: string;
     extraNote: string;
   } | null>(null);
+  /** Confirm before abandoning a pending memorial burn (lose offer turn). */
+  const [cancelLoseConfirm, setCancelLoseConfirm] = useState(false);
   /** On-chain original burn when note was resolved from a share link / path. */
   const [linkedParentBurnTxid, setLinkedParentBurnTxid] = useState<
     string | null
@@ -392,6 +394,7 @@ export default function App() {
   }
 
   async function onCancelMine() {
+    setCancelLoseConfirm(false);
     const id = challengeIdRef.current;
     const pendingRemint = pendingBurnRemintRef.current;
     const pendingToken = pendingBurnTokenRef.current;
@@ -415,6 +418,15 @@ export default function App() {
     }
   }
 
+  /** Close/cancel: confirm only after remint when memorial burn is still pending. */
+  function requestCancelOffer() {
+    if (pendingBurnRemintRef.current && pendingBurnTokenRef.current) {
+      setCancelLoseConfirm(true);
+      return;
+    }
+    void onCancelMine();
+  }
+
   async function onOffer(opts?: {
     parentBurnTxid?: string;
     /** Local label for history grouping (original dedication name). */
@@ -433,6 +445,7 @@ export default function App() {
       : note.trim();
 
     setReofferDraft(null);
+    setCancelLoseConfirm(false);
     setSession({
       reoffer: isReoffer,
       note: historyNote,
@@ -1054,7 +1067,7 @@ export default function App() {
               type="button"
               className="offer-modal-close"
               aria-label={t('btnClose')}
-              onClick={() => void onCancelMine()}
+              onClick={() => requestCancelOffer()}
             >
               ×
             </button>
@@ -1085,6 +1098,27 @@ export default function App() {
             ) : null}
             <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
             <p className="hint">{t('hintKeepScreen')}</p>
+            {cancelLoseConfirm ? (
+              <div className="offer-cancel-confirm" role="alertdialog">
+                <p>{t('cancelLoseOfferMsg')}</p>
+                <div className="offer-cancel-confirm-actions">
+                  <button
+                    type="button"
+                    className="btn btn-session-cancel"
+                    onClick={() => setCancelLoseConfirm(false)}
+                  >
+                    {t('btnKeepOffering')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-confirm-lose"
+                    onClick={() => void onCancelMine()}
+                  >
+                    {t('btnConfirmLoseOffer')}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
           </div>
         </div>
@@ -1116,17 +1150,37 @@ export default function App() {
             ) : null}
             <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
             <p className="hint">{t('hintKeepScreen')}</p>
-            <div className="offer-actions offer-session-actions">
-              {showCancel ? (
+            {cancelLoseConfirm ? (
+              <div className="offer-cancel-confirm" role="alertdialog">
+                <p>{t('cancelLoseOfferMsg')}</p>
+                <div className="offer-cancel-confirm-actions">
+                  <button
+                    type="button"
+                    className="btn btn-session-cancel"
+                    onClick={() => setCancelLoseConfirm(false)}
+                  >
+                    {t('btnKeepOffering')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-confirm-lose"
+                    onClick={() => void onCancelMine()}
+                  >
+                    {t('btnConfirmLoseOffer')}
+                  </button>
+                </div>
+              </div>
+            ) : showCancel ? (
+              <div className="offer-actions offer-session-actions">
                 <button
                   type="button"
                   className="btn btn-session-cancel"
-                  onClick={() => void onCancelMine()}
+                  onClick={() => requestCancelOffer()}
                 >
                   {t('btnCancel')}
                 </button>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
             {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
           </div>
         </div>

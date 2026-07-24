@@ -45,6 +45,9 @@ export type MessageKey =
   | 'reofferExtraNotePlaceholder'
   | 'btnOfferLotus'
   | 'btnClose'
+  | 'cancelLoseOfferMsg'
+  | 'btnConfirmLoseOffer'
+  | 'btnKeepOffering'
   | 'shareHint'
   | 'shareLookingUp'
   | 'shareLinked'
@@ -107,6 +110,10 @@ const en: Dict = {
   reofferExtraNotePlaceholder: 'Optional…',
   btnOfferLotus: 'Offer a lotus',
   btnClose: 'Close',
+  cancelLoseOfferMsg:
+    'The lotus is already minted. Cancelling now skips the memorial burn and uses up this offer turn.',
+  btnConfirmLoseOffer: 'Cancel and lose turn',
+  btnKeepOffering: 'Continue offering',
   shareHint: 'Paste a wLotus link to continue that dedication.',
   shareLookingUp: 'Looking up dedication…',
   shareLinked: 'Linked · {name}',
@@ -167,6 +174,10 @@ const vi: Dict = {
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   btnOfferLotus: 'Dâng hoa sen',
   btnClose: 'Đóng',
+  cancelLoseOfferMsg:
+    'Hoa sen đã được tạo. Hủy lúc này sẽ bỏ qua bước dâng và bạn mất lượt dâng hoa.',
+  btnConfirmLoseOffer: 'Hủy và mất lượt',
+  btnKeepOffering: 'Tiếp tục dâng',
   shareHint: 'Dán liên kết wLotus để tiếp tục lời tưởng niệm đó.',
   shareLookingUp: 'Đang tìm lời tưởng niệm…',
   shareLinked: 'Đã liên kết · {name}',
@@ -226,6 +237,10 @@ const zh: Dict = {
   reofferExtraNotePlaceholder: '可选…',
   btnOfferLotus: '献上莲花',
   btnClose: '关闭',
+  cancelLoseOfferMsg:
+    '莲花已铸造。现在取消将跳过献念，并消耗本次献花名额。',
+  btnConfirmLoseOffer: '取消并失去名额',
+  btnKeepOffering: '继续献花',
   shareHint: '粘贴 wLotus 链接以继续该追思。',
   shareLookingUp: '正在查找追思…',
   shareLinked: '已关联 · {name}',
