@@ -1,0 +1,17 @@
+[Unit]
+Description=wLotus DANA memorial index
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/wlotus
+Environment=NODE_ENV=production
+# Prefer /etc/wlotus/dana-index.env (TOKEN_ID, CHRONIK_URLS, DANA_INDEX_STORE).
+# mint.env is also loaded for TOKEN_ID / VITE_PRAYER_TOKEN_ID convenience.
+ExecStart=/opt/wlotus/deploy/contabo/run-dana-index.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

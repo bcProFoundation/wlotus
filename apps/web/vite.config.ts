@@ -64,6 +64,10 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkOnly',
           },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/index-api/'),
+            handler: 'NetworkOnly',
+          },
         ],
       },
       devOptions: { enabled: false },
@@ -76,6 +80,11 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
+      },
+      '/index-api': {
+        target: 'http://127.0.0.1:8788',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/index-api/, ''),
       },
     },
   },

@@ -440,13 +440,67 @@ a {
 .history-main {
   display: flex;
   flex: 1;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
   min-width: 0;
 }
 
+.history-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.history-original {
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.history-latest {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 .history-main a {
+  flex-shrink: 0;
   font-size: 0.82rem;
+}
+
+.memorial-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.85rem 0 0;
+}
+
+.memorial-history-list li {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.memorial-history-list li:last-child {
+  border-bottom: 0;
+}
+
+.memorial-history-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.memorial-history-note {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .btn-reoffer {

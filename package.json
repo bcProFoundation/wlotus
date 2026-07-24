@@ -16,6 +16,7 @@
     "web": "npm run dev -w @wlotus/web",
     "web:build": "npm run build -w @wlotus/web",
     "mint-api": "tsx apps/mint-api/src/server.ts",
+    "dana-index": "tsx apps/dana-index/src/server.ts",
     "new-wallet": "tsx scripts/new-wallet.ts",
     "create-test-token": "tsx scripts/create-test-token.ts",
     "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",

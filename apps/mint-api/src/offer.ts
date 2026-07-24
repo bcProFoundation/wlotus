@@ -354,6 +354,20 @@ function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
 }
 
+/** Fire-and-forget: ask dana-index to pull this burn into the public history. */
+function notifyDanaIndex(burnTxid: string): void {
+  const base = process.env.DANA_INDEX_URL?.trim();
+  if (!base) return;
+  const url = `${base.replace(/\/$/, '')}/api/notify`;
+  void fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ burnTxid }),
+  }).catch(err => {
+    console.warn('dana-index notify failed', err);
+  });
+}
+
 /** After temple remint, burn the miner 1 atom from the tip fee wallet. */
 async function burnMinerAtomAfterMint(opts: {
   wallet: Wallet;
@@ -1076,6 +1090,7 @@ async function completeBurnOnce(opts: {
     parentBurnTxid: pb.parentBurnTxid,
   });
   pendingBurns.delete(remintTxid);
+  notifyDanaIndex(burnTxid);
 
   return {
     remintTxid: pb.remintTxid,

@@ -36,9 +36,16 @@ import {
   liveTipEpochFromStatus,
 } from './lib/tipRace.js';
 import {
-  groupOffersByOriginal,
   type LocalOffer,
+  type OfferGroup,
 } from './lib/groupOffers.js';
+import {
+  fetchIndexMemorial,
+  fetchIndexRecent,
+  notifyIndexBurn,
+  type IndexMemorialGroup,
+} from './lib/danaIndexApi.js';
+import { mergeIndexAndLocalOffers } from './lib/mergeRecentOffers.js';
 import {
   burnTxidFromLocation,
   clearDedicationPath,
@@ -144,6 +151,13 @@ export default function App() {
     formatElapsedTenthsMinLocale(0, 'en'),
   );
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
+  /** Global recent from dana-index (null = not loaded / offline). */
+  const [indexGroups, setIndexGroups] = useState<IndexMemorialGroup[] | null>(
+    null,
+  );
+  const [historyGroup, setHistoryGroup] = useState<OfferGroup | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   /** Active offer overlay (new or re-offer) — keeps timer/cancel on screen. */
   const [session, setSession] = useState<{
@@ -241,6 +255,21 @@ export default function App() {
     const timer = setInterval(() => void refreshStatus(), 15_000);
     return () => clearInterval(timer);
   }, [refreshStatus]);
+
+  const refreshIndexRecent = useCallback(async () => {
+    try {
+      const items = await fetchIndexRecent(40);
+      setIndexGroups(items);
+    } catch {
+      /* keep prior / fall back to local */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshIndexRecent();
+    const timer = setInterval(() => void refreshIndexRecent(), 45_000);
+    return () => clearInterval(timer);
+  }, [refreshIndexRecent]);
 
   /** Probe once if we have no cached rate; otherwise reuse localStorage. */
   useEffect(() => {
@@ -638,7 +667,8 @@ export default function App() {
             pushOffer({
               remintTxid: result.remintTxid,
               burnTxid,
-              note: historyNote,
+              // This burn's on-chain memorial text (re-offer may differ from dedication).
+              note: isReoffer ? challengeNote : historyNote,
               at: new Date().toISOString(),
               powMs: uiPowMs,
               powAttempts: result.powAttempts || mined.attempts,
@@ -648,6 +678,8 @@ export default function App() {
             }),
           );
           setNote('');
+          void notifyIndexBurn(burnTxid);
+          void refreshIndexRecent();
           await refreshStatus();
           setMsg({
             kind: 'ok',
@@ -693,13 +725,13 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!busy && !reofferDraft) return;
+    if (!busy && !reofferDraft && !historyGroup) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [busy, reofferDraft]);
+  }, [busy, reofferDraft, historyGroup]);
 
   const canOffer =
     !busy && apiOnline === true && (remaining === null || remaining > 0);
@@ -765,6 +797,23 @@ export default function App() {
       setMsg({ kind: 'ok', text: t('shareCopied') });
     } catch {
       setMsg({ kind: 'err', text: url });
+    }
+  }
+
+  const recentGroups = mergeIndexAndLocalOffers(indexGroups, offers);
+
+  async function openMemorialHistory(g: OfferGroup) {
+    setHistoryGroup(g);
+    setHistoryError('');
+    setHistoryLoading(true);
+    try {
+      const remote = await fetchIndexMemorial(g.original.burnTxid);
+      const merged = mergeIndexAndLocalOffers([remote], offers);
+      setHistoryGroup(merged[0] ?? g);
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setHistoryLoading(false);
     }
   }
 
@@ -905,36 +954,45 @@ export default function App() {
         ) : null}
       </section>
 
-      {offers.length > 0 ? (
+      {recentGroups.length > 0 ? (
         <section className="panel">
           <h2>{t('recentTitle')}</h2>
           <p className="hint">{t('reofferHint')}</p>
           <ul className="history">
-            {groupOffersByOriginal(offers).map(g => {
+            {recentGroups.map(g => {
               const last = g.latest;
+              const originalText = g.note || t('offeringFallback');
+              const latestText = (last.note || '').trim();
+              const showLatest =
+                g.totalBurns > 1 &&
+                (last.burnTxid !== g.original.burnTxid ||
+                  latestText !== originalText);
               return (
                 <li key={g.original.burnTxid}>
                   <div className="history-main">
-                    <span>
-                      {g.note || t('offeringFallback')}
-                      {last.powMs != null ? (
-                        <span className="history-meta">
-                          {' '}
-                          ·{' '}
-                          {formatActualDurationLocale(
-                            last.powMs / 1000,
-                            locale,
-                          )}
-                          {last.hashrateHps
-                            ? ` · ${formatHashrateLabel(last.hashrateHps)}`
-                            : ''}
+                    <div className="history-text">
+                      <span className="history-original">{originalText}</span>
+                      {showLatest ? (
+                        <span className="history-latest">
+                          {latestText || t('latestMemorialFallback')}
                         </span>
                       ) : null}
                       <span className="history-meta">
-                        {' '}
-                        · {t('burnTotal', { n: g.totalBurns })}
+                        {last.powMs != null ? (
+                          <>
+                            {formatActualDurationLocale(
+                              last.powMs / 1000,
+                              locale,
+                            )}
+                            {last.hashrateHps
+                              ? ` · ${formatHashrateLabel(last.hashrateHps)}`
+                              : ''}
+                            {' · '}
+                          </>
+                        ) : null}
+                        {t('burnTotal', { n: g.totalBurns })}
                       </span>
-                    </span>
+                    </div>
                     <a
                       href={`https://explorer.e.cash/tx/${last.burnTxid}`}
                       target="_blank"
@@ -950,11 +1008,18 @@ export default function App() {
                     <button
                       type="button"
                       className="btn btn-reoffer"
+                      onClick={() => void openMemorialHistory(g)}
+                    >
+                      {t('btnHistory')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-reoffer"
                       disabled={busy}
                       onClick={() =>
                         void shareDedication(
                           g.original.burnTxid,
-                          g.note || t('offeringFallback'),
+                          originalText,
                         )
                       }
                     >
@@ -967,7 +1032,7 @@ export default function App() {
                       onClick={() =>
                         openReofferDraft({
                           parentBurnTxid: g.original.burnTxid,
-                          originalNote: g.note || t('offeringFallback'),
+                          originalNote: originalText,
                         })
                       }
                     >
@@ -979,6 +1044,62 @@ export default function App() {
             })}
           </ul>
         </section>
+      ) : null}
+
+      {historyGroup ? (
+        <div
+          className="offer-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="memorial-history-title"
+        >
+          <div className="offer-modal-card">
+            <button
+              type="button"
+              className="offer-modal-close"
+              aria-label={t('btnClose')}
+              onClick={() => setHistoryGroup(null)}
+            >
+              ×
+            </button>
+            <h2 id="memorial-history-title">{t('historyTitle')}</h2>
+            <p className="offer-session-note offer-session-original">
+              {historyGroup.note || t('offeringFallback')}
+            </p>
+            <p className="hint">
+              {t('burnTotal', { n: historyGroup.totalBurns })}
+              {historyLoading ? ` · ${t('historyLoading')}` : ''}
+            </p>
+            {historyError ? (
+              <div className="msg err">{historyError}</div>
+            ) : null}
+            <ul className="memorial-history-list">
+              {historyGroup.burns.map((b, i) => (
+                <li key={b.burnTxid}>
+                  <div className="memorial-history-main">
+                    <span className="memorial-history-note">
+                      {(b.note || '').trim() ||
+                        (i === historyGroup.burns.length - 1
+                          ? historyGroup.note || t('offeringFallback')
+                          : t('latestMemorialFallback'))}
+                    </span>
+                    <a
+                      href={`https://explorer.e.cash/tx/${b.burnTxid}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {shortTx(b.burnTxid)}
+                    </a>
+                  </div>
+                  <span className="history-meta">
+                    {new Date(b.at).toLocaleString(locale)}
+                    {b.parentBurnTxid ? ` · ${t('reofferBadge')}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       ) : null}
 
       {reofferDraft && !busy ? (

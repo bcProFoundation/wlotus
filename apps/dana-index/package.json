@@ -1,0 +1,20 @@
+{
+  "name": "@wlotus/dana-index",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "chronik-client": "^4.3.0",
+    "dotenv": "^16.4.7",
+    "ecash-lib": "^4.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
