@@ -9,7 +9,7 @@ during the soft wait abandons the burn — desk keeps the miner atom.
 The on-chain burn is the gift (memorial + dana). Remint tip EMPP also uses **`DANA` v4**
 (same LOKAD; ver distinguishes tip vs memorial).
 Re-offers send `parentBurnTxid` (**original** dedication burn) and encode
-**DANA v2** with empty note + 32-byte parent txid for dana explorer linkage
+**DANA v2** with optional note + 32-byte parent txid for dana explorer linkage.
 (star topology: all re-offers → root, not a tip chain).
 
 Legacy Prayer memo path (mint 1 + DANA memorial on remint, no burn) still works if the

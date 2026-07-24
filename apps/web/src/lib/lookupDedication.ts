@@ -57,7 +57,7 @@ async function fetchMemorialForTxid(
 
 /**
  * Resolve a burn txid (original or re-offer) to the dedication root + note.
- * Re-offer tips have empty notes and parentBurnTxid → walk once to the root.
+ * Re-offer tips have parentBurnTxid → walk once to the root for the dedication name.
  */
 export async function lookupDedication(
   burnTxid: string,
