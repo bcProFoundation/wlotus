@@ -149,6 +149,14 @@ export default function App() {
   const [session, setSession] = useState<{
     reoffer: boolean;
     note: string;
+    /** Optional local words on a re-offer (not on-chain yet). */
+    extraNote?: string;
+  } | null>(null);
+  /** Confirm sheet before starting a re-offer. */
+  const [reofferDraft, setReofferDraft] = useState<{
+    parentBurnTxid: string;
+    originalNote: string;
+    extraNote: string;
   } | null>(null);
   /** On-chain original burn when note was resolved from a share link / path. */
   const [linkedParentBurnTxid, setLinkedParentBurnTxid] = useState<
@@ -411,6 +419,8 @@ export default function App() {
     parentBurnTxid?: string;
     /** Local label for history; on-chain note is empty when re-offering. */
     displayNote?: string;
+    /** Optional local remembrance words on a re-offer (not on-chain yet). */
+    extraNote?: string;
   }) {
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
     const isReoffer = Boolean(parentBurnTxid);
@@ -418,10 +428,15 @@ export default function App() {
     const historyNote = isReoffer
       ? (opts?.displayNote ?? '').trim()
       : note.trim();
+    const extraNote = isReoffer
+      ? (opts?.extraNote ?? '').trim() || undefined
+      : undefined;
 
+    setReofferDraft(null);
     setSession({
       reoffer: isReoffer,
       note: historyNote,
+      extraNote,
     });
     setLinkedParentBurnTxid(null);
 
@@ -678,28 +693,37 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!busy) return;
+    if (!busy && !reofferDraft) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [busy]);
+  }, [busy, reofferDraft]);
 
   const canOffer =
     !busy && apiOnline === true && (remaining === null || remaining > 0);
 
-  /** Path deeplink: start re-offer once the desk is reachable. */
+  function openReofferDraft(opts: {
+    parentBurnTxid: string;
+    originalNote: string;
+  }) {
+    setReofferDraft({
+      parentBurnTxid: opts.parentBurnTxid,
+      originalNote: opts.originalNote,
+      extraNote: '',
+    });
+  }
+
+  /** Path deeplink: open re-offer confirm once the desk is reachable. */
   useEffect(() => {
     if (!canOffer || !pendingDeeplinkOffer) return;
     const pending = pendingDeeplinkOffer;
     setPendingDeeplinkOffer(null);
-    void onOffer({
+    openReofferDraft({
       parentBurnTxid: pending.parentBurnTxid,
-      displayNote: pending.displayNote,
+      originalNote: pending.displayNote,
     });
-    // onOffer is intentionally not a dep — fires when lookup + online are ready.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canOffer, pendingDeeplinkOffer]);
 
   function onNoteInput(value: string) {
@@ -810,16 +834,16 @@ export default function App() {
           <button
             className="btn btn-primary btn-offer"
             disabled={!canOffer || shareLookingUp}
-            onClick={() =>
-              void onOffer(
-                linkedParentBurnTxid
-                  ? {
-                      parentBurnTxid: linkedParentBurnTxid,
-                      displayNote: note,
-                    }
-                  : undefined,
-              )
-            }
+            onClick={() => {
+              if (linkedParentBurnTxid) {
+                openReofferDraft({
+                  parentBurnTxid: linkedParentBurnTxid,
+                  originalNote: note,
+                });
+                return;
+              }
+              void onOffer();
+            }}
           >
             {buttonLabel}
           </button>
@@ -941,9 +965,9 @@ export default function App() {
                       className="btn btn-reoffer"
                       disabled={!canOffer}
                       onClick={() =>
-                        void onOffer({
+                        openReofferDraft({
                           parentBurnTxid: g.original.burnTxid,
-                          displayNote: g.note,
+                          originalNote: g.note || t('offeringFallback'),
                         })
                       }
                     >
@@ -957,7 +981,7 @@ export default function App() {
         </section>
       ) : null}
 
-      {busy && session ? (
+      {reofferDraft && !busy ? (
         <div
           className="offer-modal"
           role="dialog"
@@ -965,43 +989,139 @@ export default function App() {
           aria-labelledby="offer-session-title"
         >
           <div className="offer-modal-card">
-            <h2 id="offer-session-title">
-              {session.reoffer
-                ? t('reofferSessionTitle')
-                : t('offerSessionTitle')}
-            </h2>
-            <p className="offer-session-label">{t('sessionNoteLabel')}</p>
-            <p className="offer-session-note">
+            <button
+              type="button"
+              className="offer-modal-close"
+              aria-label={t('btnClose')}
+              onClick={() => setReofferDraft(null)}
+            >
+              ×
+            </button>
+            <p className="offer-session-msgs offer-session-msgs-top">
+              <span>{t('reofferSessionMsg')}</span>
+            </p>
+            <h2 id="offer-session-title">{t('reofferSessionTitle')}</h2>
+            <p className="offer-session-note offer-session-original">
+              {reofferDraft.originalNote.trim() || t('offeringFallback')}
+            </p>
+            <div className="field">
+              <label htmlFor="reoffer-extra-note">
+                {t('reofferExtraNoteLabel')}
+              </label>
+              <textarea
+                id="reoffer-extra-note"
+                rows={2}
+                maxLength={80}
+                value={reofferDraft.extraNote}
+                onChange={e =>
+                  setReofferDraft(d =>
+                    d
+                      ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                      : d,
+                  )
+                }
+                placeholder={t('reofferExtraNotePlaceholder')}
+              />
+            </div>
+            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+            <p className="hint">{t('hintKeepScreen')}</p>
+            <div className="offer-actions offer-session-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-offer"
+                disabled={!canOffer}
+                onClick={() =>
+                  void onOffer({
+                    parentBurnTxid: reofferDraft.parentBurnTxid,
+                    displayNote: reofferDraft.originalNote,
+                    extraNote: reofferDraft.extraNote,
+                  })
+                }
+              >
+                {t('btnOfferLotus')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {busy && session?.reoffer ? (
+        <div
+          className="offer-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="offer-session-title"
+        >
+          <div className="offer-modal-card">
+            <button
+              type="button"
+              className="offer-modal-close"
+              aria-label={t('btnClose')}
+              onClick={() => void onCancelMine()}
+            >
+              ×
+            </button>
+            <p className="offer-session-msgs offer-session-msgs-top">
+              <span>{t('reofferSessionMsg')}</span>
+            </p>
+            <h2 id="offer-session-title">{t('reofferSessionTitle')}</h2>
+            <p className="offer-session-note offer-session-original">
               {session.note.trim() || t('offeringFallback')}
             </p>
-            {session.reoffer ? (
-              <div className="offer-session-msgs">
-                <p>{t('reofferSessionMsg')}</p>
-                {phase === 'challenge' || phase === 'mining' ? (
-                  <p>{t('reofferSessionMsgPray')}</p>
-                ) : null}
-                <p className="hint">{t('hintKeepScreen')}</p>
-                <p className="hint eta">
-                  {t('etaEstimated', { eta: etaLabel })}
+            {session.extraNote ? (
+              <>
+                <p className="offer-session-label">
+                  {t('reofferExtraNoteLabel')}
                 </p>
-              </div>
+                <p className="offer-session-note offer-session-extra">
+                  {session.extraNote}
+                </p>
+              </>
             ) : null}
             <p className="offer-session-status" aria-live="polite">
               {buttonLabel}
             </p>
             {mineStartedAt != null ? (
-              <p className="mine-progress offer-session-elapsed" aria-live="polite">
+              <p
+                className="mine-progress offer-session-elapsed"
+                aria-live="polite"
+              >
                 {t('miningElapsed', { elapsed: elapsedDisplay })}
               </p>
             ) : null}
-            {!session.reoffer ? (
-              <>
-                <p className="hint eta">
-                  {t('etaEstimated', { eta: etaLabel })}
-                </p>
-                <p className="hint">{t('hintKeepScreen')}</p>
-              </>
+            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+            <p className="hint">{t('hintKeepScreen')}</p>
+            {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
+          </div>
+        </div>
+      ) : null}
+
+      {busy && session && !session.reoffer ? (
+        <div
+          className="offer-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="offer-session-title"
+        >
+          <div className="offer-modal-card">
+            <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
+            <p className="offer-session-label">{t('sessionNoteLabel')}</p>
+            <p className="offer-session-note">
+              {session.note.trim() || t('offeringFallback')}
+            </p>
+            <p className="offer-session-status" aria-live="polite">
+              {buttonLabel}
+            </p>
+            {mineStartedAt != null ? (
+              <p
+                className="mine-progress offer-session-elapsed"
+                aria-live="polite"
+              >
+                {t('miningElapsed', { elapsed: elapsedDisplay })}
+              </p>
             ) : null}
+            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+            <p className="hint">{t('hintKeepScreen')}</p>
             <div className="offer-actions offer-session-actions">
               {showCancel ? (
                 <button

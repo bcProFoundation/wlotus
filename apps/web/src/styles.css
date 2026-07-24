@@ -555,6 +555,7 @@ a {
 }
 
 .offer-modal-card {
+  position: relative;
   width: min(100%, 26rem);
   max-height: min(92vh, 40rem);
   overflow: auto;
@@ -566,11 +567,35 @@ a {
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
 }
 
+.offer-modal-close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 1;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.offer-modal-close:hover,
+.offer-modal-close:focus-visible {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .offer-modal-card h2 {
   font-family: var(--font-display);
   font-size: 1.45rem;
   font-weight: 600;
-  margin: 0 0 1rem;
+  margin: 0 0 0.75rem;
+  padding-right: 2rem;
 }
 
 .offer-session-label {
@@ -592,6 +617,19 @@ a {
   word-break: break-word;
 }
 
+.offer-session-original {
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.offer-session-extra {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
 .offer-session-msgs {
   display: flex;
   flex-direction: column;
@@ -599,7 +637,13 @@ a {
   margin: 0 0 1rem;
 }
 
-.offer-session-msgs > p {
+.offer-session-msgs-top {
+  margin: 0 0 0.65rem;
+  padding-right: 2rem;
+}
+
+.offer-session-msgs > p,
+.offer-session-msgs > span {
   margin: 0;
   color: var(--muted);
   font-size: 0.88rem;
@@ -608,6 +652,29 @@ a {
 
 .offer-session-msgs > p.hint {
   font-size: 0.82rem;
+}
+
+.offer-modal-card .field {
+  margin: 0 0 0.85rem;
+}
+
+.offer-modal-card .field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.offer-modal-card .field textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 3.2rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font: inherit;
 }
 
 .offer-session-status {
@@ -626,12 +693,17 @@ a {
 .offer-session-actions {
   margin-top: 1.15rem;
   display: flex;
-  justify-content: center;
+  justify-content: stretch;
+}
+
+.offer-session-actions .btn-offer {
+  width: 100%;
 }
 
 .btn-session-cancel {
   width: auto;
   min-width: 0;
+  margin-inline: auto;
   padding: 0.4rem 0.85rem;
   font-size: 0.82rem;
   font-weight: 500;
