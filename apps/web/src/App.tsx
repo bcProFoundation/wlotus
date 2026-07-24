@@ -215,7 +215,7 @@ export default function App() {
     bits: baseZeroBits,
     hashesPerSec: deviceHashrateHps,
   });
-  /** ETA floor = max(PoW estimate, min pray) so early finds still feel ~1 min. */
+  /** ETA floor = max(PoW estimate, min pray) so early finds still feel ~2 min. */
   const etaSeconds = Math.max(powEta.seconds, minPrayMs / 1000);
   const etaLabel = formatEstimateDurationLocale(etaSeconds, locale);
 

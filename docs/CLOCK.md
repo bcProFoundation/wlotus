@@ -63,7 +63,7 @@ If pagoda **buy→burn** demand exceeds temple refill (**107 × remints/day**), 
 
 ### Cap 128 bits — phone mine ETA (base **0**, 500 d/bit)
 
-Assumptions: mid-phone WebGPU ≈ **5 MH/s**; Moore ≈ **2× / 2 years**; soft pray ≈ **60 s**.
+Assumptions: mid-phone WebGPU ≈ **5 MH/s**; Moore ≈ **2× / 2 years**; soft pray ≈ **108 s**.
 
 From base **0** → cap **128** = **+128 bits** ≈ **~175 years** calendar (128 × 500 / 365.25).
 

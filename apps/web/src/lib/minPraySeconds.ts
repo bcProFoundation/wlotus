@@ -5,12 +5,13 @@
  * keeps the miner atom. Anti-farming is separate: wLotus 1/107 + XEC fees —
  * see docs/ECONOMICS_WLOTUS_GLOTUS.md § Product intent.
  *
- * Bake at build time: `VITE_MIN_PRAY_SECONDS=60` (default). `0` disables.
+ * Default **108** ≈ one second per mala bead (~2 min presence).
+ * Bake at build time: `VITE_MIN_PRAY_SECONDS=108`. `0` disables.
  * Runtime override: localStorage `wlotus.minPraySeconds`.
  * Clamped to 0–600 seconds (10 min).
  */
 
-export const DEFAULT_MIN_PRAY_SECONDS = 60;
+export const DEFAULT_MIN_PRAY_SECONDS = 108;
 export const MAX_MIN_PRAY_SECONDS = 600;
 export const MIN_PRAY_SECONDS_KEY = 'wlotus.minPraySeconds';
 

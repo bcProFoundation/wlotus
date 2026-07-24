@@ -42,7 +42,7 @@ At genesis (wLotus base **0**, PoW instant; cycle ≈ broadcast+tip sync): \(T_{
 |-------|------:|------------:|-------|
 | **Launch desk** | **1** | **~6–12** | Bound XEC fees; raise toward 28 if demand warrants |
 | Full desk / permissionless | **28** | **~170–340** | Load-balance across tips |
-| Soft-pray myth (60 s holds baton) | — | **wrong** | Soft pray does not serialize remints |
+| Soft-pray myth (108 s holds baton) | — | **wrong** | Soft pray does not serialize remints |
 
 Desk extras: `MINT_MAX_OPEN_CHALLENGES` (default **32**), `MINT_MAX_OFFERS_PER_DAY` (**20**/installId), in-process chain lock on one mint-api until scaled.
 

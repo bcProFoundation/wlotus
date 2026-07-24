@@ -55,7 +55,7 @@ Anyone may satisfy the covenant (including copied clients) **if they pay their o
 | Mechanism | Role |
 |-----------|------|
 | **1 miner / 107 temple** | **Practical anti-farming.** Independent remints pay XEC and keep only **1/108**. Temple-sponsored Offer pays **0 XEC** for the user and still fills the desk with **107**. |
-| **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default 60) | **Attention tax after remint.** PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
+| **Soft pray timer** (`VITE_MIN_PRAY_SECONDS`, default **108**) | **Attention tax after remint** (~2 min ≈ 1 s × 108 mala beads). PoW → remint ASAP (tip race) → hold → memorial burn. Cancel skips burn; desk keeps the miner atom. |
 | **PoW bits (base 0, whole-byte)** | Launch presence is **soft pray + 1/107 + fees**, not hashrate. Base **0** maximizes headroom to the 128 sunset. Whole-byte only (`bits % 8 == 0`). |
 | **Moore clock (+1 bit / 500 days)** | 五百罗汉 — intentional dearening for **WLOTUS** as bootstrap ritual stock. See [CLOCK.md](./CLOCK.md). |
 | **128-bit hard sunset** | Covenant `verify bits <= 128` — when calendar would require bits **> 128**, remints **fail**. WLOTUS becomes legacy; **GLOTUS** carries the living economy. |
