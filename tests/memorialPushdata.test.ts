@@ -38,6 +38,16 @@ describe('DANA memorial pushdata', () => {
     expect(parsed.lokad).toBe('DANA');
   });
 
+  test('v2 re-offer may carry an additional on-chain note', () => {
+    const parent =
+      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const raw = memorialPushdata('nhớ mãi', OFFERING_ID_WLOTUS, parent);
+    const parsed = parseMemorialPushdata(raw);
+    expect(parsed.version).toBe(2);
+    expect(parsed.note).toBe('nhớ mãi');
+    expect(parsed.parentBurnTxid).toBe(parent);
+  });
+
   test('parser rejects non-DANA LOKAD', () => {
     const note = new TextEncoder().encode('hi');
     const id = new TextEncoder().encode('wlotus');

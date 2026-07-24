@@ -149,7 +149,7 @@ export default function App() {
   const [session, setSession] = useState<{
     reoffer: boolean;
     note: string;
-    /** Optional local words on a re-offer (not on-chain yet). */
+    /** Optional remembrance words on a re-offer (on-chain DANA v2 note). */
     extraNote?: string;
   } | null>(null);
   /** Confirm sheet before starting a re-offer. */
@@ -417,26 +417,26 @@ export default function App() {
 
   async function onOffer(opts?: {
     parentBurnTxid?: string;
-    /** Local label for history; on-chain note is empty when re-offering. */
+    /** Local label for history grouping (original dedication name). */
     displayNote?: string;
-    /** Optional local remembrance words on a re-offer (not on-chain yet). */
+    /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
   }) {
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
     const isReoffer = Boolean(parentBurnTxid);
-    const challengeNote = isReoffer ? '' : note.trim();
+    const extraNote = isReoffer
+      ? (opts?.extraNote ?? '').trim()
+      : undefined;
+    const challengeNote = isReoffer ? (extraNote ?? '') : note.trim();
     const historyNote = isReoffer
       ? (opts?.displayNote ?? '').trim()
       : note.trim();
-    const extraNote = isReoffer
-      ? (opts?.extraNote ?? '').trim() || undefined
-      : undefined;
 
     setReofferDraft(null);
     setSession({
       reoffer: isReoffer,
       note: historyNote,
-      extraNote,
+      extraNote: extraNote || undefined,
     });
     setLinkedParentBurnTxid(null);
 

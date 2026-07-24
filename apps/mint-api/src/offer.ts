@@ -38,6 +38,7 @@ import {
 import {
   burnOnePrayer,
   memorialPushdata,
+  OFFERING_ID_PRAYER,
   OFFERING_ID_WLOTUS,
   parseParentBurnTxidHex,
 } from '../../../src/offering/burnPrayer.js';
@@ -196,7 +197,7 @@ interface StoredChallenge {
   note: string;
   /**
    * Original dedication burn txid (hex). Temple path only — encoded in DANA v2
-   * on the burn-after-mint tx (empty note). Star topology for explorers.
+   * on the burn-after-mint tx (optional note + parent). Star topology for explorers.
    * Rejected on memo path (mint memorial budget).
    */
   parentBurnTxid?: string;
@@ -625,14 +626,18 @@ async function createChallengeOnce(opts: {
   const parentBurnTxid = opts.parentBurnTxid
     ? parseParentBurnTxidHex(opts.parentBurnTxid)
     : undefined;
-  // Re-offer: empty on-chain note; link via parentBurnTxid → original dedication (DANA v2).
-  const note = parentBurnTxid ? '' : opts.note.trim().slice(0, 80);
+  // Re-offer: DANA v2 — optional on-chain note + parent → original dedication.
+  const note = opts.note.trim().slice(0, 80);
   if (parentBurnTxid && !temple) {
     throw new Error(
       'parentBurnTxid (re-offer) requires the wLotus temple burn path',
     );
   }
-  const memorial = memorialPushdata(note);
+  const memorial = memorialPushdata(
+    note,
+    temple ? OFFERING_ID_WLOTUS : OFFERING_ID_PRAYER,
+    parentBurnTxid,
+  );
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
   if (temple && (!templeHashHex || templeHashHex.length !== 40)) {
     throw new Error('wLotus deployment missing templeScriptHashHex');
