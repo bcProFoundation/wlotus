@@ -630,30 +630,6 @@ a {
   font-weight: 400;
 }
 
-.offer-session-msgs {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin: 0 0 1rem;
-}
-
-.offer-session-msgs-top {
-  margin: 0 0 0.65rem;
-  padding-right: 2rem;
-}
-
-.offer-session-msgs > p,
-.offer-session-msgs > span {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.offer-session-msgs > p.hint {
-  font-size: 0.82rem;
-}
-
 .offer-modal-card .field {
   margin: 0 0 0.85rem;
 }
