@@ -676,6 +676,34 @@ a {
   width: 100%;
 }
 
+.offer-cancel-confirm {
+  margin-top: 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(240, 113, 120, 0.35);
+  border-radius: 10px;
+  background: rgba(240, 113, 120, 0.08);
+}
+
+.offer-cancel-confirm > p {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.offer-cancel-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.btn-confirm-lose {
+  width: auto;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
 .btn-session-cancel {
   width: auto;
   min-width: 0;
