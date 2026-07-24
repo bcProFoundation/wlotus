@@ -1,6 +1,7 @@
 # Architecture
 
 Product meaning (memorial + dana): **[VISION.md](./VISION.md)**.  
+Altar / on-chain memorial policy: **[ALTAR.md](./ALTAR.md)** (star fragments, separator fields, no WLotus off-chain).  
 Economics: **[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md)**.
 
 ## Flow

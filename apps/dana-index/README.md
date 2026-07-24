@@ -3,6 +3,10 @@
 Chronik-backed public history of wLotus / dWLOTUS **DANA** memorial burns
 (all clients — not localStorage).
 
+This service is a **read-only mirror of on-chain data**. It is not an off-chain
+content store. WLotus altar policy: [docs/ALTAR.md](../../docs/ALTAR.md)
+(star fragments → original burn; richer fields via separator encoding later).
+
 ## Run locally
 
 ```bash

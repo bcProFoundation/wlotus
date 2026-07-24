@@ -45,6 +45,8 @@ See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-wlotus.json
 
 Burn wLotus = white lotus **in memorial of the dead** + **dana** for everybody. [VISION.md](./VISION.md).
 
+Altar / memorial wire policy (star fragments, separator fields, minter amend ≤10, no WLotus off-chain): [ALTAR.md](./ALTAR.md).
+
 ## Offerings app (`apps/web`)
 
 Mobile-first Offer / burn UI. No browser wallet yet — remint via mint-api.
@@ -65,6 +67,8 @@ Mobile-first Offer / burn UI. No browser wallet yet — remint via mint-api.
 ## Next
 
 1. Live **WLOTUS** genesis on prod (`create-wlotus-token` + `MINT_REQUIRE_LIVE=1`)
-2. Postage / fee sponsorship polish
-3. **GLOTUS** genesis when economic layer ships
-4. Fractional-bit PoW if/when eCash raises the 201-op limit
+2. Enable **dana-index** on Contabo (`/index-api/`) after merge — mirror of on-chain DANA history
+3. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
+4. Postage / fee sponsorship polish
+5. **GLOTUS** genesis when economic layer ships
+6. Fractional-bit PoW if/when eCash raises the 201-op limit
