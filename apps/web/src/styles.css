@@ -592,6 +592,24 @@ a {
   word-break: break-word;
 }
 
+.offer-session-msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+}
+
+.offer-session-msgs > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.offer-session-msgs > p.hint {
+  font-size: 0.82rem;
+}
+
 .offer-session-status {
   margin: 0;
   font-size: 1.05rem;
@@ -607,12 +625,27 @@ a {
 
 .offer-session-actions {
   margin-top: 1.15rem;
+  display: flex;
+  justify-content: center;
 }
 
 .btn-session-cancel {
-  width: 100%;
-  padding: 0.85rem 1.1rem;
-  font-size: 1rem;
+  width: auto;
+  min-width: 0;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.btn-session-cancel:hover,
+.btn-session-cancel:focus-visible {
+  color: var(--danger);
+  border-color: rgba(240, 113, 120, 0.55);
+  background: rgba(240, 113, 120, 0.08);
 }
 
 @media (min-width: 520px) {

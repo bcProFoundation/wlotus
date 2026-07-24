@@ -41,6 +41,8 @@ export type MessageKey =
   | 'offerSessionTitle'
   | 'reofferSessionTitle'
   | 'sessionNoteLabel'
+  | 'reofferSessionMsg'
+  | 'reofferSessionMsgPray'
   | 'shareHint'
   | 'shareLookingUp'
   | 'shareLinked'
@@ -99,6 +101,10 @@ const en: Dict = {
   offerSessionTitle: 'Offering a flower',
   reofferSessionTitle: 'Re-offering',
   sessionNoteLabel: 'In remembrance',
+  reofferSessionMsg:
+    'Continuing this memorial altar — the dedication stays linked on the chain.',
+  reofferSessionMsgPray:
+    'Take a quiet moment to remember before the flower is offered.',
   shareHint: 'Paste a wLotus link to continue that dedication.',
   shareLookingUp: 'Looking up dedication…',
   shareLinked: 'Linked · {name}',
@@ -155,6 +161,10 @@ const vi: Dict = {
   offerSessionTitle: 'Đang dâng hoa',
   reofferSessionTitle: 'Đang dâng lại',
   sessionNoteLabel: 'Lời tưởng niệm',
+  reofferSessionMsg:
+    'Tiếp tục bàn thờ tưởng niệm này — lời dâng vẫn liên kết trên chuỗi.',
+  reofferSessionMsgPray:
+    'Hãy dành một lúc yên lặng để tưởng nhớ trước khi dâng hoa.',
   shareHint: 'Dán liên kết wLotus để tiếp tục lời tưởng niệm đó.',
   shareLookingUp: 'Đang tìm lời tưởng niệm…',
   shareLinked: 'Đã liên kết · {name}',
@@ -210,6 +220,8 @@ const zh: Dict = {
   offerSessionTitle: '正在献花',
   reofferSessionTitle: '正在再献',
   sessionNoteLabel: '追思寄语',
+  reofferSessionMsg: '继续这座追思坛——献花仍与链上原祭文相连。',
+  reofferSessionMsgPray: '请静心片刻追思，然后再献上莲花。',
   shareHint: '粘贴 wLotus 链接以继续该追思。',
   shareLookingUp: '正在查找追思…',
   shareLinked: '已关联 · {name}',
