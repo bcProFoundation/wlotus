@@ -40,6 +40,10 @@ if [[ -z "$OLD_REPO" ]]; then
   done
 fi
 
+command -v jq >/dev/null || apt-get install -y jq
+command -v git >/dev/null || apt-get install -y git
+command -v curl >/dev/null || apt-get install -y curl
+
 echo "==> Stop services"
 systemctl stop wlotus-mint-api 2>/dev/null || true
 systemctl stop wlotus-dana-index 2>/dev/null || true
