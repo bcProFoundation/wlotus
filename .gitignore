@@ -9,4 +9,5 @@ apps/web/dist/
 *.log
 .DS_Store
 coverage/
+data/
 *.tgz

@@ -51,12 +51,15 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 | **App title (human)** | **White Lotus** / **wLotus** | Primary display name — flower + memorial meaning |
 | **Ticker / domain** | **WLOTUS** · `wlotus.org` | Tech identity |
 | **Economic companion** | **Golden Lotus** / ticker **GLOTUS** | Event burns & later commerce |
+| **Family (later)** | **LotusHeart** | Family-oriented; may use off-chain data — not WLotus |
 | Logo | White lotus flower (B&W mark) | Botanical motif |
 | Visual theme | **Black & white** | Monochrome UI |
 | The act | **Offer / Burn** | One gesture, two gifts |
 | Issuance | Mint **108** → **1** miner + **107** temple | One mala per remint |
 
 **Launch economics:** ship **wLotus** first; **GLOTUS** when the economic layer is ready — [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md).
+
+**Data policy:** WLotus memorial / altar content is **on-chain only** (star-linked DANA burns). Indexes mirror the chain; they are not a second truth. Off-chain stores are for **LotusHeart**, not WLotus — see [ALTAR.md](./ALTAR.md).
 
 **Anti-farm / presence:** **1/107 + XEC fees** beat commercial remint even when energy ≈ 0; official Offer adds a **soft pray timer** so attention stays the ritual tax. Token hashrate does not secure the ledger (eCash does).
 

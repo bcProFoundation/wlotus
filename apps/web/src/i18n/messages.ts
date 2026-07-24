@@ -37,6 +37,10 @@ export type MessageKey =
   | 'burnTotal'
   | 'latestBurnLink'
   | 'btnReoffer'
+  | 'btnHistory'
+  | 'historyTitle'
+  | 'historyLoading'
+  | 'latestMemorialFallback'
   | 'offeringFallback'
   | 'offerSessionTitle'
   | 'reofferSessionTitle'
@@ -99,6 +103,10 @@ const en: Dict = {
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
   btnReoffer: 'Re-offer',
+  btnHistory: 'History',
+  historyTitle: 'Memorial history',
+  historyLoading: 'Loading…',
+  latestMemorialFallback: 'Re-offered',
   offeringFallback: 'Offering',
   offerSessionTitle: 'Offering a flower',
   reofferSessionTitle: 'Offer a lotus for:',
@@ -159,6 +167,10 @@ const vi: Dict = {
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
   btnReoffer: 'Dâng lại',
+  btnHistory: 'Lịch sử',
+  historyTitle: 'Lịch sử tưởng niệm',
+  historyLoading: 'Đang tải…',
+  latestMemorialFallback: 'Đã dâng lại',
   offeringFallback: 'Lần dâng hoa',
   offerSessionTitle: 'Đang dâng hoa',
   reofferSessionTitle: 'Dâng hoa sen cho:',
@@ -218,6 +230,10 @@ const zh: Dict = {
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
   btnReoffer: '再献',
+  btnHistory: '历史',
+  historyTitle: '追思历史',
+  historyLoading: '加载中…',
+  latestMemorialFallback: '再次献花',
   offeringFallback: '献花',
   offerSessionTitle: '正在献花',
   reofferSessionTitle: '为TA献上莲花：',

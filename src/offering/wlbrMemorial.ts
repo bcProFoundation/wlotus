@@ -7,7 +7,9 @@
  *   v2: DANA | ver=2 | idLen | id | noteLen | note | parentLen | parentTxid
  *       parentLen is 0 or 32; parentTxid is 32 raw bytes when set.
  *       Re-offers use v2 with parent = **original** dedication burn txid
- *       (star topology). Note may be empty or carry an additional message.
+ *       (star topology — see docs/ALTAR.md). Note may be empty or carry an
+ *       additional message. Richer altar fields: separator packing (not JSON).
+ *       Amendments: minter-only, max 10 (software). Off-chain = LotusHeart only.
  *
  * Tip-state layout (ver=4, 15 bytes) lives in `src/covenant/mooreTip.ts`.
  */

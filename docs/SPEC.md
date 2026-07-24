@@ -1,7 +1,8 @@
 # WLOTUS consensus parameters
 
 Canonical economics: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md).  
-Clock: [CLOCK.md](./CLOCK.md).
+Clock: [CLOCK.md](./CLOCK.md).  
+Altar / memorial on-chain policy: [ALTAR.md](./ALTAR.md).
 
 ## Identity
 
