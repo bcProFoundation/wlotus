@@ -997,9 +997,6 @@ export default function App() {
             >
               ×
             </button>
-            <p className="offer-session-msgs offer-session-msgs-top">
-              <span>{t('reofferSessionMsg')}</span>
-            </p>
             <h2 id="offer-session-title">{t('reofferSessionTitle')}</h2>
             <p className="offer-session-note offer-session-original">
               {reofferDraft.originalNote.trim() || t('offeringFallback')}
@@ -1061,9 +1058,6 @@ export default function App() {
             >
               ×
             </button>
-            <p className="offer-session-msgs offer-session-msgs-top">
-              <span>{t('reofferSessionMsg')}</span>
-            </p>
             <h2 id="offer-session-title">{t('reofferSessionTitle')}</h2>
             <p className="offer-session-note offer-session-original">
               {session.note.trim() || t('offeringFallback')}

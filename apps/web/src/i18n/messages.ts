@@ -41,7 +41,6 @@ export type MessageKey =
   | 'offerSessionTitle'
   | 'reofferSessionTitle'
   | 'sessionNoteLabel'
-  | 'reofferSessionMsg'
   | 'reofferExtraNoteLabel'
   | 'reofferExtraNotePlaceholder'
   | 'btnOfferLotus'
@@ -104,8 +103,6 @@ const en: Dict = {
   offerSessionTitle: 'Offering a flower',
   reofferSessionTitle: 'Offer a lotus for:',
   sessionNoteLabel: 'In remembrance',
-  reofferSessionMsg:
-    'Continuing this memorial altar — the dedication stays linked on the chain.',
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
   btnOfferLotus: 'Offer a lotus',
@@ -166,8 +163,6 @@ const vi: Dict = {
   offerSessionTitle: 'Đang dâng hoa',
   reofferSessionTitle: 'Dâng hoa sen cho:',
   sessionNoteLabel: 'Lời tưởng niệm',
-  reofferSessionMsg:
-    'Tiếp tục bàn thờ tưởng niệm này — lời dâng vẫn liên kết trên chuỗi.',
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   btnOfferLotus: 'Dâng hoa sen',
@@ -227,7 +222,6 @@ const zh: Dict = {
   offerSessionTitle: '正在献花',
   reofferSessionTitle: '为TA献上莲花：',
   sessionNoteLabel: '追思寄语',
-  reofferSessionMsg: '继续这座追思坛——献花仍与链上原祭文相连。',
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
   btnOfferLotus: '献上莲花',
