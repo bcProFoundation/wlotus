@@ -136,9 +136,8 @@ cd /opt/wlotus
 sudo -u deploy git checkout master
 sudo -u deploy npm ci
 
-# systemd — WorkingDirectory=/opt/wlotus
-sudo sed 's|/root/wlotus/wlotus|/opt/wlotus|g' deploy/contabo/wlotus-mint-api.service \
-  | sudo tee /etc/systemd/system/wlotus-mint-api.service >/dev/null
+# systemd — WorkingDirectory=/opt/wlotus, User=deploy (same unit as test)
+sudo cp deploy/contabo/wlotus-mint-api.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable wlotus-mint-api
 # Start after genesis + mint.env exist (below)
@@ -149,9 +148,9 @@ sudo systemctl enable wlotus-mint-api
 Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TICKER=dWLOTUS npm run create-wlotus-token`).
 
 ```bash
-cd /opt/wlotus   # or ~/wlotus/wlotus
-git pull origin master
-npm ci
+cd /opt/wlotus
+sudo -u deploy git pull origin master
+sudo -u deploy npm ci
 
 # 1) Genesis key (NEW — not the test Contabo key)
 #    If you already have GENESIS_SK_HEX for prod in .env, skip new-wallet.
