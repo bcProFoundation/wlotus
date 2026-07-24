@@ -974,6 +974,18 @@ export default function App() {
             <p className="offer-session-note">
               {session.note.trim() || t('offeringFallback')}
             </p>
+            {session.reoffer ? (
+              <div className="offer-session-msgs">
+                <p>{t('reofferSessionMsg')}</p>
+                {phase === 'challenge' || phase === 'mining' ? (
+                  <p>{t('reofferSessionMsgPray')}</p>
+                ) : null}
+                <p className="hint">{t('hintKeepScreen')}</p>
+                <p className="hint eta">
+                  {t('etaEstimated', { eta: etaLabel })}
+                </p>
+              </div>
+            ) : null}
             <p className="offer-session-status" aria-live="polite">
               {buttonLabel}
             </p>
@@ -982,13 +994,19 @@ export default function App() {
                 {t('miningElapsed', { elapsed: elapsedDisplay })}
               </p>
             ) : null}
-            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-            <p className="hint">{t('hintKeepScreen')}</p>
+            {!session.reoffer ? (
+              <>
+                <p className="hint eta">
+                  {t('etaEstimated', { eta: etaLabel })}
+                </p>
+                <p className="hint">{t('hintKeepScreen')}</p>
+              </>
+            ) : null}
             <div className="offer-actions offer-session-actions">
               {showCancel ? (
                 <button
                   type="button"
-                  className="btn btn-danger btn-session-cancel"
+                  className="btn btn-session-cancel"
                   onClick={() => void onCancelMine()}
                 >
                   {t('btnCancel')}
