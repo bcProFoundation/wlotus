@@ -35,8 +35,22 @@ function indexUrl(path: string): string {
   return `${base}${p}`;
 }
 
+/** True when nginx/SPA returned HTML instead of the index API. */
+export function looksLikeHtmlBody(text: string): boolean {
+  const s = text.trimStart().slice(0, 32).toLowerCase();
+  return s.startsWith('<!doctype') || s.startsWith('<html');
+}
+
 async function readJson<T>(res: Response): Promise<T> {
-  return (await res.json()) as T;
+  const text = await res.text();
+  if (looksLikeHtmlBody(text)) {
+    throw new Error('INDEX_HTML');
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error('INDEX_BAD_JSON');
+  }
 }
 
 export async function fetchIndexRecent(

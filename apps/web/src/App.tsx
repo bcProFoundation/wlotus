@@ -55,7 +55,6 @@ import {
 } from './lib/shareLink.js';
 import {
   estimatePrayerPow,
-  formatHashrateLabel,
   loadCachedHashrate,
   saveCachedHashrate,
 } from './lib/powEstimate.js';
@@ -811,7 +810,17 @@ export default function App() {
       const merged = mergeIndexAndLocalOffers([remote], offers);
       setHistoryGroup(merged[0] ?? g);
     } catch (err) {
-      setHistoryError(err instanceof Error ? err.message : String(err));
+      const raw = err instanceof Error ? err.message : String(err);
+      // Local burns already shown — only surface a soft hint when index is down.
+      if (
+        raw === 'INDEX_HTML' ||
+        raw === 'INDEX_BAD_JSON' ||
+        /Failed to fetch|NetworkError|fetch/i.test(raw)
+      ) {
+        setHistoryError(t('historyIndexUnavailable'));
+      } else {
+        setHistoryError(raw);
+      }
     } finally {
       setHistoryLoading(false);
     }
@@ -967,6 +976,7 @@ export default function App() {
                 g.totalBurns > 1 &&
                 (last.burnTxid !== g.original.burnTxid ||
                   latestText !== originalText);
+              const lastWhen = new Date(last.at).toLocaleString(locale);
               return (
                 <li key={g.original.burnTxid}>
                   <div className="history-main">
@@ -976,33 +986,15 @@ export default function App() {
                         <span className="history-latest">
                           {latestText || t('latestMemorialFallback')}
                         </span>
+                      ) : latestText && latestText !== originalText ? (
+                        <span className="history-latest">{latestText}</span>
                       ) : null}
                       <span className="history-meta">
-                        {last.powMs != null ? (
-                          <>
-                            {formatActualDurationLocale(
-                              last.powMs / 1000,
-                              locale,
-                            )}
-                            {last.hashrateHps
-                              ? ` · ${formatHashrateLabel(last.hashrateHps)}`
-                              : ''}
-                            {' · '}
-                          </>
-                        ) : null}
+                        {t('lastOfferedAt', { when: lastWhen })}
+                        {' · '}
                         {t('burnTotal', { n: g.totalBurns })}
                       </span>
                     </div>
-                    <a
-                      href={`https://explorer.e.cash/tx/${last.burnTxid}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      title={
-                        g.totalBurns > 1 ? t('latestBurnLink') : undefined
-                      }
-                    >
-                      {shortTx(last.burnTxid)}
-                    </a>
                   </div>
                   <div className="history-actions">
                     <button
@@ -1014,7 +1006,9 @@ export default function App() {
                     </button>
                     <button
                       type="button"
-                      className="btn btn-reoffer"
+                      className="btn btn-icon-action"
+                      aria-label={t('btnShare')}
+                      title={t('btnShare')}
                       disabled={busy}
                       onClick={() =>
                         void shareDedication(
@@ -1023,11 +1017,25 @@ export default function App() {
                         )
                       }
                     >
-                      {t('btnShare')}
+                      <svg
+                        className="btn-icon-svg"
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+                        />
+                      </svg>
                     </button>
                     <button
                       type="button"
-                      className="btn btn-reoffer"
+                      className="btn btn-icon-action btn-reoffer-lotus"
+                      aria-label={t('btnReoffer')}
+                      title={t('btnReoffer')}
                       disabled={!canOffer}
                       onClick={() =>
                         openReofferDraft({
@@ -1036,7 +1044,13 @@ export default function App() {
                         })
                       }
                     >
-                      {t('btnReoffer')}
+                      <img
+                        src="/images/wlotus.png"
+                        alt=""
+                        width={22}
+                        height={22}
+                        draggable={false}
+                      />
                     </button>
                   </div>
                 </li>
@@ -1071,7 +1085,7 @@ export default function App() {
               {historyLoading ? ` · ${t('historyLoading')}` : ''}
             </p>
             {historyError ? (
-              <div className="msg err">{historyError}</div>
+              <div className="msg hint-inline">{historyError}</div>
             ) : null}
             <ul className="memorial-history-list">
               {historyGroup.burns.map((b, i) => (

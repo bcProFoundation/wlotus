@@ -440,10 +440,9 @@ a {
 .history-main {
   display: flex;
   flex: 1;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.65rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
   min-width: 0;
 }
 
@@ -521,6 +520,48 @@ a {
 .btn-reoffer:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.btn-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn-icon-action:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-icon-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-icon-svg {
+  display: block;
+}
+
+.btn-reoffer-lotus img {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+  object-fit: contain;
+  filter: grayscale(1) brightness(1.35);
+}
+
+.hint-inline {
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: transparent;
 }
 
 .history-actions {
