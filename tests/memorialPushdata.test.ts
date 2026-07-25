@@ -27,7 +27,7 @@ describe('DANA memorial pushdata', () => {
 
   test('v2 encodes parent burn txid for re-offer (empty note)', () => {
     const parent =
-      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
     const raw = memorialPushdata('', OFFERING_ID_WLOTUS, parent);
     expect(raw[4]).toBe(DANA_VERSION_PARENT);
     const parsed = parseMemorialPushdata(raw);
@@ -40,7 +40,7 @@ describe('DANA memorial pushdata', () => {
 
   test('v2 re-offer may carry an additional on-chain note', () => {
     const parent =
-      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
     const raw = memorialPushdata('nhớ mãi', OFFERING_ID_WLOTUS, parent);
     const parsed = parseMemorialPushdata(raw);
     expect(parsed.version).toBe(2);
