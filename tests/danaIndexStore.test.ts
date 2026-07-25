@@ -62,4 +62,34 @@ describe('BurnStore', () => {
     expect(memorial?.originalBurnTxid).toBe(root);
     expect(memorial?.burns.map(b => b.note)).toEqual(['nhớ mãi', 'Cao Lâm Quả']);
   });
+
+  it('skips orphan re-offers when the original is not indexed', () => {
+    const root =
+      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const child =
+      'b38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    store.upsert(
+      burn({
+        burnTxid: child,
+        note: '',
+        parentBurnTxid: root,
+        blockTimestamp: 1_700_000_100,
+      }),
+    );
+    expect(store.recentGroups(10)).toHaveLength(0);
+    expect(store.memorial(child)).toBeNull();
+  });
+
+  it('skips empty-name roots', () => {
+    const root =
+      'c38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    store.upsert(
+      burn({
+        burnTxid: root,
+        note: '  ',
+        blockTimestamp: 1_700_000_000,
+      }),
+    );
+    expect(store.recentGroups(10)).toHaveLength(0);
+  });
 });

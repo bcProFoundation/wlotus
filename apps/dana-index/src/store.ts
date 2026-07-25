@@ -107,14 +107,17 @@ export class BurnStore {
 
     const groups: MemorialGroup[] = [];
     for (const [rootId, members] of buckets) {
+      const original = this.byTxid.get(rootId);
+      // Skip orphan stars (parent not ingested) and empty-name roots.
+      if (!original || original.parentBurnTxid) continue;
+      const originalNote = (original.note || '').trim();
+      if (!originalNote) continue;
+
       const burns = [...members].sort(byActivityDesc);
       const latest = burns[0]!;
-      const original =
-        this.byTxid.get(rootId) ??
-        [...members].sort(byActivityAsc)[0]!;
       groups.push({
         originalBurnTxid: original.burnTxid,
-        originalNote: (original.note || '').trim(),
+        originalNote,
         latestBurnTxid: latest.burnTxid,
         latestNote: (latest.note || '').trim(),
         totalBurns: burns.length,
@@ -131,16 +134,20 @@ export class BurnStore {
     const seed = this.get(txid);
     if (!seed) return null;
     const rootId = seed.originalBurnTxid;
+    const original = this.byTxid.get(rootId);
+    if (!original || original.parentBurnTxid) return null;
+    const originalNote = (original.note || '').trim();
+    if (!originalNote) return null;
+
     const members = [...this.byTxid.values()].filter(
       b => b.originalBurnTxid === rootId,
     );
     if (!members.length) return null;
     const burns = members.sort(byActivityDesc);
     const latest = burns[0]!;
-    const original = this.byTxid.get(rootId) ?? [...members].sort(byActivityAsc)[0]!;
     return {
       originalBurnTxid: original.burnTxid,
-      originalNote: (original.note || '').trim(),
+      originalNote,
       latestBurnTxid: latest.burnTxid,
       latestNote: (latest.note || '').trim(),
       totalBurns: burns.length,
@@ -157,41 +164,23 @@ function normalizeBurn(b: IndexedBurn): IndexedBurn {
     ...b,
     burnTxid,
     parentBurnTxid: parent,
-    originalBurnTxid: (b.originalBurnTxid || parent || burnTxid).toLowerCase(),
+    // Star only: parent field is the original; no tip-chain walk.
+    originalBurnTxid: (parent || burnTxid).toLowerCase(),
     note: b.note ?? '',
     offeringId: b.offeringId ?? '',
   };
 }
 
+/** Star topology: parentBurnTxid = original, else self. */
 function resolveOriginal(
   burn: IndexedBurn,
-  byTxid: Map<string, IndexedBurn>,
+  _byTxid: Map<string, IndexedBurn>,
 ): string {
-  let cur = burn;
-  const seen = new Set<string>();
-  while (
-    cur.parentBurnTxid &&
-    byTxid.has(cur.parentBurnTxid) &&
-    !seen.has(cur.burnTxid)
-  ) {
-    seen.add(cur.burnTxid);
-    cur = byTxid.get(cur.parentBurnTxid)!;
-  }
-  // Star topology: parent may not be indexed yet — still treat parent as root.
-  if (burn.parentBurnTxid && !byTxid.has(burn.parentBurnTxid)) {
-    return burn.parentBurnTxid;
-  }
-  return cur.parentBurnTxid && !byTxid.has(cur.parentBurnTxid)
-    ? cur.parentBurnTxid
-    : cur.burnTxid;
+  return (burn.parentBurnTxid || burn.burnTxid).toLowerCase();
 }
 
 function byActivityDesc(a: IndexedBurn, b: IndexedBurn): number {
   return activityMs(b) - activityMs(a);
-}
-
-function byActivityAsc(a: IndexedBurn, b: IndexedBurn): number {
-  return activityMs(a) - activityMs(b);
 }
 
 function activityMs(b: IndexedBurn): number {

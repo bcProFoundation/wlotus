@@ -4,9 +4,9 @@
 
 import type { IndexMemorialGroup } from './danaIndexApi.js';
 import type { LocalOffer, OfferGroup } from './groupOffers.js';
-import { groupOffersByOriginal } from './groupOffers.js';
+import { groupOffersByOriginal, isNamedRootOffer } from './groupOffers.js';
 
-function indexGroupToOfferGroup(g: IndexMemorialGroup): OfferGroup {
+function indexGroupToOfferGroup(g: IndexMemorialGroup): OfferGroup | null {
   const burns: LocalOffer[] = g.burns.map(b => ({
     remintTxid: '',
     burnTxid: b.burnTxid,
@@ -17,17 +17,15 @@ function indexGroupToOfferGroup(g: IndexMemorialGroup): OfferGroup {
         : b.timeFirstSeen,
     parentBurnTxid: b.parentBurnTxid,
   }));
-  const byTxid = new Map(burns.map(b => [b.burnTxid, b]));
-  const original =
-    byTxid.get(g.originalBurnTxid) ??
-    burns[burns.length - 1] ?? {
-      remintTxid: '',
-      burnTxid: g.originalBurnTxid,
-      note: g.originalNote,
-      at: g.at,
-    };
+  const byTxid = new Map(
+    burns.map(b => [b.burnTxid.trim().toLowerCase(), b] as const),
+  );
+  const rootId = g.originalBurnTxid.trim().toLowerCase();
+  const original = byTxid.get(rootId);
+  if (!original || !isNamedRootOffer(original)) return null;
+
   const latest =
-    byTxid.get(g.latestBurnTxid) ??
+    byTxid.get(g.latestBurnTxid.trim().toLowerCase()) ??
     burns[0] ??
     original;
   return {
@@ -41,6 +39,7 @@ function indexGroupToOfferGroup(g: IndexMemorialGroup): OfferGroup {
 
 /**
  * Prefer index (all clients). Overlay any local-only roots not yet in the index.
+ * Drops empty-name / orphan groups ("Lần dâng hoa" fallbacks).
  */
 export function mergeIndexAndLocalOffers(
   indexGroups: IndexMemorialGroup[] | null,
@@ -49,7 +48,9 @@ export function mergeIndexAndLocalOffers(
   const localGroups = groupOffersByOriginal(localOffers);
   if (!indexGroups?.length) return localGroups;
 
-  const fromIndex = indexGroups.map(indexGroupToOfferGroup);
+  const fromIndex = indexGroups
+    .map(indexGroupToOfferGroup)
+    .filter((g): g is OfferGroup => g != null && g.note.length > 0);
   const indexedRoots = new Set(fromIndex.map(g => g.original.burnTxid));
   const localOnly = localGroups.filter(
     g => !indexedRoots.has(g.original.burnTxid),
@@ -71,15 +72,15 @@ export function mergeIndexAndLocalOffers(
       (a, b) => Date.parse(b.at) - Date.parse(a.at),
     );
     return {
-      original: ig.original.note ? ig.original : local.original,
+      original: ig.original,
       latest: burns[0]!,
       burns,
       totalBurns: burns.length,
-      note: (ig.note || local.note || '').trim(),
+      note: ig.note,
     };
   });
 
-  return [...merged, ...localOnly].sort(
-    (a, b) => Date.parse(b.latest.at) - Date.parse(a.latest.at),
-  );
+  return [...merged, ...localOnly]
+    .filter(g => g.note.trim().length > 0)
+    .sort((a, b) => Date.parse(b.latest.at) - Date.parse(a.latest.at));
 }
