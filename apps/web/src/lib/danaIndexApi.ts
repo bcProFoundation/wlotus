@@ -24,9 +24,18 @@ export interface IndexMemorialGroup {
 }
 
 /** Empty = same origin `/index-api` (Vite proxy / nginx). */
-export const DANA_INDEX_BASE =
-  (import.meta.env.VITE_DANA_INDEX_BASE as string | undefined)?.trim() ||
-  '';
+function viteEnv(name: string): string | undefined {
+  try {
+    // Jest has no Vite `import.meta.env`; guard for unit tests.
+    const env = (import.meta as ImportMeta & { env?: Record<string, string> })
+      .env;
+    return env?.[name];
+  } catch {
+    return undefined;
+  }
+}
+
+export const DANA_INDEX_BASE = viteEnv('VITE_DANA_INDEX_BASE')?.trim() || '';
 
 function indexUrl(path: string): string {
   const base = DANA_INDEX_BASE.replace(/\/$/, '');
