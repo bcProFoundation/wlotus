@@ -191,33 +191,55 @@ See [apps/mint-api/README.md](../../apps/mint-api/README.md).
 Static deploy alone is not enough. `/api` must hit mint-api or the UI stays on
 “Connecting…” / returns HTML JSON errors.
 
-On the VM:
+**Canonical layout (same as prod):** `/opt/wlotus` owned by `deploy`, systemd
+`User=deploy`, secrets in `/etc/wlotus/mint.env`. Do **not** run mint-api from
+`/root/wlotus/wlotus`.
+
+### Start over / migrate to `/opt/wlotus` (test)
+
+If the VM still uses `~/wlotus/wlotus` or `/root/wlotus/wlotus`, reset once as root:
+
+```bash
+# From any checkout that has the script (or curl raw from GitHub after merge):
+cd /root/wlotus/wlotus   # current tree — only needed to run the script
+sudo bash deploy/contabo/bootstrap-opt-wlotus.sh
+# Optional: OLD_REPO=/root/wlotus/wlotus BRANCH=master
+```
+
+That script: stops services → backs up `deployments/*.json` + `.env` → fresh clone
+at `/opt/wlotus` as `deploy` → restores genesis JSON → `npm ci` → installs
+`wlotus-mint-api` + `wlotus-dana-index` units → writes `/etc/wlotus/dana-index.env`
+from dryrun `tokenId` → enables services. Keeps `/etc/wlotus/mint.env`.
+
+Then nginx: paste `/index-api/` from `nginx-api-snippet.conf` if missing; reload.
+
+### First-time mint-api (already on `/opt/wlotus`)
 
 ```bash
 # 1) Fee wallet
 sudo mkdir -p /etc/wlotus
 sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
-MINT_MNEMONIC=word1 word2 ... word12
+MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787
 EOF
-sudo chmod 600 /etc/wlotus/mint.env
+sudo chown root:deploy /etc/wlotus/mint.env
+sudo chmod 640 /etc/wlotus/mint.env
 
 # 2) App checkout + deps
 sudo mkdir -p /opt/wlotus && sudo chown deploy:deploy /opt/wlotus
+sudo -u deploy git clone https://github.com/bcProFoundation/wlotus.git /opt/wlotus
 cd /opt/wlotus
-git clone https://github.com/bcProFoundation/wlotus.git .   # or git pull
-git checkout master
-npm ci
+sudo -u deploy git checkout master
+sudo -u deploy npm ci
 
-# 3) systemd (use repo unit + wrapper)
+# 3) systemd (units already point at /opt/wlotus + User=deploy)
 sudo cp deploy/contabo/wlotus-mint-api.service /etc/systemd/system/
-sudo cp deploy/contabo/run-mint-api.sh /opt/wlotus/deploy/contabo/
-# WorkingDirectory=/opt/wlotus — edit if needed
+sudo cp deploy/contabo/wlotus-dana-index.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now wlotus-mint-api
 sudo systemctl status wlotus-mint-api --no-pager
 
-# 4) nginx /api proxy — do NOT overwrite Certbot SSL
+# 4) nginx /api (+ /index-api/) — do NOT overwrite Certbot SSL
 # Prefer: paste deploy/contabo/nginx-api-snippet.conf into the existing
 # test.wlotus.org server block, then: sudo nginx -t && sudo systemctl reload nginx
 
@@ -230,9 +252,9 @@ Fund the **desk** mint wallet address with XEC, then equal-split into per-tip
 fee accounts (remint has no change out — never leave one large UTXO as fuel):
 
 ```bash
-cd /opt/wlotus   # or /root/wlotus/wlotus
+cd /opt/wlotus
 set -a && source /etc/wlotus/mint.env && set +a
-npm run fund-tip-fee-wallets
+sudo -u deploy -H bash -lc 'cd /opt/wlotus && set -a && source /etc/wlotus/mint.env && set +a && npm run fund-tip-fee-wallets'
 ```
 
 **wLotus temple (launch):** covenant pays 107 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
@@ -262,7 +284,7 @@ Desk / rate limits (soft, changeable):
 | `MINT_MAX_OFFERS_PER_DAY` | **20** / `installId` (device) |
 
 ```bash
-cd ~/wlotus/wlotus   # or /opt/wlotus
+cd /opt/wlotus
 git fetch origin
 # After PR merge: git pull origin master
 # Or test this branch: git checkout cursor/moore-1y-bit-58ff && git pull
