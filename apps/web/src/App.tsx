@@ -99,6 +99,40 @@ function rememberHashrate(hps: number): void {
   saveCachedHashrate(hps);
 }
 
+/** Compact external-link glyph for explorer tx (no hash column). */
+function ExplorerLinkIcon({
+  txid,
+  label,
+}: {
+  txid: string;
+  label: string;
+}) {
+  return (
+    <a
+      className="explorer-link-icon"
+      href={`https://explorer.e.cash/tx/${txid}`}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={label}
+      title={label}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="16"
+        height="16"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          fill="currentColor"
+          d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"
+        />
+      </svg>
+    </a>
+  );
+}
+
+
 function pushOffer(o: LocalOffer): LocalOffer[] {
   const next = [o, ...loadOffers()].slice(0, 40);
   localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
@@ -980,21 +1014,29 @@ export default function App() {
               return (
                 <li key={g.original.burnTxid}>
                   <div className="history-main">
-                    <div className="history-text">
+                    <div className="history-title-row">
                       <span className="history-original">{originalText}</span>
-                      {showLatest ? (
-                        <span className="history-latest">
-                          {latestText || t('latestMemorialFallback')}
-                        </span>
-                      ) : latestText && latestText !== originalText ? (
-                        <span className="history-latest">{latestText}</span>
-                      ) : null}
-                      <span className="history-meta">
-                        {t('lastOfferedAt', { when: lastWhen })}
-                        {' · '}
-                        {t('burnTotal', { n: g.totalBurns })}
-                      </span>
+                      <ExplorerLinkIcon
+                        txid={last.burnTxid}
+                        label={
+                          g.totalBurns > 1
+                            ? t('latestBurnLink')
+                            : t('openOnExplorer')
+                        }
+                      />
                     </div>
+                    {showLatest ? (
+                      <span className="history-latest">
+                        {latestText || t('latestMemorialFallback')}
+                      </span>
+                    ) : latestText && latestText !== originalText ? (
+                      <span className="history-latest">{latestText}</span>
+                    ) : null}
+                    <span className="history-meta">
+                      {t('lastOfferedAt', { when: lastWhen })}
+                      {' · '}
+                      {t('burnTotal', { n: g.totalBurns })}
+                    </span>
                   </div>
                   <div className="history-actions">
                     <button
@@ -1097,13 +1139,10 @@ export default function App() {
                           ? historyGroup.note || t('offeringFallback')
                           : t('latestMemorialFallback'))}
                     </span>
-                    <a
-                      href={`https://explorer.e.cash/tx/${b.burnTxid}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {shortTx(b.burnTxid)}
-                    </a>
+                    <ExplorerLinkIcon
+                      txid={b.burnTxid}
+                      label={t('openOnExplorer')}
+                    />
                   </div>
                   <span className="history-meta">
                     {new Date(b.at).toLocaleString(locale)}

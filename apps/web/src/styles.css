@@ -446,6 +446,18 @@ a {
   min-width: 0;
 }
 
+.history-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.history-title-row .history-original {
+  flex: 1;
+  min-width: 0;
+}
+
 .history-text {
   display: flex;
   flex: 1;
@@ -468,9 +480,26 @@ a {
   word-break: break-word;
 }
 
-.history-main a {
+.explorer-link-icon {
   flex-shrink: 0;
-  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: 0.05rem;
+  border-radius: 0.3rem;
+  color: var(--accent-2);
+  text-decoration: none;
+}
+
+.explorer-link-icon:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.explorer-link-icon svg {
+  display: block;
 }
 
 .memorial-history-list {

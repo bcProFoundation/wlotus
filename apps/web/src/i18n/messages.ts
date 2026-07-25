@@ -36,6 +36,7 @@ export type MessageKey =
   | 'reofferBadge'
   | 'burnTotal'
   | 'latestBurnLink'
+  | 'openOnExplorer'
   | 'btnReoffer'
   | 'btnHistory'
   | 'historyTitle'
@@ -104,6 +105,7 @@ const en: Dict = {
   reofferBadge: 're-offer',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
+  openOnExplorer: 'Open on explorer',
   btnReoffer: 'Re-offer',
   btnHistory: 'History',
   historyTitle: 'Memorial history',
@@ -171,6 +173,7 @@ const vi: Dict = {
   reofferBadge: 'dâng lại',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
+  openOnExplorer: 'Mở trên explorer',
   btnReoffer: 'Dâng lại',
   btnHistory: 'Lịch sử',
   historyTitle: 'Lịch sử tưởng niệm',
@@ -237,6 +240,7 @@ const zh: Dict = {
   reofferBadge: '再献',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
+  openOnExplorer: '在浏览器打开',
   btnReoffer: '再献',
   btnHistory: '历史',
   historyTitle: '追思历史',
