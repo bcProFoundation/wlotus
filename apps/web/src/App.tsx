@@ -1028,8 +1028,8 @@ export default function App() {
               const last = g.latest;
               const originalText = g.note || t('offeringFallback');
               const latestText = (last.note || '').trim();
-              const showLatest =
-                g.totalBurns > 1 &&
+              const showLatestMessage =
+                Boolean(latestText) &&
                 (last.burnTxid !== g.original.burnTxid ||
                   latestText !== originalText);
               const lastWhen = new Date(last.at).toLocaleString(locale);
@@ -1047,18 +1047,17 @@ export default function App() {
                         }
                       />
                     </div>
-                    {showLatest ? (
-                      <span className="history-latest">
-                        {latestText || t('latestMemorialFallback')}
-                      </span>
-                    ) : latestText && latestText !== originalText ? (
-                      <span className="history-latest">{latestText}</span>
-                    ) : null}
                     <span className="history-meta">
-                      {t('lastOfferedAt', { when: lastWhen })}
-                      {' · '}
                       {t('burnTotal', { n: g.totalBurns })}
                     </span>
+                    <span className="history-meta">
+                      {t('lastOfferedAt', { when: lastWhen })}
+                    </span>
+                    {showLatestMessage ? (
+                      <span className="history-latest">
+                        {t('latestMessageLabel', { msg: latestText })}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="history-actions">
                     <button
