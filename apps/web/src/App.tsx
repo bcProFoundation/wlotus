@@ -205,8 +205,13 @@ export default function App() {
     originalNote: string;
     extraNote: string;
   } | null>(null);
-  /** Confirm before abandoning a pending memorial burn (lose offer turn). */
+  /** Confirm before closing an active offer session (X / Cancel). */
   const [cancelLoseConfirm, setCancelLoseConfirm] = useState(false);
+  /**
+   * React mirror of pending memorial burn (soft pray after remint).
+   * Drives cancel-confirm copy; refs stay authoritative for API calls.
+   */
+  const [pendingMemorial, setPendingMemorial] = useState(false);
   /** On-chain original burn when note was resolved from a share link / path. */
   const [linkedParentBurnTxid, setLinkedParentBurnTxid] = useState<
     string | null
@@ -445,14 +450,19 @@ export default function App() {
   ): Promise<void> {
     if (!remintTxid || !burnToken) return;
     if (pendingBurnRemintRef.current === remintTxid) {
-      pendingBurnRemintRef.current = null;
-      pendingBurnTokenRef.current = null;
+      clearPendingMemorial();
     }
     try {
       await cancelOfferChallenge({ installId, remintTxid, burnToken });
     } catch {
       /* best-effort — TTL also drops pending burns */
     }
+  }
+
+  function clearPendingMemorial(): void {
+    pendingBurnRemintRef.current = null;
+    pendingBurnTokenRef.current = null;
+    setPendingMemorial(false);
   }
 
   async function onCancelMine() {
@@ -462,8 +472,7 @@ export default function App() {
     const pendingToken = pendingBurnTokenRef.current;
     offerGenRef.current += 1;
     challengeIdRef.current = null;
-    pendingBurnRemintRef.current = null;
-    pendingBurnTokenRef.current = null;
+    clearPendingMemorial();
     clearRememberedChallenge();
     abortRef.current?.abort();
     abortRef.current = null;
@@ -480,13 +489,14 @@ export default function App() {
     }
   }
 
-  /** Close/cancel: confirm only after remint when memorial burn is still pending. */
+  /** X / Cancel during an active offer — always confirm (copy depends on remint). */
   function requestCancelOffer() {
-    if (pendingBurnRemintRef.current && pendingBurnTokenRef.current) {
-      setCancelLoseConfirm(true);
+    if (cancelLoseConfirm) {
+      // Second tap on × dismisses the confirm and keeps offering.
+      setCancelLoseConfirm(false);
       return;
     }
-    void onCancelMine();
+    setCancelLoseConfirm(true);
   }
 
   async function onOffer(opts?: {
@@ -522,8 +532,7 @@ export default function App() {
     const gen = offerGenRef.current;
     abortRef.current?.abort();
     challengeIdRef.current = null;
-    pendingBurnRemintRef.current = null;
-    pendingBurnTokenRef.current = null;
+    clearPendingMemorial();
     clearRememberedChallenge();
     if (prevPending && prevToken) {
       await abandonPendingBurn(prevPending, prevToken);
@@ -675,6 +684,7 @@ export default function App() {
             }
             pendingBurnRemintRef.current = result.remintTxid;
             pendingBurnTokenRef.current = burnToken;
+            setPendingMemorial(true);
             setPhase('holding');
             try {
               await waitMinPray({
@@ -699,8 +709,7 @@ export default function App() {
               burnToken,
             });
             burnTxid = burned.burnTxid;
-            pendingBurnRemintRef.current = null;
-            pendingBurnTokenRef.current = null;
+            clearPendingMemorial();
           }
 
           if (offerGenRef.current !== gen) return;
@@ -1273,7 +1282,11 @@ export default function App() {
             <p className="hint">{t('hintKeepScreen')}</p>
             {cancelLoseConfirm ? (
               <div className="offer-cancel-confirm" role="alertdialog">
-                <p>{t('cancelLoseOfferMsg')}</p>
+                <p>
+                  {pendingMemorial
+                    ? t('cancelLoseOfferMsg')
+                    : t('cancelOfferMsg')}
+                </p>
                 <div className="offer-cancel-confirm-actions">
                   <button
                     type="button"
@@ -1287,9 +1300,21 @@ export default function App() {
                     className="btn btn-danger btn-confirm-lose"
                     onClick={() => void onCancelMine()}
                   >
-                    {t('btnConfirmLoseOffer')}
+                    {pendingMemorial
+                      ? t('btnConfirmLoseOffer')
+                      : t('btnConfirmCancel')}
                   </button>
                 </div>
+              </div>
+            ) : showCancel ? (
+              <div className="offer-actions offer-session-actions">
+                <button
+                  type="button"
+                  className="btn btn-session-cancel"
+                  onClick={() => requestCancelOffer()}
+                >
+                  {t('btnCancel')}
+                </button>
               </div>
             ) : null}
             {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
@@ -1305,6 +1330,14 @@ export default function App() {
           aria-labelledby="offer-session-title"
         >
           <div className="offer-modal-card">
+            <button
+              type="button"
+              className="offer-modal-close"
+              aria-label={t('btnClose')}
+              onClick={() => requestCancelOffer()}
+            >
+              ×
+            </button>
             <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
             <p className="offer-session-label">{t('sessionNoteLabel')}</p>
             <p className="offer-session-note">
@@ -1325,7 +1358,11 @@ export default function App() {
             <p className="hint">{t('hintKeepScreen')}</p>
             {cancelLoseConfirm ? (
               <div className="offer-cancel-confirm" role="alertdialog">
-                <p>{t('cancelLoseOfferMsg')}</p>
+                <p>
+                  {pendingMemorial
+                    ? t('cancelLoseOfferMsg')
+                    : t('cancelOfferMsg')}
+                </p>
                 <div className="offer-cancel-confirm-actions">
                   <button
                     type="button"
@@ -1339,7 +1376,9 @@ export default function App() {
                     className="btn btn-danger btn-confirm-lose"
                     onClick={() => void onCancelMine()}
                   >
-                    {t('btnConfirmLoseOffer')}
+                    {pendingMemorial
+                      ? t('btnConfirmLoseOffer')
+                      : t('btnConfirmCancel')}
                   </button>
                 </div>
               </div>
