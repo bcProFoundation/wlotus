@@ -30,40 +30,35 @@ function byTimeDesc(a: LocalOffer, b: LocalOffer): number {
 }
 
 /**
- * Walk parentBurnTxid to the dedication root still present in `byTxid`.
- * Re-offers point at the **original** burn (star), so this is usually one hop.
- * Older tip-chain records (parent = previous re-offer) still resolve correctly.
+ * Star topology only: parent = original dedication, or self is the root.
+ * Tip-chains (parent = previous re-offer) are not walked — bad/legacy data
+ * is skipped at group build time when the named root is missing.
  */
-export function resolveOriginalTxid(
-  offer: LocalOffer,
-  byTxid: Map<string, LocalOffer>,
-): string {
-  let cur = offer;
-  const seen = new Set<string>();
-  while (
-    cur.parentBurnTxid &&
-    byTxid.has(cur.parentBurnTxid) &&
-    !seen.has(cur.burnTxid)
-  ) {
-    seen.add(cur.burnTxid);
-    cur = byTxid.get(cur.parentBurnTxid)!;
-  }
-  return cur.burnTxid;
+export function resolveOriginalTxid(offer: LocalOffer): string {
+  const parent = offer.parentBurnTxid?.trim().toLowerCase();
+  if (parent) return parent;
+  return offer.burnTxid.trim().toLowerCase();
+}
+
+/** True when this burn is a dedication root worth listing (has a name). */
+export function isNamedRootOffer(offer: LocalOffer): boolean {
+  if (offer.parentBurnTxid?.trim()) return false;
+  return (offer.note || '').trim().length > 0;
 }
 
 /**
  * Group flat local burns under their original dedications.
- * Groups are ordered by most recent activity (latest burn `at`).
+ * Orphan re-offers (parent not on device) and empty-name roots are skipped.
  */
 export function groupOffersByOriginal(offers: LocalOffer[]): OfferGroup[] {
   const byTxid = new Map<string, LocalOffer>();
   for (const o of offers) {
-    if (o.burnTxid) byTxid.set(o.burnTxid, o);
+    if (o.burnTxid) byTxid.set(o.burnTxid.trim().toLowerCase(), o);
   }
 
   const buckets = new Map<string, LocalOffer[]>();
   for (const o of offers) {
-    const rootId = resolveOriginalTxid(o, byTxid);
+    const rootId = resolveOriginalTxid(o);
     const list = buckets.get(rootId);
     if (list) list.push(o);
     else buckets.set(rootId, [o]);
@@ -71,18 +66,18 @@ export function groupOffersByOriginal(offers: LocalOffer[]): OfferGroup[] {
 
   const groups: OfferGroup[] = [];
   for (const [rootId, members] of buckets) {
+    const original = byTxid.get(rootId);
+    // Skip: tip-chain / orphan parent not on device / empty dedication name.
+    if (!original || !isNamedRootOffer(original)) continue;
+
     const burns = [...members].sort(byTimeDesc);
     const latest = burns[0]!;
-    const original =
-      byTxid.get(rootId) ??
-      [...members].sort((a, b) => Date.parse(a.at) - Date.parse(b.at))[0]!;
-    const note = (original.note || latest.note || '').trim();
     groups.push({
       original,
       latest,
       burns,
       totalBurns: burns.length,
-      note,
+      note: original.note.trim(),
     });
   }
 

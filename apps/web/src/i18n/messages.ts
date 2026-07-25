@@ -36,6 +36,7 @@ export type MessageKey =
   | 'reofferBadge'
   | 'burnTotal'
   | 'latestBurnLink'
+  | 'openOnExplorer'
   | 'btnReoffer'
   | 'btnHistory'
   | 'historyTitle'
@@ -58,6 +59,8 @@ export type MessageKey =
   | 'shareLookupFailed'
   | 'btnShare'
   | 'shareCopied'
+  | 'historyIndexUnavailable'
+  | 'lastOfferedAt'
   | 'footerBrand';
 
 type Dict = Record<MessageKey, string>;
@@ -105,6 +108,7 @@ const en: Dict = {
   reofferBadge: 're-offer',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
+  openOnExplorer: 'Open on explorer',
   btnReoffer: 'Re-offer',
   btnHistory: 'History',
   historyTitle: 'Memorial history',
@@ -128,6 +132,9 @@ const en: Dict = {
   shareLookupFailed: 'Could not find that dedication on-chain.',
   btnShare: 'Share',
   shareCopied: 'Link copied',
+  historyIndexUnavailable:
+    'Could not reach the memorial index — showing what this device has. On Contabo, proxy /index-api/ → dana-index :8788.',
+  lastOfferedAt: 'Last offered {when}',
   footerBrand: 'White Lotus',
 };
 
@@ -173,6 +180,7 @@ const vi: Dict = {
   reofferBadge: 'dâng lại',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
+  openOnExplorer: 'Mở trên explorer',
   btnReoffer: 'Dâng lại',
   btnHistory: 'Lịch sử',
   historyTitle: 'Lịch sử tưởng niệm',
@@ -196,6 +204,9 @@ const vi: Dict = {
   shareLookupFailed: 'Không tìm thấy lời tưởng niệm trên chuỗi.',
   btnShare: 'Chia sẻ',
   shareCopied: 'Đã sao chép liên kết',
+  historyIndexUnavailable:
+    'Không kết nối được mục lục tưởng niệm — đang hiện dữ liệu trên máy này. Trên Contabo, proxy /index-api/ → dana-index :8788.',
+  lastOfferedAt: 'Dâng gần nhất {when}',
   footerBrand: 'White Lotus',
 };
 
@@ -240,6 +251,7 @@ const zh: Dict = {
   reofferBadge: '再献',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
+  openOnExplorer: '在浏览器打开',
   btnReoffer: '再献',
   btnHistory: '历史',
   historyTitle: '追思历史',
@@ -263,6 +275,9 @@ const zh: Dict = {
   shareLookupFailed: '链上未找到该追思。',
   btnShare: '分享',
   shareCopied: '链接已复制',
+  historyIndexUnavailable:
+    '无法连接追思索引 — 显示本机记录。请在 Contabo 将 /index-api/ 代理到 dana-index :8788。',
+  lastOfferedAt: '最近献花 {when}',
   footerBrand: 'White Lotus',
 };
 

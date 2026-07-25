@@ -17,9 +17,11 @@ describe('mergeIndexAndLocalOffers', () => {
     expect(groups[0]!.note).toBe('Local only');
   });
 
-  it('keeps index groups and appends local-only roots', () => {
+  it('keeps named index groups and skips empty-name index rows', () => {
     const root =
       '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
+    const orphanChild =
+      'b38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const other =
       'c38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const index: IndexMemorialGroup[] = [
@@ -41,6 +43,29 @@ describe('mergeIndexAndLocalOffers', () => {
             blockHeight: 1,
             blockTimestamp: 1_700_000_000,
             timeFirstSeen: '2026-01-03T00:00:00.000Z',
+          },
+        ],
+      },
+      {
+        // Index sometimes surfaces orphan re-offers as fake roots — drop them.
+        originalBurnTxid: orphanChild,
+        originalNote: '',
+        latestBurnTxid: orphanChild,
+        latestNote: '',
+        totalBurns: 1,
+        at: '2026-01-05T00:00:00.000Z',
+        burns: [
+          {
+            burnTxid: orphanChild,
+            tokenId: 't'.repeat(64),
+            note: '',
+            offeringId: 'wlotus',
+            version: 2,
+            parentBurnTxid: root,
+            originalBurnTxid: root,
+            blockHeight: 2,
+            blockTimestamp: 1_700_000_200,
+            timeFirstSeen: '2026-01-05T00:00:00.000Z',
           },
         ],
       },
