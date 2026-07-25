@@ -57,7 +57,7 @@ Open http://localhost:5173
 Optional env — copy `apps/web/.env.example` → `apps/web/.env`:
 
 ```
-VITE_PRAYER_TOKEN_ID=a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838
+VITE_PRAYER_TOKEN_ID=7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359
 VITE_PRAYER_TICKER=dWLOTUS
 VITE_CHRONIK_URLS=https://chronik.e.cash,https://chronik.pay2stay.com/xec
 ```

@@ -10,7 +10,7 @@ import {
 describe('shareLink', () => {
   it('extracts txid from path and site URL', () => {
     const id =
-      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
     expect(extractBurnTxid(`/${id}`)).toBe(id);
     expect(extractBurnTxid(`https://wlotus.org/${id}`)).toBe(id);
     expect(extractBurnTxid(`https://test.wlotus.org/${id}`)).toBe(id);
@@ -20,7 +20,7 @@ describe('shareLink', () => {
 
   it('builds share URL and detects share-shaped input', () => {
     const id =
-      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
     expect(dedicationShareUrl(id, 'https://wlotus.org')).toBe(
       `https://wlotus.org/${id}`,
     );
@@ -33,7 +33,7 @@ describe('shareLink', () => {
 
   it('accepts future native schemes but shares HTTPS only', () => {
     const id =
-      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
     expect(extractBurnTxid(`wlotus://${id}`)).toBe(id);
     expect(extractBurnTxid(`wlotus://burn/${id}`)).toBe(id);
     expect(extractBurnTxid(`web+wlotus://${id}`)).toBe(id);

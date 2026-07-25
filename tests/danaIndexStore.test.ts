@@ -33,7 +33,7 @@ describe('BurnStore', () => {
 
   it('groups re-offers under the original dedication', () => {
     const root =
-      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
     const child =
       'b38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     store.upsert(
