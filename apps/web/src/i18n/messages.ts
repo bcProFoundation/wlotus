@@ -61,6 +61,7 @@ export type MessageKey =
   | 'shareCopied'
   | 'historyIndexUnavailable'
   | 'lastOfferedAt'
+  | 'latestMessageLabel'
   | 'footerBrand';
 
 type Dict = Record<MessageKey, string>;
@@ -134,7 +135,8 @@ const en: Dict = {
   shareCopied: 'Link copied',
   historyIndexUnavailable:
     'Could not reach the memorial index — showing what this device has. On Contabo, proxy /index-api/ → dana-index :8788.',
-  lastOfferedAt: 'Last offered {when}',
+  lastOfferedAt: 'Last offered: {when}',
+  latestMessageLabel: 'Message: {msg}',
   footerBrand: 'White Lotus',
 };
 
@@ -206,7 +208,8 @@ const vi: Dict = {
   shareCopied: 'Đã sao chép liên kết',
   historyIndexUnavailable:
     'Không kết nối được mục lục tưởng niệm — đang hiện dữ liệu trên máy này. Trên Contabo, proxy /index-api/ → dana-index :8788.',
-  lastOfferedAt: 'Dâng gần nhất {when}',
+  lastOfferedAt: 'Lần gần nhất: {when}',
+  latestMessageLabel: 'Lời tưởng niệm: {msg}',
   footerBrand: 'White Lotus',
 };
 
@@ -277,7 +280,8 @@ const zh: Dict = {
   shareCopied: '链接已复制',
   historyIndexUnavailable:
     '无法连接追思索引 — 显示本机记录。请在 Contabo 将 /index-api/ 代理到 dana-index :8788。',
-  lastOfferedAt: '最近献花 {when}',
+  lastOfferedAt: '最近一次: {when}',
+  latestMessageLabel: '寄语: {msg}',
   footerBrand: 'White Lotus',
 };
 
