@@ -577,17 +577,45 @@ a {
   display: block;
 }
 
+.btn-reoffer-lotus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 0.35rem;
+  height: 2.25rem;
+  padding: 0 0.65rem 0 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-reoffer-lotus:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-reoffer-lotus:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .btn-reoffer-lotus img {
   display: block;
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.2rem;
+  height: 1.2rem;
   object-fit: contain;
   /* Source mark is dark ink — force white on the dark UI. */
   filter: brightness(0) invert(1);
 }
 
-.btn-reoffer-lotus:disabled img {
-  opacity: 0.55;
+.btn-reoffer-lotus span {
+  color: var(--ink);
 }
 
 .hint-inline {

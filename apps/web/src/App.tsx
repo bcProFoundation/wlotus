@@ -1040,9 +1040,7 @@ export default function App() {
                     <div className="history-row-actions">
                       <button
                         type="button"
-                        className="btn btn-icon-action btn-reoffer-lotus"
-                        aria-label={t('btnReoffer')}
-                        title={t('btnReoffer')}
+                        className="btn btn-reoffer-lotus"
                         disabled={!canOffer}
                         onClick={() =>
                           openReofferDraft({
@@ -1058,6 +1056,7 @@ export default function App() {
                           height={22}
                           draggable={false}
                         />
+                        <span>{t('btnReoffer')}</span>
                       </button>
                       <button
                         type="button"
