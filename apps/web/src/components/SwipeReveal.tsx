@@ -1,11 +1,16 @@
-import {
-  useEffect,
-  useRef,
-  type ReactNode,
-} from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
-const ACTION_WIDTH = 88;
+/** Width of each swipe action button (px). */
+export const SWIPE_ACTION_WIDTH = 76;
 const AXIS_SLOP = 8;
+
+export type SwipeAction = {
+  key: string;
+  label: string;
+  /** Destructive styling (e.g. Delete). */
+  danger?: boolean;
+  onClick: () => void;
+};
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -17,37 +22,39 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * Swipe / drag left to reveal a destructive action.
+ * Swipe / drag left to reveal action buttons.
  *
  * - iOS Safari: native touch listeners with `{ passive: false }` so horizontal
  *   `preventDefault` actually runs (React pointer events are often passive).
  * - Desktop: do not capture the pointer until a horizontal drag is confirmed,
  *   and ignore presses that start on buttons/links so clicks still work.
+ *
+ * Actions render left→right as listed; the last action sits at the far right.
  */
 export function SwipeReveal(props: {
   children: ReactNode;
-  actionLabel: string;
-  onAction: () => void;
+  actions: SwipeAction[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   disabled?: boolean;
 }) {
-  const { children, actionLabel, onAction, open, onOpenChange, disabled } =
-    props;
+  const { children, actions, open, onOpenChange, disabled } = props;
+  const panelWidth = Math.max(1, actions.length) * SWIPE_ACTION_WIDTH;
   const rootRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const openRef = useRef(open);
   const onOpenChangeRef = useRef(onOpenChange);
   const disabledRef = useRef(disabled);
-  const offsetRef = useRef(open ? -ACTION_WIDTH : 0);
+  const panelWidthRef = useRef(panelWidth);
+  const offsetRef = useRef(open ? -panelWidth : 0);
   const draggingRef = useRef(false);
 
-  openRef.current = open;
   onOpenChangeRef.current = onOpenChange;
   disabledRef.current = disabled;
+  panelWidthRef.current = panelWidth;
 
   const applyOffset = (px: number) => {
-    const clamped = Math.max(-ACTION_WIDTH, Math.min(0, px));
+    const max = panelWidthRef.current;
+    const clamped = Math.max(-max, Math.min(0, px));
     offsetRef.current = clamped;
     const track = trackRef.current;
     if (track) track.style.transform = `translate3d(${clamped}px,0,0)`;
@@ -58,11 +65,10 @@ export function SwipeReveal(props: {
     rootRef.current?.classList.toggle('is-dragging', on);
   };
 
-  // Keep transform in sync when parent toggles open (other row, remove, etc.).
   useEffect(() => {
     if (draggingRef.current) return;
-    applyOffset(open ? -ACTION_WIDTH : 0);
-  }, [open]);
+    applyOffset(open ? -panelWidthRef.current : 0);
+  }, [open, panelWidth]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -76,9 +82,10 @@ export function SwipeReveal(props: {
     let pointerId: number | null = null;
 
     const finishHorizontal = () => {
-      const shouldOpen = offsetRef.current < -ACTION_WIDTH * 0.4;
+      const max = panelWidthRef.current;
+      const shouldOpen = offsetRef.current < -max * 0.35;
       onOpenChangeRef.current(shouldOpen);
-      applyOffset(shouldOpen ? -ACTION_WIDTH : 0);
+      applyOffset(shouldOpen ? -max : 0);
     };
 
     const endGesture = (wasHorizontal: boolean) => {
@@ -104,7 +111,6 @@ export function SwipeReveal(props: {
       const dy = y - startY;
       if (axis == null) {
         if (Math.abs(dx) < AXIS_SLOP && Math.abs(dy) < AXIS_SLOP) return false;
-        // Prefer vertical slightly so page scroll wins on diagonal flicks.
         axis = Math.abs(dx) > Math.abs(dy) * 1.15 ? 'x' : 'y';
         if (axis === 'y') {
           active = false;
@@ -118,7 +124,6 @@ export function SwipeReveal(props: {
       return true;
     };
 
-    // ——— Touch (iPhone Safari) ———
     const onTouchStart = (e: TouchEvent) => {
       if (disabledRef.current || e.touches.length !== 1) return;
       if (isInteractiveTarget(e.target)) return;
@@ -141,8 +146,6 @@ export function SwipeReveal(props: {
       endGesture(axis === 'x');
     };
 
-    // ——— Mouse / pen (desktop) ———
-    // Touch is handled above; skip pointerType === 'touch' to avoid double-handling.
     const onPointerDown = (e: PointerEvent) => {
       if (disabledRef.current) return;
       if (e.pointerType === 'touch') return;
@@ -150,7 +153,6 @@ export function SwipeReveal(props: {
       if (isInteractiveTarget(e.target)) return;
       pointerId = e.pointerId;
       begin(e.clientX, e.clientY);
-      // Do NOT setPointerCapture yet — that breaks button clicks on desktop.
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -186,7 +188,6 @@ export function SwipeReveal(props: {
     };
 
     track.addEventListener('touchstart', onTouchStart, { passive: true });
-    // Critical for iOS: must be non-passive so preventDefault stops vertical scroll.
     track.addEventListener('touchmove', onTouchMove, { passive: false });
     track.addEventListener('touchend', onTouchEnd);
     track.addEventListener('touchcancel', onTouchEnd);
@@ -212,22 +213,34 @@ export function SwipeReveal(props: {
       ref={rootRef}
       className={`swipe-reveal${open ? ' is-open' : ''}`}
     >
-      <button
-        type="button"
-        className="swipe-reveal-action"
-        tabIndex={open ? 0 : -1}
+      <div
+        className="swipe-reveal-actions"
+        style={{ width: panelWidth }}
         aria-hidden={!open}
-        onClick={() => {
-          onOpenChange(false);
-          onAction();
-        }}
       >
-        {actionLabel}
-      </button>
+        {actions.map(action => (
+          <button
+            key={action.key}
+            type="button"
+            className={`swipe-reveal-action${
+              action.danger ? ' is-danger' : ''
+            }`}
+            tabIndex={open ? 0 : -1}
+            onClick={() => {
+              onOpenChange(false);
+              action.onClick();
+            }}
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
       <div
         ref={trackRef}
         className="swipe-reveal-track"
-        style={{ transform: `translate3d(${open ? -ACTION_WIDTH : 0}px,0,0)` }}
+        style={{
+          transform: `translate3d(${open ? -panelWidth : 0}px,0,0)`,
+        }}
       >
         {children}
       </div>

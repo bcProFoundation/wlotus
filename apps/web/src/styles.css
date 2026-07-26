@@ -447,25 +447,38 @@ a {
   overflow: hidden;
 }
 
-.swipe-reveal-action {
+.swipe-reveal-actions {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 88px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.swipe-reveal-action {
+  flex: 1 1 0;
+  min-width: 0;
   border: 0;
   margin: 0;
-  padding: 0 0.5rem;
+  padding: 0 0.35rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #a33a3a;
+  background: #3a4554;
   color: #fff;
   font: inherit;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.15;
+  text-align: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+.swipe-reveal-action.is-danger {
+  background: #a33a3a;
 }
 
 .swipe-reveal-track {
