@@ -836,24 +836,29 @@ export default function App() {
 
   async function shareDedication(originalBurnTxid: string, label: string) {
     const url = dedicationShareUrl(originalBurnTxid);
-    try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
+    // Clear any leftover banner from a prior share / clipboard attempt.
+    setMsg(null);
+
+    // Prefer the system share sheet. On dismiss/failure do not fall through —
+    // many mobile browsers reject with a non-DOMException AbortError (or
+    // similar), and clipboard fallthrough was putting the raw URL on screen.
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
         await navigator.share({
           title: label || t('offeringFallback'),
           url,
         });
-        return;
+      } catch {
+        /* dismissed or failed — stay silent */
       }
-    } catch (e) {
-      // User dismissed the system share sheet — do not fall through or show UI.
-      if (e instanceof DOMException && e.name === 'AbortError') return;
-      /* other share failures → clipboard */
+      return;
     }
+
     try {
       await navigator.clipboard.writeText(url);
       setMsg({ kind: 'ok', text: t('shareCopied') });
     } catch {
-      // Avoid dumping the raw URL into the page (breaks the layout).
+      /* no clipboard — stay silent; never dump the raw URL into the layout */
     }
   }
 
@@ -1016,7 +1021,7 @@ export default function App() {
           ) : null}
         </p>
 
-        {!busy && msg ? (
+        {!busy && msg && !looksLikeShareInput(msg.text) ? (
           <div className={`msg ${msg.kind}`}>{msg.text}</div>
         ) : null}
       </section>
