@@ -440,7 +440,6 @@ a {
   font-size: 0.92rem;
   /* Opaque so the Remove action does not show through the row. */
   background: #0c0c0c;
-  touch-action: pan-y;
 }
 
 .swipe-reveal {
@@ -466,6 +465,7 @@ a {
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .swipe-reveal-track {
@@ -473,12 +473,24 @@ a {
   z-index: 1;
   background: #0c0c0c;
   transition: transform 0.18s ease-out;
+  /* Let the page scroll vertically; JS takes over once a horizontal swipe wins. */
   touch-action: pan-y;
   will-change: transform;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.swipe-reveal-track button,
+.swipe-reveal-track a {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .swipe-reveal.is-dragging .swipe-reveal-track {
   transition: none;
+  /* Lock browser gestures while we own the horizontal drag (esp. iOS). */
+  touch-action: none;
 }
 
 .history-row {
