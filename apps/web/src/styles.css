@@ -582,7 +582,12 @@ a {
   width: 1.35rem;
   height: 1.35rem;
   object-fit: contain;
-  filter: grayscale(1) brightness(1.35);
+  /* Source mark is dark ink — force white on the dark UI. */
+  filter: brightness(0) invert(1);
+}
+
+.btn-reoffer-lotus:disabled img {
+  opacity: 0.55;
 }
 
 .hint-inline {
