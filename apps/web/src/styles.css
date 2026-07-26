@@ -423,19 +423,62 @@ a {
   margin: 0;
 }
 
-.history li,
+.history > li {
+  border-bottom: 1px solid var(--line);
+}
+
+.history > li:last-child {
+  border-bottom: 0;
+}
+
 .history-item {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.35rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--line);
+  padding: 0.75rem 0.15rem;
   font-size: 0.92rem;
+  /* Opaque so the Remove action does not show through the row. */
+  background: #0c0c0c;
+  touch-action: pan-y;
 }
 
-.history li:last-child {
-  border-bottom: 0;
+.swipe-reveal {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-reveal-action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 88px;
+  border: 0;
+  margin: 0;
+  padding: 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #a33a3a;
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.swipe-reveal-track {
+  position: relative;
+  z-index: 1;
+  background: #0c0c0c;
+  transition: transform 0.18s ease-out;
+  touch-action: pan-y;
+  will-change: transform;
+}
+
+.swipe-reveal.is-dragging .swipe-reveal-track {
+  transition: none;
 }
 
 .history-row {
