@@ -1095,10 +1095,24 @@ export default function App() {
                     <div className="history-row-actions">
                       <button
                         type="button"
-                        className="btn btn-reoffer"
+                        className="btn btn-icon-action"
+                        aria-label={t('btnHistory')}
+                        title={t('btnHistory')}
                         onClick={() => void openMemorialHistory(g)}
                       >
-                        {t('btnHistory')}
+                        <svg
+                          className="btn-icon-svg"
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          aria-hidden="true"
+                          focusable="false"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 1.91 4.76l1.44 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.75-1.23-3.5-2.08V8H12z"
+                          />
+                        </svg>
                       </button>
                       <ExplorerLinkIcon
                         txid={last.burnTxid}
