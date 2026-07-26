@@ -65,6 +65,7 @@ export type MessageKey =
   | 'lastOfferedAt'
   | 'latestMessageLabel'
   | 'btnRemoveRecent'
+  | 'btnSwipeOpen'
   | 'footerBrand';
 
 type Dict = Record<MessageKey, string>;
@@ -108,7 +109,8 @@ const en: Dict = {
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Offered in {duration}',
   recentTitle: 'Recent',
-  reofferHint: 'Re-offer a lotus from your recent list. Swipe left to remove a row on this device.',
+  reofferHint:
+    'Re-offer a lotus from your recent list. Swipe left for history, explorer, or delete on this device.',
   reofferBadge: 're-offer',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
@@ -142,7 +144,8 @@ const en: Dict = {
     'Could not reach the memorial index — showing what this device has. On Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Last offered: {when}',
   latestMessageLabel: 'Message: {msg}',
-  btnRemoveRecent: 'Remove',
+  btnRemoveRecent: 'Delete',
+  btnSwipeOpen: 'Open',
   footerBrand: 'White Lotus',
 };
 
@@ -184,7 +187,8 @@ const vi: Dict = {
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa trong {duration}',
   recentTitle: 'Gần đây',
-  reofferHint: 'Dâng lại hoa sen theo danh sách gần nhất. Vuốt sang trái để xóa khỏi máy này.',
+  reofferHint:
+    'Dâng lại hoa sen theo danh sách gần nhất. Vuốt sang trái để xem lịch sử, mở explorer, hoặc xóa khỏi máy này.',
   reofferBadge: 'dâng lại',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
@@ -219,6 +223,7 @@ const vi: Dict = {
   lastOfferedAt: 'Lần gần nhất: {when}',
   latestMessageLabel: 'Lời tưởng niệm: {msg}',
   btnRemoveRecent: 'Xóa',
+  btnSwipeOpen: 'Mở',
   footerBrand: 'White Lotus',
 };
 
@@ -259,7 +264,8 @@ const zh: Dict = {
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花完成 · {duration}',
   recentTitle: '最近',
-  reofferHint: '从最近列表再次献上莲花。向左滑动可从本机移除一行。',
+  reofferHint:
+    '从最近列表再次献上莲花。向左滑动可查看历史、打开浏览器，或从本机删除。',
   reofferBadge: '再献',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
@@ -293,7 +299,8 @@ const zh: Dict = {
     '无法连接追思索引 — 显示本机记录。请在 Contabo 将 /index-api/ 代理到 dana-index :8788。',
   lastOfferedAt: '最近一次: {when}',
   latestMessageLabel: '寄语: {msg}',
-  btnRemoveRecent: '移除',
+  btnRemoveRecent: '删除',
+  btnSwipeOpen: '打开',
   footerBrand: 'White Lotus',
 };
 

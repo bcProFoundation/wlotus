@@ -1073,38 +1073,40 @@ export default function App() {
               return (
                 <li key={rootId}>
                   <SwipeReveal
-                    actionLabel={t('btnRemoveRecent')}
                     open={swipeOpenRoot === rootId}
                     onOpenChange={open =>
                       setSwipeOpenRoot(open ? rootId : null)
                     }
-                    onAction={() => removeRecentGroup(g)}
                     disabled={busy}
+                    actions={[
+                      {
+                        key: 'history',
+                        label: t('btnHistory'),
+                        onClick: () => void openMemorialHistory(g),
+                      },
+                      {
+                        key: 'open',
+                        label: t('btnSwipeOpen'),
+                        onClick: () => {
+                          window.open(
+                            `https://explorer.e.cash/tx/${last.burnTxid}`,
+                            '_blank',
+                            'noopener,noreferrer',
+                          );
+                        },
+                      },
+                      {
+                        key: 'delete',
+                        label: t('btnRemoveRecent'),
+                        danger: true,
+                        onClick: () => removeRecentGroup(g),
+                      },
+                    ]}
                   >
                     <div className="history-item">
                       <div className="history-row history-row-primary">
                         <span className="history-original">{originalText}</span>
                         <div className="history-row-actions">
-                          <button
-                            type="button"
-                            className="btn btn-reoffer-lotus"
-                            disabled={!canOffer}
-                            onClick={() =>
-                              openReofferDraft({
-                                parentBurnTxid: rootId,
-                                originalNote: originalText,
-                              })
-                            }
-                          >
-                            <img
-                              src="/images/wlotus.png"
-                              alt=""
-                              width={22}
-                              height={22}
-                              draggable={false}
-                            />
-                            <span>{t('btnReoffer')}</span>
-                          </button>
                           <button
                             type="button"
                             className="btn btn-icon-action"
@@ -1138,33 +1140,24 @@ export default function App() {
                         <div className="history-row-actions">
                           <button
                             type="button"
-                            className="btn btn-icon-action"
-                            aria-label={t('btnHistory')}
-                            title={t('btnHistory')}
-                            onClick={() => void openMemorialHistory(g)}
-                          >
-                            <svg
-                              className="btn-icon-svg"
-                              viewBox="0 0 24 24"
-                              width="18"
-                              height="18"
-                              aria-hidden="true"
-                              focusable="false"
-                            >
-                              <path
-                                fill="currentColor"
-                                d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 1.91 4.76l1.44 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.75-1.23-3.5-2.08V8H12z"
-                              />
-                            </svg>
-                          </button>
-                          <ExplorerLinkIcon
-                            txid={last.burnTxid}
-                            label={
-                              g.totalBurns > 1
-                                ? t('latestBurnLink')
-                                : t('openOnExplorer')
+                            className="btn btn-reoffer-lotus"
+                            disabled={!canOffer}
+                            onClick={() =>
+                              openReofferDraft({
+                                parentBurnTxid: rootId,
+                                originalNote: originalText,
+                              })
                             }
-                          />
+                          >
+                            <img
+                              src="/images/wlotus.png"
+                              alt=""
+                              width={22}
+                              height={22}
+                              draggable={false}
+                            />
+                            <span>{t('btnReoffer')}</span>
+                          </button>
                         </div>
                       </div>
                       <span className="history-meta">
