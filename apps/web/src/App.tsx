@@ -844,14 +844,16 @@ export default function App() {
         });
         return;
       }
-    } catch {
-      /* fall through to clipboard */
+    } catch (e) {
+      // User dismissed the system share sheet — do not fall through or show UI.
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      /* other share failures → clipboard */
     }
     try {
       await navigator.clipboard.writeText(url);
       setMsg({ kind: 'ok', text: t('shareCopied') });
     } catch {
-      setMsg({ kind: 'err', text: url });
+      // Avoid dumping the raw URL into the page (breaks the layout).
     }
   }
 
