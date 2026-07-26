@@ -6,6 +6,7 @@ import {
   type ClipboardEvent,
 } from 'react';
 import { LangSwitch } from './components/LangSwitch.js';
+import { SwipeReveal } from './components/SwipeReveal.js';
 import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
@@ -36,6 +37,7 @@ import {
   liveTipEpochFromStatus,
 } from './lib/tipRace.js';
 import {
+  resolveOriginalTxid,
   type LocalOffer,
   type OfferGroup,
 } from './lib/groupOffers.js';
@@ -45,6 +47,13 @@ import {
   notifyIndexBurn,
   type IndexMemorialGroup,
 } from './lib/danaIndexApi.js';
+import {
+  hideRecentRoot,
+  isRecentRootHidden,
+  loadHiddenRecentRoots,
+  stripOffersForRoot,
+  unhideRecentRoot,
+} from './lib/hiddenRecent.js';
 import { mergeIndexAndLocalOffers } from './lib/mergeRecentOffers.js';
 import {
   burnTxidFromLocation,
@@ -184,6 +193,11 @@ export default function App() {
     formatElapsedTenthsMinLocale(0, 'en'),
   );
   const [offers, setOffers] = useState<LocalOffer[]>(() => loadOffers());
+  /** Roots hidden from Recent on this device only (on-chain burns remain). */
+  const [hiddenRecent, setHiddenRecent] = useState<Set<string>>(() =>
+    loadHiddenRecentRoots(),
+  );
+  const [swipeOpenRoot, setSwipeOpenRoot] = useState<string | null>(null);
   /** Global recent from dana-index (null = not loaded / offline). */
   const [indexGroups, setIndexGroups] = useState<IndexMemorialGroup[] | null>(
     null,
@@ -718,19 +732,22 @@ export default function App() {
           const activeMs = elapsedClockRef.current.readMs();
           const uiPowMs = Math.max(activeMs, result.powMs || mined.elapsedMs);
 
-          setOffers(
-            pushOffer({
-              remintTxid: result.remintTxid,
-              burnTxid,
-              // This burn's on-chain memorial text (re-offer may differ from dedication).
-              note: isReoffer ? challengeNote : historyNote,
-              at: new Date().toISOString(),
-              powMs: uiPowMs,
-              powAttempts: result.powAttempts || mined.attempts,
-              hashrateHps: result.hashrateHps || mined.hashrateHps,
-              bits: result.bits,
-              parentBurnTxid,
-            }),
+          const saved: LocalOffer = {
+            remintTxid: result.remintTxid,
+            burnTxid,
+            // This burn's on-chain memorial text (re-offer may differ from dedication).
+            note: isReoffer ? challengeNote : historyNote,
+            at: new Date().toISOString(),
+            powMs: uiPowMs,
+            powAttempts: result.powAttempts || mined.attempts,
+            hashrateHps: result.hashrateHps || mined.hashrateHps,
+            bits: result.bits,
+            parentBurnTxid,
+          };
+          setOffers(pushOffer(saved));
+          // Offering again restores a previously hidden dedication on this device.
+          setHiddenRecent(prev =>
+            unhideRecentRoot(resolveOriginalTxid(saved), prev),
           );
           setNote('');
           void notifyIndexBurn(burnTxid);
@@ -857,7 +874,19 @@ export default function App() {
     }
   }
 
-  const recentGroups = mergeIndexAndLocalOffers(indexGroups, offers);
+  const recentGroups = mergeIndexAndLocalOffers(indexGroups, offers).filter(
+    g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
+  );
+
+  function removeRecentGroup(g: OfferGroup) {
+    const root = g.original.burnTxid;
+    setHiddenRecent(prev => hideRecentRoot(root, prev));
+    const nextOffers = stripOffersForRoot(loadOffers(), root);
+    localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(nextOffers));
+    setOffers(nextOffers);
+    setSwipeOpenRoot(null);
+    if (historyGroup?.original.burnTxid === root) setHistoryGroup(null);
+  }
 
   async function openMemorialHistory(g: OfferGroup) {
     setHistoryGroup(g);
@@ -1035,104 +1064,114 @@ export default function App() {
                 (last.burnTxid !== g.original.burnTxid ||
                   latestText !== originalText);
               const lastWhen = new Date(last.at).toLocaleString(locale);
+              const rootId = g.original.burnTxid;
               return (
-                <li key={g.original.burnTxid} className="history-item">
-                  <div className="history-row history-row-primary">
-                    <span className="history-original">{originalText}</span>
-                    <div className="history-row-actions">
-                      <button
-                        type="button"
-                        className="btn btn-reoffer-lotus"
-                        disabled={!canOffer}
-                        onClick={() =>
-                          openReofferDraft({
-                            parentBurnTxid: g.original.burnTxid,
-                            originalNote: originalText,
-                          })
-                        }
-                      >
-                        <img
-                          src="/images/wlotus.png"
-                          alt=""
-                          width={22}
-                          height={22}
-                          draggable={false}
-                        />
-                        <span>{t('btnReoffer')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-icon-action"
-                        aria-label={t('btnShare')}
-                        title={t('btnShare')}
-                        disabled={busy}
-                        onClick={() =>
-                          void shareDedication(
-                            g.original.burnTxid,
-                            originalText,
-                          )
-                        }
-                      >
-                        <svg
-                          className="btn-icon-svg"
-                          viewBox="0 0 24 24"
-                          width="18"
-                          height="18"
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+                <li key={rootId}>
+                  <SwipeReveal
+                    actionLabel={t('btnRemoveRecent')}
+                    open={swipeOpenRoot === rootId}
+                    onOpenChange={open =>
+                      setSwipeOpenRoot(open ? rootId : null)
+                    }
+                    onAction={() => removeRecentGroup(g)}
+                    disabled={busy}
+                  >
+                    <div className="history-item">
+                      <div className="history-row history-row-primary">
+                        <span className="history-original">{originalText}</span>
+                        <div className="history-row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-reoffer-lotus"
+                            disabled={!canOffer}
+                            onClick={() =>
+                              openReofferDraft({
+                                parentBurnTxid: rootId,
+                                originalNote: originalText,
+                              })
+                            }
+                          >
+                            <img
+                              src="/images/wlotus.png"
+                              alt=""
+                              width={22}
+                              height={22}
+                              draggable={false}
+                            />
+                            <span>{t('btnReoffer')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-icon-action"
+                            aria-label={t('btnShare')}
+                            title={t('btnShare')}
+                            disabled={busy}
+                            onClick={() =>
+                              void shareDedication(rootId, originalText)
+                            }
+                          >
+                            <svg
+                              className="btn-icon-svg"
+                              viewBox="0 0 24 24"
+                              width="18"
+                              height="18"
+                              aria-hidden="true"
+                              focusable="false"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="history-row history-row-secondary">
+                        <span className="history-meta">
+                          {t('burnTotal', { n: g.totalBurns })}
+                        </span>
+                        <div className="history-row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-icon-action"
+                            aria-label={t('btnHistory')}
+                            title={t('btnHistory')}
+                            onClick={() => void openMemorialHistory(g)}
+                          >
+                            <svg
+                              className="btn-icon-svg"
+                              viewBox="0 0 24 24"
+                              width="18"
+                              height="18"
+                              aria-hidden="true"
+                              focusable="false"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 1.91 4.76l1.44 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.75-1.23-3.5-2.08V8H12z"
+                              />
+                            </svg>
+                          </button>
+                          <ExplorerLinkIcon
+                            txid={last.burnTxid}
+                            label={
+                              g.totalBurns > 1
+                                ? t('latestBurnLink')
+                                : t('openOnExplorer')
+                            }
                           />
-                        </svg>
-                      </button>
+                        </div>
+                      </div>
+                      <span className="history-meta">
+                        {t('lastOfferedAt', { when: lastWhen })}
+                      </span>
+                      {showLatestMessage ? (
+                        <span className="history-latest">
+                          {t('latestMessageLabel', { msg: latestText })}
+                        </span>
+                      ) : null}
                     </div>
-                  </div>
-                  <div className="history-row history-row-secondary">
-                    <span className="history-meta">
-                      {t('burnTotal', { n: g.totalBurns })}
-                    </span>
-                    <div className="history-row-actions">
-                      <button
-                        type="button"
-                        className="btn btn-icon-action"
-                        aria-label={t('btnHistory')}
-                        title={t('btnHistory')}
-                        onClick={() => void openMemorialHistory(g)}
-                      >
-                        <svg
-                          className="btn-icon-svg"
-                          viewBox="0 0 24 24"
-                          width="18"
-                          height="18"
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 1.91 4.76l1.44 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.75-1.23-3.5-2.08V8H12z"
-                          />
-                        </svg>
-                      </button>
-                      <ExplorerLinkIcon
-                        txid={last.burnTxid}
-                        label={
-                          g.totalBurns > 1
-                            ? t('latestBurnLink')
-                            : t('openOnExplorer')
-                        }
-                      />
-                    </div>
-                  </div>
-                  <span className="history-meta">
-                    {t('lastOfferedAt', { when: lastWhen })}
-                  </span>
-                  {showLatestMessage ? (
-                    <span className="history-latest">
-                      {t('latestMessageLabel', { msg: latestText })}
-                    </span>
-                  ) : null}
+                  </SwipeReveal>
                 </li>
               );
             })}
