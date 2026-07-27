@@ -377,10 +377,75 @@ a {
   cursor: not-allowed;
 }
 
+.field-label-links {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
 .altar-summary {
   margin: 0;
   color: var(--ink);
   font-size: 0.86rem;
+}
+
+.altar-details {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.altar-details-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.35rem 0.75rem;
+  padding: 0.28rem 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.altar-details-row + .altar-details-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.altar-details-row dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.altar-details-row dd {
+  margin: 0;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+@media (max-width: 420px) {
+  .altar-details-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
+.history-original-btn {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+
+.history-original-btn:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
 }
 
 .altar-setup-card {

@@ -6,6 +6,7 @@ import {
   type ClipboardEvent,
 } from 'react';
 import { LangSwitch } from './components/LangSwitch.js';
+import { AltarDetails } from './components/AltarDetails.js';
 import { AltarSetupModal } from './components/AltarSetupModal.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import {
@@ -22,6 +23,7 @@ import {
   TIP_POLL_MS,
 } from './lib/config.js';
 import {
+  emptyAltarFields,
   encodeAltarNote,
   memorialDisplayName,
   MEMORIAL_NOTE_MAX_CHARS,
@@ -189,6 +191,8 @@ export default function App() {
   /** Structured altar fields; packed into the on-chain note when offering. */
   const [altar, setAltar] = useState<AltarFields | null>(null);
   const [altarOpen, setAltarOpen] = useState(false);
+  /** Read-only Ban thờ detail from Recent name tap. */
+  const [altarView, setAltarView] = useState<AltarFields | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -221,6 +225,8 @@ export default function App() {
   const [session, setSession] = useState<{
     reoffer: boolean;
     note: string;
+    /** Structured altar shown during the offer session (new dedications). */
+    altar?: AltarFields | null;
     /** Optional remembrance words on a re-offer (on-chain DANA v2 note). */
     extraNote?: string;
   } | null>(null);
@@ -552,7 +558,7 @@ export default function App() {
       historyNote = (opts?.displayNote ?? '').trim();
     } else if (altar) {
       try {
-        challengeNote = encodeAltarNote({ ...altar, note: note.trim() });
+        challengeNote = encodeAltarNote(altar);
       } catch {
         setMsg({ kind: 'err', text: t('altarErrDeathDate') });
         return;
@@ -568,6 +574,7 @@ export default function App() {
     setSession({
       reoffer: isReoffer,
       note: historyNote,
+      altar: isReoffer ? null : altar,
       extraNote: extraNote || undefined,
     });
     setLinkedParentBurnTxid(null);
@@ -993,43 +1000,63 @@ export default function App() {
 
         <div className="field">
           <div className="field-label-row">
-            <label htmlFor="note">{t('noteLabel')}</label>
-            <button
-              type="button"
-              className="link-more"
-              disabled={busy || apiOnline === false}
-              onClick={() => setAltarOpen(true)}
-            >
-              {t('btnAltarMore')}
-            </button>
+            <label>{altar ? t('altarLabel') : t('noteLabel')}</label>
+            {altar ? (
+              <div className="field-label-links">
+                <button
+                  type="button"
+                  className="link-more"
+                  disabled={busy || apiOnline === false}
+                  onClick={() => setAltarOpen(true)}
+                >
+                  {t('btnAltarEdit')}
+                </button>
+                <button
+                  type="button"
+                  className="link-more"
+                  disabled={busy}
+                  onClick={() => {
+                    setAltar(null);
+                    setNote('');
+                    setLinkedParentBurnTxid(null);
+                  }}
+                >
+                  {t('btnAltarDelete')}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="link-more"
+                disabled={busy || apiOnline === false}
+                onClick={() => setAltarOpen(true)}
+              >
+                {t('btnAltarMore')}
+              </button>
+            )}
           </div>
-          <textarea
-            id="note"
-            rows={2}
-            maxLength={MEMORIAL_NOTE_MAX_CHARS}
-            value={note}
-            onChange={e => onNoteInput(e.target.value)}
-            onPaste={onNotePaste}
-            placeholder={
-              altar ? t('altarNotePlaceholder') : t('notePlaceholder')
-            }
-            disabled={busy || apiOnline === false || shareLookingUp}
-          />
           {altar ? (
-            <p className="hint altar-summary">
-              {t('altarSummary', {
-                name: altar.name,
-                death: altar.deathDate,
-              })}
-            </p>
-          ) : null}
+            <AltarDetails altar={altar} />
+          ) : (
+            <textarea
+              id="note"
+              rows={2}
+              maxLength={MEMORIAL_NOTE_MAX_CHARS}
+              value={note}
+              onChange={e => onNoteInput(e.target.value)}
+              onPaste={onNotePaste}
+              placeholder={t('notePlaceholder')}
+              disabled={busy || apiOnline === false || shareLookingUp}
+            />
+          )}
           <p className="hint share-hint">
             {shareLookingUp
               ? t('shareLookingUp')
               : linkedParentBurnTxid
                 ? t('shareLinked', {
                     name:
-                      memorialDisplayName(note) || t('offeringFallback'),
+                      (altar ? altar.name : memorialDisplayName(note)) ||
+                      t('offeringFallback'),
                   })
                 : t('shareHint')}
           </p>
@@ -1043,7 +1070,8 @@ export default function App() {
               if (linkedParentBurnTxid) {
                 openReofferDraft({
                   parentBurnTxid: linkedParentBurnTxid,
-                  originalNote: note,
+                  originalNote:
+                    (altar ? altar.name : memorialDisplayName(note)) || note,
                 });
                 return;
               }
@@ -1161,7 +1189,25 @@ export default function App() {
                   >
                     <div className="history-item">
                       <div className="history-row history-row-primary">
-                        <span className="history-original">{originalText}</span>
+                        <button
+                          type="button"
+                          className="history-original history-original-btn"
+                          onClick={() => {
+                            const packed = parseAltarNote(g.note);
+                            if (packed) {
+                              setAltarView(packed);
+                              return;
+                            }
+                            const name = (g.note || '').trim();
+                            if (!name) return;
+                            setAltarView({
+                              ...emptyAltarFields(),
+                              name,
+                            });
+                          }}
+                        >
+                          {originalText}
+                        </button>
                         <div className="history-row-actions">
                           <button
                             type="button"
@@ -1246,9 +1292,32 @@ export default function App() {
           }}
           onClear={() => {
             setAltar(null);
+            setNote('');
             setAltarOpen(false);
           }}
         />
+      ) : null}
+
+      {altarView ? (
+        <div
+          className="offer-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="altar-detail-title"
+        >
+          <div className="offer-modal-card altar-setup-card">
+            <button
+              type="button"
+              className="offer-modal-close"
+              aria-label={t('btnClose')}
+              onClick={() => setAltarView(null)}
+            >
+              ×
+            </button>
+            <h2 id="altar-detail-title">{t('altarDetailTitle')}</h2>
+            <AltarDetails altar={altarView} />
+          </div>
+        </div>
       ) : null}
 
       {historyGroup ? (
@@ -1469,10 +1538,19 @@ export default function App() {
               ×
             </button>
             <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
-            <p className="offer-session-label">{t('sessionNoteLabel')}</p>
-            <p className="offer-session-note">
-              {session.note.trim() || t('offeringFallback')}
-            </p>
+            {session.altar ? (
+              <>
+                <p className="offer-session-label">{t('altarLabel')}</p>
+                <AltarDetails altar={session.altar} />
+              </>
+            ) : (
+              <>
+                <p className="offer-session-label">{t('sessionNoteLabel')}</p>
+                <p className="offer-session-note">
+                  {session.note.trim() || t('offeringFallback')}
+                </p>
+              </>
+            )}
             <p className="offer-session-status" aria-live="polite">
               {buttonLabel}
             </p>
