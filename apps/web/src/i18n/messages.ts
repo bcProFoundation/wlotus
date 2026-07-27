@@ -95,6 +95,7 @@ export type MessageKey =
   | 'openInBrowserCta'
   | 'openInBrowserCopy'
   | 'openInBrowserCopied'
+  | 'openInBrowserRedirecting'
   | 'historyIndexUnavailable'
   | 'lastOfferedAt'
   | 'latestMessageLabel'
@@ -211,6 +212,7 @@ const en: Dict = {
   openInBrowserCta: 'Open in browser',
   openInBrowserCopy: 'Copy link',
   openInBrowserCopied: 'Link copied',
+  openInBrowserRedirecting: 'Opening in your browser…',
   historyIndexUnavailable:
     'Could not reach the memorial index — showing what this device has. On Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Last offered: {when}',
@@ -326,6 +328,7 @@ const vi: Dict = {
   openInBrowserCta: 'Mở bằng trình duyệt',
   openInBrowserCopy: 'Sao chép liên kết',
   openInBrowserCopied: 'Đã sao chép liên kết',
+  openInBrowserRedirecting: 'Đang mở bằng trình duyệt…',
   historyIndexUnavailable:
     'Không kết nối được mục lục tưởng niệm — đang hiện dữ liệu trên máy này. Trên Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Lần gần nhất: {when}',
@@ -438,6 +441,7 @@ const zh: Dict = {
   openInBrowserCta: '在浏览器中打开',
   openInBrowserCopy: '复制链接',
   openInBrowserCopied: '链接已复制',
+  openInBrowserRedirecting: '正在用浏览器打开…',
   historyIndexUnavailable:
     '无法连接追思索引 — 显示本机记录。请在 Contabo 将 /index-api/ 代理到 dana-index :8788。',
   lastOfferedAt: '最近一次: {when}',

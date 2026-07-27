@@ -1,12 +1,41 @@
 /**
- * Detect messenger / social in-app browsers (WebViews) and build escape
- * URLs into the system browser. In-app WebViews use a separate storage
- * partition from Safari/Chrome and from the installed PWA — opening a
- * share link there fragments localStorage (offer history, install id).
+ * Detect messenger / social in-app browsers (WebViews) and escape into the
+ * system browser. Captive WebViews use a separate storage partition from
+ * Safari/Chrome and the installed PWA — share links opened there fragment
+ * localStorage (offer history, install id).
+ *
+ * Strategy (2025–2026 practice — deepthix/inapp-escape, eiab, paul.af):
+ * - Android: auto `intent://…#Intent;scheme=https;…end` (usually works)
+ * - Facebook / Messenger iOS: auto `x-safari-https://…`
+ * - Instagram / Threads iOS: auto `instagram://extbrowser/?url=…`
+ * - LINE: auto HTTPS + `?openExternalBrowser=1`
+ * - Twitter/X, TikTok, …: JS redirects are blocked — need a user tap
+ * - Always keep a tap fallback; never loop forever (sessionStorage guard)
  */
 
-const IN_APP_UA =
-  /WebView|(iPhone|iPod|iPad)(?!.*Safari\/)|Android.*(wv)|\bZalo|\bFB[\w_]+\/|\bFBAV|\bFBAN|\bInstagram|\bLine\/|\bMicroMessenger|\bTwitter|\bBytedanceWebview|\bTikTok|\bSnapchat/i;
+export type InAppApp =
+  | 'zalo'
+  | 'facebook'
+  | 'messenger'
+  | 'instagram'
+  | 'threads'
+  | 'line'
+  | 'twitter'
+  | 'tiktok'
+  | 'snapchat'
+  | 'linkedin'
+  | 'wechat'
+  | 'other';
+
+/** Apps whose WKWebView drops JS-initiated scheme redirects. */
+const NEEDS_USER_GESTURE = new Set<InAppApp>([
+  'twitter',
+  'tiktok',
+  'snapchat',
+  'linkedin',
+]);
+
+const ESCAPE_GUARD_KEY = 'wlotus.iabEscape';
 
 /** True when running as an installed PWA / home-screen app. */
 export function isStandaloneDisplay(
@@ -23,18 +52,62 @@ export function isStandaloneDisplay(
   return Boolean(nav.standalone);
 }
 
+export function detectInAppApp(
+  ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): InAppApp | null {
+  if (!ua) return null;
+  if (/\bZalo/i.test(ua)) return 'zalo';
+  if (/\bFB[\w_]+\/(Messenger|MESSENGER)|\bMessenger/i.test(ua)) return 'messenger';
+  if (/\bFB[\w_]+\/|\bFBAV|\bFBAN/i.test(ua)) return 'facebook';
+  if (/\bThreads/i.test(ua)) return 'threads';
+  if (/\bInstagram/i.test(ua)) return 'instagram';
+  if (/\bLine\//i.test(ua)) return 'line';
+  if (/\bTwitter|\bX\/|TwitterAndroid/i.test(ua)) return 'twitter';
+  if (/\bTikTok|\bBytedanceWebview|\bmusical_ly/i.test(ua)) return 'tiktok';
+  if (/\bSnapchat/i.test(ua)) return 'snapchat';
+  if (/\bLinkedInApp/i.test(ua)) return 'linkedin';
+  if (/\bMicroMessenger/i.test(ua)) return 'wechat';
+  if (
+    /WebView|(iPhone|iPod|iPad)(?!.*Safari\/)|Android.*(wv)/i.test(ua)
+  ) {
+    return 'other';
+  }
+  return null;
+}
+
 /** Messenger / social WebView that should not own wLotus state. */
 export function isInAppBrowser(
   ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
 ): boolean {
-  if (!ua) return false;
-  return IN_APP_UA.test(ua);
+  return detectInAppApp(ua) != null;
+}
+
+export function isAndroid(
+  ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): boolean {
+  return /Android/i.test(ua);
+}
+
+export function isIOS(
+  ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): boolean {
+  return /iPad|iPhone|iPod/i.test(ua);
+}
+
+/** Whether a silent JS redirect is worth trying for this host WebView. */
+export function canAutoEscapeInAppBrowser(
+  ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+): boolean {
+  const app = detectInAppApp(ua);
+  if (!app) return false;
+  if (isAndroid(ua)) return true; // intent:// usually works without a gesture
+  if (NEEDS_USER_GESTURE.has(app)) return false;
+  return true;
 }
 
 /**
  * Prefer opening share links outside the captive WebView.
- * Returns an escape scheme when possible; otherwise the original HTTPS URL
- * (caller should still offer copy + manual “Open in browser” instructions).
+ * Returns an escape scheme / URL when possible.
  */
 export function externalBrowserEscapeUrl(
   httpsUrl: string,
@@ -48,27 +121,37 @@ export function externalBrowserEscapeUrl(
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return httpsUrl;
 
-  const isAndroid = /Android/i.test(ua);
-  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const app = detectInAppApp(ua);
+  const href = url.href;
 
-  if (isAndroid) {
-    // Opens the user's default browser (or installed app that captures https).
+  if (isAndroid(ua)) {
+    // Omit package= so Samsung Internet / Brave / Firefox can handle it.
     return (
       `intent://${url.host}${url.pathname}${url.search}${url.hash}` +
-      '#Intent;scheme=https;action=android.intent.action.VIEW;end'
+      `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(href)};end`
     );
   }
 
-  if (isIOS) {
-    if (/\bFB[\w_]+\/|\bFBAV|\bFBAN|\bMessenger/i.test(ua)) {
-      return `x-safari-https://${url.host}${url.pathname}${url.search}${url.hash}`;
+  if (isIOS(ua)) {
+    if (app === 'instagram' || app === 'threads') {
+      return `instagram://extbrowser/?url=${encodeURIComponent(href)}`;
     }
-    if (/\bInstagram/i.test(ua)) {
-      return `instagram://extbrowser/?url=${encodeURIComponent(url.href)}`;
+    if (app === 'line') {
+      const line = new URL(href);
+      line.searchParams.set('openExternalBrowser', '1');
+      return line.href;
     }
+    // Facebook / Messenger / Zalo / others — best-effort Safari handoff.
+    return `x-safari-https://${url.host}${url.pathname}${url.search}${url.hash}`;
   }
 
-  return url.href;
+  if (app === 'line') {
+    const line = new URL(href);
+    line.searchParams.set('openExternalBrowser', '1');
+    return line.href;
+  }
+
+  return href;
 }
 
 /** Block share-deeplink handling while stuck in a messenger WebView. */
@@ -91,4 +174,55 @@ export function shouldEscapeShareInAppBrowser(opts?: {
   if (!isInAppBrowser(ua)) return false;
   // Only gate dedication share paths: /<64-hex>
   return /^\/[0-9a-fA-F]{64}\/?$/.test(pathname.trim());
+}
+
+function escapeGuardKey(pathname: string): string {
+  return `${ESCAPE_GUARD_KEY}:${pathname}`;
+}
+
+/** True if we already attempted an auto-escape for this share path. */
+export function hasAttemptedAutoEscape(
+  pathname: string = typeof window !== 'undefined' ? window.location.pathname : '',
+): boolean {
+  if (typeof sessionStorage === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(escapeGuardKey(pathname)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function markAutoEscapeAttempted(
+  pathname: string = typeof window !== 'undefined' ? window.location.pathname : '',
+): void {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(escapeGuardKey(pathname), '1');
+  } catch {
+    /* private mode */
+  }
+}
+
+/**
+ * Try a silent redirect out of the WebView. Returns true if a redirect was
+ * started. Callers should still render a tap fallback in case the host blocks it.
+ */
+export function tryAutoEscapeInAppBrowser(
+  httpsUrl: string,
+  ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
+  pathname: string = typeof window !== 'undefined' ? window.location.pathname : '',
+): boolean {
+  if (!canAutoEscapeInAppBrowser(ua)) return false;
+  if (hasAttemptedAutoEscape(pathname)) return false;
+  const target = externalBrowserEscapeUrl(httpsUrl, ua);
+  if (!target) return false;
+  // No-op same URL would loop; LINE mutates query so target !== httpsUrl.
+  if (target === httpsUrl) return false;
+  markAutoEscapeAttempted(pathname);
+  try {
+    window.location.replace(target);
+    return true;
+  } catch {
+    return false;
+  }
 }

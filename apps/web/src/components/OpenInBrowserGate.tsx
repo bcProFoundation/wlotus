@@ -1,14 +1,17 @@
-import { useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useLocale } from '../i18n/LocaleContext.js';
 import {
+  canAutoEscapeInAppBrowser,
   externalBrowserEscapeUrl,
+  hasAttemptedAutoEscape,
   shouldEscapeShareInAppBrowser,
+  tryAutoEscapeInAppBrowser,
 } from '../lib/inAppBrowser.js';
 
 /**
- * When a dedication share link opens inside a messenger WebView, prompt the
- * user to continue in the system browser / installed PWA so localStorage
- * stays with their real White Lotus session.
+ * When a dedication share link opens inside a messenger WebView, try a silent
+ * escape into the system browser / installed PWA. If the host blocks JS
+ * redirects, show a one-tap fallback so localStorage stays with the real session.
  */
 export function OpenInBrowserGate(props: {
   /** Current absolute URL to open externally (usually location.href). */
@@ -16,11 +19,29 @@ export function OpenInBrowserGate(props: {
 }) {
   const { t } = useLocale();
   const [copied, setCopied] = useState(false);
+  const [showFallback, setShowFallback] = useState(() => {
+    // Already tried auto-escape, or this WebView needs a gesture → show UI.
+    return (
+      hasAttemptedAutoEscape() || !canAutoEscapeInAppBrowser()
+    );
+  });
 
   const escapeHref = useMemo(
     () => externalBrowserEscapeUrl(props.href),
     [props.href],
   );
+
+  useEffect(() => {
+    if (showFallback) return;
+    const started = tryAutoEscapeInAppBrowser(props.href);
+    if (!started) {
+      setShowFallback(true);
+      return;
+    }
+    // If still here after a beat, the host ignored the redirect — show UI.
+    const timer = window.setTimeout(() => setShowFallback(true), 900);
+    return () => window.clearTimeout(timer);
+  }, [props.href, showFallback]);
 
   async function copyLink() {
     try {
@@ -43,6 +64,15 @@ export function OpenInBrowserGate(props: {
       e.preventDefault();
       window.location.href = escapeHref;
     }
+  }
+
+  if (!showFallback) {
+    // Quiet while the auto-redirect runs — avoid a flash of “please tap”.
+    return (
+      <div className="open-browser-redirecting" aria-busy="true">
+        <p className="hint">{t('openInBrowserRedirecting')}</p>
+      </div>
+    );
   }
 
   return (
