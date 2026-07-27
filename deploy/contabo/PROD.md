@@ -149,6 +149,8 @@ Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dry
 
 ```bash
 cd /opt/wlotus
+# Pull as deploy (not root). If deployments/mainnet-*.json block the merge,
+# see README.md “Update /opt/wlotus + restart dana-index”.
 sudo -u deploy git pull origin master
 sudo -u deploy npm ci
 

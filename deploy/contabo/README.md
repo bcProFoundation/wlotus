@@ -211,7 +211,89 @@ at `/opt/wlotus` as `deploy` → restores genesis JSON → `npm ci` → installs
 `wlotus-mint-api` + `wlotus-dana-index` units → writes `/etc/wlotus/dana-index.env`
 from dryrun `tokenId` → enables services. Keeps `/etc/wlotus/mint.env`.
 
-Then nginx: paste `/index-api/` from `nginx-api-snippet.conf` if missing; reload.
+Then nginx: paste `/index-api/` **and** the `/og/` + `/<txid>` share locations from
+`nginx-api-snippet.conf` into the **443** server block (Certbot’s HTTPS block —
+editing port 80 alone does nothing for messengers). See also
+`nginx-wlotus-test-tls.conf`. Then: `sudo nginx -t && sudo systemctl reload nginx`.
+
+### Update `/opt/wlotus` + restart dana-index (test)
+
+`git pull` updates **source** under `/opt/wlotus`. It does **not** refresh
+`/var/www/wlotus-test` (that is CI/rsync). After pulling code that changes
+`apps/dana-index/`, you **must** restart `wlotus-dana-index` or `/og/:txid`
+keeps returning `{"ok":false,"error":"Not found"}`.
+
+**Always pull as `deploy`**, not root. Root hits:
+
+```text
+fatal: detected dubious ownership in repository at '/opt/wlotus'
+```
+
+Fix (prefer running as deploy; avoid making root the daily git user):
+
+```bash
+# Correct — same user that owns /opt/wlotus
+sudo -u deploy -H bash -lc 'cd /opt/wlotus && git status -sb && git pull origin master'
+
+# If you already used root and only need an exception (last resort):
+#   sudo git config --global --add safe.directory /opt/wlotus
+```
+
+**Preserve live dryrun tip JSON.** Mint-api updates
+`deployments/mainnet-dryrun-active.json` and
+`deployments/mainnet-dryrun-wlotus.json` on the VM (baton tips / last remints).
+Those local edits block `git pull`:
+
+```text
+error: Your local changes to the following files would be overwritten by merge:
+        deployments/mainnet-dryrun-active.json
+        deployments/mainnet-dryrun-wlotus.json
+```
+
+Backup → stash or checkout → pull → **restore the VM copies** (usually newer than git):
+
+```bash
+sudo -u deploy -H bash -lc '
+set -euo pipefail
+cd /opt/wlotus
+mkdir -p /tmp/wlotus-deploy-bak
+cp -a deployments/mainnet-dryrun-active.json \
+      deployments/mainnet-dryrun-wlotus.json \
+      /tmp/wlotus-deploy-bak/
+
+git stash push -m "vm dryrun tips" -- \
+  deployments/mainnet-dryrun-active.json \
+  deployments/mainnet-dryrun-wlotus.json \
+  || git checkout -- deployments/mainnet-dryrun-active.json \
+                    deployments/mainnet-dryrun-wlotus.json
+
+git pull origin master
+
+# Put live tip state back — do not commit these on the server
+cp -a /tmp/wlotus-deploy-bak/mainnet-dryrun-active.json deployments/
+cp -a /tmp/wlotus-deploy-bak/mainnet-dryrun-wlotus.json deployments/
+git status -sb
+'
+
+# Restart index (and mint-api if its code changed)
+sudo systemctl restart wlotus-dana-index
+# sudo systemctl restart wlotus-mint-api
+
+curl -sS http://127.0.0.1:8788/health | jq .
+# Expect service dana-index + tokenId matching dryrun
+curl -sS "http://127.0.0.1:8788/og/<64-hex-burn-txid>?lang=vi" | grep og:title
+curl -sS "https://test.wlotus.org/og/<64-hex-burn-txid>?lang=vi" | grep og:title
+curl -sS "https://test.wlotus.org/<64-hex-burn-txid>?lang=vi" | grep og:title
+```
+
+If `rewrite` fails nginx test with `not terminated by ";"`, quote the regex:
+
+```nginx
+rewrite "^/([0-9a-fA-F]{64})/?$" /og/$1$is_args$args break;
+```
+
+(Unquoted `{64}` is parsed as a config block.) Full share locations:
+`deploy/contabo/nginx-api-snippet.conf`.
 
 ### First-time mint-api (already on `/opt/wlotus`)
 
@@ -394,7 +476,8 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | Check nginx | `sudo nginx -t && systemctl status nginx` |
 | See live files | `ls -la /var/www/wlotus-test/` |
 | Renew TLS | `sudo certbot renew` |
-| Update clone (optional) | `cd ~/wlotus && git pull` — **does not update the website** |
+| Update clone | `sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master'` — **does not update the website**; see **Update `/opt/wlotus` + restart dana-index** above for dryrun JSON + service restart |
+| Restart dana-index | `sudo systemctl restart wlotus-dana-index` then `curl -sS http://127.0.0.1:8788/health` |
 
 ---
 
@@ -403,6 +486,10 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | `git pull` but site unchanged | Repo ≠ web root | Run CI workflow or manual rsync |
+| `dubious ownership` on `/opt/wlotus` | Ran `git` as **root** | `sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master'` |
+| Pull blocked by `mainnet-dryrun-*.json` | Live tip state on VM | Backup → stash/checkout → pull → **restore** backups (see update section) |
+| Share link OG is brand-only / JSON `Not found` | Old dana-index or nginx 443 missing `/og` | `git pull` as deploy + `systemctl restart wlotus-dana-index`; merge `nginx-api-snippet.conf` into **443** block |
+| `nginx: rewrite is not terminated by ";"` | Unquoted `{64}` in `rewrite` | Quote regex: `rewrite "^/([0-9a-fA-F]{64})/?$" … break;` |
 | `getaddrinfo: Name or service not known` | Bad `CONTABO_HOST` | Use `test.wlotus.org` or IP, no scheme |
 | `Permission denied (publickey)` | Key not on VM | Copy `.pub` to `/home/deploy/.ssh/authorized_keys` |
 | `wlotus-deploy.pub` not on VM | Expected | Generate on laptop; only **public** key goes on VM |
