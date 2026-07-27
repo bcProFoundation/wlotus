@@ -531,6 +531,7 @@ a {
   gap: 0.75rem;
   align-items: stretch;
   margin-top: 0.35rem;
+  scroll-margin-bottom: 1.5rem;
 }
 
 .offer-actions .btn-offer {
