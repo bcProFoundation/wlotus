@@ -4,6 +4,7 @@ import {
   formatAltarDateInput,
   validateAltarFields,
   type AltarFields,
+  type AltarHonorific,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
 import { AltarDetails } from './AltarDetails.js';
@@ -12,6 +13,7 @@ type Step = 'edit' | 'review';
 
 function normalizeFields(draft: AltarFields): AltarFields {
   return {
+    title: draft.title === 'mr' || draft.title === 'mrs' ? draft.title : '',
     name: draft.name.trim(),
     note: draft.note.trim(),
     birthPlace: draft.birthPlace.trim(),
@@ -38,7 +40,9 @@ export function AltarSetupModal(props: {
   const cardRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>('edit');
   const [draft, setDraft] = useState<AltarFields>(() => {
-    if (props.initial) return { ...props.initial };
+    if (props.initial) {
+      return { ...props.initial, title: props.initial.title || '' };
+    }
     const base = emptyAltarFields();
     const name = (props.fallbackName || '').trim();
     return name ? { ...base, name } : base;
@@ -53,6 +57,10 @@ export function AltarSetupModal(props: {
   function setField<K extends keyof AltarFields>(key: K, value: AltarFields[K]) {
     setDraft(d => ({ ...d, [key]: value }));
     setErrorKey(null);
+  }
+
+  function setHonorific(next: AltarHonorific) {
+    setField('title', draft.title === next ? '' : next);
   }
 
   function goReview() {
@@ -106,6 +114,42 @@ export function AltarSetupModal(props: {
           <>
             <h2 id="altar-setup-title">{t('altarTitle')}</h2>
             <p className="hint">{t('altarHint')}</p>
+
+            <div className="field">
+              <span className="altar-honorific-label" id="altar-honorific-label">
+                {t('altarHonorific')}
+              </span>
+              <div
+                className="altar-honorific"
+                role="group"
+                aria-labelledby="altar-honorific-label"
+              >
+                <button
+                  type="button"
+                  className={
+                    draft.title === 'mr'
+                      ? 'altar-honorific-btn is-selected'
+                      : 'altar-honorific-btn'
+                  }
+                  aria-pressed={draft.title === 'mr'}
+                  onClick={() => setHonorific('mr')}
+                >
+                  {t('altarHonorificMr')}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    draft.title === 'mrs'
+                      ? 'altar-honorific-btn is-selected'
+                      : 'altar-honorific-btn'
+                  }
+                  aria-pressed={draft.title === 'mrs'}
+                  onClick={() => setHonorific('mrs')}
+                >
+                  {t('altarHonorificMrs')}
+                </button>
+              </div>
+            </div>
 
             <div className="field">
               <label htmlFor="altar-name">{t('altarName')}</label>

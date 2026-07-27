@@ -86,9 +86,12 @@ export function ogCopy(
 }
 
 /** Display name from an on-chain memorial / altar note (empty if none). */
-export function ogDisplayNameFromNote(raw: string | null | undefined): string {
+export function ogDisplayNameFromNote(
+  raw: string | null | undefined,
+  locale: OgLocale = 'vi',
+): string {
   if (!raw) return '';
-  return memorialDisplayName(raw).trim();
+  return memorialDisplayName(raw, locale).trim();
 }
 
 /** Optional short remembrance line for og:description when altar has a note. */
@@ -121,7 +124,7 @@ export function buildOgHtml(opts: {
   const txid = opts.pathTxid.toLowerCase();
   const pageUrl = `${origin}/${txid}`;
   const image = `${origin}${opts.imagePath || '/images/wlotus-icon-512.png'}`;
-  const name = ogDisplayNameFromNote(opts.originalNote);
+  const name = ogDisplayNameFromNote(opts.originalNote, opts.locale);
   const copy = ogCopy(opts.locale, name);
   const remembrance = ogRemembranceLine(opts.originalNote);
   const description = remembrance || copy.description;

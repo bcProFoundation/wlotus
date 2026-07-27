@@ -1,7 +1,9 @@
 import {
+  ALTAR_SEP,
   encodeAltarNote,
   emptyAltarFields,
   formatAltarDateInput,
+  formatAltarPersonName,
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,
@@ -12,8 +14,9 @@ import {
 } from '../src/offering/altarFields.js';
 
 describe('altarFields', () => {
-  it('round-trips packed altar notes', () => {
+  it('round-trips packed altar notes with title', () => {
     const fields: AltarFields = {
+      title: 'mr',
       name: 'Cao Lâm Quả',
       note: 'Kính bố',
       birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
@@ -24,11 +27,31 @@ describe('altarFields', () => {
     };
     const packed = encodeAltarNote(fields);
     expect(isAltarPackedNote(packed)).toBe(true);
+    expect(packed.startsWith(`mr${ALTAR_SEP}`)).toBe(true);
     expect(parseAltarNote(packed)).toEqual({
       ...fields,
       funeralPlace: '',
     });
-    expect(memorialDisplayName(packed)).toBe('Cao Lâm Quả');
+    expect(memorialDisplayName(packed, 'vi')).toBe('Ông Cao Lâm Quả');
+    expect(memorialDisplayName(packed, 'en')).toBe('Mr. Cao Lâm Quả');
+    expect(formatAltarPersonName(fields, 'zh')).toBe('先生 Cao Lâm Quả');
+  });
+
+  it('reads legacy name-first packs without title', () => {
+    const legacy = [
+      'Cao Lâm Quả',
+      '',
+      'Bình Định',
+      '1945',
+      '2001-12-04',
+      '',
+      '',
+    ].join(ALTAR_SEP);
+    const parsed = parseAltarNote(legacy);
+    expect(parsed?.title).toBe('');
+    expect(parsed?.name).toBe('Cao Lâm Quả');
+    expect(parsed?.deathDate).toBe('2001-12-04');
+    expect(memorialDisplayName(legacy, 'vi')).toBe('Cao Lâm Quả');
   });
 
   it('requires name and death date', () => {

@@ -18,6 +18,7 @@ describe('ogPreview', () => {
 
   it('builds Tưởng nhớ title from altar name', () => {
     const packed = [
+      'mr',
       'Cao Lâm Quả',
       'Nhớ mẹ',
       'Bình Định',
@@ -26,10 +27,27 @@ describe('ogPreview', () => {
       '',
       '',
     ].join(ALTAR_SEP);
-    expect(ogDisplayNameFromNote(packed)).toBe('Cao Lâm Quả');
-    expect(ogCopy('vi', 'Cao Lâm Quả').title).toBe('Tưởng nhớ Cao Lâm Quả');
-    expect(ogCopy('en', 'Cao Lâm Quả').title).toBe('In memory of Cao Lâm Quả');
-    expect(ogCopy('zh', 'Cao Lâm Quả').title).toBe('纪念 Cao Lâm Quả');
+    expect(ogDisplayNameFromNote(packed, 'vi')).toBe('Ông Cao Lâm Quả');
+    expect(ogCopy('vi', 'Ông Cao Lâm Quả').title).toBe(
+      'Tưởng nhớ Ông Cao Lâm Quả',
+    );
+    expect(ogCopy('en', 'Mr. Cao Lâm Quả').title).toBe(
+      'In memory of Mr. Cao Lâm Quả',
+    );
+    expect(ogCopy('zh', '先生 Cao Lâm Quả').title).toBe('纪念 先生 Cao Lâm Quả');
+  });
+
+  it('reads legacy packs in OG without title', () => {
+    const legacy = [
+      'Cao Lâm Quả',
+      'Nhớ mẹ',
+      'Bình Định',
+      '1945',
+      '2001-12-04',
+      '',
+      '',
+    ].join(ALTAR_SEP);
+    expect(ogDisplayNameFromNote(legacy, 'vi')).toBe('Cao Lâm Quả');
   });
 
   it('uses brand fallback without a name', () => {
@@ -41,7 +59,9 @@ describe('ogPreview', () => {
   });
 
   it('renders escaped OG HTML with SPA boot for browsers', () => {
-    const packed = ['A & B', 'note', '', '', '2001', '', ''].join(ALTAR_SEP);
+    const packed = ['mrs', 'A & B', 'note', '', '', '2001', '', ''].join(
+      ALTAR_SEP,
+    );
     const html = buildOgHtml({
       siteOrigin: 'https://wlotus.org',
       pathTxid: TX,
@@ -49,7 +69,7 @@ describe('ogPreview', () => {
       originalNote: packed,
     });
     expect(html).toContain('og:title');
-    expect(html).toContain('Tưởng nhớ A &amp; B');
+    expect(html).toContain('Tưởng nhớ Bà A &amp; B');
     expect(html).toContain(`https://wlotus.org/${TX}`);
     expect(html).toContain('wlotus-icon-512.png');
     expect(html).toContain("fetch('/index.html'");

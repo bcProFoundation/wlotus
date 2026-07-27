@@ -25,6 +25,9 @@ export type MessageKey =
   | 'altarLabel'
   | 'altarTitle'
   | 'altarHint'
+  | 'altarHonorific'
+  | 'altarHonorificMr'
+  | 'altarHonorificMrs'
   | 'altarName'
   | 'altarNamePlaceholder'
   | 'altarNote'
@@ -136,6 +139,9 @@ const en: Dict = {
   altarTitle: 'Altar',
   altarHint:
     'These fields are written on-chain with the dedication. Places are plain text for now.',
+  altarHonorific: 'Title',
+  altarHonorificMr: 'Mr.',
+  altarHonorificMrs: 'Mrs.',
   altarName: 'Name',
   altarNamePlaceholder: 'Name of the departed',
   altarNote: 'Words of remembrance',
@@ -253,6 +259,9 @@ const vi: Dict = {
   altarTitle: 'Ban thờ',
   altarHint:
     'Các trường này được ghi trên chuỗi cùng lần dâng. Địa danh dùng chữ thường trước.',
+  altarHonorific: 'Danh xưng',
+  altarHonorificMr: 'Ông',
+  altarHonorificMrs: 'Bà',
   altarName: 'Họ tên',
   altarNamePlaceholder: 'Tên người đã khuất',
   altarNote: 'Lời tưởng niệm',
@@ -368,6 +377,9 @@ const zh: Dict = {
   altarLabel: '灵位',
   altarTitle: '灵位',
   altarHint: '这些字段将随献花一并写入链上。地点暂用文字描述。',
+  altarHonorific: '称谓',
+  altarHonorificMr: '先生',
+  altarHonorificMrs: '女士',
   altarName: '姓名',
   altarNamePlaceholder: '逝者姓名',
   altarNote: '追思寄语',
