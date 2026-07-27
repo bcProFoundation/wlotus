@@ -13,8 +13,8 @@ export function AltarDetails(props: {
     { label: t('altarNote'), value: altar.note },
     { label: t('altarBirthPlace'), value: altar.birthPlace },
     { label: t('altarBirthDate'), value: altar.birthYear },
-    { label: t('altarDeathDate'), value: altar.deathDate },
     { label: t('altarDeathPlace'), value: altar.deathPlace },
+    { label: t('altarDeathDate'), value: altar.deathDate },
     { label: t('altarFuneralPlace'), value: altar.funeralPlace },
   ].filter(r => r.value.trim().length > 0);
 
