@@ -169,8 +169,6 @@ export function AltarSetupModal(props: {
           />
         </div>
 
-        <p className="hint altar-geo-hint">{t('altarGeoHint')}</p>
-
         <div className="altar-setup-actions">
           <span />
           <button type="button" className="btn btn-primary" onClick={save}>

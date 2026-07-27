@@ -40,7 +40,6 @@ export type MessageKey =
   | 'altarDeathPlace'
   | 'altarFuneralPlace'
   | 'altarPlaceOptional'
-  | 'altarGeoHint'
   | 'altarErrName'
   | 'altarErrDeathDate'
   | 'altarErrBirthYear'
@@ -144,8 +143,6 @@ const en: Dict = {
   altarDeathPlace: 'Place of death',
   altarFuneralPlace: 'Funeral place',
   altarPlaceOptional: 'Optional',
-  altarGeoHint:
-    'Geotagging later via OpenStreetMap — enter a city or region for now.',
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
   altarErrBirthYear: 'Enter birth date as YYYY or YYYY-MM-DD.',
@@ -253,8 +250,6 @@ const vi: Dict = {
   altarDeathPlace: 'Nơi mất',
   altarFuneralPlace: 'Nơi an táng / tang lễ',
   altarPlaceOptional: 'Tuỳ chọn',
-  altarGeoHint:
-    'Gắn toạ độ sau (OpenStreetMap) — tạm thời ghi tỉnh / huyện / xã.',
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
   altarErrBirthYear: 'Ngày sinh dạng YYYY hoặc YYYY-MM-DD.',
@@ -360,7 +355,6 @@ const zh: Dict = {
   altarDeathPlace: '去世地点',
   altarFuneralPlace: '安葬 / 丧礼地点',
   altarPlaceOptional: '可选',
-  altarGeoHint: '日后可用 OpenStreetMap 标注坐标 — 现请填写城市或地区。',
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
   altarErrBirthYear: '出生日期请用 YYYY 或 YYYY-MM-DD。',
