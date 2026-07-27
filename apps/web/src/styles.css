@@ -916,6 +916,7 @@ a {
   width: min(100%, 26rem);
   max-height: min(92vh, 40rem);
   overflow: auto;
+  overscroll-behavior: contain;
   margin-bottom: env(safe-area-inset-bottom, 0);
   padding: 1.35rem 1.35rem 1.5rem;
   border: 1px solid var(--line);
