@@ -840,11 +840,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!busy && !dedicationSheet && !historyGroup && !altarOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const lock = Boolean(
+      busy || dedicationSheet || historyGroup || altarOpen,
+    );
+    document.body.style.overflow = lock ? 'hidden' : '';
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = '';
     };
   }, [busy, dedicationSheet, historyGroup, altarOpen]);
 
@@ -1059,21 +1060,11 @@ export default function App() {
               disabled={busy || apiOnline === false || shareLookingUp}
             />
           )}
-          <p className="hint share-hint">
-            {shareLookingUp
-              ? t('shareLookingUp')
-              : linkedParentBurnTxid
-                ? t('shareLinked', {
-                    name:
-                      (altar ? altar.name : memorialDisplayName(note)) ||
-                      t('offeringFallback'),
-                  })
-                : t('shareHint')}
-          </p>
         </div>
 
         <div className="offer-actions">
           <button
+            id="offer-flower-btn"
             className="btn btn-primary btn-offer"
             disabled={!canOffer || shareLookingUp}
             onClick={() => {
@@ -1098,6 +1089,18 @@ export default function App() {
             {buttonLabel}
           </button>
         </div>
+
+        <p className="hint share-hint">
+          {shareLookingUp
+            ? t('shareLookingUp')
+            : linkedParentBurnTxid
+              ? t('shareLinked', {
+                  name:
+                    (altar ? altar.name : memorialDisplayName(note)) ||
+                    t('offeringFallback'),
+                })
+              : t('shareHint')}
+        </p>
 
         <details className="how-offer">
           <summary>{t('howTitle')}</summary>
@@ -1299,6 +1302,15 @@ export default function App() {
             setNote(fields.note);
             setLinkedParentBurnTxid(null);
             setAltarOpen(false);
+            // Unlock scroll, then bring Dâng Hoa into view after layout.
+            document.body.style.overflow = '';
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                document
+                  .getElementById('offer-flower-btn')
+                  ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              });
+            });
           }}
           onClear={() => {
             setAltar(null);

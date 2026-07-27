@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   emptyAltarFields,
   formatAltarDateInput,
@@ -23,13 +23,6 @@ export function AltarSetupModal(props: {
     return name ? { ...base, name } : base;
   });
   const [errorKey, setErrorKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
 
   function setField<K extends keyof AltarFields>(key: K, value: AltarFields[K]) {
     setDraft(d => ({ ...d, [key]: value }));
