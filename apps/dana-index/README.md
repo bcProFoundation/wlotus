@@ -17,13 +17,14 @@ curl -sS 'http://127.0.0.1:8788/api/recent?limit=20' | jq .
 curl -sS http://127.0.0.1:8788/api/memorial/<txid> | jq .
 # Social preview HTML (nginx proxies every /<txid> share URL here):
 curl -sS http://127.0.0.1:8788/og/<txid> | head
+curl -sS 'http://127.0.0.1:8788/<txid>?lang=en' | head
 curl -sS 'http://127.0.0.1:8788/og/<txid>?lang=en' | head
 ```
 
 Web Vite proxies `/index-api` → `:8788`. Prod/test nginx: `/index-api/` plus
-every `/<txid>` → `/og/:txid` (see `deploy/contabo/nginx-og-snippet.conf`,
-`nginx-wlotus-test-tls.conf`, `nginx-wlotus-prod-tls.conf`). The OG page boots
-the SPA in browsers; crawlers keep the meta tags.
+every `/<txid>` → `proxy_pass …/og/$1` (see `deploy/contabo/nginx-api-snippet.conf`).
+dana-index also serves OG on bare `GET /:txid` so a missing nginx rewrite still works.
+The OG page boots the SPA in browsers; crawlers keep the meta tags.
 
 ## Open Graph / share previews
 

@@ -52,15 +52,14 @@ import {
   liveTipEpochFromStatus,
 } from './lib/tipRace.js';
 import {
+  groupOffersByOriginal,
   resolveOriginalTxid,
   type LocalOffer,
   type OfferGroup,
 } from './lib/groupOffers.js';
 import {
   fetchIndexMemorial,
-  fetchIndexRecent,
   notifyIndexBurn,
-  type IndexMemorialGroup,
 } from './lib/danaIndexApi.js';
 import {
   hideRecentRoot,
@@ -223,10 +222,6 @@ export default function App() {
     loadHiddenRecentRoots(),
   );
   const [swipeOpenRoot, setSwipeOpenRoot] = useState<string | null>(null);
-  /** Global recent from dana-index (null = not loaded / offline). */
-  const [indexGroups, setIndexGroups] = useState<IndexMemorialGroup[] | null>(
-    null,
-  );
   const [historyGroup, setHistoryGroup] = useState<OfferGroup | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
@@ -330,21 +325,6 @@ export default function App() {
     const timer = setInterval(() => void refreshStatus(), 15_000);
     return () => clearInterval(timer);
   }, [refreshStatus]);
-
-  const refreshIndexRecent = useCallback(async () => {
-    try {
-      const items = await fetchIndexRecent(40);
-      setIndexGroups(items);
-    } catch {
-      /* keep prior / fall back to local */
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshIndexRecent();
-    const timer = setInterval(() => void refreshIndexRecent(), 45_000);
-    return () => clearInterval(timer);
-  }, [refreshIndexRecent]);
 
   /** Probe once if we have no cached rate; otherwise reuse localStorage. */
   useEffect(() => {
@@ -805,7 +785,6 @@ export default function App() {
           setNote('');
           setAltar(null);
           void notifyIndexBurn(burnTxid);
-          void refreshIndexRecent();
           await refreshStatus();
           const offeredFor =
             memorialDisplayName(historyNote, localeRef.current) ||
@@ -944,7 +923,8 @@ export default function App() {
     }
   }
 
-  const recentGroups = mergeIndexAndLocalOffers(indexGroups, offers).filter(
+  /** Device-local Recent only — dana-index is for History / share lookup. */
+  const recentGroups = groupOffersByOriginal(offers).filter(
     g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
 

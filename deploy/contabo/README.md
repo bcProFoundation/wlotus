@@ -286,14 +286,19 @@ curl -sS "https://test.wlotus.org/og/<64-hex-burn-txid>?lang=vi" | grep og:title
 curl -sS "https://test.wlotus.org/<64-hex-burn-txid>?lang=vi" | grep og:title
 ```
 
-If `rewrite` fails nginx test with `not terminated by ";"`, quote the regex:
+If `rewrite` / share URL returns JSON `Not found` while `/og/<txid>` works,
+nginx is proxying `/<txid>` without the `/og/` prefix. Prefer:
 
 ```nginx
-rewrite "^/([0-9a-fA-F]{64})/?$" /og/$1$is_args$args break;
+location ~* "^/([0-9a-fA-F]{64})/?$" {
+    error_page 502 503 504 = @wlotus_spa;
+    proxy_pass http://127.0.0.1:8788/og/$1$is_args$args;
+    ...
+}
 ```
 
-(Unquoted `{64}` is parsed as a config block.) Full share locations:
-`deploy/contabo/nginx-api-snippet.conf`.
+Do **not** use `rewrite … {64} … break` (brittle). After editing: `sudo nginx -t && sudo systemctl reload nginx`.
+Also restart dana-index so bare `GET /<txid>` serves OG as a fallback.
 
 ### First-time mint-api (already on `/opt/wlotus`)
 
@@ -488,8 +493,8 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | `git pull` but site unchanged | Repo ≠ web root | Run CI workflow or manual rsync |
 | `dubious ownership` on `/opt/wlotus` | Ran `git` as **root** | `sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master'` |
 | Pull blocked by `mainnet-dryrun-*.json` | Live tip state on VM | Backup → stash/checkout → pull → **restore** backups (see update section) |
-| Share link OG is brand-only / JSON `Not found` | Old dana-index or nginx 443 missing `/og` | `git pull` as deploy + `systemctl restart wlotus-dana-index`; merge `nginx-api-snippet.conf` into **443** block |
-| `nginx: rewrite is not terminated by ";"` | Unquoted `{64}` in `rewrite` | Quote regex: `rewrite "^/([0-9a-fA-F]{64})/?$" … break;` |
+| Share link OG is brand-only / JSON `Not found` | Old dana-index or `/<txid>` not mapped to `/og/` | `git pull` as deploy + restart dana-index; in **443** use `proxy_pass http://127.0.0.1:8788/og/$1$is_args$args;` (no rewrite) |
+| `nginx: rewrite is not terminated by ";"` | Unquoted `{64}` in `rewrite` | Drop rewrite; use `proxy_pass …/og/$1$is_args$args` |
 | `getaddrinfo: Name or service not known` | Bad `CONTABO_HOST` | Use `test.wlotus.org` or IP, no scheme |
 | `Permission denied (publickey)` | Key not on VM | Copy `.pub` to `/home/deploy/.ssh/authorized_keys` |
 | `wlotus-deploy.pub` not on VM | Expected | Generate on laptop; only **public** key goes on VM |
