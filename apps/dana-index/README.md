@@ -15,21 +15,24 @@ TOKEN_ID=<64-hex> npm run dana-index
 curl -sS http://127.0.0.1:8788/health | jq .
 curl -sS 'http://127.0.0.1:8788/api/recent?limit=20' | jq .
 curl -sS http://127.0.0.1:8788/api/memorial/<txid> | jq .
-# Social preview HTML (nginx routes crawler UAs here for /<txid>):
+# Social preview HTML (nginx proxies every /<txid> share URL here):
 curl -sS http://127.0.0.1:8788/og/<txid> | head
 curl -sS 'http://127.0.0.1:8788/og/<txid>?lang=en' | head
 ```
 
-Web Vite proxies `/index-api` → `:8788`. Prod nginx: `/index-api/` plus
-crawler → `/og/:txid` (see `deploy/contabo/nginx-og-snippet.conf` and
-`nginx-wlotus-prod-tls.conf`).
+Web Vite proxies `/index-api` → `:8788`. Prod/test nginx: `/index-api/` plus
+every `/<txid>` → `/og/:txid` (see `deploy/contabo/nginx-og-snippet.conf`,
+`nginx-wlotus-test-tls.conf`, `nginx-wlotus-prod-tls.conf`). The OG page boots
+the SPA in browsers; crawlers keep the meta tags.
 
 ## Open Graph / share previews
 
 | Case | `og:title` (default VI) |
 |------|-------------------------|
 | Altar / named dedication | `Tưởng nhớ {name}` |
-| No name | `White Lotus — Tưởng niệm vĩnh hằng` |
+| No name | `White Lotus - Đoá sen vĩnh hằng` |
+
+`og:description` (no name): `Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.`
 
 Optional `?lang=en|vi|zh` localizes the card. The web Share action embeds the
 **sender's** current app locale in the URL. Facebook / Zalo cache **one** card
