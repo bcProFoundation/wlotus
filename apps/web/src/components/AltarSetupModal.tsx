@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   emptyAltarFields,
+  formatDeathDateInput,
   validateAltarFields,
   type AltarFields,
 } from '../lib/altarFields.js';
@@ -133,8 +134,10 @@ export function AltarSetupModal(props: {
             id="altar-death-date"
             type="text"
             inputMode="numeric"
+            autoComplete="off"
+            maxLength={10}
             value={draft.deathDate}
-            onChange={e => setField('deathDate', e.target.value.trim())}
+            onChange={e => setField('deathDate', formatDeathDateInput(e.target.value))}
             placeholder={t('altarDeathDatePlaceholder')}
           />
           {errorKey === 'deathDate' ? (
