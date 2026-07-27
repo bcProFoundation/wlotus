@@ -42,6 +42,10 @@ import {
   OFFERING_ID_WLOTUS,
   parseParentBurnTxidHex,
 } from '../../../src/offering/burnPrayer.js';
+import {
+  MEMORIAL_NOTE_MAX_BYTES,
+  truncateUtf8Bytes,
+} from '../../../src/offering/altarFields.js';
 import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
 import {
   REMINT_FUEL_SATS,
@@ -641,7 +645,7 @@ async function createChallengeOnce(opts: {
     ? parseParentBurnTxidHex(opts.parentBurnTxid)
     : undefined;
   // Re-offer: DANA v2 — optional on-chain note + parent → original dedication.
-  const note = opts.note.trim().slice(0, 80);
+  const note = truncateUtf8Bytes(opts.note.trim(), MEMORIAL_NOTE_MAX_BYTES);
   if (parentBurnTxid && !temple) {
     throw new Error(
       'parentBurnTxid (re-offer) requires the wLotus temple burn path',

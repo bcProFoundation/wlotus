@@ -45,26 +45,35 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 | # | Field | Now | Later |
 |---|--------|-----|--------|
 | 1 | Display name / dedication name | yes | yes |
-| 2 | Short remembrance note | yes (free text today) | yes |
-| 3 | Place (coarse) | optional free text | same, then geohash |
-| 4 | Language / locale hint | optional | optional |
-| 5… | Reserved / empty | — | keep slots stable |
+| 2 | Short remembrance note | yes | yes |
+| 3 | Birth place (coarse text) | optional | same, then geohash |
+| 4 | Birth year (`YYYY`) | optional | optional |
+| 5 | Date of death (`YYYY` or `YYYY-MM-DD`) | **required** when altar used | yes |
+| 6 | Place of death | optional | same, then geohash |
+| 7 | Funeral / resting place | optional | same, then geohash |
 
 Wire sketch (UTF-8):
 
 ```
-name \x1f note \x1f place \x1f lang
+name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace
 ```
 
 Trailing empty fields may be omitted. Readers split on `\x1f` and take positions by index.
 
-**Today (shipped):** DANA v1/v2 note is still a single UTF-8 string (UI caps ~80 chars). Separator packing is the **agreed direction** for richer altar fields; implement when place/amendment UX lands. Until then, treat the whole note as field 1+2 combined.
+**Note size:** EMPP `noteLen` is one byte (max **255** UTF-8 bytes). Desk + UI soft-cap ≈ **220** bytes (`MEMORIAL_NOTE_MAX_BYTES` in `altarFields.ts`).
+
+**Plain notes (no separator):** still valid — treat the whole string as the display dedication (legacy / quick offer).
+
+**Geotagging:** do **not** call paid AI for geocoding. Free path when we add geo: [OpenStreetMap Nominatim](https://nominatim.org/) (usage policy / rate limits) → store a compact **geohash** in the same place slots. Until then, coarse human place text only.
+
+**UI:** Offer panel **Thêm / More** opens altar setup; packing happens on burn via `encodeAltarNote`.
 
 **Explicit non-goals for WLotus altar wire:**
 
 - JSON / XML / tagged key-value inside EMPP
 - Off-chain pointers (IPFS, HTTP URLs as required content)
 - Encrypting memorial fields on WLotus (public memorial)
+- Requiring map APIs or AI to complete an offering
 
 ---
 
@@ -73,9 +82,9 @@ Trailing empty fields may be omitted. Readers split on `\x1f` and take positions
 | Phase | Place representation |
 |-------|----------------------|
 | Now | Coarse human place (city / region / country text) |
-| Later | Compact **geohash** (or equivalent) once geo tagging is implemented |
+| Later | Compact **geohash** (or equivalent) via Nominatim — same field slots |
 
-Do not require precise coordinates at launch. Convert coarse → geo when the feature ships; keep field slot #3 stable.
+Do not require precise coordinates at launch. Convert coarse → geo when the feature ships; keep place slots stable.
 
 ---
 
@@ -109,5 +118,6 @@ When implementing amendments / richer fields:
 | Piece | Role |
 |-------|------|
 | `src/offering/wlbrMemorial.ts` | DANA v1/v2 memorial EMPP |
+| `src/offering/altarFields.ts` | Separator pack / parse / display name |
 | `apps/dana-index` | Public recent / memorial history from chain |
-| `apps/web` Recent + Lịch sử | Merge index + local; show original + latest under star |
+| `apps/web` Offer **Thêm** + Recent / Lịch sử | Altar setup; merge index + local under star |
