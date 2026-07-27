@@ -69,20 +69,18 @@ export function ogCopy(
   switch (locale) {
     case 'en':
       return {
-        title: 'White Lotus — Remembrance forever',
-        description:
-          'Offer an eternal lotus in remembrance of someone who has passed.',
+        title: 'White Lotus - Eternal lotus',
+        description: 'Send eternal remembrance on White Lotus.',
       };
     case 'zh':
       return {
-        title: 'White Lotus — 永恒追思',
-        description: '献上一朵永恒白莲，追思逝去的亲人。',
+        title: 'White Lotus - 永恒莲花',
+        description: '在 White Lotus 上寄托永恒的追思。',
       };
     default:
       return {
-        title: 'White Lotus — Tưởng niệm vĩnh hằng',
-        description:
-          'Dâng một đóa sen vĩnh hằng tưởng nhớ người đã khuất.',
+        title: 'White Lotus - Đoá sen vĩnh hằng',
+        description: 'Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.',
       };
   }
 }
@@ -141,6 +139,25 @@ export function buildOgHtml(opts: {
   const url = escapeHtml(pageUrl);
   const img = escapeHtml(image);
 
+  // Crawlers read meta and skip JS. Browsers swap in the SPA shell while
+  // keeping /<txid> so the app can open the dedication.
+  const spaBoot = `<script>
+(function () {
+  var ua = navigator.userAgent || '';
+  if (/bot|crawl|slurp|spider|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|WhatsApp|SkypeUriPreview|Pinterest|redditbot|Zalo|Embedly|Iframely|Applebot|bitlybot|preview|Meta-ExternalAgent|meta-externalads|Quora\\s+Link\\s+Preview/i.test(ua)) {
+    return;
+  }
+  fetch('/index.html', { credentials: 'same-origin', cache: 'no-cache' })
+    .then(function (r) { return r.text(); })
+    .then(function (html) {
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function () { /* keep OG page + link below */ });
+})();
+</script>`;
+
   return `<!doctype html>
 <html lang="${opts.locale === 'zh' ? 'zh-Hans' : opts.locale}">
   <head>
@@ -161,6 +178,7 @@ ${alternates}
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${desc}" />
     <meta name="twitter:image" content="${img}" />
+    ${spaBoot}
   </head>
   <body>
     <p><a href="${url}">${title}</a></p>
