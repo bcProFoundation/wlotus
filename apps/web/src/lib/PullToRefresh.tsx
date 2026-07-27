@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
+ * True when pull-to-refresh should not run: body scroll locked (modals /
+ * offer session) or the gesture started inside a dialog.
+ */
+function pullBlocked(target: EventTarget | null): boolean {
+  if (document.body.style.overflow === 'hidden') return true;
+  if (document.querySelector('.offer-modal')) return true;
+  if (target instanceof Element && target.closest('.offer-modal')) return true;
+  return false;
+}
+
+/**
  * Mobile pull-to-refresh: at scroll top, drag down to reload (and poke the SW).
  */
 export function PullToRefresh(props: { children: ReactNode }) {
@@ -12,7 +23,11 @@ export function PullToRefresh(props: { children: ReactNode }) {
   const threshold = 72;
 
   const onTouchStart = useCallback((e: TouchEvent) => {
-    if (refreshing) return;
+    if (refreshing || pullBlocked(e.target)) {
+      startY.current = null;
+      pulling.current = false;
+      return;
+    }
     if (window.scrollY > 2) {
       startY.current = null;
       return;
@@ -23,6 +38,12 @@ export function PullToRefresh(props: { children: ReactNode }) {
 
   const onTouchMove = useCallback((e: TouchEvent) => {
     if (!pulling.current || startY.current == null || refreshing) return;
+    if (pullBlocked(e.target)) {
+      startY.current = null;
+      pulling.current = false;
+      setOffset(0);
+      return;
+    }
     if (window.scrollY > 2) {
       startY.current = null;
       setOffset(0);
@@ -43,6 +64,8 @@ export function PullToRefresh(props: { children: ReactNode }) {
     startY.current = null;
     setOffset(current => {
       if (current >= threshold && !refreshing) {
+        // Re-check: modal may have opened mid-gesture.
+        if (pullBlocked(null)) return 0;
         setRefreshing(true);
         const w = window as Window & {
           __wlotusUpdateSW?: (reloadPage?: boolean) => Promise<void>;
