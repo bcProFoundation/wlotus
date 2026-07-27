@@ -6,6 +6,7 @@ import {
   type ClipboardEvent,
 } from 'react';
 import { LangSwitch } from './components/LangSwitch.js';
+import { AltarSetupModal } from './components/AltarSetupModal.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import {
   formatActualDurationLocale,
@@ -20,6 +21,13 @@ import {
   PRAYER_TICKER,
   TIP_POLL_MS,
 } from './lib/config.js';
+import {
+  encodeAltarNote,
+  memorialDisplayName,
+  MEMORIAL_NOTE_MAX_CHARS,
+  parseAltarNote,
+  type AltarFields,
+} from './lib/altarFields.js';
 import {
   cancelOfferChallenge,
   completeOfferBurn,
@@ -178,6 +186,9 @@ export default function App() {
   const { locale, t } = useLocale();
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
+  /** Structured altar fields; packed into the on-chain note when offering. */
+  const [altar, setAltar] = useState<AltarFields | null>(null);
+  const [altarOpen, setAltarOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -368,12 +379,21 @@ export default function App() {
         const d = await lookupDedication(txid);
         if (shareLookupGenRef.current !== gen) return true;
         const displayNote = d.note.trim();
-        setNote(displayNote);
+        const packed = parseAltarNote(displayNote);
+        if (packed) {
+          setAltar(packed);
+          setNote(packed.note || packed.name);
+        } else {
+          setAltar(null);
+          setNote(displayNote);
+        }
         setLinkedParentBurnTxid(d.originalBurnTxid);
         setMsg({
           kind: 'ok',
           text: tRef.current('shareLinked', {
-            name: displayNote || tRef.current('offeringFallback'),
+            name:
+              memorialDisplayName(displayNote) ||
+              tRef.current('offeringFallback'),
           }),
         });
         if (opts?.autoStart) {
@@ -525,10 +545,23 @@ export default function App() {
     const extraNote = isReoffer
       ? (opts?.extraNote ?? '').trim()
       : undefined;
-    const challengeNote = isReoffer ? (extraNote ?? '') : note.trim();
-    const historyNote = isReoffer
-      ? (opts?.displayNote ?? '').trim()
-      : note.trim();
+    let challengeNote: string;
+    let historyNote: string;
+    if (isReoffer) {
+      challengeNote = extraNote ?? '';
+      historyNote = (opts?.displayNote ?? '').trim();
+    } else if (altar) {
+      try {
+        challengeNote = encodeAltarNote({ ...altar, note: note.trim() });
+      } catch {
+        setMsg({ kind: 'err', text: t('altarErrDeathDate') });
+        return;
+      }
+      historyNote = altar.name.trim() || memorialDisplayName(challengeNote);
+    } else {
+      challengeNote = note.trim();
+      historyNote = note.trim();
+    }
 
     setReofferDraft(null);
     setCancelLoseConfirm(false);
@@ -750,6 +783,7 @@ export default function App() {
             unhideRecentRoot(resolveOriginalTxid(saved), prev),
           );
           setNote('');
+          setAltar(null);
           void notifyIndexBurn(burnTxid);
           void refreshIndexRecent();
           await refreshStatus();
@@ -831,7 +865,7 @@ export default function App() {
   }, [canOffer, pendingDeeplinkOffer]);
 
   function onNoteInput(value: string) {
-    setNote(value.slice(0, 80));
+    setNote(value.slice(0, MEMORIAL_NOTE_MAX_CHARS));
     setLinkedParentBurnTxid(null);
     if (shareLookupTimerRef.current != null) {
       clearTimeout(shareLookupTimerRef.current);
@@ -958,23 +992,44 @@ export default function App() {
         </p>
 
         <div className="field">
-          <label htmlFor="note">{t('noteLabel')}</label>
+          <div className="field-label-row">
+            <label htmlFor="note">{t('noteLabel')}</label>
+            <button
+              type="button"
+              className="link-more"
+              disabled={busy || apiOnline === false}
+              onClick={() => setAltarOpen(true)}
+            >
+              {t('btnAltarMore')}
+            </button>
+          </div>
           <textarea
             id="note"
             rows={2}
-            maxLength={80}
+            maxLength={MEMORIAL_NOTE_MAX_CHARS}
             value={note}
             onChange={e => onNoteInput(e.target.value)}
             onPaste={onNotePaste}
-            placeholder={t('notePlaceholder')}
+            placeholder={
+              altar ? t('altarNotePlaceholder') : t('notePlaceholder')
+            }
             disabled={busy || apiOnline === false || shareLookingUp}
           />
+          {altar ? (
+            <p className="hint altar-summary">
+              {t('altarSummary', {
+                name: altar.name,
+                death: altar.deathDate,
+              })}
+            </p>
+          ) : null}
           <p className="hint share-hint">
             {shareLookingUp
               ? t('shareLookingUp')
               : linkedParentBurnTxid
                 ? t('shareLinked', {
-                    name: note.trim() || t('offeringFallback'),
+                    name:
+                      memorialDisplayName(note) || t('offeringFallback'),
                   })
                 : t('shareHint')}
           </p>
@@ -1062,8 +1117,9 @@ export default function App() {
           <ul className="history">
             {recentGroups.map(g => {
               const last = g.latest;
-              const originalText = g.note || t('offeringFallback');
-              const latestText = (last.note || '').trim();
+              const originalText =
+                memorialDisplayName(g.note) || t('offeringFallback');
+              const latestText = memorialDisplayName(last.note || '').trim();
               const showLatestMessage =
                 Boolean(latestText) &&
                 (last.burnTxid !== g.original.burnTxid ||
@@ -1177,6 +1233,24 @@ export default function App() {
         </section>
       ) : null}
 
+      {altarOpen ? (
+        <AltarSetupModal
+          initial={altar}
+          fallbackName={altar ? undefined : note.trim()}
+          onClose={() => setAltarOpen(false)}
+          onSave={fields => {
+            setAltar(fields);
+            setNote(fields.note);
+            setLinkedParentBurnTxid(null);
+            setAltarOpen(false);
+          }}
+          onClear={() => {
+            setAltar(null);
+            setAltarOpen(false);
+          }}
+        />
+      ) : null}
+
       {historyGroup ? (
         <div
           className="offer-modal"
@@ -1195,7 +1269,7 @@ export default function App() {
             </button>
             <h2 id="memorial-history-title">{t('historyTitle')}</h2>
             <p className="offer-session-note offer-session-original">
-              {historyGroup.note || t('offeringFallback')}
+              {memorialDisplayName(historyGroup.note) || t('offeringFallback')}
             </p>
             <p className="hint">
               {t('burnTotal', { n: historyGroup.totalBurns })}
@@ -1209,10 +1283,12 @@ export default function App() {
                 <li key={b.burnTxid}>
                   <div className="memorial-history-main">
                     <span className="memorial-history-note">
-                      {(b.note || '').trim() ||
-                        (i === historyGroup.burns.length - 1
-                          ? historyGroup.note || t('offeringFallback')
-                          : t('latestMemorialFallback'))}
+                      {(b.note || '').trim()
+                        ? memorialDisplayName(b.note)
+                        : i === historyGroup.burns.length - 1
+                          ? memorialDisplayName(historyGroup.note) ||
+                            t('offeringFallback')
+                          : t('latestMemorialFallback')}
                     </span>
                     <ExplorerLinkIcon
                       txid={b.burnTxid}

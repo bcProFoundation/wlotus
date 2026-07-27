@@ -19,6 +19,28 @@ export type MessageKey =
   | 'etaEstimated'
   | 'noteLabel'
   | 'notePlaceholder'
+  | 'btnAltarMore'
+  | 'altarTitle'
+  | 'altarHint'
+  | 'altarName'
+  | 'altarNamePlaceholder'
+  | 'altarNote'
+  | 'altarNotePlaceholder'
+  | 'altarBirthPlace'
+  | 'altarBirthYear'
+  | 'altarBirthYearPlaceholder'
+  | 'altarDeathDate'
+  | 'altarDeathDatePlaceholder'
+  | 'altarDeathPlace'
+  | 'altarFuneralPlace'
+  | 'altarPlaceOptional'
+  | 'altarGeoHint'
+  | 'altarErrName'
+  | 'altarErrDeathDate'
+  | 'altarErrBirthYear'
+  | 'btnAltarSave'
+  | 'btnAltarClear'
+  | 'altarSummary'
   | 'btnOffer'
   | 'btnPraying'
   | 'btnOffering'
@@ -94,6 +116,30 @@ const en: Dict = {
   etaEstimated: 'Estimated time {eta}',
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name, dedication, or paste a wLotus link',
+  btnAltarMore: 'More',
+  altarTitle: 'Altar details',
+  altarHint:
+    'These fields are written on-chain with the dedication. Places are plain text for now.',
+  altarName: 'Name',
+  altarNamePlaceholder: 'Name of the departed',
+  altarNote: 'Words of remembrance',
+  altarNotePlaceholder: 'Optional short message',
+  altarBirthPlace: 'Birth place',
+  altarBirthYear: 'Birth year',
+  altarBirthYearPlaceholder: 'YYYY',
+  altarDeathDate: 'Date of death',
+  altarDeathDatePlaceholder: 'YYYY or YYYY-MM-DD',
+  altarDeathPlace: 'Place of death',
+  altarFuneralPlace: 'Funeral place',
+  altarPlaceOptional: 'Optional',
+  altarGeoHint:
+    'Geotagging later via OpenStreetMap — enter a city or region for now.',
+  altarErrName: 'Name is required.',
+  altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
+  altarErrBirthYear: 'Birth year must be YYYY.',
+  btnAltarSave: 'Save altar',
+  btnAltarClear: 'Clear altar',
+  altarSummary: 'Altar · {name} · {death}',
   btnOffer: 'Offer a Flower',
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
@@ -173,6 +219,30 @@ const vi: Dict = {
   etaEstimated: 'Thời gian ước tính {eta}',
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên, lời tưởng niệm, hoặc dán liên kết wLotus',
+  btnAltarMore: 'Thêm',
+  altarTitle: 'Thông tin bàn thờ',
+  altarHint:
+    'Các trường này được ghi trên chuỗi cùng lần dâng. Địa danh dùng chữ thường trước.',
+  altarName: 'Họ tên',
+  altarNamePlaceholder: 'Tên người đã khuất',
+  altarNote: 'Lời tưởng niệm',
+  altarNotePlaceholder: 'Tuỳ chọn — lời ngắn',
+  altarBirthPlace: 'Nơi sinh',
+  altarBirthYear: 'Năm sinh',
+  altarBirthYearPlaceholder: 'YYYY',
+  altarDeathDate: 'Ngày mất',
+  altarDeathDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
+  altarDeathPlace: 'Nơi mất',
+  altarFuneralPlace: 'Nơi an táng / tang lễ',
+  altarPlaceOptional: 'Tuỳ chọn',
+  altarGeoHint:
+    'Gắn toạ độ sau (OpenStreetMap) — tạm thời ghi tỉnh / huyện / xã.',
+  altarErrName: 'Cần nhập họ tên.',
+  altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
+  altarErrBirthYear: 'Năm sinh phải là YYYY.',
+  btnAltarSave: 'Lưu bàn thờ',
+  btnAltarClear: 'Xoá bàn thờ',
+  altarSummary: 'Bàn thờ · {name} · {death}',
   btnOffer: 'Dâng Hoa',
   btnPraying: 'Đang tìm hoa sen…',
   btnOffering: 'Đang dâng hoa…',
@@ -251,6 +321,28 @@ const zh: Dict = {
   etaEstimated: '预计时间 {eta}',
   noteLabel: '追思寄语…',
   notePlaceholder: '姓名、寄语，或粘贴 wLotus 链接',
+  btnAltarMore: '更多',
+  altarTitle: '灵位信息',
+  altarHint: '这些字段将随献花一并写入链上。地点暂用文字描述。',
+  altarName: '姓名',
+  altarNamePlaceholder: '逝者姓名',
+  altarNote: '追思寄语',
+  altarNotePlaceholder: '可选短句',
+  altarBirthPlace: '出生地',
+  altarBirthYear: '出生年',
+  altarBirthYearPlaceholder: 'YYYY',
+  altarDeathDate: '去世日期',
+  altarDeathDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
+  altarDeathPlace: '去世地点',
+  altarFuneralPlace: '安葬 / 丧礼地点',
+  altarPlaceOptional: '可选',
+  altarGeoHint: '日后可用 OpenStreetMap 标注坐标 — 现请填写城市或地区。',
+  altarErrName: '请填写姓名。',
+  altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
+  altarErrBirthYear: '出生年须为 YYYY。',
+  btnAltarSave: '保存灵位',
+  btnAltarClear: '清除灵位',
+  altarSummary: '灵位 · {name} · {death}',
   btnOffer: '献花',
   btnPraying: '正在寻找莲花…',
   btnOffering: '正在献花…',

@@ -8,11 +8,14 @@
  *       parentLen is 0 or 32; parentTxid is 32 raw bytes when set.
  *       Re-offers use v2 with parent = **original** dedication burn txid
  *       (star topology — see docs/ALTAR.md). Note may be empty or carry an
- *       additional message. Richer altar fields: separator packing (not JSON).
+ *       additional message. Richer altar fields: separator packing (not JSON)
+ *       via `altarFields.ts` (Unit Separator U+001F).
  *       Amendments: minter-only, max 10 (software). Off-chain = LotusHeart only.
  *
  * Tip-state layout (ver=4, 15 bytes) lives in `src/covenant/mooreTip.ts`.
  */
+
+import { MEMORIAL_NOTE_MAX_BYTES, truncateUtf8Bytes } from './altarFields.js';
 
 export const DANA_LOKAD = new TextEncoder().encode('DANA');
 
@@ -80,7 +83,9 @@ export function memorialPushdata(
   parentBurnTxidHex?: string,
 ): Uint8Array {
   const idBytes = new TextEncoder().encode(offeringId);
-  const noteBytes = new TextEncoder().encode(note.slice(0, 80));
+  const noteBytes = new TextEncoder().encode(
+    truncateUtf8Bytes(note, MEMORIAL_NOTE_MAX_BYTES),
+  );
   if (idBytes.length > 255 || noteBytes.length > 255) {
     throw new Error('memorial fields too long');
   }
