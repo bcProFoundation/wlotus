@@ -8,6 +8,7 @@
  *   GET  /api/recent?limit=40
  *   GET  /api/memorial/:txid
  *   GET  /og/:txid          — Open Graph HTML for social share previews
+ *   GET  /:txid             — same OG HTML (bare share URL; nginx may not rewrite)
  *   POST /api/notify { burnTxid }  — mint-api / clients ask to index a tx now
  */
 
@@ -194,7 +195,10 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    const ogMatch = /^\/og\/([0-9a-fA-F]{64})\/?$/.exec(path);
+    const ogMatch =
+      /^\/og\/([0-9a-fA-F]{64})\/?$/.exec(path) ||
+      // Bare share URL — nginx may proxy /<txid> without rewriting to /og/
+      /^\/([0-9a-fA-F]{64})\/?$/.exec(path);
     if (req.method === 'GET' && ogMatch) {
       const txid = ogMatch[1]!.toLowerCase();
       const locale = resolveOgLocale({
