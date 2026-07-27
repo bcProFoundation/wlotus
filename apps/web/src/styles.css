@@ -478,6 +478,30 @@ a {
   margin-top: 0.85rem;
 }
 
+.altar-review-actions {
+  margin-top: 1rem;
+  align-items: stretch;
+}
+
+.altar-review-actions .btn-offer {
+  flex: 1 1 auto;
+  margin-top: 0;
+}
+
+.btn-ghost {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .field label {
   font-size: 0.85rem;
   color: var(--muted);

@@ -541,7 +541,7 @@ export default function App() {
     parentBurnTxid?: string;
     /** Local label for history grouping (original dedication name). */
     displayNote?: string;
-    /** Ban thờ fields to show during a re-offer session. */
+    /** Ban thờ for this offer (first offer from setup popup, or re-offer session). */
     altar?: AltarFields | null;
     /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
@@ -553,17 +553,19 @@ export default function App() {
       : undefined;
     let challengeNote: string;
     let historyNote: string;
+    const activeAltar = !isReoffer ? (opts?.altar ?? altar) : null;
     if (isReoffer) {
       challengeNote = extraNote ?? '';
       historyNote = (opts?.displayNote ?? '').trim();
-    } else if (altar) {
+    } else if (activeAltar) {
       try {
-        challengeNote = encodeAltarNote(altar);
+        challengeNote = encodeAltarNote(activeAltar);
       } catch {
         setMsg({ kind: 'err', text: t('altarErrDeathDate') });
         return;
       }
-      historyNote = altar.name.trim() || memorialDisplayName(challengeNote);
+      historyNote =
+        activeAltar.name.trim() || memorialDisplayName(challengeNote);
     } else {
       challengeNote = note.trim();
       historyNote = note.trim();
@@ -576,7 +578,7 @@ export default function App() {
       note: historyNote,
       altar: isReoffer
         ? (opts?.altar ?? null)
-        : altar,
+        : activeAltar,
       extraNote: extraNote || undefined,
     });
     setLinkedParentBurnTxid(null);
@@ -1298,26 +1300,20 @@ export default function App() {
         <AltarSetupModal
           initial={altar}
           fallbackName={altar ? undefined : note.trim()}
+          etaLabel={etaLabel}
+          offerDisabled={!canOffer || shareLookingUp}
           onClose={() => setAltarOpen(false)}
           onSave={fields => {
             setAltar(fields);
             setNote(fields.note);
             setLinkedParentBurnTxid(null);
-            setAltarOpen(false);
-            // Unlock scroll, then bring Dâng Hoa into view after layout.
-            document.body.style.overflow = '';
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                document
-                  .getElementById('offer-flower-btn')
-                  ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-              });
-            });
           }}
-          onClear={() => {
-            setAltar(null);
-            setNote('');
+          onOffer={fields => {
+            setAltar(fields);
+            setNote(fields.note);
+            setLinkedParentBurnTxid(null);
             setAltarOpen(false);
+            void onOffer({ altar: fields });
           }}
         />
       ) : null}
