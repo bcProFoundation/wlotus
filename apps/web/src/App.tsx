@@ -796,17 +796,19 @@ export default function App() {
           void notifyIndexBurn(burnTxid);
           void refreshIndexRecent();
           await refreshStatus();
+          const offeredFor =
+            memorialDisplayName(historyNote) ||
+            memorialDisplayName(challengeNote) ||
+            tRef.current('offeringFallback');
           setMsg({
             kind: 'ok',
-            text: [
-              tRef.current('offeredIn', {
-                duration: formatActualDurationLocale(
-                  uiPowMs / 1000,
-                  localeRef.current,
-                ),
-              }),
-              shortTx(result.remintTxid),
-            ].join(' · '),
+            text: tRef.current('offeredIn', {
+              duration: formatActualDurationLocale(
+                uiPowMs / 1000,
+                localeRef.current,
+              ),
+              name: offeredFor,
+            }),
           });
           return;
         } catch (e) {

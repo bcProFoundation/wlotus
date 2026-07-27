@@ -122,6 +122,17 @@ export function AltarSetupModal(props: {
         </div>
 
         <div className="field">
+          <label htmlFor="altar-death-place">{t('altarDeathPlace')}</label>
+          <input
+            id="altar-death-place"
+            type="text"
+            value={draft.deathPlace}
+            onChange={e => setField('deathPlace', e.target.value)}
+            placeholder={t('altarPlaceOptional')}
+          />
+        </div>
+
+        <div className="field">
           <label htmlFor="altar-death-date">{t('altarDeathDate')}</label>
           <input
             id="altar-death-date"
@@ -138,17 +149,6 @@ export function AltarSetupModal(props: {
           {errorKey === 'deathDate' ? (
             <p className="hint altar-field-error">{t('altarErrDeathDate')}</p>
           ) : null}
-        </div>
-
-        <div className="field">
-          <label htmlFor="altar-death-place">{t('altarDeathPlace')}</label>
-          <input
-            id="altar-death-place"
-            type="text"
-            value={draft.deathPlace}
-            onChange={e => setField('deathPlace', e.target.value)}
-            placeholder={t('altarPlaceOptional')}
-          />
         </div>
 
         <div className="field">
