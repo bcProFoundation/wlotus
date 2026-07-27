@@ -31,9 +31,10 @@ crawler → `/og/:txid` (see `deploy/contabo/nginx-og-snippet.conf` and
 | Altar / named dedication | `Tưởng nhớ {name}` |
 | No name | `White Lotus — Tưởng niệm vĩnh hằng` |
 
-Optional `?lang=en|vi|zh` (or `Accept-Language`) localizes the card. Facebook /
-Zalo usually cache **one** card per URL and may ignore language headers — the
-default shared URL is Vietnamese-first.
+Optional `?lang=en|vi|zh` localizes the card. The web Share action embeds the
+**sender's** current app locale in the URL. Facebook / Zalo cache **one** card
+per URL; without `?lang=`, previews fall back to `Accept-Language` then
+Vietnamese.
 
 ## Env
 

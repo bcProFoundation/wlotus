@@ -1,10 +1,10 @@
 /**
  * Open Graph / social preview HTML for dedication share URLs.
  *
- * Messengers scrape this HTML (they do not run the SPA). Titles are
- * Vietnamese-first (`Tưởng nhớ {name}`); optional `?lang=en|vi|zh` or
- * Accept-Language can override. Crawlers usually ignore Accept-Language and
- * cache one card per URL — so the default shared URL stays VI.
+ * Messengers scrape this HTML (they do not run the SPA). Locale order:
+ * 1. `?lang=` from the shared URL (sender's app locale when they tapped Share)
+ * 2. Accept-Language (rarely useful for crawlers)
+ * 3. Vietnamese product default (legacy links without ?lang=)
  */
 
 import {
@@ -27,7 +27,7 @@ export function parseOgLocale(
   return null;
 }
 
-/** Prefer ?lang=, then Accept-Language, else Vietnamese (product default). */
+/** Prefer sender `?lang=`, then Accept-Language, else Vietnamese. */
 export function resolveOgLocale(opts: {
   langParam?: string | null;
   acceptLanguage?: string | null;

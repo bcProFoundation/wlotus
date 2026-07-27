@@ -914,7 +914,8 @@ export default function App() {
   }
 
   async function shareDedication(originalBurnTxid: string, label: string) {
-    const url = dedicationShareUrl(originalBurnTxid);
+    // Embed sender locale so OG crawlers show the sharer's language preview.
+    const url = dedicationShareUrl(originalBurnTxid, undefined, locale);
     // Clear any leftover banner from a prior share / clipboard attempt.
     setMsg(null);
 
