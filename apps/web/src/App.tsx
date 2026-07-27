@@ -191,8 +191,12 @@ export default function App() {
   /** Structured altar fields; packed into the on-chain note when offering. */
   const [altar, setAltar] = useState<AltarFields | null>(null);
   const [altarOpen, setAltarOpen] = useState(false);
-  /** Read-only Ban thờ detail from Recent name tap. */
-  const [altarView, setAltarView] = useState<AltarFields | null>(null);
+  /** Read-only Ban thờ sheet (Recent name / Dâng lại) — same screen. */
+  const [dedicationSheet, setDedicationSheet] = useState<{
+    parentBurnTxid: string;
+    altar: AltarFields;
+    extraNote: string;
+  } | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -229,12 +233,6 @@ export default function App() {
     altar?: AltarFields | null;
     /** Optional remembrance words on a re-offer (on-chain DANA v2 note). */
     extraNote?: string;
-  } | null>(null);
-  /** Confirm sheet before starting a re-offer. */
-  const [reofferDraft, setReofferDraft] = useState<{
-    parentBurnTxid: string;
-    originalNote: string;
-    extraNote: string;
   } | null>(null);
   /** Confirm before closing an active offer session (X / Cancel). */
   const [cancelLoseConfirm, setCancelLoseConfirm] = useState(false);
@@ -543,6 +541,8 @@ export default function App() {
     parentBurnTxid?: string;
     /** Local label for history grouping (original dedication name). */
     displayNote?: string;
+    /** Ban thờ fields to show during a re-offer session. */
+    altar?: AltarFields | null;
     /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
   }) {
@@ -569,12 +569,14 @@ export default function App() {
       historyNote = note.trim();
     }
 
-    setReofferDraft(null);
+    setDedicationSheet(null);
     setCancelLoseConfirm(false);
     setSession({
       reoffer: isReoffer,
       note: historyNote,
-      altar: isReoffer ? null : altar,
+      altar: isReoffer
+        ? (opts?.altar ?? null)
+        : altar,
       extraNote: extraNote || undefined,
     });
     setLinkedParentBurnTxid(null);
@@ -838,36 +840,43 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!busy && !reofferDraft && !historyGroup) return;
+    if (!busy && !dedicationSheet && !historyGroup && !altarOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [busy, reofferDraft, historyGroup]);
+  }, [busy, dedicationSheet, historyGroup, altarOpen]);
 
   const canOffer =
     !busy && apiOnline === true && (remaining === null || remaining > 0);
 
-  function openReofferDraft(opts: {
+  function altarFromMemorialNote(raw: string): AltarFields {
+    const packed = parseAltarNote(raw);
+    if (packed) return packed;
+    const name = raw.trim();
+    return { ...emptyAltarFields(), name };
+  }
+
+  function openDedicationSheet(opts: {
     parentBurnTxid: string;
-    originalNote: string;
+    memorialNote: string;
   }) {
-    setReofferDraft({
+    setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
-      originalNote: opts.originalNote,
+      altar: altarFromMemorialNote(opts.memorialNote),
       extraNote: '',
     });
   }
 
-  /** Path deeplink: open re-offer confirm once the desk is reachable. */
+  /** Path deeplink: open Ban thờ / re-offer sheet once the desk is reachable. */
   useEffect(() => {
     if (!canOffer || !pendingDeeplinkOffer) return;
     const pending = pendingDeeplinkOffer;
     setPendingDeeplinkOffer(null);
-    openReofferDraft({
+    openDedicationSheet({
       parentBurnTxid: pending.parentBurnTxid,
-      originalNote: pending.displayNote,
+      memorialNote: pending.displayNote,
     });
   }, [canOffer, pendingDeeplinkOffer]);
 
@@ -932,6 +941,7 @@ export default function App() {
     setOffers(nextOffers);
     setSwipeOpenRoot(null);
     if (historyGroup?.original.burnTxid === root) setHistoryGroup(null);
+    if (dedicationSheet?.parentBurnTxid === root) setDedicationSheet(null);
   }
 
   async function openMemorialHistory(g: OfferGroup) {
@@ -1068,10 +1078,17 @@ export default function App() {
             disabled={!canOffer || shareLookingUp}
             onClick={() => {
               if (linkedParentBurnTxid) {
-                openReofferDraft({
+                let memorialNote = note;
+                if (altar) {
+                  try {
+                    memorialNote = encodeAltarNote(altar);
+                  } catch {
+                    memorialNote = altar.name;
+                  }
+                }
+                openDedicationSheet({
                   parentBurnTxid: linkedParentBurnTxid,
-                  originalNote:
-                    (altar ? altar.name : memorialDisplayName(note)) || note,
+                  memorialNote,
                 });
                 return;
               }
@@ -1192,19 +1209,12 @@ export default function App() {
                         <button
                           type="button"
                           className="history-original history-original-btn"
-                          onClick={() => {
-                            const packed = parseAltarNote(g.note);
-                            if (packed) {
-                              setAltarView(packed);
-                              return;
-                            }
-                            const name = (g.note || '').trim();
-                            if (!name) return;
-                            setAltarView({
-                              ...emptyAltarFields(),
-                              name,
-                            });
-                          }}
+                          onClick={() =>
+                            openDedicationSheet({
+                              parentBurnTxid: rootId,
+                              memorialNote: g.note,
+                            })
+                          }
                         >
                           {originalText}
                         </button>
@@ -1245,9 +1255,9 @@ export default function App() {
                             className="btn btn-reoffer-lotus"
                             disabled={!canOffer}
                             onClick={() =>
-                              openReofferDraft({
+                              openDedicationSheet({
                                 parentBurnTxid: rootId,
-                                originalNote: originalText,
+                                memorialNote: g.note,
                               })
                             }
                           >
@@ -1298,7 +1308,7 @@ export default function App() {
         />
       ) : null}
 
-      {altarView ? (
+      {dedicationSheet && !busy ? (
         <div
           className="offer-modal"
           role="dialog"
@@ -1310,12 +1320,52 @@ export default function App() {
               type="button"
               className="offer-modal-close"
               aria-label={t('btnClose')}
-              onClick={() => setAltarView(null)}
+              onClick={() => setDedicationSheet(null)}
             >
               ×
             </button>
             <h2 id="altar-detail-title">{t('altarDetailTitle')}</h2>
-            <AltarDetails altar={altarView} />
+            <AltarDetails altar={dedicationSheet.altar} />
+            <div className="field">
+              <label htmlFor="dedication-extra-note">
+                {t('reofferExtraNoteLabel')}
+              </label>
+              <textarea
+                id="dedication-extra-note"
+                rows={2}
+                maxLength={80}
+                value={dedicationSheet.extraNote}
+                onChange={e =>
+                  setDedicationSheet(d =>
+                    d
+                      ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                      : d,
+                  )
+                }
+                placeholder={t('reofferExtraNotePlaceholder')}
+              />
+            </div>
+            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+            <p className="hint">{t('hintKeepScreen')}</p>
+            <div className="offer-actions offer-session-actions">
+              <button
+                type="button"
+                className="btn btn-primary btn-offer"
+                disabled={!canOffer}
+                onClick={() =>
+                  void onOffer({
+                    parentBurnTxid: dedicationSheet.parentBurnTxid,
+                    displayNote:
+                      dedicationSheet.altar.name ||
+                      t('offeringFallback'),
+                    altar: dedicationSheet.altar,
+                    extraNote: dedicationSheet.extraNote,
+                  })
+                }
+              >
+                {t('btnOffer')}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1375,67 +1425,6 @@ export default function App() {
         </div>
       ) : null}
 
-      {reofferDraft && !busy ? (
-        <div
-          className="offer-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="offer-session-title"
-        >
-          <div className="offer-modal-card">
-            <button
-              type="button"
-              className="offer-modal-close"
-              aria-label={t('btnClose')}
-              onClick={() => setReofferDraft(null)}
-            >
-              ×
-            </button>
-            <h2 id="offer-session-title">{t('reofferSessionTitle')}</h2>
-            <p className="offer-session-note offer-session-original">
-              {reofferDraft.originalNote.trim() || t('offeringFallback')}
-            </p>
-            <div className="field">
-              <label htmlFor="reoffer-extra-note">
-                {t('reofferExtraNoteLabel')}
-              </label>
-              <textarea
-                id="reoffer-extra-note"
-                rows={2}
-                maxLength={80}
-                value={reofferDraft.extraNote}
-                onChange={e =>
-                  setReofferDraft(d =>
-                    d
-                      ? { ...d, extraNote: e.target.value.slice(0, 80) }
-                      : d,
-                  )
-                }
-                placeholder={t('reofferExtraNotePlaceholder')}
-              />
-            </div>
-            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-            <p className="hint">{t('hintKeepScreen')}</p>
-            <div className="offer-actions offer-session-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-offer"
-                disabled={!canOffer}
-                onClick={() =>
-                  void onOffer({
-                    parentBurnTxid: reofferDraft.parentBurnTxid,
-                    displayNote: reofferDraft.originalNote,
-                    extraNote: reofferDraft.extraNote,
-                  })
-                }
-              >
-                {t('btnOfferLotus')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       {busy && session?.reoffer ? (
         <div
           className="offer-modal"
@@ -1452,10 +1441,17 @@ export default function App() {
             >
               ×
             </button>
-            <h2 id="offer-session-title">{t('reofferSessionTitle')}</h2>
-            <p className="offer-session-note offer-session-original">
-              {session.note.trim() || t('offeringFallback')}
-            </p>
+            <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
+            {session.altar ? (
+              <>
+                <p className="offer-session-label">{t('altarLabel')}</p>
+                <AltarDetails altar={session.altar} />
+              </>
+            ) : (
+              <p className="offer-session-note offer-session-original">
+                {session.note.trim() || t('offeringFallback')}
+              </p>
+            )}
             {session.extraNote ? (
               <>
                 <p className="offer-session-label">

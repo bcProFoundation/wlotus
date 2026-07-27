@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   emptyAltarFields,
-  formatDeathDateInput,
+  formatAltarDateInput,
   validateAltarFields,
   type AltarFields,
 } from '../lib/altarFields.js';
@@ -98,34 +98,34 @@ export function AltarSetupModal(props: {
           />
         </div>
 
-        <div className="altar-grid">
-          <div className="field">
-            <label htmlFor="altar-birth-place">{t('altarBirthPlace')}</label>
-            <input
-              id="altar-birth-place"
-              type="text"
-              value={draft.birthPlace}
-              onChange={e => setField('birthPlace', e.target.value)}
-              placeholder={t('altarPlaceOptional')}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="altar-birth-year">{t('altarBirthYear')}</label>
-            <input
-              id="altar-birth-year"
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              value={draft.birthYear}
-              onChange={e =>
-                setField('birthYear', e.target.value.replace(/\D/g, '').slice(0, 4))
-              }
-              placeholder={t('altarBirthYearPlaceholder')}
-            />
-            {errorKey === 'birthYear' ? (
-              <p className="hint altar-field-error">{t('altarErrBirthYear')}</p>
-            ) : null}
-          </div>
+        <div className="field">
+          <label htmlFor="altar-birth-place">{t('altarBirthPlace')}</label>
+          <input
+            id="altar-birth-place"
+            type="text"
+            value={draft.birthPlace}
+            onChange={e => setField('birthPlace', e.target.value)}
+            placeholder={t('altarPlaceOptional')}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="altar-birth-date">{t('altarBirthDate')}</label>
+          <input
+            id="altar-birth-date"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={10}
+            value={draft.birthYear}
+            onChange={e =>
+              setField('birthYear', formatAltarDateInput(e.target.value))
+            }
+            placeholder={t('altarBirthDatePlaceholder')}
+          />
+          {errorKey === 'birthYear' ? (
+            <p className="hint altar-field-error">{t('altarErrBirthDate')}</p>
+          ) : null}
         </div>
 
         <div className="field">
@@ -137,7 +137,9 @@ export function AltarSetupModal(props: {
             autoComplete="off"
             maxLength={10}
             value={draft.deathDate}
-            onChange={e => setField('deathDate', formatDeathDateInput(e.target.value))}
+            onChange={e =>
+              setField('deathDate', formatAltarDateInput(e.target.value))
+            }
             placeholder={t('altarDeathDatePlaceholder')}
           />
           {errorKey === 'deathDate' ? (

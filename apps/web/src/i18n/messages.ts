@@ -32,6 +32,9 @@ export type MessageKey =
   | 'altarBirthPlace'
   | 'altarBirthYear'
   | 'altarBirthYearPlaceholder'
+  | 'altarBirthDate'
+  | 'altarBirthDatePlaceholder'
+  | 'altarErrBirthDate'
   | 'altarDeathDate'
   | 'altarDeathDatePlaceholder'
   | 'altarDeathPlace'
@@ -131,8 +134,11 @@ const en: Dict = {
   altarNote: 'Words of remembrance',
   altarNotePlaceholder: 'Optional short message',
   altarBirthPlace: 'Birth place',
-  altarBirthYear: 'Birth year',
-  altarBirthYearPlaceholder: 'YYYY',
+  altarBirthYear: 'Birth date',
+  altarBirthYearPlaceholder: 'YYYY or YYYY-MM-DD',
+  altarBirthDate: 'Birth date',
+  altarBirthDatePlaceholder: 'YYYY or YYYY-MM-DD',
+  altarErrBirthDate: 'Enter birth date as YYYY or YYYY-MM-DD.',
   altarDeathDate: 'Date of death',
   altarDeathDatePlaceholder: 'YYYY or YYYY-MM-DD',
   altarDeathPlace: 'Place of death',
@@ -142,7 +148,7 @@ const en: Dict = {
     'Geotagging later via OpenStreetMap — enter a city or region for now.',
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
-  altarErrBirthYear: 'Birth year must be YYYY.',
+  altarErrBirthYear: 'Enter birth date as YYYY or YYYY-MM-DD.',
   btnAltarSave: 'Save',
   btnAltarClear: 'Clear',
   altarDetailTitle: 'Altar',
@@ -237,8 +243,11 @@ const vi: Dict = {
   altarNote: 'Lời tưởng niệm',
   altarNotePlaceholder: 'Tuỳ chọn — lời ngắn',
   altarBirthPlace: 'Nơi sinh',
-  altarBirthYear: 'Năm sinh',
-  altarBirthYearPlaceholder: 'YYYY',
+  altarBirthYear: 'Ngày sinh',
+  altarBirthYearPlaceholder: 'YYYY hoặc YYYY-MM-DD',
+  altarBirthDate: 'Ngày sinh',
+  altarBirthDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
+  altarErrBirthDate: 'Ngày sinh dạng YYYY hoặc YYYY-MM-DD.',
   altarDeathDate: 'Ngày mất',
   altarDeathDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
   altarDeathPlace: 'Nơi mất',
@@ -248,7 +257,7 @@ const vi: Dict = {
     'Gắn toạ độ sau (OpenStreetMap) — tạm thời ghi tỉnh / huyện / xã.',
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
-  altarErrBirthYear: 'Năm sinh phải là YYYY.',
+  altarErrBirthYear: 'Ngày sinh dạng YYYY hoặc YYYY-MM-DD.',
   btnAltarSave: 'Lưu',
   btnAltarClear: 'Xoá',
   altarDetailTitle: 'Ban thờ',
@@ -341,8 +350,11 @@ const zh: Dict = {
   altarNote: '追思寄语',
   altarNotePlaceholder: '可选短句',
   altarBirthPlace: '出生地',
-  altarBirthYear: '出生年',
-  altarBirthYearPlaceholder: 'YYYY',
+  altarBirthYear: '出生日期',
+  altarBirthYearPlaceholder: 'YYYY 或 YYYY-MM-DD',
+  altarBirthDate: '出生日期',
+  altarBirthDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
+  altarErrBirthDate: '出生日期请用 YYYY 或 YYYY-MM-DD。',
   altarDeathDate: '去世日期',
   altarDeathDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
   altarDeathPlace: '去世地点',
@@ -351,7 +363,7 @@ const zh: Dict = {
   altarGeoHint: '日后可用 OpenStreetMap 标注坐标 — 现请填写城市或地区。',
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
-  altarErrBirthYear: '出生年须为 YYYY。',
+  altarErrBirthYear: '出生日期请用 YYYY 或 YYYY-MM-DD。',
   btnAltarSave: '保存',
   btnAltarClear: '清除',
   altarDetailTitle: '灵位',
