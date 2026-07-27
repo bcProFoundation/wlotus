@@ -33,11 +33,14 @@ describe('ogPreview', () => {
   });
 
   it('uses brand fallback without a name', () => {
-    expect(ogCopy('vi', '').title).toBe('White Lotus — Tưởng niệm vĩnh hằng');
-    expect(ogCopy('en', '').title).toBe('White Lotus — Remembrance forever');
+    expect(ogCopy('vi', '').title).toBe('White Lotus - Đoá sen vĩnh hằng');
+    expect(ogCopy('vi', '').description).toBe(
+      'Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.',
+    );
+    expect(ogCopy('en', '').title).toBe('White Lotus - Eternal lotus');
   });
 
-  it('renders escaped OG HTML', () => {
+  it('renders escaped OG HTML with SPA boot for browsers', () => {
     const packed = ['A & B', 'note', '', '', '2001', '', ''].join(ALTAR_SEP);
     const html = buildOgHtml({
       siteOrigin: 'https://wlotus.org',
@@ -49,5 +52,6 @@ describe('ogPreview', () => {
     expect(html).toContain('Tưởng nhớ A &amp; B');
     expect(html).toContain(`https://wlotus.org/${TX}`);
     expect(html).toContain('wlotus-icon-512.png');
+    expect(html).toContain("fetch('/index.html'");
   });
 });
