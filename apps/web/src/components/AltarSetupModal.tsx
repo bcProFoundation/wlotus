@@ -13,7 +13,7 @@ export function AltarSetupModal(props: {
   fallbackName?: string;
   onClose: () => void;
   onSave: (fields: AltarFields) => void;
-  onClear: () => void;
+  onClear?: () => void;
 }) {
   const { t } = useLocale();
   const [draft, setDraft] = useState<AltarFields>(() => {
@@ -170,19 +170,7 @@ export function AltarSetupModal(props: {
         <p className="hint altar-geo-hint">{t('altarGeoHint')}</p>
 
         <div className="altar-setup-actions">
-          {props.initial ? (
-            <button
-              type="button"
-              className="btn"
-              onClick={() => {
-                props.onClear();
-              }}
-            >
-              {t('btnAltarClear')}
-            </button>
-          ) : (
-            <span />
-          )}
+          <span />
           <button type="button" className="btn btn-primary" onClick={save}>
             {t('btnAltarSave')}
           </button>

@@ -20,6 +20,9 @@ export type MessageKey =
   | 'noteLabel'
   | 'notePlaceholder'
   | 'btnAltarMore'
+  | 'btnAltarEdit'
+  | 'btnAltarDelete'
+  | 'altarLabel'
   | 'altarTitle'
   | 'altarHint'
   | 'altarName'
@@ -40,7 +43,7 @@ export type MessageKey =
   | 'altarErrBirthYear'
   | 'btnAltarSave'
   | 'btnAltarClear'
-  | 'altarSummary'
+  | 'altarDetailTitle'
   | 'btnOffer'
   | 'btnPraying'
   | 'btnOffering'
@@ -117,7 +120,10 @@ const en: Dict = {
   noteLabel: 'Words of remembrance…',
   notePlaceholder: 'Name, dedication, or paste a wLotus link',
   btnAltarMore: 'More',
-  altarTitle: 'Altar details',
+  btnAltarEdit: 'Edit',
+  btnAltarDelete: 'Delete',
+  altarLabel: 'Altar',
+  altarTitle: 'Altar',
   altarHint:
     'These fields are written on-chain with the dedication. Places are plain text for now.',
   altarName: 'Name',
@@ -137,9 +143,9 @@ const en: Dict = {
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
   altarErrBirthYear: 'Birth year must be YYYY.',
-  btnAltarSave: 'Save altar',
-  btnAltarClear: 'Clear altar',
-  altarSummary: 'Altar · {name} · {death}',
+  btnAltarSave: 'Save',
+  btnAltarClear: 'Clear',
+  altarDetailTitle: 'Altar',
   btnOffer: 'Offer a Flower',
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
@@ -220,7 +226,10 @@ const vi: Dict = {
   noteLabel: 'Lời tưởng niệm...',
   notePlaceholder: 'Tên, lời tưởng niệm, hoặc dán liên kết wLotus',
   btnAltarMore: 'Thêm',
-  altarTitle: 'Thông tin bàn thờ',
+  btnAltarEdit: 'Sửa',
+  btnAltarDelete: 'Xoá',
+  altarLabel: 'Ban thờ',
+  altarTitle: 'Ban thờ',
   altarHint:
     'Các trường này được ghi trên chuỗi cùng lần dâng. Địa danh dùng chữ thường trước.',
   altarName: 'Họ tên',
@@ -240,9 +249,9 @@ const vi: Dict = {
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
   altarErrBirthYear: 'Năm sinh phải là YYYY.',
-  btnAltarSave: 'Lưu bàn thờ',
-  btnAltarClear: 'Xoá bàn thờ',
-  altarSummary: 'Bàn thờ · {name} · {death}',
+  btnAltarSave: 'Lưu',
+  btnAltarClear: 'Xoá',
+  altarDetailTitle: 'Ban thờ',
   btnOffer: 'Dâng Hoa',
   btnPraying: 'Đang tìm hoa sen…',
   btnOffering: 'Đang dâng hoa…',
@@ -322,7 +331,10 @@ const zh: Dict = {
   noteLabel: '追思寄语…',
   notePlaceholder: '姓名、寄语，或粘贴 wLotus 链接',
   btnAltarMore: '更多',
-  altarTitle: '灵位信息',
+  btnAltarEdit: '编辑',
+  btnAltarDelete: '删除',
+  altarLabel: '灵位',
+  altarTitle: '灵位',
   altarHint: '这些字段将随献花一并写入链上。地点暂用文字描述。',
   altarName: '姓名',
   altarNamePlaceholder: '逝者姓名',
@@ -340,9 +352,9 @@ const zh: Dict = {
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
   altarErrBirthYear: '出生年须为 YYYY。',
-  btnAltarSave: '保存灵位',
-  btnAltarClear: '清除灵位',
-  altarSummary: '灵位 · {name} · {death}',
+  btnAltarSave: '保存',
+  btnAltarClear: '清除',
+  altarDetailTitle: '灵位',
   btnOffer: '献花',
   btnPraying: '正在寻找莲花…',
   btnOffering: '正在献花…',
