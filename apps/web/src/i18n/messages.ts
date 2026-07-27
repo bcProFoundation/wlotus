@@ -44,6 +44,7 @@ export type MessageKey =
   | 'altarErrDeathDate'
   | 'altarErrBirthYear'
   | 'btnAltarSave'
+  | 'btnAltarNext'
   | 'btnAltarClear'
   | 'altarDetailTitle'
   | 'btnOffer'
@@ -147,6 +148,7 @@ const en: Dict = {
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
   altarErrBirthYear: 'Enter year of birth as YYYY or YYYY-MM-DD.',
   btnAltarSave: 'Save',
+  btnAltarNext: 'Next',
   btnAltarClear: 'Clear',
   altarDetailTitle: 'Altar',
   btnOffer: 'Offer a Flower',
@@ -254,6 +256,7 @@ const vi: Dict = {
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
   altarErrBirthYear: 'Năm sinh dạng YYYY hoặc YYYY-MM-DD.',
   btnAltarSave: 'Lưu',
+  btnAltarNext: 'Tiếp',
   btnAltarClear: 'Xoá',
   altarDetailTitle: 'Ban thờ',
   btnOffer: 'Dâng Hoa',
@@ -359,6 +362,7 @@ const zh: Dict = {
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
   altarErrBirthYear: '出生年请用 YYYY 或 YYYY-MM-DD。',
   btnAltarSave: '保存',
+  btnAltarNext: '下一步',
   btnAltarClear: '清除',
   altarDetailTitle: '灵位',
   btnOffer: '献花',
