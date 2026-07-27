@@ -79,6 +79,19 @@ export function memorialDisplayName(raw: string): string {
 const DEATH_DATE_RE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
 const BIRTH_YEAR_RE = /^\d{4}$/;
 
+/**
+ * Auto-format death date while typing on a numeric keypad (no hyphen key).
+ * Digits only → `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
+ */
+export function formatDeathDateInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
 export function validateAltarFields(a: AltarFields): string | null {
   if (!scrub(a.name)) return 'name';
   const death = scrub(a.deathDate);
