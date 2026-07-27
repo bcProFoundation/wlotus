@@ -1,6 +1,7 @@
 import {
   encodeAltarNote,
   emptyAltarFields,
+  formatAltarDateInput,
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,
@@ -53,6 +54,26 @@ describe('altarFields', () => {
       'Tưởng nhớ ông nội',
     );
     expect(parseAltarNote('plain')).toBeNull();
+  });
+
+  it('accepts birth date like death date (YYYY / YYYY-MM / YYYY-MM-DD)', () => {
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
+        deathDate: '2001',
+        birthYear: '1945-10-20',
+      }),
+    ).toBeNull();
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
+        deathDate: '2001',
+        birthYear: '19-45',
+      }),
+    ).toBe('birthYear');
+    expect(formatAltarDateInput('19451020')).toBe('1945-10-20');
   });
 
   it('auto-formats death date digits with hyphens', () => {

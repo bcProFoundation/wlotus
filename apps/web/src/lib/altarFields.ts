@@ -4,6 +4,7 @@ export {
   MEMORIAL_NOTE_MAX_CHARS,
   emptyAltarFields,
   encodeAltarNote,
+  formatAltarDateInput,
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,

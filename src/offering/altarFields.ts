@@ -21,7 +21,10 @@ export interface AltarFields {
   /** Free remembrance words (optional). */
   note: string;
   birthPlace: string;
-  /** Year only is enough (YYYY). */
+  /**
+   * Birth date — optional. Same shapes as deathDate: `YYYY`, `YYYY-MM`, or
+   * `YYYY-MM-DD`. Wire field slot kept as “birthYear” historically.
+   */
   birthYear: string;
   /** Required when altar is used — YYYY or YYYY-MM-DD. */
   deathDate: string;
@@ -76,14 +79,13 @@ export function memorialDisplayName(raw: string): string {
   return altar.name || altar.note || t;
 }
 
-const DEATH_DATE_RE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
-const BIRTH_YEAR_RE = /^\d{4}$/;
+const ALTAR_DATE_RE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
 
 /**
- * Auto-format death date while typing on a numeric keypad (no hyphen key).
+ * Auto-format altar dates while typing on a numeric keypad (no hyphen key).
  * Digits only → `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
  */
-export function formatDeathDateInput(raw: string): string {
+export function formatAltarDateInput(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 8);
   if (digits.length <= 4) return digits;
   if (digits.length <= 6) {
@@ -92,12 +94,15 @@ export function formatDeathDateInput(raw: string): string {
   return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
 }
 
+/** @deprecated use formatAltarDateInput */
+export const formatDeathDateInput = formatAltarDateInput;
+
 export function validateAltarFields(a: AltarFields): string | null {
   if (!scrub(a.name)) return 'name';
   const death = scrub(a.deathDate);
-  if (!death || !DEATH_DATE_RE.test(death)) return 'deathDate';
-  const by = scrub(a.birthYear);
-  if (by && !BIRTH_YEAR_RE.test(by)) return 'birthYear';
+  if (!death || !ALTAR_DATE_RE.test(death)) return 'deathDate';
+  const birth = scrub(a.birthYear);
+  if (birth && !ALTAR_DATE_RE.test(birth)) return 'birthYear';
   return null;
 }
 
