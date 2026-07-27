@@ -502,6 +502,47 @@ a {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.open-browser-redirecting {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+.open-browser-gate {
+  align-items: center;
+}
+
+.open-browser-card {
+  text-align: center;
+  max-height: none;
+}
+
+.open-browser-card .brand-mark {
+  margin: 0.25rem auto 0.85rem;
+}
+
+.open-browser-card h2 {
+  padding-right: 0;
+}
+
+.open-browser-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+.open-browser-actions .btn-offer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  margin-top: 0;
+}
+
 .field label {
   font-size: 0.85rem;
   color: var(--muted);

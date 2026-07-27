@@ -28,6 +28,7 @@ export default defineConfig({
         scope: '/',
         // Installed Android PWA: in-scope https://wlotus.org/<txid> opens the
         // app (same path Universal Links / App Links will use for a store app).
+        handle_links: 'preferred',
         launch_handler: {
           client_mode: 'navigate-existing',
         },

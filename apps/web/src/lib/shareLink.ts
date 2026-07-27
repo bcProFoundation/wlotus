@@ -7,6 +7,10 @@
  * installed PWA via in-scope link capturing. Custom schemes alone
  * (`wlotus://…`) break previews and often fail from messengers when the
  * app is not installed, so we only *accept* them for future native shells.
+ *
+ * Messenger in-app browsers (Zalo, Facebook, …) use a separate storage
+ * partition. Share deeplinks opened there show `OpenInBrowserGate` so the
+ * user continues in Safari/Chrome or the installed PWA.
  */
 
 const TXID_RE = /\b([0-9a-fA-F]{64})\b/;
