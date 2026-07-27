@@ -87,15 +87,33 @@ export function looksLikeShareInput(raw: string): boolean {
 /**
  * Public share URL for an original dedication burn.
  * Always HTTPS (or current origin in local/test) — mobile social → app entry.
+ *
+ * When `lang` is set (sender's app locale), append `?lang=` so Open Graph
+ * previews use that language — messengers cache one card per URL and do not
+ * know the sharer's in-app locale otherwise.
  */
 export function dedicationShareUrl(
   burnTxid: string,
   origin: string = typeof window !== 'undefined' ? window.location.origin : '',
+  lang?: string | null,
 ): string {
   const id = normalizeBurnTxid(burnTxid);
   if (!id) throw new Error('invalid burn txid');
   const base = (origin || 'https://wlotus.org').replace(/\/$/, '');
-  return `${base}/${id}`;
+  const locale = normalizeShareLang(lang);
+  return locale ? `${base}/${id}?lang=${locale}` : `${base}/${id}`;
+}
+
+/** en | vi | zh for share / OG; null if unknown. */
+export function normalizeShareLang(
+  raw: string | null | undefined,
+): 'en' | 'vi' | 'zh' | null {
+  if (!raw) return null;
+  const primary = raw.trim().toLowerCase().split(/[,;_-]/)[0]?.trim() ?? '';
+  if (primary === 'vi') return 'vi';
+  if (primary === 'zh') return 'zh';
+  if (primary === 'en') return 'en';
+  return null;
 }
 
 /** Consume `/<txid>` from the current location (SPA). */

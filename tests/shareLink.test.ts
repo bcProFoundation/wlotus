@@ -24,7 +24,16 @@ describe('shareLink', () => {
     expect(dedicationShareUrl(id, 'https://wlotus.org')).toBe(
       `https://wlotus.org/${id}`,
     );
+    expect(dedicationShareUrl(id, 'https://wlotus.org', 'vi')).toBe(
+      `https://wlotus.org/${id}?lang=vi`,
+    );
+    expect(dedicationShareUrl(id, 'https://wlotus.org', 'en-US')).toBe(
+      `https://wlotus.org/${id}?lang=en`,
+    );
     expect(looksLikeShareInput(`https://wlotus.org/${id}`)).toBe(true);
+    expect(looksLikeShareInput(`https://wlotus.org/${id}?lang=vi`)).toBe(
+      true,
+    );
     expect(looksLikeShareInput(`http://localhost:5173/${id}`)).toBe(true);
     expect(looksLikeShareInput(id)).toBe(true);
     expect(looksLikeShareInput('Cao Lâm Quả')).toBe(false);

@@ -15,10 +15,26 @@ TOKEN_ID=<64-hex> npm run dana-index
 curl -sS http://127.0.0.1:8788/health | jq .
 curl -sS 'http://127.0.0.1:8788/api/recent?limit=20' | jq .
 curl -sS http://127.0.0.1:8788/api/memorial/<txid> | jq .
+# Social preview HTML (nginx routes crawler UAs here for /<txid>):
+curl -sS http://127.0.0.1:8788/og/<txid> | head
+curl -sS 'http://127.0.0.1:8788/og/<txid>?lang=en' | head
 ```
 
-Web Vite proxies `/index-api` → `:8788`. Prod nginx: `/index-api/` (see
-`deploy/contabo/nginx-api-snippet.conf`).
+Web Vite proxies `/index-api` → `:8788`. Prod nginx: `/index-api/` plus
+crawler → `/og/:txid` (see `deploy/contabo/nginx-og-snippet.conf` and
+`nginx-wlotus-prod-tls.conf`).
+
+## Open Graph / share previews
+
+| Case | `og:title` (default VI) |
+|------|-------------------------|
+| Altar / named dedication | `Tưởng nhớ {name}` |
+| No name | `White Lotus — Tưởng niệm vĩnh hằng` |
+
+Optional `?lang=en|vi|zh` localizes the card. The web Share action embeds the
+**sender's** current app locale in the URL. Facebook / Zalo cache **one** card
+per URL; without `?lang=`, previews fall back to `Accept-Language` then
+Vietnamese.
 
 ## Env
 
@@ -30,6 +46,7 @@ Web Vite proxies `/index-api` → `:8788`. Prod nginx: `/index-api/` (see
 | `DANA_INDEX_STORE` | `./data/dana-index-burns.json` | Durable JSON |
 | `DANA_INDEX_POLL_MS` | `30000` | Mempool/tip poll |
 | `DANA_INDEX_BACKFILL_PAGES` | `30` | Startup history pages |
+| `PUBLIC_SITE_ORIGIN` | from Host / `https://wlotus.org` | Absolute OG URLs |
 
 Mint-api optional: `DANA_INDEX_URL=http://127.0.0.1:8788` to `POST /api/notify`
 after each memorial burn.

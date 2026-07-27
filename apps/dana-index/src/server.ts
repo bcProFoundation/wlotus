@@ -7,6 +7,7 @@
  *   GET  /health
  *   GET  /api/recent?limit=40
  *   GET  /api/memorial/:txid
+ *   GET  /og/:txid          — Open Graph HTML for social share previews
  *   POST /api/notify { burnTxid }  — mint-api / clients ask to index a tx now
  */
 
@@ -19,6 +20,7 @@ import {
   ingestTxid,
   ingestUnconfirmed,
 } from './ingest.js';
+import { buildOgHtml, resolveOgLocale } from './ogPreview.js';
 import { BurnStore } from './store.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
@@ -37,6 +39,11 @@ const POLL_MS = Math.max(
   5_000,
   Number(process.env.DANA_INDEX_POLL_MS?.trim() || 30_000),
 );
+const SITE_ORIGIN = (
+  process.env.PUBLIC_SITE_ORIGIN?.trim() ||
+  process.env.VITE_PUBLIC_SITE_ORIGIN?.trim() ||
+  ''
+).replace(/\/$/, '');
 const STARTED_AT = new Date().toISOString();
 
 if (!TOKEN_ID || !/^[0-9a-fA-F]{64}$/.test(TOKEN_ID)) {
@@ -63,6 +70,31 @@ function json(
   res.end(JSON.stringify(body));
 }
 
+function html(
+  res: import('node:http').ServerResponse,
+  status: number,
+  body: string,
+): void {
+  cors(res);
+  res.writeHead(status, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'public, max-age=300',
+  });
+  res.end(body);
+}
+
+function siteOriginFor(req: import('node:http').IncomingMessage): string {
+  if (SITE_ORIGIN) return SITE_ORIGIN;
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+    .split(',')[0]
+    ?.trim();
+  const proto = String(req.headers['x-forwarded-proto'] || 'https')
+    .split(',')[0]
+    ?.trim();
+  if (host) return `${proto}://${host}`;
+  return 'https://wlotus.org';
+}
+
 async function readJson(
   req: import('node:http').IncomingMessage,
 ): Promise<Record<string, unknown>> {
@@ -73,6 +105,23 @@ async function readJson(
     string,
     unknown
   >;
+}
+
+async function resolveOriginalNote(txid: string): Promise<string> {
+  let group = store.memorial(txid);
+  if (!group) {
+    try {
+      await ingestTxid({ chronik, store, tokenId: TOKEN_ID, txid });
+      group = store.memorial(txid);
+    } catch {
+      /* fall through */
+    }
+  }
+  if (group?.originalNote) return group.originalNote;
+  const seed = store.get(txid);
+  if (!seed) return '';
+  const root = store.get(seed.originalBurnTxid) || seed;
+  return (root.note || seed.note || '').trim();
 }
 
 let ingestBusy = false;
@@ -142,6 +191,27 @@ const server = createServer(async (req, res) => {
         return;
       }
       json(res, 200, { ok: true, ...group });
+      return;
+    }
+
+    const ogMatch = /^\/og\/([0-9a-fA-F]{64})\/?$/.exec(path);
+    if (req.method === 'GET' && ogMatch) {
+      const txid = ogMatch[1]!.toLowerCase();
+      const locale = resolveOgLocale({
+        langParam: url.searchParams.get('lang'),
+        acceptLanguage: String(req.headers['accept-language'] || ''),
+      });
+      const originalNote = await resolveOriginalNote(txid);
+      html(
+        res,
+        200,
+        buildOgHtml({
+          siteOrigin: siteOriginFor(req),
+          pathTxid: txid,
+          locale,
+          originalNote,
+        }),
+      );
       return;
     }
 

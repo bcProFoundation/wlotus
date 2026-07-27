@@ -11,5 +11,10 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["src", "../../src/offering/wlbrMemorial.ts", "../../src/offering/memorialFromScript.ts"]
+  "include": [
+    "src",
+    "../../src/offering/wlbrMemorial.ts",
+    "../../src/offering/memorialFromScript.ts",
+    "../../src/offering/altarFields.ts"
+  ]
 }
