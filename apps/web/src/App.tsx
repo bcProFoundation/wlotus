@@ -8,6 +8,10 @@ import {
 import { LangSwitch } from './components/LangSwitch.js';
 import { AltarDetails } from './components/AltarDetails.js';
 import { AltarSetupModal } from './components/AltarSetupModal.js';
+import {
+  OpenInBrowserGate,
+  useShareInAppBrowserGate,
+} from './components/OpenInBrowserGate.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import {
   formatActualDurationLocale,
@@ -186,6 +190,7 @@ function readRememberedChallenge(): StoredChallenge | null {
 
 export default function App() {
   const { locale, t } = useLocale();
+  const shareInAppBrowserGate = useShareInAppBrowserGate();
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
   /** Structured altar fields; packed into the on-chain note when offering. */
@@ -419,13 +424,15 @@ export default function App() {
     [],
   );
 
-  /** Deeplink: /<original-burn-txid> → lookup note → auto re-offer when online. */
+  /** Deeplink: /<original-burn-txid> → lookup note → auto re-offer when online.
+   * Skip while a messenger WebView gate is up (avoid consuming the path there). */
   useEffect(() => {
+    if (shareInAppBrowserGate) return;
     const txid = burnTxidFromLocation();
     if (!txid) return;
     clearDedicationPath();
     void applyDedicationLink(txid, { autoStart: true });
-  }, [applyDedicationLink]);
+  }, [applyDedicationLink, shareInAppBrowserGate]);
 
   useEffect(() => {
     return () => {
@@ -982,6 +989,14 @@ export default function App() {
         : linkedParentBurnTxid
           ? t('btnReoffer')
           : t('btnOffer');
+
+  if (shareInAppBrowserGate) {
+    return (
+      <div className="app">
+        <OpenInBrowserGate href={window.location.href} />
+      </div>
+    );
+  }
 
   return (
     <div className="app">

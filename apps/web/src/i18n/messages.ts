@@ -89,6 +89,12 @@ export type MessageKey =
   | 'shareLookupFailed'
   | 'btnShare'
   | 'shareCopied'
+  | 'openInBrowserTitle'
+  | 'openInBrowserBody'
+  | 'openInBrowserHint'
+  | 'openInBrowserCta'
+  | 'openInBrowserCopy'
+  | 'openInBrowserCopied'
   | 'historyIndexUnavailable'
   | 'lastOfferedAt'
   | 'latestMessageLabel'
@@ -197,6 +203,14 @@ const en: Dict = {
   shareLookupFailed: 'Could not find that dedication on-chain.',
   btnShare: 'Share',
   shareCopied: 'Link copied',
+  openInBrowserTitle: 'Open in your browser',
+  openInBrowserBody:
+    'This messenger opened White Lotus in its own browser, which does not share your offering history. Continue in Safari, Chrome, or the installed White Lotus app.',
+  openInBrowserHint:
+    'Or tap ⋯ / More → Open in browser (or Open in Safari / Chrome).',
+  openInBrowserCta: 'Open in browser',
+  openInBrowserCopy: 'Copy link',
+  openInBrowserCopied: 'Link copied',
   historyIndexUnavailable:
     'Could not reach the memorial index — showing what this device has. On Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Last offered: {when}',
@@ -304,6 +318,14 @@ const vi: Dict = {
   shareLookupFailed: 'Không tìm thấy lời tưởng niệm trên chuỗi.',
   btnShare: 'Chia sẻ',
   shareCopied: 'Đã sao chép liên kết',
+  openInBrowserTitle: 'Mở bằng trình duyệt',
+  openInBrowserBody:
+    'Ứng dụng nhắn tin đang mở White Lotus trong trình duyệt riêng — lịch sử dâng hoa của bạn không dùng chung. Hãy tiếp tục bằng Safari, Chrome hoặc ứng dụng White Lotus đã cài.',
+  openInBrowserHint:
+    'Hoặc chạm ⋯ / Thêm → Mở bằng trình duyệt (hoặc Mở bằng Safari / Chrome).',
+  openInBrowserCta: 'Mở bằng trình duyệt',
+  openInBrowserCopy: 'Sao chép liên kết',
+  openInBrowserCopied: 'Đã sao chép liên kết',
   historyIndexUnavailable:
     'Không kết nối được mục lục tưởng niệm — đang hiện dữ liệu trên máy này. Trên Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Lần gần nhất: {when}',
@@ -409,6 +431,13 @@ const zh: Dict = {
   shareLookupFailed: '链上未找到该追思。',
   btnShare: '分享',
   shareCopied: '链接已复制',
+  openInBrowserTitle: '在浏览器中打开',
+  openInBrowserBody:
+    '此即时通讯应用在其内置浏览器中打开了 White Lotus，无法共用您的献花记录。请在 Safari、Chrome 或已安装的 White Lotus 应用中继续。',
+  openInBrowserHint: '或点 ⋯ / 更多 → 在浏览器中打开（或在 Safari / Chrome 中打开）。',
+  openInBrowserCta: '在浏览器中打开',
+  openInBrowserCopy: '复制链接',
+  openInBrowserCopied: '链接已复制',
   historyIndexUnavailable:
     '无法连接追思索引 — 显示本机记录。请在 Contabo 将 /index-api/ 代理到 dana-index :8788。',
   lastOfferedAt: '最近一次: {when}',
