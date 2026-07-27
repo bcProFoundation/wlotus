@@ -29,6 +29,7 @@ import {
 import {
   emptyAltarFields,
   encodeAltarNote,
+  formatAltarPersonName,
   memorialDisplayName,
   MEMORIAL_NOTE_MAX_CHARS,
   parseAltarNote,
@@ -401,7 +402,7 @@ export default function App() {
           kind: 'ok',
           text: tRef.current('shareLinked', {
             name:
-              memorialDisplayName(displayNote) ||
+              memorialDisplayName(displayNote, localeRef.current) ||
               tRef.current('offeringFallback'),
           }),
         });
@@ -572,7 +573,8 @@ export default function App() {
         return;
       }
       historyNote =
-        activeAltar.name.trim() || memorialDisplayName(challengeNote);
+        formatAltarPersonName(activeAltar, locale) ||
+        memorialDisplayName(challengeNote, locale);
     } else {
       challengeNote = note.trim();
       historyNote = note.trim();
@@ -806,8 +808,8 @@ export default function App() {
           void refreshIndexRecent();
           await refreshStatus();
           const offeredFor =
-            memorialDisplayName(historyNote) ||
-            memorialDisplayName(challengeNote) ||
+            memorialDisplayName(historyNote, localeRef.current) ||
+            memorialDisplayName(challengeNote, localeRef.current) ||
             tRef.current('offeringFallback');
           setMsg({
             kind: 'ok',
@@ -1116,7 +1118,9 @@ export default function App() {
             : linkedParentBurnTxid
               ? t('shareLinked', {
                   name:
-                    (altar ? altar.name : memorialDisplayName(note)) ||
+                    (altar
+                      ? formatAltarPersonName(altar, locale)
+                      : memorialDisplayName(note, locale)) ||
                     t('offeringFallback'),
                 })
               : t('shareHint')}
@@ -1186,8 +1190,11 @@ export default function App() {
             {recentGroups.map(g => {
               const last = g.latest;
               const originalText =
-                memorialDisplayName(g.note) || t('offeringFallback');
-              const latestText = memorialDisplayName(last.note || '').trim();
+                memorialDisplayName(g.note, locale) || t('offeringFallback');
+              const latestText = memorialDisplayName(
+                last.note || '',
+                locale,
+              ).trim();
               const showLatestMessage =
                 Boolean(latestText) &&
                 (last.burnTxid !== g.original.burnTxid ||
@@ -1382,7 +1389,7 @@ export default function App() {
                   void onOffer({
                     parentBurnTxid: dedicationSheet.parentBurnTxid,
                     displayNote:
-                      dedicationSheet.altar.name ||
+                      formatAltarPersonName(dedicationSheet.altar, locale) ||
                       t('offeringFallback'),
                     altar: dedicationSheet.altar,
                     extraNote: dedicationSheet.extraNote,
@@ -1414,7 +1421,8 @@ export default function App() {
             </button>
             <h2 id="memorial-history-title">{t('historyTitle')}</h2>
             <p className="offer-session-note offer-session-original">
-              {memorialDisplayName(historyGroup.note) || t('offeringFallback')}
+              {memorialDisplayName(historyGroup.note, locale) ||
+                t('offeringFallback')}
             </p>
             <p className="hint">
               {t('burnTotal', { n: historyGroup.totalBurns })}
@@ -1429,9 +1437,9 @@ export default function App() {
                   <div className="memorial-history-main">
                     <span className="memorial-history-note">
                       {(b.note || '').trim()
-                        ? memorialDisplayName(b.note)
+                        ? memorialDisplayName(b.note, locale)
                         : i === historyGroup.burns.length - 1
-                          ? memorialDisplayName(historyGroup.note) ||
+                          ? memorialDisplayName(historyGroup.note, locale) ||
                             t('offeringFallback')
                           : t('latestMemorialFallback')}
                     </span>

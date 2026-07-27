@@ -453,6 +453,35 @@ a {
   overflow: auto;
 }
 
+.altar-honorific-label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+  color: var(--muted, rgba(255, 255, 255, 0.65));
+}
+
+.altar-honorific {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.altar-honorific-btn {
+  flex: 1 1 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.altar-honorific-btn.is-selected,
+.altar-honorific-btn[aria-pressed='true'] {
+  border-color: var(--accent, #c4a574);
+  background: rgba(196, 165, 116, 0.14);
+}
+
 .altar-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

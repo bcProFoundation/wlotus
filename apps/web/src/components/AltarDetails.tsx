@@ -1,4 +1,7 @@
-import type { AltarFields } from '../lib/altarFields.js';
+import {
+  altarHonorificLabel,
+  type AltarFields,
+} from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
 
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
@@ -6,9 +9,11 @@ export function AltarDetails(props: {
   altar: AltarFields;
   className?: string;
 }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { altar } = props;
+  const honorific = altarHonorificLabel(altar.title, locale);
   const rows: { label: string; value: string }[] = [
+    { label: t('altarHonorific'), value: honorific },
     { label: t('altarName'), value: altar.name },
     { label: t('altarNote'), value: altar.note },
     { label: t('altarBirthPlace'), value: altar.birthPlace },

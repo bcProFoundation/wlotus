@@ -44,19 +44,22 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 
 | # | Field | Now | Later |
 |---|--------|-----|--------|
-| 1 | Display name / dedication name | yes | yes |
-| 2 | Short remembrance note | yes | yes |
-| 3 | Birth place (coarse text) | optional | same, then geohash |
-| 4 | Birth year (`YYYY`) | optional | optional |
-| 5 | Date of death (`YYYY` or `YYYY-MM-DD`) | **required** when altar used | yes |
-| 6 | Place of death | optional | same, then geohash |
-| 7 | Funeral / resting place | optional | same, then geohash |
+| 1 | Title / honorific (`mr` \| `mrs` \| empty) | optional | yes |
+| 2 | Display name / dedication name | yes | yes |
+| 3 | Short remembrance note | yes | yes |
+| 4 | Birth place (coarse text) | optional | same, then geohash |
+| 5 | Birth year (`YYYY`) | optional | optional |
+| 6 | Date of death (`YYYY` or `YYYY-MM-DD`) | **required** when altar used | yes |
+| 7 | Place of death | optional | same, then geohash |
+| 8 | Funeral / resting place | optional | same, then geohash |
 
 Wire sketch (UTF-8):
 
 ```
-name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace
+title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace
 ```
+
+`title` is a **locale-neutral code** (`mr` / `mrs`); UI renders Mr./Mrs., Ông/Bà, 先生/女士. The title slot is always written (may be empty) so readers can tell new wire from legacy name-first packs.
 
 Trailing empty fields may be omitted. Readers split on `\x1f` and take positions by index.
 
