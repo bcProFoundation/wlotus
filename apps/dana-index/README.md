@@ -53,3 +53,19 @@ Vietnamese.
 
 Mint-api optional: `DANA_INDEX_URL=http://127.0.0.1:8788` to `POST /api/notify`
 after each memorial burn.
+
+## Contabo (test / prod)
+
+Unit: `wlotus-dana-index.service` (`User=deploy`, cwd `/opt/wlotus`, env
+`/etc/wlotus/dana-index.env`). Full update procedure — **pull as `deploy`**,
+backup `deployments/mainnet-dryrun-*.json` tip state, restart, OG smoke — is in
+[deploy/contabo/README.md](../../deploy/contabo/README.md) under
+**Update `/opt/wlotus` + restart dana-index**.
+
+Quick restart after a successful pull:
+
+```bash
+sudo systemctl restart wlotus-dana-index
+curl -sS http://127.0.0.1:8788/health | jq .
+curl -sS "http://127.0.0.1:8788/og/<txid>?lang=vi" | grep og:title
+```

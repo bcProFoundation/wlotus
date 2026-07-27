@@ -46,7 +46,8 @@ On the prod VM as root:
 # Confirm loop
 curl -sI https://wlotus.org/ | head -5   # Location: https://wlotus.org/ → broken
 
-cd /opt/wlotus && git pull   # or copy nginx-wlotus-prod-tls.conf from this repo
+cd /opt/wlotus && sudo -u deploy git pull origin master   # not as root — dubious ownership
+# or copy nginx-wlotus-prod-tls.conf from this repo
 sudo cp /etc/nginx/sites-available/wlotus "/etc/nginx/sites-available/wlotus.bak.$(date +%s)"
 sudo cp deploy/contabo/nginx-wlotus-prod-tls.conf /etc/nginx/sites-available/wlotus
 
@@ -86,7 +87,8 @@ Repo config already separates hosts: `www` returns `301 https://wlotus.org$reque
 **If the site is already live with Certbot**, do not overwrite the whole site file. On the prod VM:
 
 ```bash
-cd /opt/wlotus && git pull origin master   # or copy files from laptop
+cd /opt/wlotus && sudo -u deploy git pull origin master   # or copy files from laptop
+# If mainnet-*.json blocks pull, see README.md “Update /opt/wlotus + restart dana-index”.
 
 # 1) Ensure cert covers both names
 sudo certbot --nginx -d wlotus.org -d www.wlotus.org --expand
@@ -149,6 +151,8 @@ Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dry
 
 ```bash
 cd /opt/wlotus
+# Pull as deploy (not root). If deployments/mainnet-*.json block the merge,
+# see README.md “Update /opt/wlotus + restart dana-index”.
 sudo -u deploy git pull origin master
 sudo -u deploy npm ci
 
