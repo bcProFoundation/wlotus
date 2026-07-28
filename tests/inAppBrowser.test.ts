@@ -2,6 +2,7 @@ import {
   canAutoEscapeInAppBrowser,
   detectInAppApp,
   externalBrowserEscapeUrl,
+  hostAppDisplayName,
   isInAppBrowser,
   shouldEscapeShareInAppBrowser,
 } from '../apps/web/src/lib/inAppBrowser.js';
@@ -45,17 +46,22 @@ describe('isInAppBrowser', () => {
 });
 
 describe('canAutoEscapeInAppBrowser', () => {
-  it('allows Android and Facebook/Instagram iOS; blocks Twitter iOS', () => {
+  it('skips Messenger/Facebook/Zalo (continue in-host); allows Instagram iOS; blocks Twitter iOS', () => {
     expect(
       canAutoEscapeInAppBrowser(
         'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Zalo',
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       canAutoEscapeInAppBrowser(
         'Mozilla/5.0 (iPhone) Mobile/15E148 [FBAN/FBIOS]',
       ),
-    ).toBe(true);
+    ).toBe(false);
+    expect(
+      canAutoEscapeInAppBrowser(
+        'Mozilla/5.0 (iPhone) Mobile/15E148 [FBAN/Messenger]',
+      ),
+    ).toBe(false);
     expect(
       canAutoEscapeInAppBrowser(
         'Mozilla/5.0 (iPhone) Mobile/15E148 Instagram',
@@ -66,6 +72,14 @@ describe('canAutoEscapeInAppBrowser', () => {
         'Mozilla/5.0 (iPhone) Mobile/15E148 Twitter',
       ),
     ).toBe(false);
+  });
+});
+
+describe('hostAppDisplayName', () => {
+  it('labels Messenger / fallback', () => {
+    expect(hostAppDisplayName('messenger', 'vi')).toBe('Messenger');
+    expect(hostAppDisplayName(null, 'vi')).toBe('ứng dụng này');
+    expect(hostAppDisplayName(null, 'en')).toBe('this app');
   });
 });
 

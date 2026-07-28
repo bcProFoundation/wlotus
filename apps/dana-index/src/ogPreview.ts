@@ -3,8 +3,11 @@
  *
  * Messengers scrape this HTML (they do not run the SPA). Locale order:
  * 1. `?lang=` from the shared URL (sender's app locale when they tapped Share)
- * 2. Accept-Language (rarely useful for crawlers)
- * 3. Vietnamese product default (legacy links without ?lang=)
+ * 2. Vietnamese product default
+ *
+ * Do **not** use Accept-Language: TelegramBot / facebookexternalhit nearly always
+ * send `en-*`, which wrongly overrides the sender's `?lang=` when the query is
+ * dropped or when scraping a legacy URL without `?lang=`.
  */
 
 import {
@@ -27,16 +30,13 @@ export function parseOgLocale(
   return null;
 }
 
-/** Prefer sender `?lang=`, then Accept-Language, else Vietnamese. */
+/** Prefer sender `?lang=`, else Vietnamese. Ignore Accept-Language (bots lie). */
 export function resolveOgLocale(opts: {
   langParam?: string | null;
+  /** @deprecated Ignored — crawler Accept-Language is usually en, not the sender. */
   acceptLanguage?: string | null;
 }): OgLocale {
-  return (
-    parseOgLocale(opts.langParam) ||
-    parseOgLocale(opts.acceptLanguage) ||
-    'vi'
-  );
+  return parseOgLocale(opts.langParam) || 'vi';
 }
 
 export function ogCopy(

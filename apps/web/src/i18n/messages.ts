@@ -96,6 +96,7 @@ export type MessageKey =
   | 'openInBrowserBody'
   | 'openInBrowserHint'
   | 'openInBrowserCta'
+  | 'openInBrowserExternal'
   | 'openInBrowserCopy'
   | 'openInBrowserCopied'
   | 'openInBrowserRedirecting'
@@ -210,15 +211,16 @@ const en: Dict = {
   shareLookupFailed: 'Could not find that dedication on-chain.',
   btnShare: 'Share',
   shareCopied: 'Link copied',
-  openInBrowserTitle: 'Open in your browser',
+  openInBrowserTitle: 'Continue in {app}',
   openInBrowserBody:
-    'This messenger opened White Lotus in its own browser, which does not share your offering history. Continue in Safari, Chrome, or the installed White Lotus app.',
+    'You can offer a flower here in {app}. Offering history may stay in this app only (not shared with Safari or Chrome).',
   openInBrowserHint:
-    'Or tap ⋯ / More → Open in browser (or Open in Safari / Chrome).',
-  openInBrowserCta: 'Open in browser',
+    'To use Safari or Chrome instead: tap ⋯ / More → Open in browser (or Open in Safari / Chrome).',
+  openInBrowserCta: 'Continue in {app}',
+  openInBrowserExternal: 'Try opening in browser',
   openInBrowserCopy: 'Copy link',
   openInBrowserCopied: 'Link copied',
-  openInBrowserRedirecting: 'Opening in your browser…',
+  openInBrowserRedirecting: 'Opening…',
   historyIndexUnavailable:
     'Could not reach the memorial index — showing what this device has. On Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Last offered: {when}',
@@ -329,15 +331,16 @@ const vi: Dict = {
   shareLookupFailed: 'Không tìm thấy lời tưởng niệm trên chuỗi.',
   btnShare: 'Chia sẻ',
   shareCopied: 'Đã sao chép liên kết',
-  openInBrowserTitle: 'Mở bằng trình duyệt',
+  openInBrowserTitle: 'Tiếp tục trên {app}',
   openInBrowserBody:
-    'Ứng dụng nhắn tin đang mở White Lotus trong trình duyệt riêng — lịch sử dâng hoa của bạn không dùng chung. Hãy tiếp tục bằng Safari, Chrome hoặc ứng dụng White Lotus đã cài.',
+    'Bạn có thể dâng hoa ngay trong {app}. Lịch sử dâng hoa có thể chỉ lưu trong ứng dụng này (không dùng chung với Safari/Chrome).',
   openInBrowserHint:
-    'Hoặc chạm ⋯ / Thêm → Mở bằng trình duyệt (hoặc Mở bằng Safari / Chrome).',
-  openInBrowserCta: 'Mở bằng trình duyệt',
+    'Muốn dùng Safari/Chrome: chạm ⋯ / Thêm → Mở bằng trình duyệt (hoặc Mở bằng Safari / Chrome).',
+  openInBrowserCta: 'Tiếp tục trên {app}',
+  openInBrowserExternal: 'Thử mở bằng trình duyệt',
   openInBrowserCopy: 'Sao chép liên kết',
   openInBrowserCopied: 'Đã sao chép liên kết',
-  openInBrowserRedirecting: 'Đang mở bằng trình duyệt…',
+  openInBrowserRedirecting: 'Đang mở…',
   historyIndexUnavailable:
     'Không kết nối được mục lục tưởng niệm — đang hiện dữ liệu trên máy này. Trên Contabo, proxy /index-api/ → dana-index :8788.',
   lastOfferedAt: 'Lần gần nhất: {when}',
@@ -446,14 +449,15 @@ const zh: Dict = {
   shareLookupFailed: '链上未找到该追思。',
   btnShare: '分享',
   shareCopied: '链接已复制',
-  openInBrowserTitle: '在浏览器中打开',
+  openInBrowserTitle: '在{app}中继续',
   openInBrowserBody:
-    '此即时通讯应用在其内置浏览器中打开了 White Lotus，无法共用您的献花记录。请在 Safari、Chrome 或已安装的 White Lotus 应用中继续。',
-  openInBrowserHint: '或点 ⋯ / 更多 → 在浏览器中打开（或在 Safari / Chrome 中打开）。',
-  openInBrowserCta: '在浏览器中打开',
+    '您可以在{app}内直接献花。献花记录可能只保存在此应用中（不与 Safari / Chrome 共用）。',
+  openInBrowserHint: '若要用 Safari / Chrome：点 ⋯ / 更多 → 在浏览器中打开。',
+  openInBrowserCta: '在{app}中继续',
+  openInBrowserExternal: '尝试在浏览器中打开',
   openInBrowserCopy: '复制链接',
   openInBrowserCopied: '链接已复制',
-  openInBrowserRedirecting: '正在用浏览器打开…',
+  openInBrowserRedirecting: '正在打开…',
   historyIndexUnavailable:
     '无法连接追思索引 — 显示本机记录。请在 Contabo 将 /index-api/ 代理到 dana-index :8788。',
   lastOfferedAt: '最近一次: {when}',

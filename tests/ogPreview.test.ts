@@ -10,10 +10,23 @@ const TX =
   'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 describe('ogPreview', () => {
-  it('defaults locale to Vietnamese', () => {
+  it('defaults locale to Vietnamese; ignores crawler Accept-Language', () => {
     expect(resolveOgLocale({})).toBe('vi');
     expect(resolveOgLocale({ langParam: 'en' })).toBe('en');
-    expect(resolveOgLocale({ acceptLanguage: 'zh-CN,zh;q=0.9' })).toBe('zh');
+    expect(resolveOgLocale({ langParam: 'vi' })).toBe('vi');
+    // TelegramBot / Facebook scrapers send en-* — must not win over default or ?lang=
+    expect(
+      resolveOgLocale({ acceptLanguage: 'en-US,en;q=0.9' }),
+    ).toBe('vi');
+    expect(
+      resolveOgLocale({
+        langParam: 'vi',
+        acceptLanguage: 'en-US,en;q=0.9',
+      }),
+    ).toBe('vi');
+    expect(
+      resolveOgLocale({ acceptLanguage: 'zh-CN,zh;q=0.9' }),
+    ).toBe('vi');
   });
 
   it('builds Tưởng nhớ title from altar name', () => {

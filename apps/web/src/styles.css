@@ -568,8 +568,14 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   text-decoration: none;
   margin-top: 0;
+}
+
+.open-browser-actions .open-browser-external {
+  font-size: 0.9rem;
+  opacity: 0.85;
 }
 
 .field label {
