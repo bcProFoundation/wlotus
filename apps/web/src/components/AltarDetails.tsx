@@ -4,6 +4,7 @@ import {
   type AltarFields,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
+import { formatLunarDeathDate } from '../lib/lunarCalendar.js';
 
 /** Normalize stored dates for display (YYYY / YYYY-MM / YYYY-MM-DD). */
 function displayAltarDate(raw: string): string {
@@ -20,6 +21,10 @@ export function AltarDetails(props: {
   const { locale, t } = useLocale();
   const { altar } = props;
   const honorific = altarHonorificLabel(altar.title, locale);
+  // vi/zh giỗ (death anniversary) tradition tracks the lunar date, not the
+  // Gregorian one — show it in place of the solar date when we can convert
+  // (requires a full YYYY-MM-DD; partial YYYY/YYYY-MM falls back to solar).
+  const lunarDeathDate = formatLunarDeathDate(altar.deathDate.trim(), locale);
   const rows: { label: string; value: string }[] = [
     { label: t('altarHonorific'), value: honorific },
     { label: t('altarName'), value: altar.name.trim() },
@@ -30,10 +35,9 @@ export function AltarDetails(props: {
       value: displayAltarDate(altar.birthYear),
     },
     { label: t('altarDeathPlace'), value: altar.deathPlace.trim() },
-    {
-      label: t('altarDeathDate'),
-      value: displayAltarDate(altar.deathDate),
-    },
+    lunarDeathDate
+      ? { label: t('altarDeathDateLunar'), value: lunarDeathDate }
+      : { label: t('altarDeathDate'), value: displayAltarDate(altar.deathDate) },
     { label: t('altarFuneralPlace'), value: altar.funeralPlace.trim() },
   ].filter(r => r.value.length > 0);
 
