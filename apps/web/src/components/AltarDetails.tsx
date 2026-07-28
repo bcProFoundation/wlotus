@@ -1,8 +1,16 @@
 import {
   altarHonorificLabel,
+  formatAltarDateInput,
   type AltarFields,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
+
+/** Normalize stored dates for display (YYYY / YYYY-MM / YYYY-MM-DD). */
+function displayAltarDate(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  return formatAltarDateInput(t) || t;
+}
 
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
 export function AltarDetails(props: {
@@ -17,20 +25,28 @@ export function AltarDetails(props: {
     { label: t('altarName'), value: altar.name },
     { label: t('altarNote'), value: altar.note },
     { label: t('altarBirthPlace'), value: altar.birthPlace },
-    { label: t('altarBirthDate'), value: altar.birthYear },
+    {
+      label: t('altarBirthDate'),
+      value: displayAltarDate(altar.birthYear),
+    },
     { label: t('altarDeathPlace'), value: altar.deathPlace },
-    { label: t('altarDeathDate'), value: altar.deathDate },
+    {
+      label: t('altarDeathDate'),
+      value: displayAltarDate(altar.deathDate),
+    },
     { label: t('altarFuneralPlace'), value: altar.funeralPlace },
   ].filter(r => r.value.trim().length > 0);
 
   return (
-    <dl className={`altar-details${props.className ? ` ${props.className}` : ''}`}>
+    <div
+      className={`altar-details${props.className ? ` ${props.className}` : ''}`}
+    >
       {rows.map(r => (
         <div key={r.label} className="altar-details-row">
-          <dt>{r.label}</dt>
-          <dd>{r.value}</dd>
+          <div className="altar-details-label">{r.label}</div>
+          <div className="altar-details-value">{r.value}</div>
         </div>
       ))}
-    </dl>
+    </div>
   );
 }

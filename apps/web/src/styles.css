@@ -396,7 +396,10 @@ a {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.22);
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .altar-details-row {
@@ -405,6 +408,8 @@ a {
   gap: 0.35rem 0.75rem;
   padding: 0.45rem 0;
   font-size: 0.9rem;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   overflow: visible;
 }
@@ -413,37 +418,67 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.altar-details-row dt {
+.altar-details-label {
   margin: 0;
   color: var(--muted);
   font-weight: 500;
   line-height: 1.35;
 }
 
-.altar-details-row dd {
+.altar-details-value {
   margin: 0;
   min-width: 0;
+  max-width: 100%;
   color: var(--ink);
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 600;
-  /* Cormorant descenders (g/y) need room; 1.35 clipped after the font swap. */
-  line-height: 1.5;
+  /* Cormorant descenders need room; keep wrap inside the modal width. */
+  line-height: 1.55;
+  padding-bottom: 0.15em;
+  white-space: normal;
   overflow: visible;
-  overflow-wrap: break-word;
-  word-break: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  /* Avoid iOS Safari clipping custom-font glyphs at the box edge. */
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Ban thờ sheet is narrow — always stack so long places wrap fully. */
+/*
+ * Ban thờ sheet: flex column is more reliable than grid `1fr` on iOS Safari
+ * (fr tracks use minmax(auto,…) and long serif places clip mid-glyph).
+ */
 .offer-modal-card .altar-details-row {
-  grid-template-columns: 1fr;
-  gap: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.offer-modal-card .altar-details-value {
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 420px) {
   .altar-details-row {
-    grid-template-columns: 1fr;
-    gap: 0.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+}
+
+/* iOS: backdrop-filter on the scrim can clip descendant text oddly. */
+@supports (-webkit-touch-callout: none) {
+  .offer-modal {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .offer-modal-card {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
 }
 
@@ -1050,7 +1085,8 @@ a {
   position: relative;
   width: min(100%, 26rem);
   max-height: min(92vh, 40rem);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
   margin-bottom: env(safe-area-inset-bottom, 0);
   padding: 1.35rem 1.35rem 1.5rem;
