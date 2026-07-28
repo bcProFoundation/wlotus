@@ -418,14 +418,14 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.altar-details-row dt {
+.altar-details-label {
   margin: 0;
   color: var(--muted);
   font-weight: 500;
   line-height: 1.35;
 }
 
-.altar-details-row dd {
+.altar-details-value {
   margin: 0;
   min-width: 0;
   max-width: 100%;
@@ -435,27 +435,50 @@ a {
   font-weight: 600;
   /* Cormorant descenders need room; keep wrap inside the modal width. */
   line-height: 1.55;
-  padding-bottom: 0.12em;
+  padding-bottom: 0.15em;
   white-space: normal;
   overflow: visible;
   overflow-wrap: anywhere;
   word-break: break-word;
+  /* Avoid iOS Safari clipping custom-font glyphs at the box edge. */
+  -webkit-font-smoothing: antialiased;
 }
 
 /*
- * Ban thờ sheet stacks label/value. Use minmax(0, 1fr) — plain `1fr` is
- * minmax(auto, 1fr) and refuses to shrink below the serif string, so long
- * places like “Hải Cảng, Quy Nhơn, Bình Định” clip mid-glyph at the edge.
+ * Ban thờ sheet: flex column is more reliable than grid `1fr` on iOS Safari
+ * (fr tracks use minmax(auto,…) and long serif places clip mid-glyph).
  */
 .offer-modal-card .altar-details-row {
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.25rem;
+}
+
+.offer-modal-card .altar-details-value {
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 420px) {
   .altar-details-row {
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.25rem;
+  }
+}
+
+/* iOS: backdrop-filter on the scrim can clip descendant text oddly. */
+@supports (-webkit-touch-callout: none) {
+  .offer-modal {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .offer-modal-card {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
 }
 
