@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">White Lotus</string>
+    <string name="title_activity_main">White Lotus</string>
+    <string name="package_name">org.wlotus.app</string>
+    <string name="custom_url_scheme">org.wlotus.app</string>
+</resources>

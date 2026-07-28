@@ -25,13 +25,15 @@ This repository holds the **covenant, remint miner, mint-api, and offerings app*
 | **Prod** | https://wlotus.org — live **WLOTUS** (tag releases) |
 | **Local** | `npm run mint-api` + `npm run web` |
 
-Docs: [VISION](./docs/VISION.md) · [ECONOMICS](./docs/ECONOMICS_WLOTUS_GLOTUS.md) · [SPEC](./docs/SPEC.md) · [STATUS](./docs/STATUS.md) · [CLOCK](./docs/CLOCK.md)
+Docs: [VISION](./docs/VISION.md) · [ECONOMICS](./docs/ECONOMICS_WLOTUS_GLOTUS.md) · [SPEC](./docs/SPEC.md) · [STATUS](./docs/STATUS.md) · [CLOCK](./docs/CLOCK.md) · [MOBILE](./docs/MOBILE.md)
 
 Deploy: [test Contabo](./deploy/contabo/README.md) · [prod Contabo](./deploy/contabo/PROD.md)
 
 ```
-apps/web/           # Offerings SPA
+apps/web/           # Offerings SPA (PWA)
 apps/mint-api/      # Sponsored remint + burn desk
+apps/mobile/        # Capacitor shell (iOS App Store, optional Android)
+apps/twa/           # Android TWA shell (Play Store) — see docs/MOBILE.md
 deploy/contabo/     # Test + prod VM bootstrap + nginx
 .github/workflows/  # Deploy web (test) + Deploy web (prod)
 contracts/          # Spedn PoW remint covenants

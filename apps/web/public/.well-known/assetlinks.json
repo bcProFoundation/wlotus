@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.wlotus.twa",
+      "sha256_cert_fingerprints": ["REPLACE_WITH_APK_SIGNING_CERT_SHA256_FINGERPRINT"]
+    }
+  }
+]

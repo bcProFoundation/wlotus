@@ -1,0 +1,23 @@
+{
+  "name": "@wlotus/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell that loads the live wlotus.org PWA for iOS (and, optionally, Android) app-store distribution.",
+  "type": "module",
+  "scripts": {
+    "sync": "cap sync",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android",
+    "add:ios": "cap add ios",
+    "add:android": "cap add android",
+    "doctor": "cap doctor"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.4.2"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/ios": "^8.4.2"
+  }
+}
