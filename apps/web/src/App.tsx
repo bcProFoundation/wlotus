@@ -30,6 +30,7 @@ import {
   emptyAltarFields,
   encodeAltarNote,
   formatAltarPersonName,
+  isAltarPackedNote,
   memorialDisplayName,
   MEMORIAL_NOTE_MAX_CHARS,
   parseAltarNote,
@@ -54,6 +55,7 @@ import {
 import {
   groupOffersByOriginal,
   resolveOriginalTxid,
+  seedLocalRootIfMissing,
   type LocalOffer,
   type OfferGroup,
 } from './lib/groupOffers.js';
@@ -770,8 +772,8 @@ export default function App() {
           const saved: LocalOffer = {
             remintTxid: result.remintTxid,
             burnTxid,
-            // This burn's on-chain memorial text (re-offer may differ from dedication).
-            note: isReoffer ? challengeNote : historyNote,
+            // On-chain memorial for this burn (packed altar / plain / re-offer extra).
+            note: challengeNote,
             at: new Date().toISOString(),
             powMs: uiPowMs,
             powAttempts: result.powAttempts || mined.attempts,
@@ -779,6 +781,27 @@ export default function App() {
             bits: result.bits,
             parentBurnTxid,
           };
+          // Share-link re-offer: original may not be on this device — seed a
+          // named root (prefer packed Ban thờ wire) so Recent can open full details.
+          if (parentBurnTxid) {
+            let rootNote = historyNote.trim();
+            const altarForRoot = opts?.altar;
+            if (altarForRoot) {
+              try {
+                rootNote = encodeAltarNote(altarForRoot);
+              } catch {
+                /* keep historyNote */
+              }
+            }
+            if (rootNote) {
+              const seeded = seedLocalRootIfMissing(
+                loadOffers(),
+                parentBurnTxid,
+                rootNote,
+              );
+              localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(seeded));
+            }
+          }
           setOffers(pushOffer(saved));
           // Offering again restores a previously hidden dedication on this device.
           setHiddenRecent(prev =>
@@ -853,13 +876,51 @@ export default function App() {
     return { ...emptyAltarFields(), name };
   }
 
-  function openDedicationSheet(opts: {
+  /** Open re-offer sheet; hydrate full Ban thờ from index when local note is name-only. */
+  async function openDedicationSheet(opts: {
     parentBurnTxid: string;
     memorialNote: string;
   }) {
+    let memorialNote = opts.memorialNote;
+    if (!isAltarPackedNote(memorialNote)) {
+      try {
+        const remote = await fetchIndexMemorial(opts.parentBurnTxid);
+        const remoteNote = (
+          remote.originalNote ||
+          remote.latestNote ||
+          ''
+        ).trim();
+        if (remoteNote) {
+          memorialNote = remoteNote;
+          // Upgrade local root so next open (and Recent) keep full Ban thờ.
+          if (isAltarPackedNote(remoteNote)) {
+            const root = opts.parentBurnTxid.trim().toLowerCase();
+            const cur = loadOffers();
+            let changed = false;
+            const next = cur.map(o => {
+              if (
+                o.burnTxid.trim().toLowerCase() === root &&
+                !o.parentBurnTxid?.trim() &&
+                o.note.trim() !== remoteNote
+              ) {
+                changed = true;
+                return { ...o, note: remoteNote };
+              }
+              return o;
+            });
+            if (changed) {
+              localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
+              setOffers(next);
+            }
+          }
+        }
+      } catch {
+        /* keep local name-only fallback */
+      }
+    }
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
-      altar: altarFromMemorialNote(opts.memorialNote),
+      altar: altarFromMemorialNote(memorialNote),
       extraNote: '',
     });
   }
@@ -869,7 +930,7 @@ export default function App() {
     if (!canOffer || !pendingDeeplinkOffer) return;
     const pending = pendingDeeplinkOffer;
     setPendingDeeplinkOffer(null);
-    openDedicationSheet({
+    void openDedicationSheet({
       parentBurnTxid: pending.parentBurnTxid,
       memorialNote: pending.displayNote,
     });
@@ -1085,7 +1146,7 @@ export default function App() {
                     memorialNote = altar.name;
                   }
                 }
-                openDedicationSheet({
+                void openDedicationSheet({
                   parentBurnTxid: linkedParentBurnTxid,
                   memorialNote,
                 });
@@ -1226,7 +1287,7 @@ export default function App() {
                           type="button"
                           className="history-original history-original-btn"
                           onClick={() =>
-                            openDedicationSheet({
+                            void openDedicationSheet({
                               parentBurnTxid: rootId,
                               memorialNote: g.note,
                             })
@@ -1271,7 +1332,7 @@ export default function App() {
                             className="btn btn-reoffer-lotus"
                             disabled={!canOffer}
                             onClick={() =>
-                              openDedicationSheet({
+                              void openDedicationSheet({
                                 parentBurnTxid: rootId,
                                 memorialNote: g.note,
                               })

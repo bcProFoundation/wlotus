@@ -48,7 +48,8 @@ export function isNamedRootOffer(offer: LocalOffer): boolean {
 
 /**
  * Group flat local burns under their original dedications.
- * Orphan re-offers (parent not on device) and empty-name roots are skipped.
+ * Orphan re-offers (parent not on device) and empty-name roots are skipped —
+ * call {@link seedLocalRootIfMissing} when recording a share-link re-offer.
  */
 export function groupOffersByOriginal(offers: LocalOffer[]): OfferGroup[] {
   const byTxid = new Map<string, LocalOffer>();
@@ -83,4 +84,32 @@ export function groupOffersByOriginal(offers: LocalOffer[]): OfferGroup[] {
 
   groups.sort((a, b) => Date.parse(b.latest.at) - Date.parse(a.latest.at));
   return groups;
+}
+
+/**
+ * When the user re-offers via a share link, the original burn may not be in
+ * localStorage. Seed a named root so Recent can list the dedication.
+ */
+export function seedLocalRootIfMissing(
+  offers: LocalOffer[],
+  parentBurnTxid: string,
+  dedicationNote: string,
+  atMs: number = Date.now() - 1000,
+): LocalOffer[] {
+  const root = parentBurnTxid.trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(root)) return offers;
+  const note = dedicationNote.trim();
+  if (!note) return offers;
+  const hasRoot = offers.some(
+    o =>
+      o.burnTxid.trim().toLowerCase() === root && !o.parentBurnTxid?.trim(),
+  );
+  if (hasRoot) return offers;
+  const seed: LocalOffer = {
+    remintTxid: root,
+    burnTxid: root,
+    note,
+    at: new Date(atMs).toISOString(),
+  };
+  return [seed, ...offers];
 }
