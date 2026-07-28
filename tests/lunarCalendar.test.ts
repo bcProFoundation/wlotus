@@ -47,7 +47,7 @@ describe('lunarCalendar', () => {
 
   it('formats a full death date as lunar text for vi/zh only', () => {
     expect(formatLunarDeathDate('2001-12-04', 'vi')).toBe(
-      'Ngày 20 tháng 10 năm Tân Tỵ (Âm lịch)',
+      'Ngày 20 tháng 10 năm Tân Tỵ',
     );
     expect(formatLunarDeathDate('2001-12-04', 'zh')).toBe('农历辛巳年十月二十');
     expect(formatLunarDeathDate('2001-12-04', 'en')).toBeNull();
