@@ -27,6 +27,14 @@ export type InAppApp =
   | 'wechat'
   | 'other';
 
+/** Apps where external-browser JS redirects usually fail — prefer continue in-host. */
+const PREFER_CONTINUE_IN_HOST = new Set<InAppApp>([
+  'messenger',
+  'facebook',
+  'zalo',
+  'wechat',
+]);
+
 /** Apps whose WKWebView drops JS-initiated scheme redirects. */
 const NEEDS_USER_GESTURE = new Set<InAppApp>([
   'twitter',
@@ -36,6 +44,7 @@ const NEEDS_USER_GESTURE = new Set<InAppApp>([
 ]);
 
 const ESCAPE_GUARD_KEY = 'wlotus.iabEscape';
+const CONTINUE_GUARD_KEY = 'wlotus.iabContinue';
 
 /** True when running as an installed PWA / home-screen app. */
 export function isStandaloneDisplay(
@@ -94,12 +103,50 @@ export function isIOS(
   return /iPad|iPhone|iPod/i.test(ua);
 }
 
+/** Human label for the host app (Messenger, Zalo, …). */
+export function hostAppDisplayName(
+  app: InAppApp | null,
+  locale: 'en' | 'vi' | 'zh' = 'vi',
+): string {
+  switch (app) {
+    case 'messenger':
+      return 'Messenger';
+    case 'facebook':
+      return 'Facebook';
+    case 'zalo':
+      return 'Zalo';
+    case 'instagram':
+      return 'Instagram';
+    case 'threads':
+      return 'Threads';
+    case 'line':
+      return 'LINE';
+    case 'twitter':
+      return 'X';
+    case 'tiktok':
+      return 'TikTok';
+    case 'snapchat':
+      return 'Snapchat';
+    case 'linkedin':
+      return 'LinkedIn';
+    case 'wechat':
+      return locale === 'zh' ? '微信' : 'WeChat';
+    default:
+      if (locale === 'vi') return 'ứng dụng này';
+      if (locale === 'zh') return '此应用';
+      return 'this app';
+  }
+}
+
 /** Whether a silent JS redirect is worth trying for this host WebView. */
 export function canAutoEscapeInAppBrowser(
   ua: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
 ): boolean {
   const app = detectInAppApp(ua);
   if (!app) return false;
+  // Messenger / Facebook / Zalo: x-safari / intent often fail; let the user
+  // continue offering inside the host app instead.
+  if (PREFER_CONTINUE_IN_HOST.has(app)) return false;
   if (isAndroid(ua)) return true; // intent:// usually works without a gesture
   if (NEEDS_USER_GESTURE.has(app)) return false;
   return true;
@@ -198,6 +245,33 @@ export function markAutoEscapeAttempted(
   if (typeof sessionStorage === 'undefined') return;
   try {
     sessionStorage.setItem(escapeGuardKey(pathname), '1');
+  } catch {
+    /* private mode */
+  }
+}
+
+function continueGuardKey(pathname: string): string {
+  return `${CONTINUE_GUARD_KEY}:${pathname}`;
+}
+
+/** User chose “Continue in Messenger/…” for this share path. */
+export function hasContinuedInHostApp(
+  pathname: string = typeof window !== 'undefined' ? window.location.pathname : '',
+): boolean {
+  if (typeof sessionStorage === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(continueGuardKey(pathname)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function markContinuedInHostApp(
+  pathname: string = typeof window !== 'undefined' ? window.location.pathname : '',
+): void {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(continueGuardKey(pathname), '1');
   } catch {
     /* private mode */
   }

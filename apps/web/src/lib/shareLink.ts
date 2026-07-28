@@ -9,8 +9,8 @@
  * app is not installed, so we only *accept* them for future native shells.
  *
  * Messenger in-app browsers (Zalo, Facebook, …) use a separate storage
- * partition. Share deeplinks opened there show `OpenInBrowserGate` so the
- * user continues in Safari/Chrome or the installed PWA.
+ * partition. Share deeplinks opened there show a short gate: continue in the
+ * host app (offer flowers there) or optionally open via ⋯ → browser.
  */
 
 const TXID_RE = /\b([0-9a-fA-F]{64})\b/;

@@ -408,12 +408,12 @@ export default function App() {
   /** Deeplink: /<original-burn-txid> → lookup note → auto re-offer when online.
    * Skip while a messenger WebView gate is up (avoid consuming the path there). */
   useEffect(() => {
-    if (shareInAppBrowserGate) return;
+    if (shareInAppBrowserGate.active) return;
     const txid = burnTxidFromLocation();
     if (!txid) return;
     clearDedicationPath();
     void applyDedicationLink(txid, { autoStart: true });
-  }, [applyDedicationLink, shareInAppBrowserGate]);
+  }, [applyDedicationLink, shareInAppBrowserGate.active]);
 
   useEffect(() => {
     return () => {
@@ -973,10 +973,14 @@ export default function App() {
           ? t('btnReoffer')
           : t('btnOffer');
 
-  if (shareInAppBrowserGate) {
+  if (shareInAppBrowserGate.active) {
     return (
       <div className="app">
-        <OpenInBrowserGate href={window.location.href} />
+        <OpenInBrowserGate
+          href={window.location.href}
+          hostApp={shareInAppBrowserGate.hostApp}
+          onContinue={shareInAppBrowserGate.continueInHost}
+        />
       </div>
     );
   }
