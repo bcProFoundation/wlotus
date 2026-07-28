@@ -54,6 +54,7 @@ import {
 import {
   groupOffersByOriginal,
   resolveOriginalTxid,
+  seedLocalRootIfMissing,
   type LocalOffer,
   type OfferGroup,
 } from './lib/groupOffers.js';
@@ -779,6 +780,16 @@ export default function App() {
             bits: result.bits,
             parentBurnTxid,
           };
+          // Share-link re-offer: original may not be on this device — seed a
+          // named root so Recent lists the dedication.
+          if (parentBurnTxid && historyNote.trim()) {
+            const seeded = seedLocalRootIfMissing(
+              loadOffers(),
+              parentBurnTxid,
+              historyNote,
+            );
+            localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(seeded));
+          }
           setOffers(pushOffer(saved));
           // Offering again restores a previously hidden dedication on this device.
           setHiddenRecent(prev =>

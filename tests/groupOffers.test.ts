@@ -1,6 +1,7 @@
 import {
   groupOffersByOriginal,
   resolveOriginalTxid,
+  seedLocalRootIfMissing,
   type LocalOffer,
 } from '../apps/web/src/lib/groupOffers.js';
 
@@ -106,5 +107,41 @@ describe('groupOffersByOriginal', () => {
     });
     const groups = groupOffersByOriginal([emptyRoot, orphan]);
     expect(groups).toHaveLength(0);
+  });
+});
+
+describe('seedLocalRootIfMissing', () => {
+  const ROOT =
+    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  const CHILD =
+    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+  it('seeds a named root so share-link re-offers appear in Recent', () => {
+    const reoffer = offer({
+      burnTxid: CHILD,
+      parentBurnTxid: ROOT,
+      note: '',
+      at: '2026-01-05T00:00:00.000Z',
+    });
+    expect(groupOffersByOriginal([reoffer])).toHaveLength(0);
+
+    const seeded = seedLocalRootIfMissing([reoffer], ROOT, 'Ông Cao Lâm Quả');
+    const groups = groupOffersByOriginal(seeded);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.original.burnTxid).toBe(ROOT);
+    expect(groups[0]!.note).toBe('Ông Cao Lâm Quả');
+    expect(groups[0]!.latest.burnTxid).toBe(CHILD);
+    expect(groups[0]!.totalBurns).toBe(2);
+  });
+
+  it('does not duplicate an existing named root', () => {
+    const root = offer({
+      burnTxid: ROOT,
+      note: 'already here',
+      at: '2026-01-01T00:00:00.000Z',
+    });
+    const again = seedLocalRootIfMissing([root], ROOT, 'other name');
+    expect(again).toHaveLength(1);
+    expect(again[0]!.note).toBe('already here');
   });
 });
