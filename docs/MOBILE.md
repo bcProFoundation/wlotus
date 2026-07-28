@@ -26,9 +26,10 @@ target SDK bumps, plugin versions).
   platform via Capacitor, but the TWA remains the one we intend to publish.
   Two live Play Store listings for the same product would confuse users and
   double the release/signing overhead. Keep the Capacitor Android platform
-  in reserve for when a genuine native-plugin need shows up (push
-  notifications, biometric confirm on burns, secure keystore, etc.) that a
-  TWA cannot host; until then it's unpublished.
+  in reserve for when a genuine native-plugin need shows up (biometric
+  confirm on burns, secure keystore, etc.) that a TWA cannot host — note
+  push notifications are *not* such a case: the TWA (real Chrome) already
+  supports standard Web Push with no plugin. See "Push notifications" below.
 - Both shells are **inert config on top of the same web app** — no shared
   native code, no build coupling between them. Maintaining both costs
   nothing extra day-to-day.
@@ -62,6 +63,40 @@ Neither toolchain is available in this Linux sandbox, so `apps/mobile/ios`
 and `apps/mobile/android` were scaffolded here (file templates only) and
 must be opened/built on machines with the respective SDKs — see each app's
 README for exact commands.
+
+## Push notifications (e.g. anniversary reminders) don't require Capacitor
+
+A recurring "anniversary reminder" notification is a **Web Push** feature,
+not something that requires either native shell:
+
+| Platform | Does Web Push work? | Native shell needed? |
+|----------|---------------------|-----------------------|
+| Android — Chrome, or the TWA (real Chrome) | Yes, today, no install required | No — standard Push API + service worker, same code as desktop |
+| iOS — Safari, **only if added to the Home Screen** and launched from that icon | Yes, since iOS 16.4 (2023) | No — but only reaches users who installed the PWA; a plain Safari tab can never subscribe |
+| iOS — inside the Capacitor app (WKWebView) | **No** — Apple explicitly does not expose the Push API inside WKWebView, installed-PWA or not | Would need a *separate* native integration: `@capacitor/push-notifications` (or `@capacitor-firebase/messaging`) talking to APNs, its own Apple Developer "Push Notifications" capability + `.p8` auth key, and server-side code that posts to APNs/FCM instead of (or alongside) plain VAPID Web Push |
+
+So: **Capacitor is not required to ship this feature.** Implementing
+standard Web Push (VAPID keys + `PushManager.subscribe()` + a service-worker
+`push` event handler + a small backend that stores subscriptions per
+altar/dedication and sends at the right time) covers Android completely and
+covers iOS for any user who has installed the PWA to their Home Screen —
+which the app already nudges toward via `handle_links`/`launch_handler` in
+the manifest. Real-world reach on iOS is meaningfully smaller than native
+push because of that install step (industry estimates put it roughly an
+order of magnitude lower), but this is a low-stakes, non-time-critical
+reminder, not an OTP or urgent alert, so the trade-off is reasonable to
+start with.
+
+Capacitor's `apps/mobile` scaffold only becomes *useful* for push if you
+later decide the iOS reach gap is unacceptable and want to reach iOS users
+who never install the PWA — that would mean standing up native APNs (Apple
+Developer Push capability, `.p8` key, App Store review) in addition to, not
+instead of, the Web Push path already needed for Android/installed-iOS.
+
+Recommended order: build Web Push first (one implementation, works on
+Android + installed-iOS PWA, no store review, no Apple Developer Program
+needed at all); revisit native APNs via Capacitor only if iOS reach proves
+insufficient in practice.
 
 ## Not pursued: full native rewrite
 
