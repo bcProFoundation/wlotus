@@ -444,6 +444,11 @@ a {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Places: explicit breaks after commas (iOS was clipping mid-word otherwise). */
+.altar-details-value-place {
+  white-space: pre-line;
+}
+
 /*
  * Ban thờ sheet: flex column is more reliable than grid `1fr` on iOS Safari
  * (fr tracks use minmax(auto,…) and long serif places clip mid-glyph).
@@ -1084,8 +1089,10 @@ a {
 .offer-modal-card {
   position: relative;
   width: min(100%, 26rem);
+  max-width: 100%;
   max-height: min(92vh, 40rem);
-  overflow-x: hidden;
+  /* Do not use overflow-x:hidden — iOS Safari clipped unwrapped serif glyphs. */
+  overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
   margin-bottom: env(safe-area-inset-bottom, 0);
