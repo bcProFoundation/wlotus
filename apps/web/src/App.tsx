@@ -386,7 +386,9 @@ export default function App() {
               tRef.current('offeringFallback'),
           }),
         });
-        if (opts?.autoStart) {
+        // Share / paste / path: go straight to the re-offer (Dâng Hoa) sheet —
+        // never leave the user on Ban thờ with Sửa/Xóa.
+        if (opts?.autoStart !== false) {
           setPendingDeeplinkOffer({
             parentBurnTxid: d.originalBurnTxid,
             displayNote,
@@ -412,7 +414,7 @@ export default function App() {
     const txid = burnTxidFromLocation();
     if (!txid) return;
     clearDedicationPath();
-    void applyDedicationLink(txid, { autoStart: true });
+    void applyDedicationLink(txid);
   }, [applyDedicationLink, shareInAppBrowserGate.active]);
 
   useEffect(() => {
@@ -1018,7 +1020,7 @@ export default function App() {
         <div className="field">
           <div className="field-label-row">
             <label>{altar ? t('altarLabel') : t('noteLabel')}</label>
-            {altar ? (
+            {altar && !linkedParentBurnTxid ? (
               <div className="field-label-links">
                 <button
                   type="button"
@@ -1041,7 +1043,7 @@ export default function App() {
                   {t('btnAltarDelete')}
                 </button>
               </div>
-            ) : (
+            ) : !altar ? (
               <button
                 type="button"
                 className="link-more"
@@ -1050,7 +1052,7 @@ export default function App() {
               >
                 {t('btnAltarMore')}
               </button>
-            )}
+            ) : null}
           </div>
           {altar ? (
             <AltarDetails altar={altar} />
