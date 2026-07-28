@@ -64,7 +64,7 @@ export type MessageKey =
   | 'offeredIn'
   | 'recentTitle'
   | 'reofferHint'
-  | 'reofferBadge'
+  | 'originalBurnBadge'
   | 'burnTotal'
   | 'latestBurnLink'
   | 'openOnExplorer'
@@ -72,7 +72,6 @@ export type MessageKey =
   | 'btnHistory'
   | 'historyTitle'
   | 'historyLoading'
-  | 'latestMemorialFallback'
   | 'offeringFallback'
   | 'offerSessionTitle'
   | 'reofferSessionTitle'
@@ -182,7 +181,7 @@ const en: Dict = {
   recentTitle: 'Recent',
   reofferHint:
     'Re-offer a lotus from your recent list. Swipe left for history, explorer, or delete on this device.',
-  reofferBadge: 're-offer',
+  originalBurnBadge: 'Origin',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
   openOnExplorer: 'Open on explorer',
@@ -190,7 +189,6 @@ const en: Dict = {
   btnHistory: 'History',
   historyTitle: 'Memorial history',
   historyLoading: 'Loading…',
-  latestMemorialFallback: 'Re-offered',
   offeringFallback: 'Offering',
   offerSessionTitle: 'Offering a flower',
   reofferSessionTitle: 'Offer a lotus for:',
@@ -302,7 +300,7 @@ const vi: Dict = {
   recentTitle: 'Gần đây',
   reofferHint:
     'Dâng lại hoa sen theo danh sách gần nhất. Vuốt sang trái để xem lịch sử, mở explorer, hoặc xóa khỏi máy này.',
-  reofferBadge: 'dâng lại',
+  originalBurnBadge: 'Lập ban',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
   openOnExplorer: 'Mở trên explorer',
@@ -310,7 +308,6 @@ const vi: Dict = {
   btnHistory: 'Lịch sử',
   historyTitle: 'Lịch sử tưởng niệm',
   historyLoading: 'Đang tải…',
-  latestMemorialFallback: 'Đã dâng lại',
   offeringFallback: 'Lần dâng hoa',
   offerSessionTitle: 'Đang dâng hoa',
   reofferSessionTitle: 'Dâng hoa sen cho:',
@@ -420,7 +417,7 @@ const zh: Dict = {
   recentTitle: '最近',
   reofferHint:
     '从最近列表再次献上莲花。向左滑动可查看历史、打开浏览器，或从本机删除。',
-  reofferBadge: '再献',
+  originalBurnBadge: '立坛',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
   openOnExplorer: '在浏览器打开',
@@ -428,7 +425,6 @@ const zh: Dict = {
   btnHistory: '历史',
   historyTitle: '追思历史',
   historyLoading: '加载中…',
-  latestMemorialFallback: '再次献花',
   offeringFallback: '献花',
   offerSessionTitle: '正在献花',
   reofferSessionTitle: '为TA献上莲花：',
