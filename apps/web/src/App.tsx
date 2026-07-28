@@ -85,7 +85,7 @@ import {
 } from './lib/powEstimate.js';
 import { measureDeviceHashrate } from './lib/powMeasure.js';
 
-type Msg = { kind: 'ok' | 'err'; text: string } | null;
+type Msg = { kind: 'ok' | 'err' | 'success'; text: string } | null;
 
 type Phase = 'idle' | 'challenge' | 'mining' | 'submit' | 'holding' | 'burn';
 
@@ -816,7 +816,7 @@ export default function App() {
             memorialDisplayName(challengeNote, localeRef.current) ||
             tRef.current('offeringFallback');
           setMsg({
-            kind: 'ok',
+            kind: 'success',
             text: tRef.current('offeredIn', {
               duration: formatActualDurationLocale(
                 uiPowMs / 1000,
@@ -865,6 +865,12 @@ export default function App() {
       document.body.style.overflow = '';
     };
   }, [busy, dedicationSheet, historyGroup, altarOpen]);
+
+  useEffect(() => {
+    if (busy || msg?.kind !== 'success') return;
+    const el = document.getElementById('offer-success-msg');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [busy, msg]);
 
   const canOffer =
     !busy && apiOnline === true && (remaining === null || remaining > 0);
@@ -1159,6 +1165,16 @@ export default function App() {
           </button>
         </div>
 
+        {!busy && msg?.kind === 'success' ? (
+          <div
+            id="offer-success-msg"
+            className={`msg ${msg.kind}`}
+            role="status"
+          >
+            {msg.text}
+          </div>
+        ) : null}
+
         <p className="hint share-hint">
           {shareLookingUp
             ? t('shareLookingUp')
@@ -1224,7 +1240,10 @@ export default function App() {
           ) : null}
         </p>
 
-        {!busy && msg && !looksLikeShareInput(msg.text) ? (
+        {!busy &&
+        msg &&
+        msg.kind !== 'success' &&
+        !looksLikeShareInput(msg.text) ? (
           <div className={`msg ${msg.kind}`}>{msg.text}</div>
         ) : null}
       </section>
