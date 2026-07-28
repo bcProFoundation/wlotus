@@ -12,21 +12,6 @@ function displayAltarDate(raw: string): string {
   return formatAltarDateInput(t) || t;
 }
 
-/**
- * Force a line break after each comma so long places always wrap.
- * iOS Safari was clipping Cormorant mid-glyph (`Quy Nhơ…`) despite CSS wrap.
- */
-function displayAltarPlace(raw: string): string {
-  return raw.trim().replace(/,\s*/g, ',\n');
-}
-
-type DetailRow = {
-  label: string;
-  value: string;
-  /** Soft-wrap after commas (places). */
-  place?: boolean;
-};
-
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
 export function AltarDetails(props: {
   altar: AltarFields;
@@ -35,34 +20,22 @@ export function AltarDetails(props: {
   const { locale, t } = useLocale();
   const { altar } = props;
   const honorific = altarHonorificLabel(altar.title, locale);
-  const rows: DetailRow[] = [
+  const rows: { label: string; value: string }[] = [
     { label: t('altarHonorific'), value: honorific },
-    { label: t('altarName'), value: altar.name },
-    { label: t('altarNote'), value: altar.note },
-    {
-      label: t('altarBirthPlace'),
-      value: displayAltarPlace(altar.birthPlace),
-      place: true,
-    },
+    { label: t('altarName'), value: altar.name.trim() },
+    { label: t('altarNote'), value: altar.note.trim() },
+    { label: t('altarBirthPlace'), value: altar.birthPlace.trim() },
     {
       label: t('altarBirthDate'),
       value: displayAltarDate(altar.birthYear),
     },
-    {
-      label: t('altarDeathPlace'),
-      value: displayAltarPlace(altar.deathPlace),
-      place: true,
-    },
+    { label: t('altarDeathPlace'), value: altar.deathPlace.trim() },
     {
       label: t('altarDeathDate'),
       value: displayAltarDate(altar.deathDate),
     },
-    {
-      label: t('altarFuneralPlace'),
-      value: displayAltarPlace(altar.funeralPlace),
-      place: true,
-    },
-  ].filter(r => r.value.trim().length > 0);
+    { label: t('altarFuneralPlace'), value: altar.funeralPlace.trim() },
+  ].filter(r => r.value.length > 0);
 
   return (
     <div
@@ -71,16 +44,7 @@ export function AltarDetails(props: {
       {rows.map(r => (
         <div key={r.label} className="altar-details-row">
           <div className="altar-details-label">{r.label}</div>
-          <div
-            className={
-              r.place
-                ? 'altar-details-value altar-details-value-place'
-                : 'altar-details-value'
-            }
-            title={r.value.replace(/\n/g, ' ')}
-          >
-            {r.value}
-          </div>
+          <div className="altar-details-value">{r.value}</div>
         </div>
       ))}
     </div>

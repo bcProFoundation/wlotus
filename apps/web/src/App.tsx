@@ -914,7 +914,15 @@ export default function App() {
         memorialNote = remoteNote;
       }
     } catch {
-      /* keep local note; index may be offline */
+      // Test / offline index: still hydrate full Ban thờ from chain.
+      try {
+        const { lookupDedication } = await import('./lib/lookupDedication.js');
+        const d = await lookupDedication(opts.parentBurnTxid);
+        const chainNote = d.note.trim();
+        if (chainNote) memorialNote = chainNote;
+      } catch {
+        /* keep local note */
+      }
     }
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
