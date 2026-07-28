@@ -98,6 +98,69 @@ Android + installed-iOS PWA, no store review, no Apple Developer Program
 needed at all); revisit native APNs via Capacitor only if iOS reach proves
 insufficient in practice.
 
+## Per-device daily offer limit: neither PWA nor TWA strengthen `installId`
+
+`apps/mint-api` caps offers per day per `installId`
+(`MAX_OFFERS_PER_DAY`, see `apps/mint-api/src/offer.ts`). The web app
+generates that id once with `crypto.randomUUID()` and persists it in
+`localStorage` (`getOrCreateInstallId()`, `apps/web/src/lib/config.ts`) — the
+server just trusts whatever 8–128 char string the client sends
+(`requireInstallId()`); there's no cryptographic binding to a real device.
+
+**Neither shell changes this:**
+
+- **PWA** — this *is* the current mechanism. `localStorage` is per-origin,
+  per-browser-profile storage: trivially reset by clearing site data, private
+  browsing, a different browser on the same phone, or simply POSTing a fresh
+  random string directly to the API. There's no web-platform API for a
+  install-scoped id stronger than this.
+- **TWA** — gives **nothing extra by default**. A stock Bubblewrap TWA isn't
+  a WebView with a native bridge; it launches the device's real installed
+  Chrome via Custom Tabs and shares *that Chrome's* normal per-origin
+  storage — the exact same `localStorage` the PWA already uses. There is no
+  JS↔native bridge to read an Android-level id unless you fork the generated
+  Android project into a custom WebView + `@JavascriptInterface` shim
+  (defeats the "real Chrome, zero native code" rationale for choosing TWA in
+  the first place — see the table at the top of this doc).
+- **Capacitor** *can* do a bit better, but with real caveats: a plugin like
+  `@capacitor/device` stores an app-generated random UUID in native storage
+  (Android SharedPreferences / iOS Keychain) instead of the WebView's
+  `localStorage`. The one genuinely stronger property: an iOS Keychain-backed
+  id can survive an app **delete + reinstall** on the same device (unlike
+  any web storage or an Android app's data, which is normally wiped on
+  uninstall). It is still not a true hardware id — Google Play policy
+  restricts raw persistent identifiers (`ANDROID_ID`, IMEI) for non-telephony
+  apps, so Android plugins hand you the same kind of app-generated UUID,
+  reset by "Clear app data" or uninstall/reinstall. And it only covers users
+  who installed the Capacitor app — PWA/TWA users are unaffected either way.
+
+**None of this is a hard security boundary, native or not** — a determined
+abuser can always multi-device, multi-account, or use an emulator, regardless
+of which shell they're using. The real scarcity mechanism this app already
+has is the **Proof-of-Work cost per offer** (`apps/mint-api` challenge/submit
+flow); the per-`installId` daily cap is a soft, good-faith UX guard against
+casual re-offering, not the security boundary itself.
+
+If real abuse of the daily cap shows up in practice, cheaper wins exist
+before reaching for native identifiers:
+
+- **IP-based secondary limiting** — nginx already forwards
+  `X-Real-IP`/`X-Forwarded-For` to `apps/mint-api` for `/api/` (see
+  `deploy/contabo/nginx-*.conf`); the server doesn't currently read it for
+  rate limiting. Cheap to add (defeated by shared/dynamic IPs and VPNs, but
+  catches the common "just clear localStorage" case for free).
+- **`navigator.storage.persist()`** — reduces the chance the browser evicts
+  `localStorage`/IndexedDB under storage pressure; does nothing against a
+  user (or script) deliberately clearing/resetting it.
+- Flag/soft-throttle `installId`s that are brand-new (created moments before
+  their first challenge) as a heuristic, without claiming real device
+  identity.
+
+Only pursue Capacitor's native device-id plugins if there's evidence the
+daily cap is being abused at meaningful scale by the same real users
+reinstalling — and even then, budget for it only helping the fraction of
+traffic that installs the native app, not PWA/TWA users.
+
 ## Not pursued: full native rewrite
 
 A ground-up native app (Swift/Kotlin or React Native/Flutter) was considered
