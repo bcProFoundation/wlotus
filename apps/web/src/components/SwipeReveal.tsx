@@ -70,6 +70,19 @@ export function SwipeReveal(props: {
     applyOffset(open ? -panelWidthRef.current : 0);
   }, [open, panelWidth]);
 
+  /** Close when the user taps/clicks anywhere outside this row. */
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const root = rootRef.current;
+      if (!root?.contains(e.target as Node)) {
+        onOpenChangeRef.current(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [open]);
+
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
