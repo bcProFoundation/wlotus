@@ -396,7 +396,10 @@ a {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.22);
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .altar-details-row {
@@ -405,6 +408,8 @@ a {
   gap: 0.35rem 0.75rem;
   padding: 0.45rem 0;
   font-size: 0.9rem;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   overflow: visible;
 }
@@ -423,27 +428,34 @@ a {
 .altar-details-row dd {
   margin: 0;
   min-width: 0;
+  max-width: 100%;
   color: var(--ink);
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 600;
-  /* Cormorant descenders (g/y) need room; 1.35 clipped after the font swap. */
-  line-height: 1.5;
+  /* Cormorant descenders need room; keep wrap inside the modal width. */
+  line-height: 1.55;
+  padding-bottom: 0.12em;
+  white-space: normal;
   overflow: visible;
-  overflow-wrap: break-word;
-  word-break: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-/* Ban thờ sheet is narrow — always stack so long places wrap fully. */
+/*
+ * Ban thờ sheet stacks label/value. Use minmax(0, 1fr) — plain `1fr` is
+ * minmax(auto, 1fr) and refuses to shrink below the serif string, so long
+ * places like “Hải Cảng, Quy Nhơn, Bình Định” clip mid-glyph at the edge.
+ */
 .offer-modal-card .altar-details-row {
-  grid-template-columns: 1fr;
-  gap: 0.2rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.25rem;
 }
 
 @media (max-width: 420px) {
   .altar-details-row {
-    grid-template-columns: 1fr;
-    gap: 0.2rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
   }
 }
 
@@ -1050,7 +1062,8 @@ a {
   position: relative;
   width: min(100%, 26rem);
   max-height: min(92vh, 40rem);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
   margin-bottom: env(safe-area-inset-bottom, 0);
   padding: 1.35rem 1.35rem 1.5rem;
