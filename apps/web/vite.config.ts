@@ -3,10 +3,24 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  define: {
+    // Per-build id baked into the SW registration URL (?v=…) so every deploy
+    // is a genuinely new request the browser has never cached — sidesteps
+    // WebKit/Safari's unreliable HTTP-cache bypass on service-worker update
+    // checks, which can otherwise pin an iPhone on an old JS/CSS bundle
+    // indefinitely even with correct Cache-Control headers on sw.js.
+    __WLOTUS_BUILD_ID__: JSON.stringify(Date.now().toString(36)),
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // App registers the SW itself (apps/web/src/lib/pwaUpdate.ts) with a
+      // versioned URL — don't also auto-inject vite-plugin-pwa's own
+      // registerSW.js script tag (its "auto" heuristic only skips injection
+      // when it detects a `virtual:pwa-register` import, which we no longer
+      // use now that registration is hand-rolled).
+      injectRegister: false,
       includeAssets: [
         'images/wlotus.png',
         'images/wlotus-icon-32.png',
