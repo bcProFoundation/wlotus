@@ -32,3 +32,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Per-build id, injected via `define` in vite.config.ts. */
+declare const __WLOTUS_BUILD_ID__: string;
