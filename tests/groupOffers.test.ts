@@ -121,11 +121,16 @@ describe('seedLocalRootIfMissing', () => {
       burnTxid: CHILD,
       parentBurnTxid: ROOT,
       note: '',
-      at: '2026-01-05T00:00:00.000Z',
+      at: '2026-01-05T12:00:00.000Z',
     });
     expect(groupOffersByOriginal([reoffer])).toHaveLength(0);
 
-    const seeded = seedLocalRootIfMissing([reoffer], ROOT, 'Ông Cao Lâm Quả');
+    const seeded = seedLocalRootIfMissing(
+      [reoffer],
+      ROOT,
+      'Ông Cao Lâm Quả',
+      Date.parse('2026-01-05T11:00:00.000Z'),
+    );
     const groups = groupOffersByOriginal(seeded);
     expect(groups).toHaveLength(1);
     expect(groups[0]!.original.burnTxid).toBe(ROOT);
