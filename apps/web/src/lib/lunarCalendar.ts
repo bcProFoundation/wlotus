@@ -229,5 +229,5 @@ export function formatLunarDeathDate(
     return `农历${cc}年${zhMonthName(lunar.month, lunar.leap)}${zhDayName(lunar.day)}`;
   }
   const leapNote = lunar.leap ? ' (nhuận)' : '';
-  return `Ngày ${lunar.day} tháng ${lunar.month}${leapNote} năm ${cc} (Âm lịch)`;
+  return `Ngày ${lunar.day} tháng ${lunar.month}${leapNote} năm ${cc}`;
 }
