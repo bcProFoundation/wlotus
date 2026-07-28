@@ -1,0 +1,46 @@
+{
+  "packageId": "org.wlotus.twa",
+  "host": "wlotus.org",
+  "name": "White Lotus",
+  "launcherName": "White Lotus",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#0a0a0a",
+  "navigationColor": "#0a0a0a",
+  "navigationColorDark": "#0a0a0a",
+  "navigationDividerColor": "#0a0a0a",
+  "navigationDividerColorDark": "#0a0a0a",
+  "backgroundColor": "#050505",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "webManifestUrl": "https://wlotus.org/manifest.webmanifest",
+  "iconUrl": "https://wlotus.org/images/wlotus-icon-512.png",
+  "maskableIconUrl": "https://wlotus.org/images/wlotus-icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "wlotus"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "manual",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": false
+    },
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://wlotus.org/",
+  "minSdkVersion": 21,
+  "fingerprints": []
+}
