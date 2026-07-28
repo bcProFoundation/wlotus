@@ -73,6 +73,22 @@ function requireInstallId(raw: unknown): string {
   return installId;
 }
 
+/**
+ * Best-effort client IP for the secondary per-IP daily cap (see
+ * src/lib/rateLimit.ts + docs/MOBILE.md). `X-Real-IP` is what
+ * deploy/contabo's nginx configs set from `$remote_addr`, so it's trusted
+ * ahead of the more easily spoofed `X-Forwarded-For`. Falls back to the raw
+ * socket address for local dev without the nginx proxy in front.
+ */
+function clientIp(req: import('node:http').IncomingMessage): string | undefined {
+  const realIp = req.headers['x-real-ip'];
+  if (typeof realIp === 'string' && realIp.trim()) return realIp;
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim()) return forwarded;
+  if (Array.isArray(forwarded) && forwarded.length) return forwarded[0];
+  return req.socket.remoteAddress ?? undefined;
+}
+
 function fileMtimeIso(path: string): string | null {
   try {
     return statSync(path).mtime.toISOString();
@@ -170,7 +186,9 @@ const server = createServer(async (req, res) => {
       const health = healthPayload();
       json(res, 200, {
         ...pub,
-        remainingToday: installId ? remainingOffersToday(installId) : null,
+        remainingToday: installId
+          ? remainingOffersToday(installId, clientIp(req))
+          : null,
         startedAt: STARTED_AT,
         deployedAt: health.deployedAt,
       });
@@ -198,6 +216,7 @@ const server = createServer(async (req, res) => {
         installId,
         note,
         parentBurnTxid,
+        ip: clientIp(req),
       });
       json(res, 200, challenge);
       return;
@@ -234,6 +253,7 @@ const server = createServer(async (req, res) => {
         nonceHex,
         powMs,
         powAttempts,
+        ip: clientIp(req),
       });
       json(res, 200, { ok: true, ...result });
       return;
