@@ -39,6 +39,7 @@ export type MessageKey =
   | 'altarBirthDatePlaceholder'
   | 'altarErrBirthDate'
   | 'altarDeathDate'
+  | 'altarDeathDateLunar'
   | 'altarDeathDatePlaceholder'
   | 'altarDeathPlace'
   | 'altarFuneralPlace'
@@ -153,6 +154,7 @@ const en: Dict = {
   altarBirthDatePlaceholder: 'YYYY or YYYY-MM-DD',
   altarErrBirthDate: 'Enter year of birth as YYYY or YYYY-MM-DD.',
   altarDeathDate: 'Date of death (YYYY-MM-DD)',
+  altarDeathDateLunar: 'Date of death (lunar)',
   altarDeathDatePlaceholder: 'YYYY or YYYY-MM-DD',
   altarDeathPlace: 'Place of residence',
   altarFuneralPlace: 'Burial place',
@@ -273,6 +275,7 @@ const vi: Dict = {
   altarBirthDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
   altarErrBirthDate: 'Năm sinh dạng YYYY hoặc YYYY-MM-DD.',
   altarDeathDate: 'Ngày mất (YYYY-MM-DD)',
+  altarDeathDateLunar: 'Ngày mất (Âm lịch)',
   altarDeathDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
   altarDeathPlace: 'Nơi sinh sống',
   altarFuneralPlace: 'Nơi an táng',
@@ -391,6 +394,7 @@ const zh: Dict = {
   altarBirthDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
   altarErrBirthDate: '出生年请用 YYYY 或 YYYY-MM-DD。',
   altarDeathDate: '去世日期 (YYYY-MM-DD)',
+  altarDeathDateLunar: '去世日期（农历）',
   altarDeathDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
   altarDeathPlace: '居住地',
   altarFuneralPlace: '安葬地',
