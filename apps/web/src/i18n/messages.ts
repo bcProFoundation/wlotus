@@ -44,6 +44,15 @@ export type MessageKey =
   | 'altarDeathPlace'
   | 'altarFuneralPlace'
   | 'altarPlaceOptional'
+  | 'altarRelationship'
+  | 'altarRelationshipNone'
+  | 'altarRelationshipSpouse'
+  | 'altarRelationshipParent'
+  | 'altarRelationshipChild'
+  | 'altarRelatedTxidLabel'
+  | 'altarRelatedTxidPlaceholder'
+  | 'altarErrRelatedTxid'
+  | 'altarViewRelated'
   | 'altarErrName'
   | 'altarErrDeathDate'
   | 'altarErrBirthYear'
@@ -79,6 +88,7 @@ export type MessageKey =
   | 'sessionNoteLabel'
   | 'reofferExtraNoteLabel'
   | 'reofferExtraNotePlaceholder'
+  | 'btnAmendAltar'
   | 'btnOfferLotus'
   | 'btnClose'
   | 'cancelOfferMsg'
@@ -159,6 +169,15 @@ const en: Dict = {
   altarDeathPlace: 'Place of residence',
   altarFuneralPlace: 'Burial place',
   altarPlaceOptional: 'Optional',
+  altarRelationship: 'Relationship',
+  altarRelationshipNone: 'None',
+  altarRelationshipSpouse: 'Spouse',
+  altarRelationshipParent: 'Parent of',
+  altarRelationshipChild: 'Child of',
+  altarRelatedTxidLabel: 'Linked altar (paste its wLotus link)',
+  altarRelatedTxidPlaceholder: 'https://wlotus.org/…',
+  altarErrRelatedTxid: 'Paste a valid wLotus altar link to link a relationship.',
+  altarViewRelated: 'View linked altar',
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
   altarErrBirthYear: 'Enter year of birth as YYYY or YYYY-MM-DD.',
@@ -197,6 +216,7 @@ const en: Dict = {
   sessionNoteLabel: 'In remembrance',
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
+  btnAmendAltar: 'Edit altar details / relationship',
   btnOfferLotus: 'Offer a lotus',
   btnClose: 'Close',
   cancelOfferMsg: 'Stop this offering and return to the home screen?',
@@ -280,6 +300,16 @@ const vi: Dict = {
   altarDeathPlace: 'Nơi sinh sống',
   altarFuneralPlace: 'Nơi an táng',
   altarPlaceOptional: 'Tuỳ chọn',
+  altarRelationship: 'Mối quan hệ',
+  altarRelationshipNone: 'Không có',
+  altarRelationshipSpouse: 'Vợ/Chồng của',
+  altarRelationshipParent: 'Cha/Mẹ của',
+  altarRelationshipChild: 'Con của',
+  altarRelatedTxidLabel: 'Ban thờ liên quan (dán liên kết wLotus)',
+  altarRelatedTxidPlaceholder: 'https://wlotus.org/…',
+  altarErrRelatedTxid:
+    'Dán một liên kết ban thờ wLotus hợp lệ để liên kết mối quan hệ.',
+  altarViewRelated: 'Xem ban thờ liên quan',
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
   altarErrBirthYear: 'Năm sinh dạng YYYY hoặc YYYY-MM-DD.',
@@ -317,6 +347,7 @@ const vi: Dict = {
   sessionNoteLabel: 'Lời tưởng niệm',
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
+  btnAmendAltar: 'Sửa chi tiết ban thờ / mối quan hệ',
   btnOfferLotus: 'Dâng hoa sen',
   btnClose: 'Đóng',
   cancelOfferMsg: 'Dừng dâng hoa và quay lại màn hình chính?',
@@ -399,6 +430,15 @@ const zh: Dict = {
   altarDeathPlace: '居住地',
   altarFuneralPlace: '安葬地',
   altarPlaceOptional: '可选',
+  altarRelationship: '关系',
+  altarRelationshipNone: '无',
+  altarRelationshipSpouse: '配偶',
+  altarRelationshipParent: '为其父母',
+  altarRelationshipChild: '为其子女',
+  altarRelatedTxidLabel: '关联灵位（粘贴 wLotus 链接）',
+  altarRelatedTxidPlaceholder: 'https://wlotus.org/…',
+  altarErrRelatedTxid: '请粘贴有效的 wLotus 灵位链接以建立关系。',
+  altarViewRelated: '查看关联灵位',
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
   altarErrBirthYear: '出生年请用 YYYY 或 YYYY-MM-DD。',
@@ -435,6 +475,7 @@ const zh: Dict = {
   sessionNoteLabel: '追思寄语',
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
+  btnAmendAltar: '编辑灵位详情 / 关系',
   btnOfferLotus: '献上莲花',
   btnClose: '关闭',
   cancelOfferMsg: '停止献花并返回主页？',

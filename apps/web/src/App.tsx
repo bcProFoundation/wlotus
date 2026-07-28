@@ -206,6 +206,15 @@ export default function App() {
     altar: AltarFields;
     extraNote: string;
   } | null>(null);
+  /**
+   * Edit/relationship sheet for an EXISTING altar — reuses AltarSetupModal to
+   * submit a star-fragment burn (amendment) under the same root. Open for
+   * now: any device may amend; see docs/ALTAR.md restriction plan.
+   */
+  const [amendSheet, setAmendSheet] = useState<{
+    parentBurnTxid: string;
+    altar: AltarFields;
+  } | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -540,9 +549,17 @@ export default function App() {
     altar?: AltarFields | null;
     /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
+    /**
+     * Amend an existing altar (star fragment burn under the same root that
+     * carries the full re-packed altar note, e.g. to add/edit a relationship
+     * after setup). Intentionally OPEN for now — any device may amend any
+     * altar; see docs/ALTAR.md "Relationships — open for now, restrict later".
+     */
+    amend?: boolean;
   }) {
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
-    const isReoffer = Boolean(parentBurnTxid);
+    const isAmend = Boolean(parentBurnTxid) && Boolean(opts?.amend);
+    const isReoffer = Boolean(parentBurnTxid) && !isAmend;
     const extraNote = isReoffer
       ? (opts?.extraNote ?? '').trim()
       : undefined;
@@ -861,13 +878,13 @@ export default function App() {
 
   useEffect(() => {
     const lock = Boolean(
-      busy || dedicationSheet || historyGroup || altarOpen,
+      busy || dedicationSheet || historyGroup || altarOpen || amendSheet,
     );
     document.body.style.overflow = lock ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [busy, dedicationSheet, historyGroup, altarOpen]);
+  }, [busy, dedicationSheet, historyGroup, altarOpen, amendSheet]);
 
   useEffect(() => {
     if (busy || msg?.kind !== 'success') return;
@@ -893,6 +910,19 @@ export default function App() {
     return next;
   }
 
+  /**
+   * Prefer the most recent altar-packed burn under a star (an amendment,
+   * e.g. one that added/edited a relationship) over the original note, so
+   * later edits actually show up. `remote.burns` is latest-first.
+   */
+  function pickDisplayAltarNote(remote: IndexMemorialGroup): string {
+    for (const b of remote.burns) {
+      const n = (b.note || '').trim();
+      if (isAltarPackedNote(n)) return n;
+    }
+    return (remote.originalNote || remote.latestNote || '').trim();
+  }
+
   /** Open re-offer sheet; sync History burns into Recent; hydrate Ban thờ. */
   async function openDedicationSheet(opts: {
     parentBurnTxid: string;
@@ -902,11 +932,7 @@ export default function App() {
     try {
       const remote = await fetchIndexMemorial(opts.parentBurnTxid);
       persistMemorialSync(remote);
-      const remoteNote = (
-        remote.originalNote ||
-        remote.latestNote ||
-        ''
-      ).trim();
+      const remoteNote = pickDisplayAltarNote(remote);
       if (
         remoteNote &&
         (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
@@ -928,6 +954,16 @@ export default function App() {
       parentBurnTxid: opts.parentBurnTxid,
       altar: altarFromMemorialNote(memorialNote),
       extraNote: '',
+    });
+  }
+
+  /** Follow a relationship link (Spouse / Parent / Child) to the linked altar. */
+  async function viewRelatedAltar(relatedTxid: string) {
+    setDedicationSheet(null);
+    setAmendSheet(null);
+    await openDedicationSheet({
+      parentBurnTxid: relatedTxid,
+      memorialNote: '',
     });
   }
 
@@ -1425,7 +1461,10 @@ export default function App() {
               ×
             </button>
             <h2 id="altar-detail-title">{t('altarDetailTitle')}</h2>
-            <AltarDetails altar={dedicationSheet.altar} />
+            <AltarDetails
+              altar={dedicationSheet.altar}
+              onViewRelated={txid => void viewRelatedAltar(txid)}
+            />
             <div className="field">
               <label htmlFor="dedication-extra-note">
                 {t('reofferExtraNoteLabel')}
@@ -1465,9 +1504,45 @@ export default function App() {
               >
                 {t('btnOffer')}
               </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={!canOffer}
+                onClick={() =>
+                  setAmendSheet({
+                    parentBurnTxid: dedicationSheet.parentBurnTxid,
+                    altar: dedicationSheet.altar,
+                  })
+                }
+              >
+                {t('btnAmendAltar')}
+              </button>
             </div>
           </div>
         </div>
+      ) : null}
+
+      {amendSheet && !busy ? (
+        <AltarSetupModal
+          initial={amendSheet.altar}
+          etaLabel={etaLabel}
+          offerDisabled={!canOffer || shareLookingUp}
+          onClose={() => setAmendSheet(null)}
+          onSave={() => {}}
+          onOffer={fields => {
+            const parentBurnTxid = amendSheet.parentBurnTxid;
+            setAmendSheet(null);
+            setDedicationSheet(null);
+            void onOffer({
+              parentBurnTxid,
+              displayNote:
+                formatAltarPersonName(fields, locale) ||
+                t('offeringFallback'),
+              altar: fields,
+              amend: true,
+            });
+          }}
+        />
       ) : null}
 
       {historyGroup ? (

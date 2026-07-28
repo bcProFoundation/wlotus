@@ -3,13 +3,23 @@
  * See docs/ALTAR.md.
  *
  * Wire (UTF-8), Unit Separator U+001F between fields:
- *   title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace
+ *   title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate
+ *     \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid
  *
  * `title` is a locale-neutral honorific code: `` | `mr` | `mrs`
  * (UI: Mr./Mrs. · Ông/Bà · 先生/女士).
  *
  * Places are coarse free text for now. Geotag later via OpenStreetMap Nominatim
  * → compact geohash in the same place slots (no AI geocoding).
+ *
+ * `relationshipType` / `relatedTxid` link this altar to another WLotus altar
+ * (its original dedication burn txid): `spouse` | `parent` | `child`, where
+ * `parent`/`child` describe THIS altar's role relative to the linked one.
+ * Writing / amending this pair is intentionally left OPEN (any device, at
+ * setup or later via a star-fragment burn under the same root) — see
+ * docs/ALTAR.md § "Relationships — open for now, restrict later" for the
+ * planned minter-only restriction and why a device `installId` cannot be a
+ * durable creator credential.
  */
 
 export const ALTAR_SEP = '\u001f';
@@ -20,6 +30,12 @@ export const MEMORIAL_NOTE_MAX_BYTES = 220;
 
 /** On-chain honorific codes (render via locale in the UI / OG). */
 export type AltarHonorific = '' | 'mr' | 'mrs';
+
+/**
+ * Link type to another altar: empty (none), `spouse` (symmetric), or
+ * `parent` / `child` — THIS altar's role relative to `relatedTxid`.
+ */
+export type AltarRelationshipType = '' | 'spouse' | 'parent' | 'child';
 
 export type AltarLocale = 'vi' | 'en' | 'zh';
 
@@ -40,6 +56,10 @@ export interface AltarFields {
   deathDate: string;
   deathPlace: string;
   funeralPlace: string;
+  /** Optional link to another altar (see AltarRelationshipType above). */
+  relationshipType: AltarRelationshipType;
+  /** Original dedication burn txid (64 hex) of the linked altar, or ''. */
+  relatedTxid: string;
 }
 
 export function emptyAltarFields(): AltarFields {
@@ -52,6 +72,8 @@ export function emptyAltarFields(): AltarFields {
     deathDate: '',
     deathPlace: '',
     funeralPlace: '',
+    relationshipType: '',
+    relatedTxid: '',
   };
 }
 
@@ -65,6 +87,22 @@ export function normalizeAltarHonorific(
   const t = (raw || '').trim().toLowerCase();
   if (t === 'mr' || t === 'mrs') return t;
   return '';
+}
+
+export function normalizeAltarRelationshipType(
+  raw: string | null | undefined,
+): AltarRelationshipType {
+  const t = (raw || '').trim().toLowerCase();
+  if (t === 'spouse' || t === 'parent' || t === 'child') return t;
+  return '';
+}
+
+/** Lowercase 64-hex burn txid, or '' if not a valid shape. */
+export function normalizeAltarRelatedTxid(
+  raw: string | null | undefined,
+): string {
+  const t = (raw || '').trim().toLowerCase();
+  return /^[0-9a-f]{64}$/.test(t) ? t : '';
 }
 
 /** Localized honorific label; empty if none. */
@@ -126,6 +164,8 @@ export function parseAltarNote(raw: string): AltarFields | null {
       deathDate: (parts[5] ?? '').trim(),
       deathPlace: (parts[6] ?? '').trim(),
       funeralPlace: (parts[7] ?? '').trim(),
+      relationshipType: normalizeAltarRelationshipType(parts[8]),
+      relatedTxid: normalizeAltarRelatedTxid(parts[9]),
     };
   }
   // Legacy (pre-title): name \x1f note \x1f …
@@ -138,6 +178,8 @@ export function parseAltarNote(raw: string): AltarFields | null {
     deathDate: (parts[4] ?? '').trim(),
     deathPlace: (parts[5] ?? '').trim(),
     funeralPlace: (parts[6] ?? '').trim(),
+    relationshipType: normalizeAltarRelationshipType(parts[7]),
+    relatedTxid: normalizeAltarRelatedTxid(parts[8]),
   };
 }
 
@@ -182,6 +224,18 @@ export function validateAltarFields(a: AltarFields): string | null {
   if (!death || !ALTAR_DATE_RE.test(death)) return 'deathDate';
   const birth = scrub(a.birthYear);
   if (birth && !ALTAR_DATE_RE.test(birth)) return 'birthYear';
+  const relTypeRaw = (a.relationshipType || '').trim();
+  if (relTypeRaw && !normalizeAltarRelationshipType(relTypeRaw)) {
+    return 'relationshipType';
+  }
+  const relTxidRaw = scrub(a.relatedTxid);
+  if (relTxidRaw && !normalizeAltarRelatedTxid(relTxidRaw)) {
+    return 'relatedTxid';
+  }
+  // A relationship needs both a type and a linked altar — one without the
+  // other is an incomplete / stale entry.
+  if (relTypeRaw && !relTxidRaw) return 'relatedTxid';
+  if (relTxidRaw && !relTypeRaw) return 'relationshipType';
   return null;
 }
 
@@ -216,6 +270,8 @@ export function encodeAltarNote(fields: AltarFields): string {
     scrub(fields.deathDate),
     scrub(fields.deathPlace),
     scrub(fields.funeralPlace),
+    normalizeAltarRelationshipType(fields.relationshipType),
+    normalizeAltarRelatedTxid(fields.relatedTxid),
   ];
   while (parts.length > 2 && !parts[parts.length - 1]) parts.pop();
   const packed = parts.join(ALTAR_SEP);

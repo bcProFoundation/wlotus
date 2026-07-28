@@ -7,6 +7,8 @@ import {
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,
+  normalizeAltarRelatedTxid,
+  normalizeAltarRelationshipType,
   parseAltarNote,
   truncateUtf8Bytes,
   validateAltarFields,
@@ -24,6 +26,8 @@ describe('altarFields', () => {
       deathDate: '2001-10-20',
       deathPlace: 'Bình Định',
       funeralPlace: '',
+      relationshipType: '',
+      relatedTxid: '',
     };
     const packed = encodeAltarNote(fields);
     expect(isAltarPackedNote(packed)).toBe(true);
@@ -35,6 +39,102 @@ describe('altarFields', () => {
     expect(memorialDisplayName(packed, 'vi')).toBe('Ông Cao Lâm Quả');
     expect(memorialDisplayName(packed, 'en')).toBe('Mr. Cao Lâm Quả');
     expect(formatAltarPersonName(fields, 'zh')).toBe('先生 Cao Lâm Quả');
+  });
+
+  it('round-trips a spouse relationship link', () => {
+    const relatedTxid = 'a'.repeat(64);
+    const fields: AltarFields = {
+      ...emptyAltarFields(),
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-10-20',
+      relationshipType: 'spouse',
+      relatedTxid,
+    };
+    const packed = encodeAltarNote(fields);
+    const parsed = parseAltarNote(packed);
+    expect(parsed?.relationshipType).toBe('spouse');
+    expect(parsed?.relatedTxid).toBe(relatedTxid);
+  });
+
+  it('round-trips a parent/child relationship link on a legacy (no-title) pack', () => {
+    const relatedTxid = 'b'.repeat(64);
+    const legacy = [
+      'Cao Lâm Quả',
+      '',
+      'Bình Định',
+      '1945',
+      '2001-12-04',
+      '',
+      '',
+      'child',
+      relatedTxid,
+    ].join(ALTAR_SEP);
+    const parsed = parseAltarNote(legacy);
+    expect(parsed?.relationshipType).toBe('child');
+    expect(parsed?.relatedTxid).toBe(relatedTxid);
+  });
+
+  it('is backward compatible with notes packed before relationship fields existed', () => {
+    const legacy = [
+      'Cao Lâm Quả',
+      '',
+      'Bình Định',
+      '1945',
+      '2001-12-04',
+      '',
+      '',
+    ].join(ALTAR_SEP);
+    const parsed = parseAltarNote(legacy);
+    expect(parsed?.relationshipType).toBe('');
+    expect(parsed?.relatedTxid).toBe('');
+  });
+
+  it('normalizes relationship type and related txid', () => {
+    expect(normalizeAltarRelationshipType('SPOUSE')).toBe('spouse');
+    expect(normalizeAltarRelationshipType('sibling')).toBe('');
+    expect(normalizeAltarRelationshipType(undefined)).toBe('');
+    const hex = 'c'.repeat(64);
+    expect(normalizeAltarRelatedTxid(`  ${hex.toUpperCase()}  `)).toBe(hex);
+    expect(normalizeAltarRelatedTxid('not-a-txid')).toBe('');
+  });
+
+  it('requires both relationship type and related txid together', () => {
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
+        deathDate: '2001',
+        relationshipType: 'spouse',
+        relatedTxid: '',
+      }),
+    ).toBe('relatedTxid');
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
+        deathDate: '2001',
+        relationshipType: '',
+        relatedTxid: 'd'.repeat(64),
+      }),
+    ).toBe('relationshipType');
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
+        deathDate: '2001',
+        relationshipType: 'parent',
+        relatedTxid: 'not-hex',
+      }),
+    ).toBe('relatedTxid');
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
+        deathDate: '2001',
+        relationshipType: 'parent',
+        relatedTxid: 'e'.repeat(64),
+      }),
+    ).toBeNull();
   });
 
   it('reads legacy name-first packs without title', () => {
