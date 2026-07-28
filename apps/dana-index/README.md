@@ -36,9 +36,10 @@ The OG page boots the SPA in browsers; crawlers keep the meta tags.
 `og:description` (no name): `Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.`
 
 Optional `?lang=en|vi|zh` localizes the card. The web Share action embeds the
-**sender's** current app locale in the URL. Facebook / Zalo cache **one** card
-per URL; without `?lang=`, previews fall back to `Accept-Language` then
-Vietnamese.
+**sender's** current app locale in the URL. Crawler `Accept-Language` is
+**ignored** (TelegramBot usually sends `en`). Without `?lang=`, previews use
+Vietnamese. Messengers cache one card per URL — refresh Telegram via
+[@WebpageBot](https://t.me/WebpageBot) after fixing tags.
 
 ## Env
 
