@@ -497,6 +497,7 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | `nginx: rewrite is not terminated by ";"` | Unquoted `{64}` in `rewrite` | Drop rewrite; use `proxy_pass …/og/$1$is_args$args` |
 | `getaddrinfo: Name or service not known` | Bad `CONTABO_HOST` | Use `test.wlotus.org` or IP, no scheme |
 | `Permission denied (publickey)` | Key not on VM | Copy `.pub` to `/home/deploy/.ssh/authorized_keys` |
+| iPhone (Safari/PWA) keeps showing an old build after deploy, but Android/desktop is fine | `/sw.js` had no explicit `Cache-Control`, so WebKit can serve it from its HTTP cache instead of hitting the network on `registration.update()`, pinning the old JS/CSS bundle | Merge the `location = /sw.js { add_header Cache-Control "no-cache"; }` (+ `manifest.webmanifest`) block from `nginx-wlotus-test-tls.conf` into the live **443** server block, then `sudo nginx -t && sudo systemctl reload nginx`. On the phone, fully close the PWA/tab (not just background it) once to pick up the fix. |
 | `wlotus-deploy.pub` not on VM | Expected | Generate on laptop; only **public** key goes on VM |
 | Node 20 deprecation warning in Actions | GitHub runner notice | Warning only — not a deploy failure |
 | Smoke check fails | Site/DNS/TLS not ready | Fix HTTP first; set `CONTABO_SMOKE_URL` after |
