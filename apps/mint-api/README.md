@@ -96,7 +96,30 @@ fuel coin from the desk automatically — still prefer running the fund script f
 
 ## Limits
 
-- `MINT_MAX_OFFERS_PER_DAY` (default **20** on test)
+- `MINT_MAX_OFFERS_PER_DAY` (default **20** on test) — per `installId`
+  (client-generated `localStorage` UUID; trivial to reset — see docs/MOBILE.md).
+- `MINT_MAX_OFFERS_PER_DAY_PER_IP` (default **`MINT_MAX_OFFERS_PER_DAY` × 5**)
+  — coarser secondary cap keyed on the client IP (`X-Real-IP`, normalized —
+  IPv6 collapses to its `/64` prefix so a single customer can't bypass it by
+  rotating the low 64 bits for free; see `src/lib/rateLimit.ts`). Deliberately
+  looser than the per-`installId` cap so a household/office sharing one
+  public IPv4 isn't throttled by ordinary, independent use; it exists only to
+  bound how much sponsored XEC fee one IP can drain by minting fresh
+  `installId`s. `remainingToday` in `/api/status` reports the more
+  restrictive of the two.
+  - **Why IP-only is proportionate here, not a real security boundary:**
+    each offer costs the desk on the order of a few XEC in sponsored network
+    fees (fee-only — the minted miner atom itself carries no separable value
+    at the current zero-difficulty Moore-clock epoch; 107/108 of the mint
+    goes straight to the temple address, not to whoever offered). At XEC's
+    typical price (order of $0.00001–0.0001), maxing out one identity's daily
+    cap drains cents at most — far less than the cost of real IP-rotation
+    infrastructure (residential proxies, VPN churn) an attacker would need to
+    repeat that at scale. Treat this cap as a good-faith UX guard against
+    casual re-offering, not a defense against a determined attacker — the
+    Moore-clock PoW difficulty ramp (see docs/CLOCK.md) is the mechanism that
+    scales the real cost of abuse as the token (hopefully) gains value over
+    time.
 - `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
 - `MINT_SERVING_TIP_COUNT` (default **1**) — tips load-balanced; raise toward **28** if demand warrants
 - Challenges expire after 15 minutes (or when that tip is reminted by someone else)

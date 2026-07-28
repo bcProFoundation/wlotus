@@ -60,10 +60,25 @@ import {
   loadMintWallet,
   mintWalletSummary,
 } from '../../../src/mint/loadMintWallet.js';
+import { createDailyCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
 
 const MAX_OFFERS_PER_DAY = Math.max(
   1,
   Number(process.env.MINT_MAX_OFFERS_PER_DAY?.trim() || 20) || 20,
+);
+/**
+ * Coarser secondary cap keyed on client IP (normalized — IPv6 collapses to
+ * its /64 prefix; see src/lib/rateLimit.ts). Deliberately looser than the
+ * per-installId cap so a household/office sharing one public IPv4 isn't
+ * throttled by normal, independent use — it exists only to bound how much
+ * sponsored XEC fee a single IP can drain by minting fresh installIds
+ * (clearing localStorage costs nothing; this doesn't need to be tight — see
+ * the economics note in apps/mint-api/README.md "Limits").
+ */
+const MAX_OFFERS_PER_DAY_PER_IP = Math.max(
+  MAX_OFFERS_PER_DAY,
+  Number(process.env.MINT_MAX_OFFERS_PER_DAY_PER_IP?.trim() || 0) ||
+    MAX_OFFERS_PER_DAY * 5,
 );
 /** Cap concurrent open challenges (server CPU for building preimages). */
 const MAX_OPEN_CHALLENGES = Math.max(
@@ -223,14 +238,17 @@ interface PendingBurn {
   parentBurnTxid?: string;
 }
 
-const offerCounts = new Map<string, Map<number, number>>();
+const installDailyCounter = createDailyCounter(
+  MAX_OFFERS_PER_DAY,
+  (max) => `Daily limit reached (${max} offerings per device).`,
+);
+const ipDailyCounter = createDailyCounter(
+  MAX_OFFERS_PER_DAY_PER_IP,
+  (max) => `Daily limit reached (${max} offerings from this network).`,
+);
 const challenges = new Map<string, StoredChallenge>();
 const pendingBurns = new Map<string, PendingBurn>();
 let chainLock: Promise<void> = Promise.resolve();
-
-function utcDay(now = Date.now()): number {
-  return Math.floor(now / 86_400_000);
-}
 
 function fuelKey(txid: string, outIdx: number): string {
   return `${txid}:${outIdx}`;
@@ -287,26 +305,16 @@ function expireOpenOnBaton(
   return n;
 }
 
-export function remainingOffersToday(installId: string): number {
-  const day = utcDay();
-  const used = offerCounts.get(installId)?.get(day) ?? 0;
-  return Math.max(0, MAX_OFFERS_PER_DAY - used);
+/** Most restrictive of the per-device and per-IP caps still open today. */
+export function remainingOffersToday(installId: string, ip?: string): number {
+  const installRemaining = installDailyCounter.remaining(installId);
+  if (ip === undefined) return installRemaining;
+  return Math.min(installRemaining, ipDailyCounter.remaining(normalizeClientIp(ip)));
 }
 
-function consumeOfferSlot(installId: string): void {
-  const day = utcDay();
-  let byDay = offerCounts.get(installId);
-  if (!byDay) {
-    byDay = new Map();
-    offerCounts.set(installId, byDay);
-  }
-  const used = byDay.get(day) ?? 0;
-  if (used >= MAX_OFFERS_PER_DAY) {
-    throw new Error(
-      `Daily limit reached (${MAX_OFFERS_PER_DAY} offerings per device).`,
-    );
-  }
-  byDay.set(day, used + 1);
+function consumeOfferSlot(installId: string, ip?: string): void {
+  installDailyCounter.consume(installId);
+  if (ip !== undefined) ipDailyCounter.consume(normalizeClientIp(ip));
 }
 
 function loadDep(): { path: string; dep: DryrunDep } {
@@ -598,11 +606,20 @@ async function createChallengeOnce(opts: {
   installId: string;
   note: string;
   parentBurnTxid?: string;
+  ip?: string;
 }): Promise<ChallengePublic> {
   expireStaleChallenges();
-  if (remainingOffersToday(opts.installId) <= 0) {
+  if (installDailyCounter.remaining(opts.installId) <= 0) {
     throw new Error(
       `Daily limit reached (${MAX_OFFERS_PER_DAY} offerings per device).`,
+    );
+  }
+  if (
+    opts.ip !== undefined &&
+    ipDailyCounter.remaining(normalizeClientIp(opts.ip)) <= 0
+  ) {
+    throw new Error(
+      `Daily limit reached (${MAX_OFFERS_PER_DAY_PER_IP} offerings from this network).`,
     );
   }
   // Same device replaces its own open job; others may keep racing tips.
@@ -911,6 +928,7 @@ async function submitChallengeOnce(opts: {
   nonceHex: string;
   powMs?: number;
   powAttempts?: number;
+  ip?: string;
 }): Promise<OfferResult> {
   expireStaleChallenges();
   const ch = challenges.get(opts.challengeId);
@@ -961,7 +979,7 @@ async function submitChallengeOnce(opts: {
     );
   }
 
-  consumeOfferSlot(opts.installId);
+  consumeOfferSlot(opts.installId, opts.ip);
 
   // Losers on the same tip restart (shared fee coin is spent by the winner).
   expireOpenOnBaton(ch.baton.txid, ch.baton.outIdx, ch.id);
@@ -1152,12 +1170,14 @@ export function enqueueChallenge(opts: {
   installId: string;
   note?: string;
   parentBurnTxid?: string;
+  ip?: string;
 }): Promise<ChallengePublic> {
   return withChainLock(() =>
     createChallengeOnce({
       installId: opts.installId,
       note: opts.note ?? '',
       parentBurnTxid: opts.parentBurnTxid,
+      ip: opts.ip,
     }),
   );
 }
@@ -1168,6 +1188,7 @@ export function enqueueSubmit(opts: {
   nonceHex: string;
   powMs?: number;
   powAttempts?: number;
+  ip?: string;
 }): Promise<OfferResult> {
   return withChainLock(() => submitChallengeOnce(opts));
 }
