@@ -1491,16 +1491,16 @@ export default function App() {
               <div className="msg hint-inline">{historyError}</div>
             ) : null}
             <ul className="memorial-history-list">
-              {historyGroup.burns.map((b, i) => (
+              {historyGroup.burns.map(b => (
                 <li key={b.burnTxid}>
                   <div className="memorial-history-main">
                     <span className="memorial-history-note">
                       {(b.note || '').trim()
                         ? memorialDisplayName(b.note, locale)
-                        : i === historyGroup.burns.length - 1
+                        : !b.parentBurnTxid
                           ? memorialDisplayName(historyGroup.note, locale) ||
                             t('offeringFallback')
-                          : t('latestMemorialFallback')}
+                          : ''}
                     </span>
                     <ExplorerLinkIcon
                       txid={b.burnTxid}
@@ -1509,7 +1509,9 @@ export default function App() {
                   </div>
                   <span className="history-meta">
                     {new Date(b.at).toLocaleString(locale)}
-                    {b.parentBurnTxid ? ` · ${t('reofferBadge')}` : ''}
+                    {!b.parentBurnTxid
+                      ? ` · ${t('originalBurnBadge')}`
+                      : ''}
                   </span>
                 </li>
               ))}
