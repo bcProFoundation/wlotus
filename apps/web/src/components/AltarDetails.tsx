@@ -22,20 +22,20 @@ export function AltarDetails(props: {
   const honorific = altarHonorificLabel(altar.title, locale);
   const rows: { label: string; value: string }[] = [
     { label: t('altarHonorific'), value: honorific },
-    { label: t('altarName'), value: altar.name },
-    { label: t('altarNote'), value: altar.note },
-    { label: t('altarBirthPlace'), value: altar.birthPlace },
+    { label: t('altarName'), value: altar.name.trim() },
+    { label: t('altarNote'), value: altar.note.trim() },
+    { label: t('altarBirthPlace'), value: altar.birthPlace.trim() },
     {
       label: t('altarBirthDate'),
       value: displayAltarDate(altar.birthYear),
     },
-    { label: t('altarDeathPlace'), value: altar.deathPlace },
+    { label: t('altarDeathPlace'), value: altar.deathPlace.trim() },
     {
       label: t('altarDeathDate'),
       value: displayAltarDate(altar.deathDate),
     },
-    { label: t('altarFuneralPlace'), value: altar.funeralPlace },
-  ].filter(r => r.value.trim().length > 0);
+    { label: t('altarFuneralPlace'), value: altar.funeralPlace.trim() },
+  ].filter(r => r.value.length > 0);
 
   return (
     <div
