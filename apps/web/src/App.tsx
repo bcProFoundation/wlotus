@@ -62,6 +62,7 @@ import {
 import {
   fetchIndexMemorial,
   notifyIndexBurn,
+  type IndexMemorialGroup,
 } from './lib/danaIndexApi.js';
 import {
   hideRecentRoot,
@@ -70,7 +71,7 @@ import {
   stripOffersForRoot,
   unhideRecentRoot,
 } from './lib/hiddenRecent.js';
-import { mergeIndexAndLocalOffers } from './lib/mergeRecentOffers.js';
+import { mergeIndexAndLocalOffers, syncIndexMemorialIntoLocal } from './lib/mergeRecentOffers.js';
 import {
   burnTxidFromLocation,
   clearDedicationPath,
@@ -884,47 +885,36 @@ export default function App() {
     return { ...emptyAltarFields(), name };
   }
 
-  /** Open re-offer sheet; hydrate full Ban thờ from index when local note is name-only. */
+  /** Persist index burns for a dedication so Recent total matches History. */
+  function persistMemorialSync(remote: IndexMemorialGroup): LocalOffer[] {
+    const next = syncIndexMemorialIntoLocal(loadOffers(), remote);
+    localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
+    setOffers(next);
+    return next;
+  }
+
+  /** Open re-offer sheet; sync History burns into Recent; hydrate Ban thờ. */
   async function openDedicationSheet(opts: {
     parentBurnTxid: string;
     memorialNote: string;
   }) {
     let memorialNote = opts.memorialNote;
-    if (!isAltarPackedNote(memorialNote)) {
-      try {
-        const remote = await fetchIndexMemorial(opts.parentBurnTxid);
-        const remoteNote = (
-          remote.originalNote ||
-          remote.latestNote ||
-          ''
-        ).trim();
-        if (remoteNote) {
-          memorialNote = remoteNote;
-          // Upgrade local root so next open (and Recent) keep full Ban thờ.
-          if (isAltarPackedNote(remoteNote)) {
-            const root = opts.parentBurnTxid.trim().toLowerCase();
-            const cur = loadOffers();
-            let changed = false;
-            const next = cur.map(o => {
-              if (
-                o.burnTxid.trim().toLowerCase() === root &&
-                !o.parentBurnTxid?.trim() &&
-                o.note.trim() !== remoteNote
-              ) {
-                changed = true;
-                return { ...o, note: remoteNote };
-              }
-              return o;
-            });
-            if (changed) {
-              localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
-              setOffers(next);
-            }
-          }
-        }
-      } catch {
-        /* keep local name-only fallback */
+    try {
+      const remote = await fetchIndexMemorial(opts.parentBurnTxid);
+      persistMemorialSync(remote);
+      const remoteNote = (
+        remote.originalNote ||
+        remote.latestNote ||
+        ''
+      ).trim();
+      if (
+        remoteNote &&
+        (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
+      ) {
+        memorialNote = remoteNote;
       }
+    } catch {
+      /* keep local note; index may be offline */
     }
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
@@ -1016,7 +1006,8 @@ export default function App() {
     setHistoryLoading(true);
     try {
       const remote = await fetchIndexMemorial(g.original.burnTxid);
-      const merged = mergeIndexAndLocalOffers([remote], offers);
+      const next = persistMemorialSync(remote);
+      const merged = mergeIndexAndLocalOffers([remote], next);
       setHistoryGroup(merged[0] ?? g);
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
