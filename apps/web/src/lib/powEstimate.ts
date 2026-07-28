@@ -16,6 +16,12 @@ export const DEFAULT_PRAYER_BASE_BITS = 0;
 /** Inflate ETA so users usually finish sooner than the label suggests. */
 export const ETA_BUFFER = 1.3;
 
+/**
+ * Typical challenge + remint submit + memorial burn overhead beyond PoW/pray.
+ * Added to the ETA floor so low-difficulty sessions (~min pray) match wall time.
+ */
+export const OFFER_DESK_OVERHEAD_SECONDS = 20;
+
 export function expectedHashesFromBits(bits: number): number {
   // bits=0 → any nonce works (vacuous PoW); treat as 1 hash of work for ETA.
   if (!Number.isFinite(bits) || bits <= 0) return 1;
@@ -65,12 +71,12 @@ export function formatActualDuration(seconds: number): string {
 }
 
 /**
- * Elapsed mining label in tenths of a minute, stepped every 10s:
- * 0.1, 0.2, 0.3, …
+ * Elapsed mining label in tenths of a minute (0.1 min = 6s), stepped every
+ * tenth: 0.0, 0.1, 0.2, … — same units as estimate / actual duration.
  */
 export function formatElapsedTenthsMin(elapsedMs: number): string {
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return '0.0 min';
-  const tenths = Math.floor(elapsedMs / 10_000); // 10s → 0.1 min
+  const tenths = Math.floor(elapsedMs / 6_000); // 6s → 0.1 min
   return `${(tenths / 10).toFixed(1)} min`;
 }
 

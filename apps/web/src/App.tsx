@@ -81,6 +81,7 @@ import {
 import {
   estimatePrayerPow,
   loadCachedHashrate,
+  OFFER_DESK_OVERHEAD_SECONDS,
   saveCachedHashrate,
 } from './lib/powEstimate.js';
 import { measureDeviceHashrate } from './lib/powMeasure.js';
@@ -301,8 +302,9 @@ export default function App() {
     bits: baseZeroBits,
     hashesPerSec: deviceHashrateHps,
   });
-  /** ETA floor = max(PoW estimate, min pray) so early finds still feel ~2 min. */
-  const etaSeconds = Math.max(powEta.seconds, minPrayMs / 1000);
+  /** ETA = max(PoW, min pray) + desk overhead so low-diff sessions match wall time. */
+  const etaSeconds =
+    Math.max(powEta.seconds, minPrayMs / 1000) + OFFER_DESK_OVERHEAD_SECONDS;
   const etaLabel = formatEstimateDurationLocale(etaSeconds, locale);
 
   const refreshStatus = useCallback(async () => {

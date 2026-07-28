@@ -56,6 +56,7 @@ export function formatElapsedTenthsMinLocale(
 ): string {
   const u = UNITS[locale];
   if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return `0.0 ${u.min}`;
-  const tenths = Math.floor(elapsedMs / 10_000);
+  // 0.1 min = 6s (same unit as estimate/actual) — not 10s.
+  const tenths = Math.floor(elapsedMs / 6_000);
   return `${(tenths / 10).toFixed(1)} ${u.min}`;
 }
