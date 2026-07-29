@@ -91,6 +91,27 @@ export async function fetchIndexMemorial(
   return body;
 }
 
+/** Search named star roots by display name — ranked server-side (see dana-index). */
+export async function searchIndexMemorials(
+  query: string,
+  limit = 20,
+): Promise<IndexMemorialGroup[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const res = await fetch(
+    indexUrl(`/api/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+  );
+  const body = await readJson<{
+    ok?: boolean;
+    items?: IndexMemorialGroup[];
+    error?: string;
+  }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error || `Index search ${res.status}`);
+  }
+  return body.items ?? [];
+}
+
 /** Best-effort: ask index to pull a burn tx now. */
 export async function notifyIndexBurn(burnTxid: string): Promise<void> {
   try {

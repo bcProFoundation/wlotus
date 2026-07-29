@@ -5,6 +5,10 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import {
+  altarSearchRelevance,
+  memorialDisplayName,
+} from '../../../src/offering/altarFields.js';
 
 export interface IndexedBurn {
   burnTxid: string;
@@ -96,7 +100,8 @@ export class BurnStore {
     return this.byTxid.size;
   }
 
-  recentGroups(limit: number): MemorialGroup[] {
+  /** All named star roots with their fragments — unsorted, no limit. */
+  private buildGroups(): MemorialGroup[] {
     const buckets = new Map<string, IndexedBurn[]>();
     for (const b of this.byTxid.values()) {
       const root = b.originalBurnTxid;
@@ -125,9 +130,40 @@ export class BurnStore {
         burns,
       });
     }
+    return groups;
+  }
 
+  recentGroups(limit: number): MemorialGroup[] {
+    const groups = this.buildGroups();
     groups.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
     return groups.slice(0, Math.max(1, Math.min(200, limit)));
+  }
+
+  /**
+   * Search named star roots by display name. Ranked by relevance tier
+   * (exact → prefix → contains) first, then by offering count (`totalBurns`)
+   * as the tie-break "offering score", then most recent activity.
+   */
+  searchGroups(query: string, limit: number): MemorialGroup[] {
+    const q = query.trim();
+    if (!q) return [];
+    const scored = this.buildGroups()
+      .map(group => {
+        const name = memorialDisplayName(group.originalNote) || group.originalNote;
+        return { group, tier: altarSearchRelevance(name, q) };
+      })
+      .filter(x => x.tier > 0);
+
+    scored.sort((a, b) => {
+      if (a.tier !== b.tier) return b.tier - a.tier;
+      if (a.group.totalBurns !== b.group.totalBurns) {
+        return b.group.totalBurns - a.group.totalBurns;
+      }
+      return Date.parse(b.group.at) - Date.parse(a.group.at);
+    });
+    return scored
+      .slice(0, Math.max(1, Math.min(50, limit)))
+      .map(x => x.group);
   }
 
   memorial(txid: string): MemorialGroup | null {

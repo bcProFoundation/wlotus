@@ -264,6 +264,9 @@ When implementing amendments / richer fields:
 | `src/offering/wlbrMemorial.ts` | DANA v1/v2 memorial EMPP |
 | `src/offering/altarFields.ts` | Separator pack / parse / display name / relationship fields |
 | `apps/dana-index` | Public recent / memorial history from chain |
+| `apps/dana-index` `GET /api/search?q=` | Search named star roots by display name (relevance tier, then offering count) |
 | `apps/web` Offer **Thêm** + Recent / Lịch sử | Altar setup; merge index + local under star |
 | `apps/web/src/components/AltarSetupModal.tsx` | Setup (full altar) or `variant="relationship"` (link only) |
 | `apps/web/src/App.tsx` `onOffer({ amend: true })` | Star-fragment burn that re-packs the full altar (open for now) |
+| `apps/web/src/components/SearchOverlay.tsx` | Search-by-name icon (header, left of language switch) |
+| `apps/web/src/lib/searchAltars.ts` | Client ranking: index results + this device's Recent fallback/merge |

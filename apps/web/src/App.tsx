@@ -12,6 +12,7 @@ import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
 } from './components/OpenInBrowserGate.js';
+import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import {
   formatActualDurationLocale,
@@ -76,8 +77,15 @@ import {
 import {
   fetchIndexMemorial,
   notifyIndexBurn,
+  searchIndexMemorials,
   type IndexMemorialGroup,
 } from './lib/danaIndexApi.js';
+import {
+  mergeSearchResults,
+  rankSearchCandidates,
+  type SearchCandidate,
+  type SearchResultRow,
+} from './lib/searchAltars.js';
 import {
   hideRecentRoot,
   isRecentRootHidden,
@@ -316,6 +324,14 @@ export default function App() {
     parentBurnTxid: string;
     displayNote: string;
   } | null>(null);
+  /** Search by name — icon to the left of the language switch. */
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResultRow[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const searchGenRef = useRef(0);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tRef = useRef(t);
   const localeRef = useRef(locale);
   tRef.current = t;
@@ -1095,13 +1111,18 @@ export default function App() {
 
   useEffect(() => {
     const lock = Boolean(
-      busy || dedicationSheet || historyGroup || altarOpen || amendSheet,
+      busy ||
+        dedicationSheet ||
+        historyGroup ||
+        altarOpen ||
+        amendSheet ||
+        searchOpen,
     );
     document.body.style.overflow = lock ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [busy, dedicationSheet, historyGroup, altarOpen, amendSheet]);
+  }, [busy, dedicationSheet, historyGroup, altarOpen, amendSheet, searchOpen]);
 
   useEffect(() => {
     if (busy || msg?.kind !== 'success') return;
@@ -1413,6 +1434,96 @@ export default function App() {
     };
   });
 
+  /**
+   * Search by name, ordered by relevance then offering score (`totalBurns`).
+   * Prefers the public dana-index search (all users); falls back to / merges
+   * with this device's Recent when the index is offline or has not indexed
+   * a fresh burn yet.
+   */
+  async function runSearch(query: string): Promise<void> {
+    const gen = ++searchGenRef.current;
+    setSearchLoading(true);
+    setSearchError('');
+
+    const localCandidates: SearchCandidate[] = recentGroups.map(g => {
+      const a = altarFromOfferGroup(g);
+      const name =
+        formatAltarPersonName(a, locale) ||
+        memorialDisplayName(g.note, locale) ||
+        g.note.trim();
+      return {
+        txid: g.original.burnTxid,
+        name,
+        totalBurns: g.totalBurns,
+        atMs: Date.parse(g.latest.at) || 0,
+      };
+    });
+    const localRows = rankSearchCandidates(localCandidates, query);
+
+    try {
+      const indexGroups = await searchIndexMemorials(query, 20);
+      if (searchGenRef.current !== gen) return;
+      const indexRows: SearchResultRow[] = indexGroups.map(g => ({
+        txid: g.originalBurnTxid,
+        label:
+          memorialDisplayName(g.originalNote, locale) ||
+          g.originalNote.trim() ||
+          g.originalBurnTxid,
+        totalBurns: g.totalBurns,
+      }));
+      setSearchResults(mergeSearchResults(indexRows, localRows));
+    } catch {
+      if (searchGenRef.current !== gen) return;
+      // Offline / test index — this device's Recent is still searchable.
+      setSearchError(t('searchIndexUnavailable'));
+      setSearchResults(localRows);
+    } finally {
+      if (searchGenRef.current === gen) setSearchLoading(false);
+    }
+  }
+
+  function openSearch() {
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError('');
+    setSearchLoading(false);
+    setSearchOpen(true);
+  }
+
+  function closeSearch() {
+    searchGenRef.current += 1;
+    if (searchTimerRef.current != null) {
+      clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+    setSearchOpen(false);
+  }
+
+  function onSearchQueryChange(value: string) {
+    setSearchQuery(value);
+    if (searchTimerRef.current != null) {
+      clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+    const q = value.trim();
+    if (!q) {
+      searchGenRef.current += 1;
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchError('');
+      return;
+    }
+    searchTimerRef.current = setTimeout(() => {
+      searchTimerRef.current = null;
+      void runSearch(q);
+    }, 350);
+  }
+
+  function onSearchSelect(txid: string) {
+    closeSearch();
+    void openDedicationSheet({ parentBurnTxid: txid, memorialNote: '' });
+  }
+
   function removeRecentGroup(g: OfferGroup) {
     const root = g.original.burnTxid;
     setHiddenRecent(prev => hideRecentRoot(root, prev));
@@ -1489,7 +1600,32 @@ export default function App() {
             />
             <h1 className="brand">{t('brand')}</h1>
           </div>
-          <LangSwitch />
+          <div className="header-actions">
+            <button
+              type="button"
+              className="header-icon-btn"
+              aria-label={t('searchTitle')}
+              onClick={openSearch}
+            >
+              <svg
+                className="btn-icon-svg"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm10 17-5.6-5.6"
+                />
+              </svg>
+            </button>
+            <LangSwitch />
+          </div>
         </div>
         <p className="tagline">{t('tagline')}</p>
       </header>
@@ -2067,6 +2203,18 @@ export default function App() {
               relatedOptions: sessionRelatedOptions,
             });
           }}
+        />
+      ) : null}
+
+      {searchOpen ? (
+        <SearchOverlay
+          query={searchQuery}
+          onQueryChange={onSearchQueryChange}
+          results={searchResults}
+          loading={searchLoading}
+          error={searchError}
+          onSelect={onSearchSelect}
+          onClose={closeSearch}
         />
       ) : null}
 

@@ -6,6 +6,7 @@
  *
  *   GET  /health
  *   GET  /api/recent?limit=40
+ *   GET  /api/search?q=&limit=20
  *   GET  /api/memorial/:txid
  *   GET  /og/:txid          — Open Graph HTML for social share previews
  *   GET  /:txid             — same OG HTML (bare share URL; nginx may not rewrite)
@@ -171,6 +172,18 @@ const server = createServer(async (req, res) => {
         ok: true,
         tokenId: TOKEN_ID,
         items: store.recentGroups(limit),
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && path === '/api/search') {
+      const q = (url.searchParams.get('q') || '').trim();
+      const limit = Number(url.searchParams.get('limit') || 20);
+      json(res, 200, {
+        ok: true,
+        tokenId: TOKEN_ID,
+        query: q,
+        items: q ? store.searchGroups(q, limit) : [],
       });
       return;
     }
