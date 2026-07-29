@@ -143,12 +143,26 @@ export function linksFromSingularFields(
   return [{ type, relatedTxid: txid }];
 }
 
-/** Prefer `relationships`; fall back to singular slots. */
+/** Prefer `relationships`; merge draft singular slots when present (setup / amend). */
 export function altarRelationships(fields: AltarFields): AltarRelationshipLink[] {
-  if (fields.relationships && fields.relationships.length > 0) {
-    return fields.relationships;
+  const fromList = fields.relationships ?? [];
+  const fromSingular = linksFromSingularFields(
+    fields.relationshipType,
+    fields.relatedTxid,
+  );
+  if (fromList.length === 0) return fromSingular;
+  if (fromSingular.length === 0) return fromList;
+  const out = [...fromList];
+  for (const link of fromSingular) {
+    if (
+      !out.some(
+        r => r.type === link.type && r.relatedTxid === link.relatedTxid,
+      )
+    ) {
+      out.push(link);
+    }
   }
-  return linksFromSingularFields(fields.relationshipType, fields.relatedTxid);
+  return out;
 }
 
 export function relationshipLinkKey(link: AltarRelationshipLink): string {
@@ -265,6 +279,77 @@ export function altarSpouseRelationshipLabel(
       if (h === 'mrs') return 'Chồng';
       return 'Vợ/Chồng';
   }
+}
+
+/**
+ * Parent label from the **related** altar's honorific:
+ * Ông/Mr → Cha/Father; Bà/Mrs → Mẹ/Mother; unknown → Cha/Mẹ / Parent.
+ */
+export function altarParentRelationshipLabel(
+  relatedTitle: string | null | undefined,
+  locale: AltarLocale = 'vi',
+): string {
+  const h = normalizeAltarHonorific(relatedTitle);
+  switch (locale) {
+    case 'en':
+      if (h === 'mr') return 'Father';
+      if (h === 'mrs') return 'Mother';
+      return 'Parent';
+    case 'zh':
+      if (h === 'mr') return '父';
+      if (h === 'mrs') return '母';
+      return '父母';
+    default:
+      if (h === 'mr') return 'Cha';
+      if (h === 'mrs') return 'Mẹ';
+      return 'Cha/Mẹ';
+  }
+}
+
+/** YYYY prefix of a birth date/year field for child sort order. */
+export function birthYearSortKey(raw: string | null | undefined): number | null {
+  const t = (raw || '').trim();
+  if (!/^\d{4}/.test(t)) return null;
+  const y = Number(t.slice(0, 4));
+  return Number.isFinite(y) ? y : null;
+}
+
+/**
+ * Display order on Ban thờ / profile: Cha → Mẹ → (Cha/Mẹ unknown) →
+ * Vợ/Chồng → Con (by birth year when known).
+ */
+export function sortAltarRelationships(
+  links: readonly AltarRelationshipLink[],
+  relatedMeta?: ReadonlyMap<
+    string,
+    { title?: string | null; birthYear?: string | null }
+  >,
+): AltarRelationshipLink[] {
+  const meta = (txid: string) => relatedMeta?.get(txid);
+  const rank = (link: AltarRelationshipLink): number => {
+    if (link.type === 'parent') {
+      const h = normalizeAltarHonorific(meta(link.relatedTxid)?.title);
+      if (h === 'mr') return 0;
+      if (h === 'mrs') return 1;
+      return 2;
+    }
+    if (link.type === 'spouse') return 3;
+    if (link.type === 'child') return 4;
+    return 5;
+  };
+  return [...links].sort((a, b) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    if (a.type === 'child' && b.type === 'child') {
+      const ya = birthYearSortKey(meta(a.relatedTxid)?.birthYear);
+      const yb = birthYearSortKey(meta(b.relatedTxid)?.birthYear);
+      if (ya != null && yb != null && ya !== yb) return ya - yb;
+      if (ya != null && yb == null) return -1;
+      if (ya == null && yb != null) return 1;
+    }
+    return a.relatedTxid.localeCompare(b.relatedTxid);
+  });
 }
 
 /**
@@ -527,10 +612,11 @@ function joinAltarParts(parts: string[]): string {
  * Omits trailing empty fields. Throws if required fields missing.
  * Always writes the title slot first (may be empty) so readers detect new wire.
  *
- * Relationship may be included when it fits. Fit order prefers keeping place
- * text on the root: drop funeral → remembrance note → relationship → places →
- * birth year. Prefer setting relationship via {@link encodeRelationshipNote}
- * as a separate star fragment when the root is already large.
+ * Relationship may be included when it fits. Fit order prefers keeping the
+ * relationship link on the root (living setups often fill long place text):
+ * drop funeral → remembrance note → places → relationship → birth year.
+ * Prefer {@link encodeRelationshipNote} as a separate star fragment when the
+ * root would otherwise lose places or the link still cannot fit.
  */
 export function encodeAltarNote(
   fields: AltarFields,
@@ -573,14 +659,14 @@ export function encodeAltarNote(
       note = '';
     },
     () => {
-      relType = '';
-      relTxid = '';
-    },
-    () => {
       deathPlace = '';
     },
     () => {
       birthPlace = '';
+    },
+    () => {
+      relType = '';
+      relTxid = '';
     },
     () => {
       birthYear = '';

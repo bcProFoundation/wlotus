@@ -39,8 +39,11 @@ import {
   altarHasDeathDate,
   altarRelationships,
   MEMORIAL_NOTE_MAX_CHARS,
+  normalizeAltarRelatedTxid,
+  normalizeAltarRelationshipType,
   parseAltarNote,
   type AltarFields,
+  type AltarRelationshipType,
 } from './lib/altarFields.js';
 import {
   cancelOfferChallenge,
@@ -268,6 +271,8 @@ export default function App() {
     altar?: AltarFields | null;
     /** Optional remembrance words on a re-offer (on-chain DANA v2 note). */
     extraNote?: string;
+    /** Related-altar labels/titles for relationship rows during the session. */
+    relatedOptions?: RelatedAltarOption[];
   } | null>(null);
   /** Confirm before closing an active offer session (X / Cancel). */
   const [cancelLoseConfirm, setCancelLoseConfirm] = useState(false);
@@ -288,6 +293,17 @@ export default function App() {
   const pendingBurnTokenRef = useRef<string | null>(null);
   /** Bumps on cancel / new offer so a stale offer's finally cannot clobber UI. */
   const offerGenRef = useRef(0);
+  /**
+   * After a root setup burn, if the relationship did not fit on the root note
+   * (or would have forced dropping places), queue a relationship star fragment.
+   */
+  const pendingRelationshipFollowUpRef = useRef<{
+    parentBurnTxid: string;
+    relationshipType: Exclude<AltarRelationshipType, ''>;
+    relatedTxid: string;
+    displayNote: string;
+    altar: AltarFields;
+  } | null>(null);
   /** Active elapsed (pauses when tab/app hidden; survives tip retries). */
   const elapsedClockRef = useRef(new MineElapsedClock());
   const tipMsgClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -535,6 +551,7 @@ export default function App() {
     const pendingToken = pendingBurnTokenRef.current;
     offerGenRef.current += 1;
     challengeIdRef.current = null;
+    pendingRelationshipFollowUpRef.current = null;
     clearPendingMemorial();
     clearRememberedChallenge();
     abortRef.current?.abort();
@@ -575,6 +592,8 @@ export default function App() {
      * `relationship` = link only; `death` = death date for a living profile.
      */
     amend?: boolean | 'relationship' | 'death';
+    /** Related-altar meta for session AltarDetails (names + honorifics). */
+    relatedOptions?: RelatedAltarOption[];
   }) {
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
     const amendKind =
@@ -637,11 +656,62 @@ export default function App() {
         (opts?.displayNote ?? '').trim() ||
         t('offeringFallback');
     } else if (activeAltar) {
+      const maxBytes = memorialNoteMaxBytes(Boolean(parentBurnTxid));
+      const wantedType = normalizeAltarRelationshipType(
+        activeAltar.relationshipType,
+      );
+      const wantedTxid = normalizeAltarRelatedTxid(activeAltar.relatedTxid);
+      const wantsRel = Boolean(wantedType && wantedTxid);
+      const rootOnly: AltarFields = {
+        ...activeAltar,
+        relationshipType: '',
+        relatedTxid: '',
+      };
       try {
-        challengeNote = encodeAltarNote(activeAltar, {
-          maxBytes: memorialNoteMaxBytes(Boolean(parentBurnTxid)),
-        });
+        const packedRoot = encodeAltarNote(rootOnly, { maxBytes });
+        let usePacked = packedRoot;
+        let queueRelFollowUp = false;
+        if (wantsRel) {
+          const withRel = encodeAltarNote(activeAltar, { maxBytes });
+          const parsedRel = parseAltarNote(withRel);
+          const relKept =
+            parsedRel?.relationshipType === wantedType &&
+            parsedRel?.relatedTxid === wantedTxid;
+          if (relKept) {
+            const rootParsed = parseAltarNote(packedRoot);
+            const placesLost =
+              (rootParsed?.deathPlace || '') !==
+                (parsedRel?.deathPlace || '') ||
+              (rootParsed?.birthPlace || '') !==
+                (parsedRel?.birthPlace || '') ||
+              (rootParsed?.funeralPlace || '') !==
+                (parsedRel?.funeralPlace || '') ||
+              (rootParsed?.note || '') !== (parsedRel?.note || '');
+            if (placesLost) {
+              // Keep full places on the root; link via star fragment next.
+              queueRelFollowUp = true;
+            } else {
+              usePacked = withRel;
+            }
+          } else {
+            queueRelFollowUp = true;
+          }
+        }
+        challengeNote = usePacked;
+        if (queueRelFollowUp && wantedType && wantedTxid) {
+          // parentBurnTxid filled after the root burn succeeds.
+          pendingRelationshipFollowUpRef.current = {
+            parentBurnTxid: '',
+            relationshipType: wantedType,
+            relatedTxid: wantedTxid,
+            displayNote: '',
+            altar: activeAltar,
+          };
+        } else {
+          pendingRelationshipFollowUpRef.current = null;
+        }
       } catch (e) {
+        pendingRelationshipFollowUpRef.current = null;
         const raw = e instanceof Error ? e.message : '';
         const overBudget = raw.includes('OP_RETURN budget');
         setMsg({
@@ -657,6 +727,9 @@ export default function App() {
       historyNote =
         formatAltarPersonName(activeAltar, locale) ||
         memorialDisplayName(challengeNote, locale);
+      if (pendingRelationshipFollowUpRef.current) {
+        pendingRelationshipFollowUpRef.current.displayNote = historyNote;
+      }
     } else {
       challengeNote = note.trim();
       historyNote = note.trim();
@@ -664,14 +737,23 @@ export default function App() {
 
     setDedicationSheet(null);
     setCancelLoseConfirm(false);
+    const sessionAltar =
+      isReoffer
+        ? (opts?.altar ?? null)
+        : activeAltar
+          ? {
+              ...activeAltar,
+              // Fold draft singular link into relationships so session UI shows it.
+              relationships: altarRelationships(activeAltar),
+            }
+          : null;
     setSession({
       reoffer: isReoffer,
       setup: !isReoffer && !isAmend,
       note: historyNote,
-      altar: isReoffer
-        ? (opts?.altar ?? null)
-        : activeAltar,
+      altar: sessionAltar,
       extraNote: extraNote || undefined,
+      relatedOptions: opts?.relatedOptions,
     });
     setLinkedParentBurnTxid(null);
 
@@ -913,6 +995,27 @@ export default function App() {
               next.set(burnTxid.trim().toLowerCase(), true);
               return next;
             });
+            const follow = pendingRelationshipFollowUpRef.current;
+            if (follow && !follow.parentBurnTxid) {
+              pendingRelationshipFollowUpRef.current = {
+                ...follow,
+                parentBurnTxid: burnTxid,
+              };
+            }
+          } else if (isAmend && amendKind === 'relationship') {
+            pendingRelationshipFollowUpRef.current = null;
+            // Open profile/Ban thờ from local burns so the new link shows
+            // immediately (dana-index may lag by minutes).
+            if (parentBurnTxid) {
+              const root = parentBurnTxid;
+              const note = historyNote;
+              queueMicrotask(() => {
+                void openDedicationSheet({
+                  parentBurnTxid: root,
+                  memorialNote: note,
+                });
+              });
+            }
           }
           setNote('');
           setAltar(null);
@@ -954,6 +1057,9 @@ export default function App() {
             return;
           }
           setMsg({ kind: 'err', text: errMsg });
+          if (!pendingRelationshipFollowUpRef.current?.parentBurnTxid) {
+            pendingRelationshipFollowUpRef.current = null;
+          }
           return;
         } finally {
           if (tipWatch) clearInterval(tipWatch);
@@ -966,6 +1072,23 @@ export default function App() {
         setMineStartedAt(null);
         setSession(null);
         if (abortRef.current === ac) abortRef.current = null;
+        const follow = pendingRelationshipFollowUpRef.current;
+        if (follow?.parentBurnTxid) {
+          pendingRelationshipFollowUpRef.current = null;
+          queueMicrotask(() => {
+            void onOffer({
+              parentBurnTxid: follow.parentBurnTxid,
+              displayNote: follow.displayNote,
+              altar: {
+                ...follow.altar,
+                relationshipType: follow.relationshipType,
+                relatedTxid: follow.relatedTxid,
+              },
+              amend: 'relationship',
+              relatedOptions: relatedAltarOptions,
+            });
+          });
+        }
       }
     }
   }
@@ -1049,12 +1172,20 @@ export default function App() {
       if (byTxid.has(link.relatedTxid)) continue;
       try {
         const g = await fetchIndexMemorial(link.relatedTxid);
+        const fields = pickDisplayAltarFields(g);
         const label =
-          memorialDisplayName(
-            g.originalNote || g.latestNote || '',
-            locale,
-          ) || t('altarViewRelated');
-        byTxid.set(link.relatedTxid, { txid: link.relatedTxid, label });
+          (fields
+            ? formatAltarPersonName(fields, locale)
+            : memorialDisplayName(
+                g.originalNote || g.latestNote || '',
+                locale,
+              )) || t('altarViewRelated');
+        byTxid.set(link.relatedTxid, {
+          txid: link.relatedTxid,
+          label,
+          title: fields?.title,
+          birthYear: fields?.birthYear,
+        });
       } catch {
         byTxid.set(link.relatedTxid, {
           txid: link.relatedTxid,
@@ -1071,38 +1202,54 @@ export default function App() {
     memorialNote: string;
   }) {
     let memorialNote = opts.memorialNote;
-    let altar: AltarFields | null = null;
+    const rootId = opts.parentBurnTxid.trim().toLowerCase();
+    const localGroup = () =>
+      groupOffersByOriginal(loadOffers()).find(
+        g => g.original.burnTxid.trim().toLowerCase() === rootId,
+      );
+    const resolveLocal = (note: string): AltarFields => {
+      const g = localGroup();
+      return g ? altarFromOfferGroup(g) : altarFromMemorialNote(note);
+    };
+
+    // Show device burns immediately (relationship fragments are local before
+    // dana-index catches up — often minutes later).
+    let resolved = resolveLocal(memorialNote);
+    let isCreator =
+      isLocalCreatedRoot(rootId) || creatorByRoot.get(rootId) === true;
+    setDedicationSheet({
+      parentBurnTxid: opts.parentBurnTxid,
+      altar: resolved,
+      extraNote: '',
+      relatedOptions: relatedAltarOptions,
+      isCreator,
+    });
+
     try {
       const remote = await fetchIndexMemorial(opts.parentBurnTxid);
+      // Union into localStorage — keeps device-only relationship / death
+      // fragments that the index has not indexed yet.
       persistMemorialSync(remote);
-      altar = pickDisplayAltarFields(remote);
-      if (!altar) {
-        const remoteNote = pickDisplayAltarNote(remote);
-        if (
-          remoteNote &&
-          (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
-        ) {
-          memorialNote = remoteNote;
-        }
-      }
+      resolved = resolveLocal(memorialNote);
     } catch {
       // Test / offline index: still hydrate full Ban thờ from chain.
       try {
         const { lookupDedication } = await import('./lib/lookupDedication.js');
         const d = await lookupDedication(opts.parentBurnTxid);
         const chainNote = d.note.trim();
-        if (chainNote) memorialNote = chainNote;
+        if (chainNote) {
+          memorialNote = chainNote;
+          if (!localGroup()) resolved = altarFromMemorialNote(memorialNote);
+        }
       } catch {
-        /* keep local note */
+        /* keep local */
       }
     }
-    const resolved = altar ?? altarFromMemorialNote(memorialNote);
+
     const relatedOptions = await resolveRelatedOptions(
       resolved,
       relatedAltarOptions,
     );
-    const rootId = opts.parentBurnTxid.trim().toLowerCase();
-    let isCreator = isLocalCreatedRoot(rootId) || creatorByRoot.get(rootId) === true;
     try {
       const own = await fetchRootCreator({
         installId,
@@ -1117,13 +1264,17 @@ export default function App() {
     } catch {
       /* offline mint-api — local cache only */
     }
-    setDedicationSheet({
-      parentBurnTxid: opts.parentBurnTxid,
-      altar: resolved,
-      extraNote: '',
-      relatedOptions,
-      isCreator,
-    });
+    setDedicationSheet(prev =>
+      prev &&
+      prev.parentBurnTxid.trim().toLowerCase() === rootId
+        ? {
+            ...prev,
+            altar: resolved,
+            relatedOptions,
+            isCreator,
+          }
+        : prev,
+    );
   }
 
   /** Follow a relationship link (Spouse / Parent / Child) to the linked altar. */
@@ -1252,10 +1403,15 @@ export default function App() {
    * txid entry) — simpler and keeps the link to something the user actually
    * offered to. See docs/ALTAR.md "Relationships — open for now, restrict later".
    */
-  const relatedAltarOptions = recentGroups.map(g => ({
-    txid: g.original.burnTxid,
-    label: memorialDisplayName(g.note, locale) || t('offeringFallback'),
-  }));
+  const relatedAltarOptions = recentGroups.map(g => {
+    const a = altarFromOfferGroup(g);
+    return {
+      txid: g.original.burnTxid,
+      label: memorialDisplayName(g.note, locale) || t('offeringFallback'),
+      title: a.title,
+      birthYear: a.birthYear,
+    };
+  });
 
   function removeRecentGroup(g: OfferGroup) {
     const root = g.original.burnTxid;
@@ -1706,7 +1862,10 @@ export default function App() {
             setNote(fields.note);
             setLinkedParentBurnTxid(null);
             setAltarOpen(false);
-            void onOffer({ altar: fields });
+            void onOffer({
+              altar: fields,
+              relatedOptions: relatedAltarOptions,
+            });
           }}
         />
       ) : null}
@@ -1870,6 +2029,11 @@ export default function App() {
           onOffer={fields => {
             const parentBurnTxid = amendSheet.parentBurnTxid;
             const kind = amendSheet.kind;
+            const sessionRelatedOptions = (
+              dedicationSheet?.parentBurnTxid === amendSheet.parentBurnTxid
+                ? dedicationSheet.relatedOptions
+                : relatedAltarOptions
+            ).filter(o => o.txid !== amendSheet.parentBurnTxid);
             setAmendSheet(null);
             setDedicationSheet(null);
             if (kind === 'death') {
@@ -1885,6 +2049,7 @@ export default function App() {
                   funeralPlace: fields.funeralPlace,
                 },
                 amend: 'death',
+                relatedOptions: sessionRelatedOptions,
               });
               return;
             }
@@ -1899,6 +2064,7 @@ export default function App() {
                 relatedTxid: fields.relatedTxid,
               },
               amend: 'relationship',
+              relatedOptions: sessionRelatedOptions,
             });
           }}
         />
@@ -1992,7 +2158,12 @@ export default function App() {
                     ? t('profileLabel')
                     : t('altarLabel')}
                 </p>
-                <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
+                <AltarDetails
+                  altar={session.altar}
+                  relatedAltarOptions={
+                    session.relatedOptions ?? relatedAltarOptions
+                  }
+                />
               </>
             ) : (
               <p className="offer-session-note offer-session-original">
@@ -2090,7 +2261,12 @@ export default function App() {
                     ? t('profileLabel')
                     : t('altarLabel')}
                 </p>
-                <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
+                <AltarDetails
+                  altar={session.altar}
+                  relatedAltarOptions={
+                    session.relatedOptions ?? relatedAltarOptions
+                  }
+                />
               </>
             ) : (
               <>

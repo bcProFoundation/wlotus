@@ -172,10 +172,12 @@ binding limit is eCash’s **OP_RETURN script ≤ 223 bytes** for the full burn
 | Root dedication | v1 | `MEMORIAL_NOTE_MAX_BYTES` (**150**) |
 | Amend / re-offer (parent txid) | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**120**) |
 
-`encodeAltarNote` packs the **root** dedication. Fit order prefers keeping
-places on the root (drop funeral → remembrance note → relationship → places).
-Prefer `encodeRelationshipNote` as a separate star fragment when the root is
-already large.
+`encodeAltarNote` packs the **root** dedication. Fit order prefers keeping the
+relationship link on the root (living setups often fill long place text): drop
+funeral → remembrance note → places → relationship → birth year. Prefer
+`encodeRelationshipNote` as a separate star fragment when packing the link would
+drop places, or when the link still cannot fit — the web client auto-queues that
+follow-up burn after a successful root setup.
 
 Star fragments under a root:
 
