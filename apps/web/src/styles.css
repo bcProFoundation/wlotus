@@ -107,7 +107,7 @@ a {
 
 .brand {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 7vw, 3.8rem);
+  font-size: clamp(2.6rem, 7vw, 3.8rem);
   font-weight: 600;
   letter-spacing: -0.03em;
   margin: 0;
