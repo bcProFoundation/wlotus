@@ -1,5 +1,10 @@
 /** Client for the DANA memorial index (`/index-api`). */
 
+import {
+  altarSearchRelevance,
+  memorialDisplayName,
+} from './altarFields.js';
+
 export interface IndexBurn {
   burnTxid: string;
   tokenId: string;
@@ -91,6 +96,35 @@ export async function fetchIndexMemorial(
   return body;
 }
 
+/** Client-side rank over `/api/recent` when `/api/search` is not deployed yet. */
+function searchViaRecentGroups(
+  groups: IndexMemorialGroup[],
+  query: string,
+  limit: number,
+): IndexMemorialGroup[] {
+  const q = query.trim();
+  if (!q) return [];
+  const scored = groups
+    .map(group => {
+      const name =
+        memorialDisplayName(group.originalNote) || group.originalNote.trim();
+      return { group, tier: altarSearchRelevance(name, q) };
+    })
+    .filter(x => x.tier > 0);
+
+  scored.sort((a, b) => {
+    if (a.tier !== b.tier) return b.tier - a.tier;
+    if (a.group.totalBurns !== b.group.totalBurns) {
+      return b.group.totalBurns - a.group.totalBurns;
+    }
+    return Date.parse(b.group.at) - Date.parse(a.group.at);
+  });
+
+  return scored
+    .slice(0, Math.max(1, Math.min(50, limit)))
+    .map(x => x.group);
+}
+
 /** Search named star roots by display name — ranked server-side (see dana-index). */
 export async function searchIndexMemorials(
   query: string,
@@ -106,6 +140,11 @@ export async function searchIndexMemorials(
     items?: IndexMemorialGroup[];
     error?: string;
   }>(res);
+  if (res.status === 404) {
+    // Older deployed dana-index without GET /api/search — rank /api/recent instead.
+    const recent = await fetchIndexRecent(200);
+    return searchViaRecentGroups(recent, q, limit);
+  }
   if (!res.ok || body.ok === false) {
     throw new Error(body.error || `Index search ${res.status}`);
   }
