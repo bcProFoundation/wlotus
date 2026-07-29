@@ -44,7 +44,7 @@ in the note field may be truncated/dropped to fit OP_RETURN). It does **not**
 re-pack name / places / dates — those live on the root and do not change.
 
 **Multiple links (add-only):** each relationship fragment adds one link.
-Spouse and parent may repeat; **child is capped at 2**. Duplicates
+Child and spouse may repeat; **parent (Cha/mẹ) is capped at 2**. Duplicates
 (same type + related txid) are rejected in the UI. Deletion is not supported
 yet (a future “mark deleted” burn may land later). The client merges all
 fragments under a star into `AltarFields.relationships` for Ban thờ details.
@@ -140,10 +140,10 @@ title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f dea
 
 Fields 9–10 (`relationshipType` / `relatedTxid`, see `src/offering/altarFields.ts`)
 link this altar to another WLotus altar by its original dedication burn
-txid. `parent` / `child` describe **this** altar's role relative to the
-linked one (e.g. `child` = "this person is the child of the linked altar");
-`spouse` is symmetric. On the wire, relationship type is packed as a
-one-letter code (`s` / `p` / `c`); readers still accept the long forms
+txid. Each type is the **related** person's role toward this memorial:
+`parent` = Cha/mẹ, `child` = Con, `spouse` = Vợ/Chồng (UI labels wife vs
+husband from this altar's honorific). On the wire, relationship type is packed
+as a one-letter code (`s` / `p` / `c`); readers still accept the long forms
 `spouse` / `parent` / `child`. Notes packed before this pair existed simply
 omit the slots — readers default missing/invalid values to empty, so old
 altars parse unchanged.
