@@ -25,7 +25,7 @@ import {
   remainingOffersToday,
 } from './offer.js';
 import {
-  MEMORIAL_NOTE_MAX_BYTES,
+  memorialNoteMaxBytes,
   truncateUtf8Bytes,
 } from '../../../src/offering/altarFields.js';
 
@@ -203,15 +203,15 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/challenge') {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
-      const note = truncateUtf8Bytes(
-        String(body.note || '').trim(),
-        MEMORIAL_NOTE_MAX_BYTES,
-      );
       const parentRaw = body.parentBurnTxid ?? body.parentBurnTxId;
       const parentBurnTxid =
         parentRaw != null && String(parentRaw).trim()
           ? String(parentRaw).trim()
           : undefined;
+      const note = truncateUtf8Bytes(
+        String(body.note || '').trim(),
+        memorialNoteMaxBytes(Boolean(parentBurnTxid)),
+      );
       const challenge = await enqueueChallenge({
         installId,
         note,

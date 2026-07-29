@@ -57,6 +57,7 @@ export type MessageKey =
   | 'altarErrName'
   | 'altarErrDeathDate'
   | 'altarErrBirthYear'
+  | 'altarErrOpreturn'
   | 'btnAltarSave'
   | 'btnAltarNext'
   | 'btnAltarClear'
@@ -184,6 +185,8 @@ const en: Dict = {
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
   altarErrBirthYear: 'Enter year of birth as YYYY or YYYY-MM-DD.',
+  altarErrOpreturn:
+    'Altar note is too long for the chain. Shorten places or the remembrance note, then try again.',
   btnAltarSave: 'Save',
   btnAltarNext: 'Next',
   btnAltarClear: 'Clear',
@@ -317,6 +320,8 @@ const vi: Dict = {
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
   altarErrBirthYear: 'Năm sinh dạng YYYY hoặc YYYY-MM-DD.',
+  altarErrOpreturn:
+    'Nội dung ban thờ quá dài cho chuỗi khối. Hãy rút gọn nơi chốn hoặc lời tưởng nhớ rồi thử lại.',
   btnAltarSave: 'Lưu',
   btnAltarNext: 'Tiếp',
   btnAltarClear: 'Xoá',
@@ -447,6 +452,7 @@ const zh: Dict = {
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
   altarErrBirthYear: '出生年请用 YYYY 或 YYYY-MM-DD。',
+  altarErrOpreturn: '灵位内容过长，无法上链。请缩短地点或纪念文字后再试。',
   btnAltarSave: '保存',
   btnAltarNext: '下一步',
   btnAltarClear: '清除',

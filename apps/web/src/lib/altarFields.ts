@@ -1,7 +1,9 @@
 export {
   ALTAR_SEP,
   MEMORIAL_NOTE_MAX_BYTES,
+  MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   MEMORIAL_NOTE_MAX_CHARS,
+  OP_RETURN_SCRIPT_MAX_BYTES,
   altarHonorificLabel,
   emptyAltarFields,
   encodeAltarNote,
@@ -10,6 +12,8 @@ export {
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,
+  memorialNoteMaxBytes,
+  mergeAltarFields,
   normalizeAltarHonorific,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
@@ -19,4 +23,5 @@ export {
   type AltarHonorific,
   type AltarLocale,
   type AltarRelationshipType,
+  type EncodeAltarNoteOptions,
 } from '../../../../src/offering/altarFields.js';

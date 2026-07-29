@@ -7,6 +7,10 @@ import {
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,
+  memorialNoteMaxBytes,
+  mergeAltarFields,
+  MEMORIAL_NOTE_MAX_BYTES,
+  MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
   parseAltarNote,
@@ -41,7 +45,7 @@ describe('altarFields', () => {
     expect(formatAltarPersonName(fields, 'zh')).toBe('先生 Cao Lâm Quả');
   });
 
-  it('round-trips a spouse relationship link', () => {
+  it('round-trips a spouse relationship link (compact wire code)', () => {
     const relatedTxid = 'a'.repeat(64);
     const fields: AltarFields = {
       ...emptyAltarFields(),
@@ -51,6 +55,9 @@ describe('altarFields', () => {
       relatedTxid,
     };
     const packed = encodeAltarNote(fields);
+    expect(packed.includes(`${ALTAR_SEP}s${ALTAR_SEP}${relatedTxid}`)).toBe(
+      true,
+    );
     const parsed = parseAltarNote(packed);
     expect(parsed?.relationshipType).toBe('spouse');
     expect(parsed?.relatedTxid).toBe(relatedTxid);
@@ -91,6 +98,9 @@ describe('altarFields', () => {
 
   it('normalizes relationship type and related txid', () => {
     expect(normalizeAltarRelationshipType('SPOUSE')).toBe('spouse');
+    expect(normalizeAltarRelationshipType('s')).toBe('spouse');
+    expect(normalizeAltarRelationshipType('p')).toBe('parent');
+    expect(normalizeAltarRelationshipType('c')).toBe('child');
     expect(normalizeAltarRelationshipType('sibling')).toBe('');
     expect(normalizeAltarRelationshipType(undefined)).toBe('');
     const hex = 'c'.repeat(64);
@@ -211,5 +221,77 @@ describe('altarFields', () => {
     const s = 'á'.repeat(100);
     const out = truncateUtf8Bytes(s, 10);
     expect(new TextEncoder().encode(out).length).toBeLessThanOrEqual(10);
+  });
+
+  it('drops optional places to fit OP_RETURN amend budget with a relationship', () => {
+    const relatedTxid = 'f'.repeat(64);
+    const fields: AltarFields = {
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      note: '',
+      birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
+      birthYear: '1945-09-02',
+      deathDate: '2001-12-04',
+      deathPlace: 'Hải Cảng, Quy Nhơn, Bình Định',
+      funeralPlace: '',
+      relationshipType: 'spouse',
+      relatedTxid,
+    };
+    const packed = encodeAltarNote(fields, {
+      maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+    });
+    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
+      MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+    );
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.relationshipType).toBe('spouse');
+    expect(parsed.relatedTxid).toBe(relatedTxid);
+    expect(parsed.name).toBe('Cao Lâm Quả');
+    expect(parsed.deathDate).toBe('2001-12-04');
+    // Places dropped so the link fits under the amend budget.
+    expect(parsed.deathPlace).toBe('');
+  });
+
+  it('merges a trimmed relationship amend with the richer root note', () => {
+    const relatedTxid = 'a'.repeat(64);
+    const root = encodeAltarNote({
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      note: '',
+      birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
+      birthYear: '1945-09-02',
+      deathDate: '2001-12-04',
+      deathPlace: 'Hải Cảng, Quy Nhơn, Bình Định',
+      funeralPlace: '',
+      relationshipType: '',
+      relatedTxid: '',
+    });
+    const amend = encodeAltarNote(
+      {
+        title: 'mr',
+        name: 'Cao Lâm Quả',
+        note: '',
+        birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
+        birthYear: '1945-09-02',
+        deathDate: '2001-12-04',
+        deathPlace: 'Hải Cảng, Quy Nhơn, Bình Định',
+        funeralPlace: '',
+        relationshipType: 'spouse',
+        relatedTxid,
+      },
+      { maxBytes: memorialNoteMaxBytes(true) },
+    );
+    const merged = mergeAltarFields([amend, root]);
+    expect(merged?.relationshipType).toBe('spouse');
+    expect(merged?.relatedTxid).toBe(relatedTxid);
+    expect(merged?.deathPlace).toBe('Hải Cảng, Quy Nhơn, Bình Định');
+    expect(merged?.birthPlace).toBe('Mỹ Thành, Phù Mỹ, Bình Định');
+  });
+
+  it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {
+    expect(MEMORIAL_NOTE_MAX_BYTES).toBe(150);
+    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
+    expect(memorialNoteMaxBytes(false)).toBe(150);
+    expect(memorialNoteMaxBytes(true)).toBe(120);
   });
 });

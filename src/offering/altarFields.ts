@@ -15,6 +15,9 @@
  * `relationshipType` / `relatedTxid` link this altar to another WLotus altar
  * (its original dedication burn txid): `spouse` | `parent` | `child`, where
  * `parent`/`child` describe THIS altar's role relative to the linked one.
+ * On the wire, relationship type is packed as a one-letter code (`s`/`p`/`c`)
+ * to save OP_RETURN budget; readers still accept the long forms.
+ *
  * Writing / amending this pair is intentionally left OPEN (any device, at
  * setup or later via a star-fragment burn under the same root) — see
  * docs/ALTAR.md § "Relationships — open for now, restrict later" for the
@@ -24,9 +27,29 @@
 
 export const ALTAR_SEP = '\u001f';
 
-/** Soft UI / mint cap — EMPP noteLen is u8 (max 255 UTF-8 bytes). */
+/**
+ * eCash standard relay policy: max OP_RETURN *script* size (bytes).
+ * ALP BURN + DANA memorial EMPP must fit under this.
+ */
+export const OP_RETURN_SCRIPT_MAX_BYTES = 223;
+
+/**
+ * Max UTF-8 bytes for the DANA memorial *note* so the full burn OP_RETURN
+ * (ALP BURN + DANA EMPP, offeringId `wlotus`) stays ≤ 223.
+ *
+ * Empirically measured with ecash-lib `emppScript([alpBurn, memorial])`:
+ *   - DANA v1 (root, no parent): note ≤ 157
+ *   - DANA v2 (amend / re-offer with 32-byte parent): note ≤ 124
+ *
+ * Soft caps leave a small margin under those ceilings.
+ * EMPP `noteLen` is still a u8 (max 255) — the OP_RETURN limit binds first.
+ */
+export const MEMORIAL_NOTE_MAX_BYTES = 150;
+/** Stricter note budget when DANA v2 embeds a parent burn txid. */
+export const MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT = 120;
+
+/** Soft UI cap for the free-text quick-offer note (characters). */
 export const MEMORIAL_NOTE_MAX_CHARS = 200;
-export const MEMORIAL_NOTE_MAX_BYTES = 220;
 
 /** On-chain honorific codes (render via locale in the UI / OG). */
 export type AltarHonorific = '' | 'mr' | 'mrs';
@@ -81,6 +104,16 @@ function scrub(raw: string): string {
   return raw.replaceAll(ALTAR_SEP, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function utf8ByteLength(raw: string): number {
+  return new TextEncoder().encode(raw).length;
+}
+
+export function memorialNoteMaxBytes(hasParentBurnTxid: boolean): number {
+  return hasParentBurnTxid
+    ? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT
+    : MEMORIAL_NOTE_MAX_BYTES;
+}
+
 export function normalizeAltarHonorific(
   raw: string | null | undefined,
 ): AltarHonorific {
@@ -93,7 +126,17 @@ export function normalizeAltarRelationshipType(
   raw: string | null | undefined,
 ): AltarRelationshipType {
   const t = (raw || '').trim().toLowerCase();
-  if (t === 'spouse' || t === 'parent' || t === 'child') return t;
+  if (t === 'spouse' || t === 's') return 'spouse';
+  if (t === 'parent' || t === 'p') return 'parent';
+  if (t === 'child' || t === 'c') return 'child';
+  return '';
+}
+
+/** Compact on-wire relationship code (saves OP_RETURN bytes vs long words). */
+function wireRelationshipType(t: AltarRelationshipType): string {
+  if (t === 'spouse') return 's';
+  if (t === 'parent') return 'p';
+  if (t === 'child') return 'c';
   return '';
 }
 
@@ -184,6 +227,38 @@ export function parseAltarNote(raw: string): AltarFields | null {
 }
 
 /**
+ * Merge altar-packed notes (latest-first). For each field, keep the first
+ * non-empty value so a size-trimmed relationship amend can omit places and
+ * still display birth/death place from the original root burn.
+ */
+export function mergeAltarFields(
+  notes: Iterable<string>,
+): AltarFields | null {
+  let merged: AltarFields | null = null;
+  for (const raw of notes) {
+    const parsed = parseAltarNote(raw);
+    if (!parsed) continue;
+    if (!merged) {
+      merged = { ...parsed };
+      continue;
+    }
+    merged = {
+      title: merged.title || parsed.title,
+      name: merged.name || parsed.name,
+      note: merged.note || parsed.note,
+      birthPlace: merged.birthPlace || parsed.birthPlace,
+      birthYear: merged.birthYear || parsed.birthYear,
+      deathDate: merged.deathDate || parsed.deathDate,
+      deathPlace: merged.deathPlace || parsed.deathPlace,
+      funeralPlace: merged.funeralPlace || parsed.funeralPlace,
+      relationshipType: merged.relationshipType || parsed.relationshipType,
+      relatedTxid: merged.relatedTxid || parsed.relatedTxid,
+    };
+  }
+  return merged;
+}
+
+/**
  * Display name for Recent / share labels.
  * Packed altar → titled name (fallback note); plain note → as-is.
  */
@@ -252,28 +327,97 @@ export function truncateUtf8Bytes(raw: string, maxBytes: number): string {
   return out;
 }
 
+export type EncodeAltarNoteOptions = {
+  /**
+   * Max UTF-8 note bytes. Defaults to {@link MEMORIAL_NOTE_MAX_BYTES}.
+   * Use {@link memorialNoteMaxBytes}(true) when the burn will carry a DANA v2
+   * parent (amend / re-offer under a star).
+   */
+  maxBytes?: number;
+};
+
+function joinAltarParts(parts: string[]): string {
+  const out = [...parts];
+  while (out.length > 2 && !out[out.length - 1]) out.pop();
+  return out.join(ALTAR_SEP);
+}
+
 /**
  * Pack altar fields for the DANA memorial note.
  * Omits trailing empty fields. Throws if required fields missing.
  * Always writes the title slot first (may be empty) so readers detect new wire.
+ *
+ * Fits within `maxBytes` by dropping optional fields (funeral → note → death
+ * place → birth place → birth year) before touching name / deathDate /
+ * relationship. Never mid-truncates `relatedTxid` (that would corrupt the link).
  */
-export function encodeAltarNote(fields: AltarFields): string {
+export function encodeAltarNote(
+  fields: AltarFields,
+  opts?: EncodeAltarNoteOptions,
+): string {
   const err = validateAltarFields(fields);
   if (err) throw new Error(`invalid altar field: ${err}`);
 
-  const parts = [
-    normalizeAltarHonorific(fields.title),
-    scrub(fields.name),
-    scrub(fields.note),
-    scrub(fields.birthPlace),
-    scrub(fields.birthYear),
-    scrub(fields.deathDate),
-    scrub(fields.deathPlace),
-    scrub(fields.funeralPlace),
-    normalizeAltarRelationshipType(fields.relationshipType),
-    normalizeAltarRelatedTxid(fields.relatedTxid),
+  const maxBytes = opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES;
+  const title = normalizeAltarHonorific(fields.title);
+  const name = scrub(fields.name);
+  const deathDate = scrub(fields.deathDate);
+  const relType = normalizeAltarRelationshipType(fields.relationshipType);
+  const relTxid = normalizeAltarRelatedTxid(fields.relatedTxid);
+  const relWire = wireRelationshipType(relType);
+
+  let note = scrub(fields.note);
+  let birthPlace = scrub(fields.birthPlace);
+  let birthYear = scrub(fields.birthYear);
+  let deathPlace = scrub(fields.deathPlace);
+  let funeralPlace = scrub(fields.funeralPlace);
+
+  const pack = (): string =>
+    joinAltarParts([
+      title,
+      name,
+      note,
+      birthPlace,
+      birthYear,
+      deathDate,
+      deathPlace,
+      funeralPlace,
+      relWire,
+      relTxid,
+    ]);
+
+  // Drop whole optional fields first so a later merge can restore them from
+  // an earlier (richer) burn under the same star — mid-truncation would
+  // block that fallback.
+  const dropOrder: Array<() => void> = [
+    () => {
+      funeralPlace = '';
+    },
+    () => {
+      note = '';
+    },
+    () => {
+      deathPlace = '';
+    },
+    () => {
+      birthPlace = '';
+    },
+    () => {
+      birthYear = '';
+    },
   ];
-  while (parts.length > 2 && !parts[parts.length - 1]) parts.pop();
-  const packed = parts.join(ALTAR_SEP);
-  return truncateUtf8Bytes(packed, MEMORIAL_NOTE_MAX_BYTES);
+
+  let packed = pack();
+  for (const drop of dropOrder) {
+    if (utf8ByteLength(packed) <= maxBytes) break;
+    drop();
+    packed = pack();
+  }
+
+  if (utf8ByteLength(packed) > maxBytes) {
+    throw new Error(
+      `altar note exceeds OP_RETURN budget (${utf8ByteLength(packed)} > ${maxBytes} bytes)`,
+    );
+  }
+  return packed;
 }

@@ -32,6 +32,8 @@ import {
   formatAltarPersonName,
   isAltarPackedNote,
   memorialDisplayName,
+  memorialNoteMaxBytes,
+  mergeAltarFields,
   MEMORIAL_NOTE_MAX_CHARS,
   parseAltarNote,
   type AltarFields,
@@ -571,9 +573,17 @@ export default function App() {
       historyNote = (opts?.displayNote ?? '').trim();
     } else if (activeAltar) {
       try {
-        challengeNote = encodeAltarNote(activeAltar);
-      } catch {
-        setMsg({ kind: 'err', text: t('altarErrDeathDate') });
+        // Amend / star burns carry DANA v2 parent → tighter OP_RETURN budget.
+        challengeNote = encodeAltarNote(activeAltar, {
+          maxBytes: memorialNoteMaxBytes(Boolean(parentBurnTxid)),
+        });
+      } catch (e) {
+        const overBudget =
+          e instanceof Error && e.message.includes('OP_RETURN budget');
+        setMsg({
+          kind: 'err',
+          text: overBudget ? t('altarErrOpreturn') : t('altarErrDeathDate'),
+        });
         return;
       }
       historyNote =
@@ -911,10 +921,26 @@ export default function App() {
   }
 
   /**
-   * Prefer the most recent altar-packed burn under a star (an amendment,
-   * e.g. one that added/edited a relationship) over the original note, so
-   * later edits actually show up. `remote.burns` is latest-first.
+   * Merge altar-packed burns under a star (latest-first). Relationship
+   * amends may omit long place fields to fit OP_RETURN; merging restores
+   * places from the original root while keeping the latest link.
+   * `remote.burns` is latest-first.
    */
+  function pickDisplayAltarFields(
+    remote: IndexMemorialGroup,
+  ): AltarFields | null {
+    const notes: string[] = [];
+    for (const b of remote.burns) {
+      const n = (b.note || '').trim();
+      if (n) notes.push(n);
+    }
+    const original = (remote.originalNote || '').trim();
+    if (original) notes.push(original);
+    const latest = (remote.latestNote || '').trim();
+    if (latest) notes.push(latest);
+    return mergeAltarFields(notes);
+  }
+
   function pickDisplayAltarNote(remote: IndexMemorialGroup): string {
     for (const b of remote.burns) {
       const n = (b.note || '').trim();
@@ -929,15 +955,19 @@ export default function App() {
     memorialNote: string;
   }) {
     let memorialNote = opts.memorialNote;
+    let altar: AltarFields | null = null;
     try {
       const remote = await fetchIndexMemorial(opts.parentBurnTxid);
       persistMemorialSync(remote);
-      const remoteNote = pickDisplayAltarNote(remote);
-      if (
-        remoteNote &&
-        (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
-      ) {
-        memorialNote = remoteNote;
+      altar = pickDisplayAltarFields(remote);
+      if (!altar) {
+        const remoteNote = pickDisplayAltarNote(remote);
+        if (
+          remoteNote &&
+          (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
+        ) {
+          memorialNote = remoteNote;
+        }
       }
     } catch {
       // Test / offline index: still hydrate full Ban thờ from chain.
@@ -952,7 +982,7 @@ export default function App() {
     }
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
-      altar: altarFromMemorialNote(memorialNote),
+      altar: altar ?? altarFromMemorialNote(memorialNote),
       extraNote: '',
     });
   }
