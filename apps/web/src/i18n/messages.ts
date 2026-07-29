@@ -143,7 +143,7 @@ type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
   brand: 'White Lotus',
-  tagline: 'Offer an eternal lotus in remembrance of someone who has passed.',
+  tagline: 'Offer a lotus of remembrance in eternity.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
@@ -301,7 +301,7 @@ const en: Dict = {
 
 const vi: Dict = {
   brand: 'White Lotus',
-  tagline: 'Dâng một đóa sen vĩnh hằng tưởng nhớ người đã khuất.',
+  tagline: 'Dâng một đóa sen tưởng nhớ trong vĩnh hằng.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
@@ -458,7 +458,7 @@ const vi: Dict = {
 
 const zh: Dict = {
   brand: 'White Lotus',
-  tagline: '献上一朵永恒莲花，纪念逝去的亲人。',
+  tagline: '献上一朵追思之莲，寄于永恒。',
   offerTitle: '献花',
   hintPrayMine:
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',
