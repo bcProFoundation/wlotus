@@ -65,7 +65,19 @@ export type AltarHonorific = '' | 'mr' | 'mrs';
  */
 export type AltarRelationshipType = '' | 'spouse' | 'parent' | 'child';
 
+/** Non-empty relationship kinds used in link lists. */
+export type AltarRelationshipKind = Exclude<AltarRelationshipType, ''>;
+
 export type AltarLocale = 'vi' | 'en' | 'zh';
+
+/** One on-chain relationship link (spouse / parent / child → related altar). */
+export interface AltarRelationshipLink {
+  type: AltarRelationshipKind;
+  relatedTxid: string;
+}
+
+/** Soft cap — child links only. Spouse and parent are unlimited for now. */
+export const MAX_CHILD_RELATIONSHIPS = 2;
 
 export interface AltarFields {
   /** Mr. / Mrs. — stored as `mr` | `mrs` (optional). */
@@ -84,10 +96,17 @@ export interface AltarFields {
   deathDate: string;
   deathPlace: string;
   funeralPlace: string;
-  /** Optional link to another altar (see AltarRelationshipType above). */
+  /**
+   * Draft / single-note wire slots (one link per packed note). Prefer
+   * {@link relationships} after merging star burns for display.
+   */
   relationshipType: AltarRelationshipType;
-  /** Original dedication burn txid (64 hex) of the linked altar, or ''. */
   relatedTxid: string;
+  /**
+   * All relationship links for this altar (root + add-only star fragments).
+   * Deletion is not supported yet — future burns may mark links deleted.
+   */
+  relationships: AltarRelationshipLink[];
 }
 
 export function emptyAltarFields(): AltarFields {
@@ -102,7 +121,53 @@ export function emptyAltarFields(): AltarFields {
     funeralPlace: '',
     relationshipType: '',
     relatedTxid: '',
+    relationships: [],
   };
+}
+
+/** Build 0–1 links from the singular wire slots. */
+export function linksFromSingularFields(
+  relationshipType: string | null | undefined,
+  relatedTxid: string | null | undefined,
+): AltarRelationshipLink[] {
+  const type = normalizeAltarRelationshipType(relationshipType);
+  const txid = normalizeAltarRelatedTxid(relatedTxid);
+  if (!type || !txid) return [];
+  return [{ type, relatedTxid: txid }];
+}
+
+/** Prefer `relationships`; fall back to singular slots. */
+export function altarRelationships(fields: AltarFields): AltarRelationshipLink[] {
+  if (fields.relationships && fields.relationships.length > 0) {
+    return fields.relationships;
+  }
+  return linksFromSingularFields(fields.relationshipType, fields.relatedTxid);
+}
+
+export function relationshipLinkKey(link: AltarRelationshipLink): string {
+  return `${link.type}:${link.relatedTxid}`;
+}
+
+/**
+ * Add-only rules: no duplicates; child ≤ {@link MAX_CHILD_RELATIONSHIPS};
+ * spouse and parent unlimited. Deletion not supported yet.
+ */
+export function canAddRelationship(
+  existing: AltarRelationshipLink[],
+  next: AltarRelationshipLink,
+): 'duplicate' | 'childMax' | null {
+  if (
+    existing.some(
+      r => r.type === next.type && r.relatedTxid === next.relatedTxid,
+    )
+  ) {
+    return 'duplicate';
+  }
+  if (next.type === 'child') {
+    const n = existing.filter(r => r.type === 'child').length;
+    if (n >= MAX_CHILD_RELATIONSHIPS) return 'childMax';
+  }
+  return null;
 }
 
 function scrub(raw: string): string {
@@ -203,8 +268,9 @@ function isTitleFirstWire(parts: string[]): boolean {
 export function parseAltarNote(raw: string): AltarFields | null {
   if (!isAltarPackedNote(raw)) return null;
   const parts = raw.split(ALTAR_SEP);
+  let fields: AltarFields;
   if (isTitleFirstWire(parts)) {
-    return {
+    fields = {
       title: normalizeAltarHonorific(parts[0]),
       name: (parts[1] ?? '').trim(),
       note: (parts[2] ?? '').trim(),
@@ -215,37 +281,51 @@ export function parseAltarNote(raw: string): AltarFields | null {
       funeralPlace: (parts[7] ?? '').trim(),
       relationshipType: normalizeAltarRelationshipType(parts[8]),
       relatedTxid: normalizeAltarRelatedTxid(parts[9]),
+      relationships: [],
+    };
+  } else {
+    // Legacy (pre-title): name \x1f note \x1f …
+    fields = {
+      title: '',
+      name: (parts[0] ?? '').trim(),
+      note: (parts[1] ?? '').trim(),
+      birthPlace: (parts[2] ?? '').trim(),
+      birthYear: (parts[3] ?? '').trim(),
+      deathDate: (parts[4] ?? '').trim(),
+      deathPlace: (parts[5] ?? '').trim(),
+      funeralPlace: (parts[6] ?? '').trim(),
+      relationshipType: normalizeAltarRelationshipType(parts[7]),
+      relatedTxid: normalizeAltarRelatedTxid(parts[8]),
+      relationships: [],
     };
   }
-  // Legacy (pre-title): name \x1f note \x1f …
-  return {
-    title: '',
-    name: (parts[0] ?? '').trim(),
-    note: (parts[1] ?? '').trim(),
-    birthPlace: (parts[2] ?? '').trim(),
-    birthYear: (parts[3] ?? '').trim(),
-    deathDate: (parts[4] ?? '').trim(),
-    deathPlace: (parts[5] ?? '').trim(),
-    funeralPlace: (parts[6] ?? '').trim(),
-    relationshipType: normalizeAltarRelationshipType(parts[7]),
-    relatedTxid: normalizeAltarRelatedTxid(parts[8]),
-  };
+  fields.relationships = linksFromSingularFields(
+    fields.relationshipType,
+    fields.relatedTxid,
+  );
+  return fields;
 }
 
 /**
- * Merge altar-packed notes (latest-first). For each field, keep the first
- * non-empty value so a relationship-only star fragment can omit identity
- * fields and still display name/places from the original root burn.
+ * Merge altar-packed notes (latest-first for identity fields).
+ * Relationships are collected add-only from every packed note (oldest first)
+ * so multiple spouse/parent/child star fragments all show up.
  */
 export function mergeAltarFields(
   notes: Iterable<string>,
 ): AltarFields | null {
+  const list = [...notes];
   let merged: AltarFields | null = null;
-  for (const raw of notes) {
+  for (const raw of list) {
     const parsed = parseAltarNote(raw);
     if (!parsed) continue;
     if (!merged) {
-      merged = { ...parsed };
+      merged = {
+        ...parsed,
+        relationships: [],
+        relationshipType: '',
+        relatedTxid: '',
+      };
       continue;
     }
     merged = {
@@ -257,11 +337,33 @@ export function mergeAltarFields(
       deathDate: merged.deathDate || parsed.deathDate,
       deathPlace: merged.deathPlace || parsed.deathPlace,
       funeralPlace: merged.funeralPlace || parsed.funeralPlace,
-      relationshipType: merged.relationshipType || parsed.relationshipType,
-      relatedTxid: merged.relatedTxid || parsed.relatedTxid,
+      relationshipType: '',
+      relatedTxid: '',
+      relationships: [],
     };
   }
-  return merged;
+  if (!merged) return null;
+
+  const relationships: AltarRelationshipLink[] = [];
+  const seen = new Set<string>();
+  // Oldest first so add order is stable in the UI.
+  for (const raw of [...list].reverse()) {
+    const parsed = parseAltarNote(raw);
+    if (!parsed) continue;
+    for (const link of altarRelationships(parsed)) {
+      const key = relationshipLinkKey(link);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      relationships.push(link);
+    }
+  }
+  const first = relationships[0];
+  return {
+    ...merged,
+    relationships,
+    relationshipType: first?.type ?? '',
+    relatedTxid: first?.relatedTxid ?? '',
+  };
 }
 
 /**

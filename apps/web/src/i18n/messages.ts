@@ -47,6 +47,10 @@ export type MessageKey =
   | 'altarRelationship'
   | 'altarRelationshipTitle'
   | 'altarRelationshipHint'
+  | 'altarExistingRelationships'
+  | 'altarChildMaxHint'
+  | 'altarErrChildMax'
+  | 'altarErrDuplicateRel'
   | 'altarRelationshipNone'
   | 'altarRelationshipSpouse'
   | 'altarRelationshipParent'
@@ -177,6 +181,10 @@ const en: Dict = {
   altarRelationshipTitle: 'Relationship',
   altarRelationshipHint:
     'Link this altar to another in Recent. The original Ban thờ details stay on the first burn — this only adds the relationship.',
+  altarExistingRelationships: 'Current relationships',
+  altarChildMaxHint: 'At most {n} child links (add-only for now).',
+  altarErrChildMax: 'Already has {n} child links.',
+  altarErrDuplicateRel: 'That relationship is already linked.',
   altarRelationshipNone: 'None',
   altarRelationshipSpouse: 'Spouse',
   altarRelationshipParent: 'Parent of',
@@ -227,7 +235,7 @@ const en: Dict = {
   sessionNoteLabel: 'In remembrance',
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
-  btnAmendAltar: 'Add / edit relationship',
+  btnAmendAltar: 'Add relationship',
   btnOfferLotus: 'Offer a lotus',
   btnClose: 'Close',
   cancelOfferMsg: 'Stop this offering and return to the home screen?',
@@ -315,6 +323,10 @@ const vi: Dict = {
   altarRelationshipTitle: 'Mối quan hệ',
   altarRelationshipHint:
     'Liên kết ban thờ này với một ban thờ trong Gần đây. Chi tiết ban thờ gốc giữ trên lần đốt đầu — lần này chỉ thêm mối quan hệ.',
+  altarExistingRelationships: 'Mối quan hệ hiện có',
+  altarChildMaxHint: 'Tối đa {n} mối quan hệ con (hiện chỉ thêm, chưa xoá).',
+  altarErrChildMax: 'Đã có đủ {n} mối quan hệ con.',
+  altarErrDuplicateRel: 'Mối quan hệ này đã được liên kết.',
   altarRelationshipNone: 'Không có',
   altarRelationshipSpouse: 'Vợ/Chồng của',
   altarRelationshipParent: 'Cha/Mẹ của',
@@ -364,7 +376,7 @@ const vi: Dict = {
   sessionNoteLabel: 'Lời tưởng niệm',
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
-  btnAmendAltar: 'Thêm / sửa mối quan hệ',
+  btnAmendAltar: 'Thêm mối quan hệ',
   btnOfferLotus: 'Dâng hoa sen',
   btnClose: 'Đóng',
   cancelOfferMsg: 'Dừng dâng hoa và quay lại màn hình chính?',
@@ -451,6 +463,10 @@ const zh: Dict = {
   altarRelationshipTitle: '关系',
   altarRelationshipHint:
     '将此灵位关联到“最近”中的另一灵位。原有灵位详情保留在首次供奉上——这次只添加关系。',
+  altarExistingRelationships: '现有关系',
+  altarChildMaxHint: '最多 {n} 条子辈关系（目前只能添加，暂不支持删除）。',
+  altarErrChildMax: '已有 {n} 条子辈关系。',
+  altarErrDuplicateRel: '该关系已关联。',
   altarRelationshipNone: '无',
   altarRelationshipSpouse: '配偶',
   altarRelationshipParent: '为其父母',
@@ -497,7 +513,7 @@ const zh: Dict = {
   sessionNoteLabel: '追思寄语',
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
-  btnAmendAltar: '添加 / 编辑关系',
+  btnAmendAltar: '添加关系',
   btnOfferLotus: '献上莲花',
   btnClose: '关闭',
   cancelOfferMsg: '停止献花并返回主页？',

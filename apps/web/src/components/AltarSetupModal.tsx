@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  altarRelationships,
+  canAddRelationship,
   emptyAltarFields,
   formatAltarDateInput,
   formatAltarPersonName,
+  MAX_CHILD_RELATIONSHIPS,
   normalizeAltarRelatedTxid,
   validateAltarFields,
   validateRelationshipFields,
   type AltarFields,
   type AltarHonorific,
+  type AltarRelationshipKind,
+  type AltarRelationshipLink,
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
@@ -27,6 +32,7 @@ function normalizeFields(draft: AltarFields): AltarFields {
     funeralPlace: draft.funeralPlace.trim(),
     relationshipType: draft.relationshipType,
     relatedTxid: normalizeAltarRelatedTxid(draft.relatedTxid),
+    relationships: draft.relationships ?? [],
   };
 }
 
@@ -34,6 +40,7 @@ function RelationshipFields(props: {
   draft: AltarFields;
   errorKey: string | null;
   relatedAltarOptions: RelatedAltarOption[];
+  childDisabled?: boolean;
   setRelationshipType: (next: AltarRelationshipType) => void;
   setRelatedTxid: (txid: string) => void;
 }) {
@@ -81,11 +88,17 @@ function RelationshipFields(props: {
               : 'altar-honorific-btn'
           }
           aria-pressed={draft.relationshipType === 'child'}
+          disabled={props.childDisabled && draft.relationshipType !== 'child'}
           onClick={() => props.setRelationshipType('child')}
         >
           {t('altarRelationshipChild')}
         </button>
       </div>
+      {props.childDisabled ? (
+        <p className="hint" style={{ marginTop: '0.35rem' }}>
+          {t('altarChildMaxHint', { n: MAX_CHILD_RELATIONSHIPS })}
+        </p>
+      ) : null}
       {draft.relationshipType ? (
         props.relatedAltarOptions.length > 0 ? (
           <select
@@ -109,39 +122,89 @@ function RelationshipFields(props: {
         )
       ) : null}
       {props.errorKey === 'relatedTxid' ||
-      props.errorKey === 'relationshipType' ? (
-        <p className="hint altar-field-error">{t('altarErrRelatedTxid')}</p>
+      props.errorKey === 'relationshipType' ||
+      props.errorKey === 'duplicate' ||
+      props.errorKey === 'childMax' ? (
+        <p className="hint altar-field-error">
+          {props.errorKey === 'childMax'
+            ? t('altarErrChildMax', { n: MAX_CHILD_RELATIONSHIPS })
+            : props.errorKey === 'duplicate'
+              ? t('altarErrDuplicateRel')
+              : t('altarErrRelatedTxid')}
+        </p>
       ) : null}
+    </div>
+  );
+}
+
+function ExistingRelationships(props: {
+  links: AltarRelationshipLink[];
+  relatedAltarOptions: RelatedAltarOption[];
+}) {
+  const { t } = useLocale();
+  if (props.links.length === 0) return null;
+  const labelFor = (type: AltarRelationshipKind) =>
+    type === 'spouse'
+      ? t('altarRelationshipSpouse')
+      : type === 'parent'
+        ? t('altarRelationshipParent')
+        : t('altarRelationshipChild');
+  return (
+    <div className="field">
+      <span className="altar-honorific-label">
+        {t('altarExistingRelationships')}
+      </span>
+      <ul className="altar-existing-relationships">
+        {props.links.map(link => {
+          const name =
+            props.relatedAltarOptions.find(o => o.txid === link.relatedTxid)
+              ?.label || t('altarViewRelated');
+          return (
+            <li key={`${link.type}:${link.relatedTxid}`}>
+              <span className="altar-details-label">{labelFor(link.type)}</span>
+              {' · '}
+              <span className="altar-details-value">{name}</span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
 
 export function AltarSetupModal(props: {
   initial: AltarFields | null;
-  /** Prefill name from the simple note when opening altar the first time. */
   fallbackName?: string;
-  /**
-   * `setup` — full Ban thờ form (root dedication).
-   * `relationship` — link only; altar identity stays on the root burn.
-   */
   variant?: 'setup' | 'relationship';
   etaLabel: string;
   offerDisabled?: boolean;
-  /** Altars to link a relationship to — Recent list only (no free-text txid). */
   relatedAltarOptions: RelatedAltarOption[];
   onClose: () => void;
-  /** Persist Ban thờ on the main screen (Next / Offer). */
   onSave: (fields: AltarFields) => void;
-  /** Start offering from the review step. */
   onOffer: (fields: AltarFields) => void;
 }) {
   const { t, locale } = useLocale();
   const relationshipOnly = props.variant === 'relationship';
+  const existingLinks = altarRelationships(props.initial ?? emptyAltarFields());
+  const childCount = existingLinks.filter(l => l.type === 'child').length;
+  const childAtMax = childCount >= MAX_CHILD_RELATIONSHIPS;
   const cardRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>('edit');
   const [draft, setDraft] = useState<AltarFields>(() => {
+    if (relationshipOnly) {
+      return {
+        ...(props.initial ?? emptyAltarFields()),
+        relationshipType: '',
+        relatedTxid: '',
+        relationships: existingLinks,
+      };
+    }
     if (props.initial) {
-      return { ...props.initial, title: props.initial.title || '' };
+      return {
+        ...props.initial,
+        title: props.initial.title || '',
+        relationships: props.initial.relationships ?? [],
+      };
     }
     const base = emptyAltarFields();
     const name = (props.fallbackName || '').trim();
@@ -149,6 +212,10 @@ export function AltarSetupModal(props: {
   });
   const [review, setReview] = useState<AltarFields | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+
+  const availableOptions = props.relatedAltarOptions.filter(
+    o => !existingLinks.some(l => l.relatedTxid === o.txid),
+  );
 
   useEffect(() => {
     cardRef.current?.scrollTo({ top: 0 });
@@ -164,24 +231,34 @@ export function AltarSetupModal(props: {
   }
 
   function setRelationshipType(next: AltarRelationshipType) {
+    if (next === 'child' && childAtMax) {
+      setErrorKey('childMax');
+      return;
+    }
     const nextType = draft.relationshipType === next ? '' : next;
     setDraft(d => ({
       ...d,
       relationshipType: nextType,
-      // Keep relatedTxid only if it's still a valid Recent-list option.
       relatedTxid:
-        nextType && props.relatedAltarOptions.some(o => o.txid === d.relatedTxid)
+        nextType && availableOptions.some(o => o.txid === d.relatedTxid)
           ? d.relatedTxid
           : '',
     }));
     setErrorKey(null);
   }
 
+  function validateAdd(): string | null {
+    const pairErr =
+      validateRelationshipFields(draft) ||
+      (!draft.relationshipType ? 'relationshipType' : null);
+    if (pairErr) return pairErr;
+    const type = draft.relationshipType as AltarRelationshipKind;
+    const txid = normalizeAltarRelatedTxid(draft.relatedTxid);
+    return canAddRelationship(existingLinks, { type, relatedTxid: txid });
+  }
+
   function goReview() {
-    const err = relationshipOnly
-      ? validateRelationshipFields(draft) ||
-        (!draft.relationshipType ? 'relationshipType' : null)
-      : validateAltarFields(draft);
+    const err = relationshipOnly ? validateAdd() : validateAltarFields(draft);
     if (err) {
       setErrorKey(err);
       return;
@@ -201,8 +278,16 @@ export function AltarSetupModal(props: {
   function offer() {
     const fields = review ?? normalizeFields(draft);
     const err = relationshipOnly
-      ? validateRelationshipFields(fields) ||
-        (!fields.relationshipType ? 'relationshipType' : null)
+      ? (() => {
+          const pairErr =
+            validateRelationshipFields(fields) ||
+            (!fields.relationshipType ? 'relationshipType' : null);
+          if (pairErr) return pairErr;
+          return canAddRelationship(existingLinks, {
+            type: fields.relationshipType as AltarRelationshipKind,
+            relatedTxid: normalizeAltarRelatedTxid(fields.relatedTxid),
+          });
+        })()
       : validateAltarFields(fields);
     if (err) {
       setErrorKey(err);
@@ -240,9 +325,7 @@ export function AltarSetupModal(props: {
               {relationshipOnly ? t('altarRelationshipTitle') : t('altarTitle')}
             </h2>
             <p className="hint">
-              {relationshipOnly
-                ? t('altarRelationshipHint')
-                : t('altarHint')}
+              {relationshipOnly ? t('altarRelationshipHint') : t('altarHint')}
             </p>
 
             {relationshipOnly ? (
@@ -250,10 +333,15 @@ export function AltarSetupModal(props: {
                 <p className="offer-session-note offer-session-original">
                   {personLabel}
                 </p>
+                <ExistingRelationships
+                  links={existingLinks}
+                  relatedAltarOptions={props.relatedAltarOptions}
+                />
                 <RelationshipFields
                   draft={draft}
                   errorKey={errorKey}
-                  relatedAltarOptions={props.relatedAltarOptions}
+                  relatedAltarOptions={availableOptions}
+                  childDisabled={childAtMax}
                   setRelationshipType={setRelationshipType}
                   setRelatedTxid={txid => setField('relatedTxid', txid)}
                 />
@@ -446,6 +534,15 @@ export function AltarSetupModal(props: {
                   relationshipOnly && props.initial
                     ? {
                         ...props.initial,
+                        relationships: [
+                          ...existingLinks,
+                          {
+                            type: review.relationshipType as AltarRelationshipKind,
+                            relatedTxid: normalizeAltarRelatedTxid(
+                              review.relatedTxid,
+                            ),
+                          },
+                        ],
                         relationshipType: review.relationshipType,
                         relatedTxid: review.relatedTxid,
                       }

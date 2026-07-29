@@ -548,6 +548,20 @@ a {
   text-underline-offset: 0.12em;
 }
 
+.altar-existing-relationships {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.altar-existing-relationships li {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
 .altar-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
