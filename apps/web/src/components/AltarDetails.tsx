@@ -2,8 +2,11 @@ import { useState, type ReactNode } from 'react';
 import {
   altarHonorificLabel,
   altarRelationships,
+  altarSpouseRelationshipLabel,
   formatAltarDateInput,
   type AltarFields,
+  type AltarHonorific,
+  type AltarLocale,
   type AltarRelationshipKind,
   type AltarRelationshipLink,
 } from '../lib/altarFields.js';
@@ -28,14 +31,13 @@ export interface RelatedAltarOption {
 
 function relationshipKindLabel(
   type: AltarRelationshipKind,
+  title: AltarHonorific | string,
+  locale: AltarLocale,
   t: (
-    key:
-      | 'altarRelationshipSpouse'
-      | 'altarRelationshipParent'
-      | 'altarRelationshipChild',
+    key: 'altarRelationshipParent' | 'altarRelationshipChild',
   ) => string,
 ): string {
-  if (type === 'spouse') return t('altarRelationshipSpouse');
+  if (type === 'spouse') return altarSpouseRelationshipLabel(title, locale);
   if (type === 'parent') return t('altarRelationshipParent');
   return t('altarRelationshipChild');
 }
@@ -127,7 +129,7 @@ export function AltarDetails(props: {
         </div>
       ))}
       {links.map(link => {
-        const label = relationshipKindLabel(link.type, t);
+        const label = relationshipKindLabel(link.type, altar.title, locale, t);
         const relatedName = props.relatedAltarOptions?.find(
           o => o.txid === link.relatedTxid,
         )?.label;

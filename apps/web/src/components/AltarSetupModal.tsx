@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   altarRelationships,
+  altarSpouseRelationshipLabel,
   canAddRelationship,
   emptyAltarFields,
   formatAltarDateInput,
   formatAltarPersonName,
-  MAX_CHILD_RELATIONSHIPS,
+  MAX_PARENT_RELATIONSHIPS,
   normalizeAltarRelatedTxid,
   validateAltarFields,
   validateRelationshipFields,
@@ -40,12 +41,13 @@ function RelationshipFields(props: {
   draft: AltarFields;
   errorKey: string | null;
   relatedAltarOptions: RelatedAltarOption[];
-  childDisabled?: boolean;
+  parentDisabled?: boolean;
   setRelationshipType: (next: AltarRelationshipType) => void;
   setRelatedTxid: (txid: string) => void;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { draft } = props;
+  const spouseLabel = altarSpouseRelationshipLabel(draft.title, locale);
   return (
     <div className="field">
       <span className="altar-honorific-label" id="altar-relationship-label">
@@ -59,23 +61,12 @@ function RelationshipFields(props: {
         <button
           type="button"
           className={
-            draft.relationshipType === 'spouse'
-              ? 'altar-honorific-btn is-selected'
-              : 'altar-honorific-btn'
-          }
-          aria-pressed={draft.relationshipType === 'spouse'}
-          onClick={() => props.setRelationshipType('spouse')}
-        >
-          {t('altarRelationshipSpouse')}
-        </button>
-        <button
-          type="button"
-          className={
             draft.relationshipType === 'parent'
               ? 'altar-honorific-btn is-selected'
               : 'altar-honorific-btn'
           }
           aria-pressed={draft.relationshipType === 'parent'}
+          disabled={props.parentDisabled && draft.relationshipType !== 'parent'}
           onClick={() => props.setRelationshipType('parent')}
         >
           {t('altarRelationshipParent')}
@@ -88,15 +79,26 @@ function RelationshipFields(props: {
               : 'altar-honorific-btn'
           }
           aria-pressed={draft.relationshipType === 'child'}
-          disabled={props.childDisabled && draft.relationshipType !== 'child'}
           onClick={() => props.setRelationshipType('child')}
         >
           {t('altarRelationshipChild')}
         </button>
+        <button
+          type="button"
+          className={
+            draft.relationshipType === 'spouse'
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={draft.relationshipType === 'spouse'}
+          onClick={() => props.setRelationshipType('spouse')}
+        >
+          {spouseLabel}
+        </button>
       </div>
-      {props.childDisabled ? (
+      {props.parentDisabled ? (
         <p className="hint" style={{ marginTop: '0.35rem' }}>
-          {t('altarChildMaxHint', { n: MAX_CHILD_RELATIONSHIPS })}
+          {t('altarParentMaxHint', { n: MAX_PARENT_RELATIONSHIPS })}
         </p>
       ) : null}
       {draft.relationshipType ? (
@@ -124,10 +126,10 @@ function RelationshipFields(props: {
       {props.errorKey === 'relatedTxid' ||
       props.errorKey === 'relationshipType' ||
       props.errorKey === 'duplicate' ||
-      props.errorKey === 'childMax' ? (
+      props.errorKey === 'parentMax' ? (
         <p className="hint altar-field-error">
-          {props.errorKey === 'childMax'
-            ? t('altarErrChildMax', { n: MAX_CHILD_RELATIONSHIPS })
+          {props.errorKey === 'parentMax'
+            ? t('altarErrParentMax', { n: MAX_PARENT_RELATIONSHIPS })
             : props.errorKey === 'duplicate'
               ? t('altarErrDuplicateRel')
               : t('altarErrRelatedTxid')}
@@ -140,12 +142,13 @@ function RelationshipFields(props: {
 function ExistingRelationships(props: {
   links: AltarRelationshipLink[];
   relatedAltarOptions: RelatedAltarOption[];
+  title: AltarHonorific | string;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   if (props.links.length === 0) return null;
   const labelFor = (type: AltarRelationshipKind) =>
     type === 'spouse'
-      ? t('altarRelationshipSpouse')
+      ? altarSpouseRelationshipLabel(props.title, locale)
       : type === 'parent'
         ? t('altarRelationshipParent')
         : t('altarRelationshipChild');
@@ -186,8 +189,8 @@ export function AltarSetupModal(props: {
   const { t, locale } = useLocale();
   const relationshipOnly = props.variant === 'relationship';
   const existingLinks = altarRelationships(props.initial ?? emptyAltarFields());
-  const childCount = existingLinks.filter(l => l.type === 'child').length;
-  const childAtMax = childCount >= MAX_CHILD_RELATIONSHIPS;
+  const parentCount = existingLinks.filter(l => l.type === 'parent').length;
+  const parentAtMax = parentCount >= MAX_PARENT_RELATIONSHIPS;
   const cardRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>('edit');
   const [draft, setDraft] = useState<AltarFields>(() => {
@@ -231,8 +234,8 @@ export function AltarSetupModal(props: {
   }
 
   function setRelationshipType(next: AltarRelationshipType) {
-    if (next === 'child' && childAtMax) {
-      setErrorKey('childMax');
+    if (next === 'parent' && parentAtMax) {
+      setErrorKey('parentMax');
       return;
     }
     const nextType = draft.relationshipType === next ? '' : next;
@@ -336,12 +339,13 @@ export function AltarSetupModal(props: {
                 <ExistingRelationships
                   links={existingLinks}
                   relatedAltarOptions={props.relatedAltarOptions}
+                  title={draft.title}
                 />
                 <RelationshipFields
                   draft={draft}
                   errorKey={errorKey}
                   relatedAltarOptions={availableOptions}
-                  childDisabled={childAtMax}
+                  parentDisabled={parentAtMax}
                   setRelationshipType={setRelationshipType}
                   setRelatedTxid={txid => setField('relatedTxid', txid)}
                 />
@@ -504,6 +508,7 @@ export function AltarSetupModal(props: {
                   draft={draft}
                   errorKey={errorKey}
                   relatedAltarOptions={props.relatedAltarOptions}
+                  parentDisabled={parentAtMax}
                   setRelationshipType={setRelationshipType}
                   setRelatedTxid={txid => setField('relatedTxid', txid)}
                 />
