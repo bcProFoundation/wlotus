@@ -8,10 +8,12 @@
  *
  * Star-fragment burns under a root do **not** re-pack the full altar:
  *   - Re-offer: DANA v2 parent = root + optional free-text memorial message
+ *     (only after a death date exists — living profiles cannot re-offer)
  *   - Relationship: DANA v2 parent = root + relationship slots only
- *     (optional short message in the note slot; dropped first if over budget)
- * Altar identity fields are written once on the root dedication and do not
- * change. Clients merge burns under a star for display.
+ *   - Death date: DANA v2 parent = root + deathDate (+ optional places)
+ *     when the root was created as a living profile (empty death date)
+ * Root identity (name / honorific / birth) is written once; death date may be
+ * added later via a star fragment. Clients merge burns under a star for display.
  *
  * `title` is a locale-neutral honorific code: `` | `mr` | `mrs`
  * (UI: Mr./Mrs. · Ông/Bà · 先生/女士).
@@ -93,7 +95,11 @@ export interface AltarFields {
    * `YYYY-MM-DD`. Wire field slot kept as “birthYear” historically.
    */
   birthYear: string;
-  /** Required when altar is used — YYYY or YYYY-MM-DD. */
+  /**
+   * Date of death — optional. Empty = living profile (Setup only; no
+   * flower re-offer until a death-date star fragment is added).
+   * Same shapes as birthYear: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
+   */
   deathDate: string;
   deathPlace: string;
   funeralPlace: string;
@@ -426,16 +432,35 @@ export function formatAltarDateInput(raw: string): string {
 /** @deprecated use formatAltarDateInput */
 export const formatDeathDateInput = formatAltarDateInput;
 
+/** True when death date is present and well-formed (deceased memorial). */
+export function altarHasDeathDate(
+  a: Pick<AltarFields, 'deathDate'> | null | undefined,
+): boolean {
+  if (!a) return false;
+  const death = scrub(a.deathDate);
+  return Boolean(death) && ALTAR_DATE_RE.test(death);
+}
+
 export function validateAltarFields(a: AltarFields): string | null {
   const titleRaw = (a.title || '').trim();
   if (titleRaw && !normalizeAltarHonorific(titleRaw)) return 'title';
   if (!scrub(a.name)) return 'name';
   const death = scrub(a.deathDate);
-  if (!death || !ALTAR_DATE_RE.test(death)) return 'deathDate';
+  // Empty = living profile; non-empty must be a valid date shape.
+  if (death && !ALTAR_DATE_RE.test(death)) return 'deathDate';
   const birth = scrub(a.birthYear);
   if (birth && !ALTAR_DATE_RE.test(birth)) return 'birthYear';
   const relErr = validateRelationshipFields(a);
   if (relErr) return relErr;
+  return null;
+}
+
+/** Death-date amendment fragment (living → deceased). */
+export function validateDeathDateFields(
+  a: Pick<AltarFields, 'deathDate'>,
+): string | null {
+  const death = scrub(a.deathDate);
+  if (!death || !ALTAR_DATE_RE.test(death)) return 'deathDate';
   return null;
 }
 
@@ -628,6 +653,52 @@ export function encodeRelationshipNote(
   if (utf8ByteLength(packed) > maxBytes) {
     throw new Error(
       `relationship note exceeds OP_RETURN budget (${utf8ByteLength(packed)} > ${maxBytes} bytes)`,
+    );
+  }
+  return packed;
+}
+
+/**
+ * Pack a **death-date** star fragment under a living profile root
+ * (DANA v2 parent = root). Fills deathDate (+ optional death/funeral place);
+ * does not re-state name / birth / relationships.
+ */
+export function encodeDeathDateNote(
+  fields: Pick<AltarFields, 'deathDate' | 'deathPlace' | 'funeralPlace'>,
+  opts?: EncodeAltarNoteOptions,
+): string {
+  const err = validateDeathDateFields(fields);
+  if (err) throw new Error(`invalid altar field: ${err}`);
+
+  const maxBytes = opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT;
+  const deathDate = scrub(fields.deathDate);
+  let deathPlace = scrub(fields.deathPlace);
+  let funeralPlace = scrub(fields.funeralPlace);
+
+  const pack = (): string =>
+    joinAltarParts([
+      '',
+      '',
+      '',
+      '',
+      '',
+      deathDate,
+      deathPlace,
+      funeralPlace,
+    ]);
+
+  let packed = pack();
+  if (utf8ByteLength(packed) > maxBytes && funeralPlace) {
+    funeralPlace = '';
+    packed = pack();
+  }
+  if (utf8ByteLength(packed) > maxBytes && deathPlace) {
+    deathPlace = '';
+    packed = pack();
+  }
+  if (utf8ByteLength(packed) > maxBytes) {
+    throw new Error(
+      `death-date note exceeds OP_RETURN budget (${utf8ByteLength(packed)} > ${maxBytes} bytes)`,
     );
   }
   return packed;

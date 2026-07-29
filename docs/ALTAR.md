@@ -126,7 +126,7 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 | 3 | Short remembrance note | yes | yes |
 | 4 | Birth place (coarse text) | optional | same, then geohash |
 | 5 | Birth year (`YYYY`) | optional | optional |
-| 6 | Date of death (`YYYY` or `YYYY-MM-DD`) | **required** when altar used | yes |
+| 6 | Date of death (`YYYY` or `YYYY-MM-DD`) | **optional** (empty = living) | yes |
 | 7 | Place of death | optional | same, then geohash |
 | 8 | Funeral / resting place | optional | same, then geohash |
 | 9 | Relationship type (wire `s`/`p`/`c`; long forms still parse) | optional | yes |
@@ -147,6 +147,16 @@ as a one-letter code (`s` / `p` / `c`); readers still accept the long forms
 `spouse` / `parent` / `child`. Notes packed before this pair existed simply
 omit the slots — readers default missing/invalid values to empty, so old
 altars parse unchanged.
+
+### Living profiles
+
+Death date (field 6) is **optional**. Empty = a living person profile created
+via **Setup / Thiết lập** (root burn, not framed as a flower offering).
+**Re-offer is disabled** until a **death-date star-fragment** is added under
+the same root (`encodeDeathDateNote`: parent = root, deathDate + optional
+places). After merge shows a death date, flower re-offers unlock. Name /
+honorific / birth stay on the root; death may be filled once via amend
+(add-only merge — cannot clear a date already set).
 
 `title` is a **locale-neutral code** (`mr` / `mrs`); UI renders Mr./Mrs., Ông/Bà, 先生/女士. The title slot is always written (may be empty) so readers can tell new wire from legacy name-first packs.
 

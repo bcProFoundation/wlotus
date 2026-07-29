@@ -12,7 +12,9 @@ import {
   mergeAltarFields,
   canAddRelationship,
   altarRelationships,
+  altarHasDeathDate,
   altarSpouseRelationshipLabel,
+  encodeDeathDateNote,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
@@ -206,7 +208,7 @@ describe('altarFields', () => {
     expect(memorialDisplayName(legacy, 'vi')).toBe('Cao Lâm Quả');
   });
 
-  it('requires name and death date', () => {
+  it('requires name; death date optional (living profile)', () => {
     expect(validateAltarFields(emptyAltarFields())).toBe('name');
     expect(
       validateAltarFields({
@@ -219,9 +221,18 @@ describe('altarFields', () => {
       validateAltarFields({
         ...emptyAltarFields(),
         name: 'A',
+        deathDate: '',
+      }),
+    ).toBeNull();
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'A',
         deathDate: '2001',
       }),
     ).toBeNull();
+    expect(altarHasDeathDate({ deathDate: '' })).toBe(false);
+    expect(altarHasDeathDate({ deathDate: '2001-12-04' })).toBe(true);
   });
 
   it('leaves plain notes alone for display', () => {
@@ -369,6 +380,27 @@ describe('altarFields', () => {
     expect(altarSpouseRelationshipLabel('', 'vi')).toBe('Vợ/Chồng');
     expect(altarSpouseRelationshipLabel('mr', 'en')).toBe('Wife');
     expect(altarSpouseRelationshipLabel('mrs', 'en')).toBe('Husband');
+  });
+
+  it('merges a death-date fragment onto a living root', () => {
+    const root = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Nguyễn Văn A',
+      birthYear: '1950',
+      deathDate: '',
+    });
+    expect(altarHasDeathDate(parseAltarNote(root)!)).toBe(false);
+    const fragment = encodeDeathDateNote({
+      deathDate: '2020-01-15',
+      deathPlace: 'Hà Nội',
+      funeralPlace: '',
+    });
+    const merged = mergeAltarFields([fragment, root]);
+    expect(merged?.name).toBe('Nguyễn Văn A');
+    expect(merged?.deathDate).toBe('2020-01-15');
+    expect(merged?.deathPlace).toBe('Hà Nội');
+    expect(altarHasDeathDate(merged!)).toBe(true);
   });
 
   it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {

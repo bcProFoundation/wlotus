@@ -71,6 +71,9 @@ export type MessageKey =
   | 'btnAltarClear'
   | 'altarDetailTitle'
   | 'btnOffer'
+  | 'btnSetup'
+  | 'btnSettingUp'
+  | 'btnRecordDeath'
   | 'btnPraying'
   | 'btnOffering'
   | 'btnCancel'
@@ -82,8 +85,10 @@ export type MessageKey =
   | 'memorialCancelled'
   | 'miningOnNewTip'
   | 'offeredIn'
+  | 'setupDoneIn'
   | 'recentTitle'
   | 'reofferHint'
+  | 'reofferNeedsDeathDate'
   | 'originalBurnBadge'
   | 'burnTotal'
   | 'latestBurnLink'
@@ -94,11 +99,14 @@ export type MessageKey =
   | 'historyLoading'
   | 'offeringFallback'
   | 'offerSessionTitle'
+  | 'setupSessionTitle'
   | 'reofferSessionTitle'
   | 'sessionNoteLabel'
   | 'reofferExtraNoteLabel'
   | 'reofferExtraNotePlaceholder'
   | 'btnAmendAltar'
+  | 'altarDeathAmendTitle'
+  | 'altarDeathAmendHint'
   | 'btnOfferLotus'
   | 'btnClose'
   | 'cancelOfferMsg'
@@ -131,7 +139,7 @@ type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
   brand: 'White Lotus',
-  tagline: 'Offer an eternal lotus in remembrance of someone who has passed.',
+  tagline: 'Set up a lasting profile — and offer an eternal lotus in remembrance.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
@@ -159,12 +167,12 @@ const en: Dict = {
   altarLabel: 'Altar',
   altarTitle: 'Altar',
   altarHint:
-    'These fields are written on-chain with the dedication. Places are plain text for now.',
+    'Create a profile on-chain. Leave date of death empty for a living person — flower re-offers unlock after you record a death date. Places are plain text for now.',
   altarHonorific: 'Title',
   altarHonorificMr: 'Mr.',
   altarHonorificMrs: 'Mrs.',
   altarName: 'Name',
-  altarNamePlaceholder: 'Name of the departed',
+  altarNamePlaceholder: 'Full name',
   altarNote: 'Words of remembrance',
   altarNotePlaceholder: 'Optional short message',
   altarBirthPlace: 'Hometown',
@@ -209,6 +217,9 @@ const en: Dict = {
   btnAltarClear: 'Clear',
   altarDetailTitle: 'Altar',
   btnOffer: 'Offer a Flower',
+  btnSetup: 'Setup',
+  btnSettingUp: 'Setting up…',
+  btnRecordDeath: 'Record death date',
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
   btnCancel: 'Cancel',
@@ -222,9 +233,12 @@ const en: Dict = {
     'Memorial cancelled — lotus was minted; dedication burn skipped.',
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Flower offered successfully in {duration} for {name}',
+  setupDoneIn: 'Profile set up in {duration} for {name}',
   recentTitle: 'Recent',
   reofferHint:
-    'Re-offer a lotus from your recent list. Swipe left for history, explorer, or delete on this device.',
+    'Flower re-offers need a date of death. Living profiles show Record death date instead.',
+  reofferNeedsDeathDate:
+    'Record a date of death first — then you can offer flowers here.',
   originalBurnBadge: 'Origin',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
@@ -235,11 +249,15 @@ const en: Dict = {
   historyLoading: 'Loading…',
   offeringFallback: 'Offering',
   offerSessionTitle: 'Offering a flower',
+  setupSessionTitle: 'Setting up profile',
   reofferSessionTitle: 'Offer a lotus for:',
   sessionNoteLabel: 'In remembrance',
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
   btnAmendAltar: 'Add relationship',
+  altarDeathAmendTitle: 'Record death date',
+  altarDeathAmendHint:
+    'Adds the date of death on-chain under this profile. Flower offerings unlock after this amendment.',
   btnOfferLotus: 'Offer a lotus',
   btnClose: 'Close',
   cancelOfferMsg: 'Stop this offering and return to the home screen?',
@@ -275,7 +293,7 @@ const en: Dict = {
 
 const vi: Dict = {
   brand: 'White Lotus',
-  tagline: 'Dâng một đóa sen vĩnh hằng tưởng nhớ người đã khuất.',
+  tagline: 'Thiết lập hồ sơ bền vững — và dâng đóa sen vĩnh hằng tưởng nhớ.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
@@ -303,12 +321,12 @@ const vi: Dict = {
   altarLabel: 'Ban thờ',
   altarTitle: 'Ban thờ',
   altarHint:
-    'Các trường này được ghi trên chuỗi cùng lần dâng. Địa danh dùng chữ thường trước.',
+    'Tạo hồ sơ trên chuỗi. Để trống ngày mất nếu còn sống — dâng hoa mở lại sau khi ghi ngày mất. Địa danh dùng chữ thường trước.',
   altarHonorific: 'Danh xưng',
   altarHonorificMr: 'Ông',
   altarHonorificMrs: 'Bà',
   altarName: 'Họ tên',
-  altarNamePlaceholder: 'Tên người đã khuất',
+  altarNamePlaceholder: 'Họ và tên',
   altarNote: 'Lời tưởng niệm',
   altarNotePlaceholder: 'Tuỳ chọn — lời ngắn',
   altarBirthPlace: 'Quê quán',
@@ -353,6 +371,9 @@ const vi: Dict = {
   btnAltarClear: 'Xoá',
   altarDetailTitle: 'Ban thờ',
   btnOffer: 'Dâng Hoa',
+  btnSetup: 'Thiết lập',
+  btnSettingUp: 'Đang thiết lập…',
+  btnRecordDeath: 'Ghi ngày mất',
   btnPraying: 'Đang tìm hoa sen…',
   btnOffering: 'Đang dâng hoa…',
   btnCancel: 'Hủy',
@@ -365,9 +386,12 @@ const vi: Dict = {
     'Đã hủy tưởng niệm — sen đã được mint; chưa đốt dâng.',
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa thành công trong {duration} cho {name}',
+  setupDoneIn: 'Đã thiết lập hồ sơ trong {duration} cho {name}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng lại hoa sen theo danh sách gần nhất. Vuốt sang trái để xem lịch sử, mở explorer, hoặc xóa khỏi máy này.',
+    'Dâng lại hoa sen khi đã có ngày mất. Hồ sơ còn sống hiện nút Ghi ngày mất.',
+  reofferNeedsDeathDate:
+    'Hãy ghi ngày mất trước — sau đó mới dâng hoa tại đây.',
   originalBurnBadge: 'Lập ban',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
@@ -378,11 +402,15 @@ const vi: Dict = {
   historyLoading: 'Đang tải…',
   offeringFallback: 'Lần dâng hoa',
   offerSessionTitle: 'Đang dâng hoa',
+  setupSessionTitle: 'Đang thiết lập hồ sơ',
   reofferSessionTitle: 'Dâng hoa sen cho:',
   sessionNoteLabel: 'Lời tưởng niệm',
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   btnAmendAltar: 'Thêm mối quan hệ',
+  altarDeathAmendTitle: 'Ghi ngày mất',
+  altarDeathAmendHint:
+    'Thêm ngày mất trên chuỗi dưới hồ sơ này. Sau đó mới mở dâng hoa.',
   btnOfferLotus: 'Dâng hoa sen',
   btnClose: 'Đóng',
   cancelOfferMsg: 'Dừng dâng hoa và quay lại màn hình chính?',
@@ -418,7 +446,7 @@ const vi: Dict = {
 
 const zh: Dict = {
   brand: 'White Lotus',
-  tagline: '献上一朵永恒莲花，纪念逝去的亲人。',
+  tagline: '建立持久档案——并献上一朵永恒莲花以表追思。',
   offerTitle: '献花',
   hintPrayMine:
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',
@@ -445,12 +473,13 @@ const zh: Dict = {
   btnAltarDelete: '删除',
   altarLabel: '灵位',
   altarTitle: '灵位',
-  altarHint: '这些字段将随献花一并写入链上。地点暂用文字描述。',
+  altarHint:
+    '在链上创建档案。在世者可留空去世日期——献花需在补记去世日期之后。地点暂用文字描述。',
   altarHonorific: '称谓',
   altarHonorificMr: '先生',
   altarHonorificMrs: '女士',
   altarName: '姓名',
-  altarNamePlaceholder: '逝者姓名',
+  altarNamePlaceholder: '姓名',
   altarNote: '追思寄语',
   altarNotePlaceholder: '可选短句',
   altarBirthPlace: '籍贯',
@@ -493,6 +522,9 @@ const zh: Dict = {
   btnAltarClear: '清除',
   altarDetailTitle: '灵位',
   btnOffer: '献花',
+  btnSetup: '设置',
+  btnSettingUp: '正在设置…',
+  btnRecordDeath: '登记去世日期',
   btnPraying: '正在寻找莲花…',
   btnOffering: '正在献花…',
   btnCancel: '取消',
@@ -504,9 +536,10 @@ const zh: Dict = {
   memorialCancelled: '已取消献念——莲花已铸造；未完成燃烧献上。',
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花成功，用时 {duration}，献给 {name}',
+  setupDoneIn: '档案已设置，用时 {duration}，献给 {name}',
   recentTitle: '最近',
-  reofferHint:
-    '从最近列表再次献上莲花。向左滑动可查看历史、打开浏览器，或从本机删除。',
+  reofferHint: '有去世日期后方可再次献花；在世档案显示“登记去世日期”。',
+  reofferNeedsDeathDate: '请先登记去世日期，然后才能在此献花。',
   originalBurnBadge: '立坛',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
@@ -517,11 +550,15 @@ const zh: Dict = {
   historyLoading: '加载中…',
   offeringFallback: '献花',
   offerSessionTitle: '正在献花',
+  setupSessionTitle: '正在设置档案',
   reofferSessionTitle: '为TA献上莲花：',
   sessionNoteLabel: '追思寄语',
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
   btnAmendAltar: '添加关系',
+  altarDeathAmendTitle: '登记去世日期',
+  altarDeathAmendHint:
+    '在此档案下链上补记去世日期。完成后即可献花。',
   btnOfferLotus: '献上莲花',
   btnClose: '关闭',
   cancelOfferMsg: '停止献花并返回主页？',
