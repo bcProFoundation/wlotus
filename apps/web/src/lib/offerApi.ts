@@ -103,6 +103,29 @@ export async function fetchStatus(installId: string): Promise<StatusOk> {
   return body;
 }
 
+/** Soft ownership: whether this installId created the root dedication. */
+export async function fetchRootCreator(opts: {
+  installId: string;
+  rootBurnTxid: string;
+}): Promise<{ isCreator: boolean; known: boolean }> {
+  const q = new URLSearchParams({
+    installId: opts.installId,
+    txid: opts.rootBurnTxid.trim().toLowerCase(),
+  });
+  const res = await fetch(apiUrl(`/api/root-creator?${q}`));
+  const body = await readApiJson<{
+    ok?: boolean;
+    isCreator?: boolean;
+    known?: boolean;
+    error?: string;
+  }>(res);
+  if (!res.ok) throw new Error(body.error || `Root creator ${res.status}`);
+  return {
+    isCreator: body.isCreator === true,
+    known: body.known === true,
+  };
+}
+
 export async function fetchChallenge(opts: {
   installId: string;
   note: string;

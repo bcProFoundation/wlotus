@@ -464,6 +464,19 @@ export function validateDeathDateFields(
   return null;
 }
 
+/**
+ * True when the packed note is a death-date star fragment (no name; has
+ * deathDate; no relationship link) — used to gate creator-only amends.
+ */
+export function isDeathDateAmendNote(raw: string | null | undefined): boolean {
+  const parsed = parseAltarNote(raw || '');
+  if (!parsed) return false;
+  if (scrub(parsed.name)) return false;
+  if (!altarHasDeathDate(parsed)) return false;
+  if (normalizeAltarRelationshipType(parsed.relationshipType)) return false;
+  return true;
+}
+
 /** Relationship pair only (for relationship star-fragment burns). */
 export function validateRelationshipFields(
   a: Pick<AltarFields, 'relationshipType' | 'relatedTxid'>,

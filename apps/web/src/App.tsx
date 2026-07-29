@@ -46,10 +46,15 @@ import {
   cancelOfferChallenge,
   completeOfferBurn,
   fetchChallenge,
+  fetchRootCreator,
   fetchStatus,
   shortTx,
   submitMinedOffer,
 } from './lib/offerApi.js';
+import {
+  isLocalCreatedRoot,
+  markLocalCreatedRoot,
+} from './lib/createdRoots.js';
 
 import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
@@ -213,6 +218,8 @@ export default function App() {
     extraNote: string;
     /** Names for relationship links (Recent + index lookups). */
     relatedOptions: RelatedAltarOption[];
+    /** Soft ownership — creator may first-offer with mandatory death date. */
+    isCreator: boolean;
   } | null>(null);
   /**
    * Edit sheet for an EXISTING altar — relationship or death-date star
@@ -223,6 +230,10 @@ export default function App() {
     altar: AltarFields;
     kind: 'relationship' | 'death';
   } | null>(null);
+  /** rootBurnTxid → this installId is soft creator (API + local cache). */
+  const [creatorByRoot, setCreatorByRoot] = useState<Map<string, boolean>>(
+    () => new Map(),
+  );
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -583,7 +594,7 @@ export default function App() {
 
     if (isReoffer) {
       if (opts?.altar && !altarHasDeathDate(opts.altar)) {
-        setMsg({ kind: 'err', text: t('reofferNeedsDeathDate') });
+        setMsg({ kind: 'err', text: t('firstOfferDeathHint') });
         return;
       }
       // Re-offer: parent txid only + optional extra memorial message.
@@ -895,6 +906,14 @@ export default function App() {
           setHiddenRecent(prev =>
             unhideRecentRoot(resolveOriginalTxid(saved), prev),
           );
+          if (!parentBurnTxid && burnTxid) {
+            markLocalCreatedRoot(burnTxid);
+            setCreatorByRoot(prev => {
+              const next = new Map(prev);
+              next.set(burnTxid.trim().toLowerCase(), true);
+              return next;
+            });
+          }
           setNote('');
           setAltar(null);
           void notifyIndexBurn(burnTxid);
@@ -1046,7 +1065,7 @@ export default function App() {
     return [...byTxid.values()];
   }
 
-  /** Open re-offer sheet; sync History burns into Recent; hydrate Ban thờ. */
+  /** Open re-offer / profile sheet; sync History burns into Recent; hydrate fields. */
   async function openDedicationSheet(opts: {
     parentBurnTxid: string;
     memorialNote: string;
@@ -1082,11 +1101,28 @@ export default function App() {
       resolved,
       relatedAltarOptions,
     );
+    const rootId = opts.parentBurnTxid.trim().toLowerCase();
+    let isCreator = isLocalCreatedRoot(rootId) || creatorByRoot.get(rootId) === true;
+    try {
+      const own = await fetchRootCreator({
+        installId,
+        rootBurnTxid: rootId,
+      });
+      isCreator = own.isCreator || isLocalCreatedRoot(rootId);
+      setCreatorByRoot(prev => {
+        const next = new Map(prev);
+        next.set(rootId, isCreator);
+        return next;
+      });
+    } catch {
+      /* offline mint-api — local cache only */
+    }
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
       altar: resolved,
       extraNote: '',
       relatedOptions,
+      isCreator,
     });
   }
 
@@ -1165,6 +1201,51 @@ export default function App() {
   const recentGroups = groupOffersByOriginal(offers).filter(
     g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
+
+  // Soft-ownership prefetch for living profiles in Recent (creator sees Dâng hoa).
+  useEffect(() => {
+    let cancelled = false;
+    const livingRoots = recentGroups
+      .filter(g => !altarHasDeathDate(altarFromOfferGroup(g)))
+      .map(g => g.original.burnTxid.trim().toLowerCase())
+      .filter(txid => /^[0-9a-f]{64}$/.test(txid));
+    void (async () => {
+      for (const rootId of livingRoots) {
+        if (cancelled) return;
+        if (creatorByRoot.has(rootId)) continue;
+        let isCreator = isLocalCreatedRoot(rootId);
+        if (!isCreator) {
+          try {
+            const own = await fetchRootCreator({
+              installId,
+              rootBurnTxid: rootId,
+            });
+            isCreator = own.isCreator || isLocalCreatedRoot(rootId);
+          } catch {
+            /* keep local */
+          }
+        }
+        if (cancelled) return;
+        setCreatorByRoot(prev => {
+          if (prev.has(rootId)) return prev;
+          const next = new Map(prev);
+          next.set(rootId, isCreator);
+          return next;
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Prefetch when the living-root set changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    recentGroups
+      .filter(g => !altarHasDeathDate(altarFromOfferGroup(g)))
+      .map(g => g.original.burnTxid)
+      .join('|'),
+    installId,
+  ]);
 
   /**
    * Relationship links only pick from this device's Recent list (no free-text
@@ -1270,7 +1351,13 @@ export default function App() {
 
         <div className="field">
           <div className="field-label-row">
-            <label>{altar ? t('altarLabel') : t('noteLabel')}</label>
+            <label>
+              {altar
+                ? altarHasDeathDate(altar)
+                  ? t('altarLabel')
+                  : t('profileLabel')
+                : t('noteLabel')}
+            </label>
             {altar && !linkedParentBurnTxid ? (
               <div className="field-label-links">
                 <button
@@ -1453,6 +1540,11 @@ export default function App() {
               const rootId = g.original.burnTxid;
               const groupAltar = altarFromOfferGroup(g);
               const canReoffer = altarHasDeathDate(groupAltar);
+              const rootKey = rootId.trim().toLowerCase();
+              const isCreator =
+                creatorByRoot.get(rootKey) === true ||
+                isLocalCreatedRoot(rootKey);
+              const showFirstOffer = !canReoffer && isCreator;
               return (
                 <li key={rootId}>
                   <SwipeReveal
@@ -1553,10 +1645,10 @@ export default function App() {
                               />
                               <span>{t('btnReoffer')}</span>
                             </button>
-                          ) : (
+                          ) : showFirstOffer ? (
                             <button
                               type="button"
-                              className="btn btn-ghost"
+                              className="btn btn-reoffer-lotus"
                               disabled={!canOffer}
                               onClick={() =>
                                 void openDedicationSheet({
@@ -1565,9 +1657,16 @@ export default function App() {
                                 })
                               }
                             >
-                              {t('btnRecordDeath')}
+                              <img
+                                src="/images/wlotus.png"
+                                alt=""
+                                width={22}
+                                height={22}
+                                draggable={false}
+                              />
+                              <span>{t('btnOffer')}</span>
                             </button>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                       <span className="history-meta">
@@ -1626,7 +1725,11 @@ export default function App() {
             >
               ×
             </button>
-            <h2 id="altar-detail-title">{t('altarDetailTitle')}</h2>
+            <h2 id="altar-detail-title">
+              {altarHasDeathDate(dedicationSheet.altar)
+                ? t('altarDetailTitle')
+                : t('profileDetailTitle')}
+            </h2>
             <AltarDetails
               altar={dedicationSheet.altar}
               onViewRelated={txid => void viewRelatedAltar(txid)}
@@ -1689,9 +1792,9 @@ export default function App() {
                   </button>
                 </div>
               </>
-            ) : (
+            ) : dedicationSheet.isCreator ? (
               <>
-                <p className="hint">{t('reofferNeedsDeathDate')}</p>
+                <p className="hint">{t('firstOfferDeathHint')}</p>
                 <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
                 <p className="hint">{t('hintKeepScreen')}</p>
                 <div className="offer-actions offer-session-actions">
@@ -1707,7 +1810,7 @@ export default function App() {
                       })
                     }
                   >
-                    {t('btnRecordDeath')}
+                    {t('btnOffer')}
                   </button>
                   <button
                     type="button"
@@ -1725,6 +1828,23 @@ export default function App() {
                   </button>
                 </div>
               </>
+            ) : (
+              <div className="offer-actions offer-session-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={!canOffer}
+                  onClick={() =>
+                    setAmendSheet({
+                      parentBurnTxid: dedicationSheet.parentBurnTxid,
+                      altar: dedicationSheet.altar,
+                      kind: 'relationship',
+                    })
+                  }
+                >
+                  {t('btnAmendAltar')}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -1859,7 +1979,11 @@ export default function App() {
             <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
             {session.altar ? (
               <>
-                <p className="offer-session-label">{t('altarLabel')}</p>
+                <p className="offer-session-label">
+                  {session.altar && !altarHasDeathDate(session.altar)
+                    ? t('profileLabel')
+                    : t('altarLabel')}
+                </p>
                 <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
               </>
             ) : (
@@ -1953,7 +2077,11 @@ export default function App() {
             </h2>
             {session.altar ? (
               <>
-                <p className="offer-session-label">{t('altarLabel')}</p>
+                <p className="offer-session-label">
+                  {session.altar && !altarHasDeathDate(session.altar)
+                    ? t('profileLabel')
+                    : t('altarLabel')}
+                </p>
                 <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
               </>
             ) : (

@@ -150,13 +150,14 @@ altars parse unchanged.
 
 ### Living profiles
 
-Death date (field 6) is **optional**. Empty = a living person profile created
-via **Setup / Thiết lập** (root burn, not framed as a flower offering).
-**Re-offer is disabled** until a **death-date star-fragment** is added under
-the same root (`encodeDeathDateNote`: parent = root, deathDate + optional
-places). After merge shows a death date, flower re-offers unlock. Name /
-honorific / birth stay on the root; death may be filled once via amend
-(add-only merge — cannot clear a date already set).
+Death date (field 6) is **optional**. Empty = a living **profile** (UI: Hồ sơ /
+Profile) created via **Setup / Thiết lập**. Flower re-offers stay locked until
+the **creator** offers a flower with a mandatory death date (death-date star
+fragment via `encodeDeathDateNote`). Soft ownership is cached in mint-api as
+`rootBurnTxid → installId` (`data/root-creators.json`, `GET /api/root-creator`);
+non-creators do not see first-offer / death UI. A future desk ownership
+transaction will replace installId. Name / honorific / birth stay on the root;
+death is add-only via amend.
 
 `title` is a **locale-neutral code** (`mr` / `mrs`); UI renders Mr./Mrs., Ông/Bà, 先生/女士. The title slot is always written (may be empty) so readers can tell new wire from legacy name-first packs.
 

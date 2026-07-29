@@ -45,6 +45,7 @@ import {
 import {
   memorialNoteMaxBytes,
   truncateUtf8Bytes,
+  isDeathDateAmendNote,
 } from '../../../src/offering/altarFields.js';
 import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
 import {
@@ -61,6 +62,11 @@ import {
   mintWalletSummary,
 } from '../../../src/mint/loadMintWallet.js';
 import { createDailyCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
+import {
+  isKnownRootCreator,
+  rememberRootCreator,
+  rootCreatorMatch,
+} from './rootCreators.js';
 
 const MAX_OFFERS_PER_DAY = Math.max(
   1,
@@ -661,6 +667,14 @@ async function createChallengeOnce(opts: {
   const parentBurnTxid = opts.parentBurnTxid
     ? parseParentBurnTxidHex(opts.parentBurnTxid)
     : undefined;
+  // Death-date star fragments are creator-only (installId soft ownership).
+  if (parentBurnTxid && isDeathDateAmendNote(opts.note)) {
+    if (!isKnownRootCreator(parentBurnTxid, opts.installId)) {
+      throw new Error(
+        'Only the profile creator can record a death date on this dedication',
+      );
+    }
+  }
   // Re-offer: DANA v2 — optional on-chain note + parent → original dedication.
   const note = truncateUtf8Bytes(
     opts.note.trim(),
@@ -1115,6 +1129,10 @@ async function completeBurnOnce(opts: {
     parentBurnTxid: pb.parentBurnTxid,
   });
   pendingBurns.delete(remintTxid);
+  // Root dedication (no parent): remember creating installId for soft ownership.
+  if (!pb.parentBurnTxid) {
+    rememberRootCreator(burnTxid, opts.installId);
+  }
   notifyDanaIndex(burnTxid);
 
   return {
@@ -1202,6 +1220,22 @@ export function enqueueBurn(opts: {
   burnToken: string;
 }): Promise<BurnResult> {
   return withChainLock(() => completeBurnOnce(opts));
+}
+
+/**
+ * Soft ownership check for a root dedication. Never returns the stored
+ * installId — only whether the caller matches (or unknown).
+ */
+export function checkRootCreator(opts: {
+  rootBurnTxid: string;
+  installId: string;
+}): { ok: true; isCreator: boolean; known: boolean } {
+  const match = rootCreatorMatch(opts.rootBurnTxid, opts.installId);
+  return {
+    ok: true,
+    known: match !== null,
+    isCreator: match === true,
+  };
 }
 
 /** Release an open challenge (cancel mining / page reload cleanup). */

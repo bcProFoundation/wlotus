@@ -18,6 +18,7 @@ export {
   formatAltarPersonName,
   formatDeathDateInput,
   isAltarPackedNote,
+  isDeathDateAmendNote,
   linksFromSingularFields,
   memorialDisplayName,
   memorialNoteMaxBytes,

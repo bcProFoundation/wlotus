@@ -23,8 +23,11 @@ export type MessageKey =
   | 'btnAltarEdit'
   | 'btnAltarDelete'
   | 'altarLabel'
+  | 'profileLabel'
   | 'altarTitle'
+  | 'profileTitle'
   | 'altarHint'
+  | 'profileHint'
   | 'altarHonorific'
   | 'altarHonorificMr'
   | 'altarHonorificMrs'
@@ -70,10 +73,10 @@ export type MessageKey =
   | 'btnAltarNext'
   | 'btnAltarClear'
   | 'altarDetailTitle'
+  | 'profileDetailTitle'
   | 'btnOffer'
   | 'btnSetup'
   | 'btnSettingUp'
-  | 'btnRecordDeath'
   | 'btnPraying'
   | 'btnOffering'
   | 'btnCancel'
@@ -88,7 +91,6 @@ export type MessageKey =
   | 'setupDoneIn'
   | 'recentTitle'
   | 'reofferHint'
-  | 'reofferNeedsDeathDate'
   | 'originalBurnBadge'
   | 'burnTotal'
   | 'latestBurnLink'
@@ -105,8 +107,8 @@ export type MessageKey =
   | 'reofferExtraNoteLabel'
   | 'reofferExtraNotePlaceholder'
   | 'btnAmendAltar'
-  | 'altarDeathAmendTitle'
-  | 'altarDeathAmendHint'
+  | 'firstOfferDeathTitle'
+  | 'firstOfferDeathHint'
   | 'btnOfferLotus'
   | 'btnClose'
   | 'cancelOfferMsg'
@@ -165,9 +167,13 @@ const en: Dict = {
   btnAltarEdit: 'Edit',
   btnAltarDelete: 'Delete',
   altarLabel: 'Altar',
+  profileLabel: 'Profile',
   altarTitle: 'Altar',
+  profileTitle: 'Profile',
   altarHint:
-    'Create a profile on-chain. Leave date of death empty for a living person — flower re-offers unlock after you record a death date. Places are plain text for now.',
+    'Create a memorial on-chain. Date of death is optional at setup — living profiles use Profile until the creator offers a flower with a death date.',
+  profileHint:
+    'Create a living profile on-chain. Flower offerings unlock after you (the creator) offer a flower with a date of death.',
   altarHonorific: 'Title',
   altarHonorificMr: 'Mr.',
   altarHonorificMrs: 'Mrs.',
@@ -216,10 +222,10 @@ const en: Dict = {
   btnAltarNext: 'Next',
   btnAltarClear: 'Clear',
   altarDetailTitle: 'Altar',
+  profileDetailTitle: 'Profile',
   btnOffer: 'Offer a Flower',
   btnSetup: 'Setup',
   btnSettingUp: 'Setting up…',
-  btnRecordDeath: 'Record death date',
   btnPraying: 'Finding a lotus…',
   btnOffering: 'Offering…',
   btnCancel: 'Cancel',
@@ -236,9 +242,7 @@ const en: Dict = {
   setupDoneIn: 'Profile set up in {duration} for {name}',
   recentTitle: 'Recent',
   reofferHint:
-    'Flower re-offers need a date of death. Living profiles show Record death date instead.',
-  reofferNeedsDeathDate:
-    'Record a date of death first — then you can offer flowers here.',
+    'Re-offer a lotus from memorials with a date of death. Swipe left for history, explorer, or delete on this device.',
   originalBurnBadge: 'Origin',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
@@ -255,9 +259,9 @@ const en: Dict = {
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
   btnAmendAltar: 'Add relationship',
-  altarDeathAmendTitle: 'Record death date',
-  altarDeathAmendHint:
-    'Adds the date of death on-chain under this profile. Flower offerings unlock after this amendment.',
+  firstOfferDeathTitle: 'Offer a flower',
+  firstOfferDeathHint:
+    'Date of death is required. This records it on-chain and offers a flower. Only the creator of this profile can do this.',
   btnOfferLotus: 'Offer a lotus',
   btnClose: 'Close',
   cancelOfferMsg: 'Stop this offering and return to the home screen?',
@@ -319,9 +323,13 @@ const vi: Dict = {
   btnAltarEdit: 'Sửa',
   btnAltarDelete: 'Xoá',
   altarLabel: 'Ban thờ',
+  profileLabel: 'Hồ sơ',
   altarTitle: 'Ban thờ',
+  profileTitle: 'Hồ sơ',
   altarHint:
-    'Tạo hồ sơ trên chuỗi. Để trống ngày mất nếu còn sống — dâng hoa mở lại sau khi ghi ngày mất. Địa danh dùng chữ thường trước.',
+    'Tạo ban thờ trên chuỗi. Ngày mất tuỳ chọn khi thiết lập — hồ sơ còn sống dùng Hồ sơ cho đến khi người tạo dâng hoa kèm ngày mất.',
+  profileHint:
+    'Tạo hồ sơ người còn sống trên chuỗi. Dâng hoa mở lại sau khi bạn (người tạo) dâng hoa kèm ngày mất.',
   altarHonorific: 'Danh xưng',
   altarHonorificMr: 'Ông',
   altarHonorificMrs: 'Bà',
@@ -370,10 +378,10 @@ const vi: Dict = {
   btnAltarNext: 'Tiếp',
   btnAltarClear: 'Xoá',
   altarDetailTitle: 'Ban thờ',
+  profileDetailTitle: 'Hồ sơ',
   btnOffer: 'Dâng Hoa',
   btnSetup: 'Thiết lập',
   btnSettingUp: 'Đang thiết lập…',
-  btnRecordDeath: 'Ghi ngày mất',
   btnPraying: 'Đang tìm hoa sen…',
   btnOffering: 'Đang dâng hoa…',
   btnCancel: 'Hủy',
@@ -389,9 +397,7 @@ const vi: Dict = {
   setupDoneIn: 'Đã thiết lập hồ sơ trong {duration} cho {name}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng lại hoa sen khi đã có ngày mất. Hồ sơ còn sống hiện nút Ghi ngày mất.',
-  reofferNeedsDeathDate:
-    'Hãy ghi ngày mất trước — sau đó mới dâng hoa tại đây.',
+    'Dâng lại hoa sen cho ban thờ đã có ngày mất. Vuốt sang trái để xem lịch sử, mở explorer, hoặc xóa khỏi máy này.',
   originalBurnBadge: 'Lập ban',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
@@ -408,9 +414,9 @@ const vi: Dict = {
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   btnAmendAltar: 'Thêm mối quan hệ',
-  altarDeathAmendTitle: 'Ghi ngày mất',
-  altarDeathAmendHint:
-    'Thêm ngày mất trên chuỗi dưới hồ sơ này. Sau đó mới mở dâng hoa.',
+  firstOfferDeathTitle: 'Dâng hoa',
+  firstOfferDeathHint:
+    'Bắt buộc nhập ngày mất. Lần này ghi ngày mất trên chuỗi và dâng hoa. Chỉ người tạo hồ sơ mới làm được.',
   btnOfferLotus: 'Dâng hoa sen',
   btnClose: 'Đóng',
   cancelOfferMsg: 'Dừng dâng hoa và quay lại màn hình chính?',
@@ -472,9 +478,13 @@ const zh: Dict = {
   btnAltarEdit: '编辑',
   btnAltarDelete: '删除',
   altarLabel: '灵位',
+  profileLabel: '档案',
   altarTitle: '灵位',
+  profileTitle: '档案',
   altarHint:
-    '在链上创建档案。在世者可留空去世日期——献花需在补记去世日期之后。地点暂用文字描述。',
+    '在链上创建灵位。设置时可留空去世日期——在世档案显示为档案，直到创建者献花并填写去世日期。',
+  profileHint:
+    '在链上创建在世档案。创建者献花并填写去世日期后即可再次献花。',
   altarHonorific: '称谓',
   altarHonorificMr: '先生',
   altarHonorificMrs: '女士',
@@ -521,10 +531,10 @@ const zh: Dict = {
   btnAltarNext: '下一步',
   btnAltarClear: '清除',
   altarDetailTitle: '灵位',
+  profileDetailTitle: '档案',
   btnOffer: '献花',
   btnSetup: '设置',
   btnSettingUp: '正在设置…',
-  btnRecordDeath: '登记去世日期',
   btnPraying: '正在寻找莲花…',
   btnOffering: '正在献花…',
   btnCancel: '取消',
@@ -538,8 +548,8 @@ const zh: Dict = {
   offeredIn: '献花成功，用时 {duration}，献给 {name}',
   setupDoneIn: '档案已设置，用时 {duration}，献给 {name}',
   recentTitle: '最近',
-  reofferHint: '有去世日期后方可再次献花；在世档案显示“登记去世日期”。',
-  reofferNeedsDeathDate: '请先登记去世日期，然后才能在此献花。',
+  reofferHint:
+    '可为已有去世日期的灵位再次献花。向左滑动可查看历史、打开浏览器，或从本机删除。',
   originalBurnBadge: '立坛',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',
@@ -556,9 +566,9 @@ const zh: Dict = {
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
   btnAmendAltar: '添加关系',
-  altarDeathAmendTitle: '登记去世日期',
-  altarDeathAmendHint:
-    '在此档案下链上补记去世日期。完成后即可献花。',
+  firstOfferDeathTitle: '献花',
+  firstOfferDeathHint:
+    '必须填写去世日期。本次会在链上记录去世日期并献花。仅档案创建者可操作。',
   btnOfferLotus: '献上莲花',
   btnClose: '关闭',
   cancelOfferMsg: '停止献花并返回主页？',
