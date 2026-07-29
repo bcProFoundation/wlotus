@@ -118,6 +118,15 @@ a {
   text-overflow: ellipsis;
 }
 
+.brand--footer {
+  font-size: 1rem;
+  color: var(--muted);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  min-width: auto;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -1424,11 +1433,4 @@ a {
   margin-top: 2rem;
   color: var(--muted);
   font-size: 0.85rem;
-}
-
-.footer-brand {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  font-size: 1rem;
 }

@@ -2483,7 +2483,11 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        <span className="footer-brand">{t('footerBrand')}</span> ·{' '}
+        <span className="brand brand--footer">
+          <span className="brand-letter">{t('footerBrand').charAt(0)}</span>
+          {t('footerBrand').slice(1)}
+        </span>{' '}
+        ·{' '}
         <a href="https://wlotus.org">wlotus.org</a>
       </footer>
     </div>
