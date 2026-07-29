@@ -44,6 +44,13 @@ root that re-packs the full altar note (`AltarSetupModal` reused for both;
 burn under a star (`burns`), and the client picks the most recent
 altar-packed one for display — the same mechanism any future amendment uses.
 
+The UI only lets a user link to an altar already in **this device's Recent
+list** (`AltarSetupModal` `relatedAltarOptions`, sourced from `recentGroups`
+in `App.tsx`) — no free-text txid entry. This is a UX constraint on the
+client only; the wire format itself (`relatedTxid`) is just a 64-hex txid and
+does not enforce or depend on it, so it does not change anything about the
+open-write discussion below.
+
 **Current state: intentionally open.** Any device can set or overwrite the
 relationship (or any other altar field) on **any** altar via this path — the
 same trust level the app already gives re-offers under a star. This matches
@@ -191,5 +198,5 @@ When implementing amendments / richer fields:
 | `src/offering/altarFields.ts` | Separator pack / parse / display name / relationship fields |
 | `apps/dana-index` | Public recent / memorial history from chain |
 | `apps/web` Offer **Thêm** + Recent / Lịch sử | Altar setup; merge index + local under star |
-| `apps/web/src/components/AltarSetupModal.tsx` | Relationship type + linked-altar link input (setup and amend) |
+| `apps/web/src/components/AltarSetupModal.tsx` | Relationship type + linked-altar picker — Recent list only (setup and amend) |
 | `apps/web/src/App.tsx` `onOffer({ amend: true })` | Star-fragment burn that re-packs the full altar (open for now) |

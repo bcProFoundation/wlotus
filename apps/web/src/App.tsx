@@ -1033,6 +1033,16 @@ export default function App() {
     g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
 
+  /**
+   * Relationship links only pick from this device's Recent list (no free-text
+   * txid entry) — simpler and keeps the link to something the user actually
+   * offered to. See docs/ALTAR.md "Relationships — open for now, restrict later".
+   */
+  const relatedAltarOptions = recentGroups.map(g => ({
+    txid: g.original.burnTxid,
+    label: memorialDisplayName(g.note, locale) || t('offeringFallback'),
+  }));
+
   function removeRecentGroup(g: OfferGroup) {
     const root = g.original.burnTxid;
     setHiddenRecent(prev => hideRecentRoot(root, prev));
@@ -1159,7 +1169,7 @@ export default function App() {
             ) : null}
           </div>
           {altar ? (
-            <AltarDetails altar={altar} />
+            <AltarDetails altar={altar} relatedAltarOptions={relatedAltarOptions} />
           ) : (
             <textarea
               id="note"
@@ -1428,6 +1438,7 @@ export default function App() {
           fallbackName={altar ? undefined : note.trim()}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
+          relatedAltarOptions={relatedAltarOptions}
           onClose={() => setAltarOpen(false)}
           onSave={fields => {
             setAltar(fields);
@@ -1464,6 +1475,7 @@ export default function App() {
             <AltarDetails
               altar={dedicationSheet.altar}
               onViewRelated={txid => void viewRelatedAltar(txid)}
+              relatedAltarOptions={relatedAltarOptions}
             />
             <div className="field">
               <label htmlFor="dedication-extra-note">
@@ -1527,6 +1539,9 @@ export default function App() {
           initial={amendSheet.altar}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
+          relatedAltarOptions={relatedAltarOptions.filter(
+            o => o.txid !== amendSheet.parentBurnTxid,
+          )}
           onClose={() => setAmendSheet(null)}
           onSave={() => {}}
           onOffer={fields => {
@@ -1623,7 +1638,7 @@ export default function App() {
             {session.altar ? (
               <>
                 <p className="offer-session-label">{t('altarLabel')}</p>
-                <AltarDetails altar={session.altar} />
+                <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
               </>
             ) : (
               <p className="offer-session-note offer-session-original">
@@ -1715,7 +1730,7 @@ export default function App() {
             {session.altar ? (
               <>
                 <p className="offer-session-label">{t('altarLabel')}</p>
-                <AltarDetails altar={session.altar} />
+                <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
               </>
             ) : (
               <>

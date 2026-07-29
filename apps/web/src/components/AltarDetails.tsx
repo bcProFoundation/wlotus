@@ -14,12 +14,20 @@ function displayAltarDate(raw: string): string {
   return formatAltarDateInput(t) || t;
 }
 
+/** One pickable link target — this device's Recent list only. */
+export interface RelatedAltarOption {
+  txid: string;
+  label: string;
+}
+
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
 export function AltarDetails(props: {
   altar: AltarFields;
   className?: string;
   /** Open the linked altar (relationship) when the caller supports it. */
   onViewRelated?: (relatedTxid: string) => void;
+  /** Resolve the linked altar's display name (Recent-list options). */
+  relatedAltarOptions?: RelatedAltarOption[];
 }) {
   const { locale, t } = useLocale();
   const { altar } = props;
@@ -53,6 +61,9 @@ export function AltarDetails(props: {
         : altar.relationshipType === 'child'
           ? t('altarRelationshipChild')
           : '';
+  const relatedName = props.relatedAltarOptions?.find(
+    o => o.txid === relatedTxid,
+  )?.label;
 
   return (
     <div
@@ -66,7 +77,7 @@ export function AltarDetails(props: {
       ))}
       {relationshipLabel && relatedTxid ? (
         <div className="altar-details-row">
-          <div className="altar-details-label">{t('altarRelationship')}</div>
+          <div className="altar-details-label">{relationshipLabel}</div>
           <div className="altar-details-value">
             {props.onViewRelated ? (
               <button
@@ -74,10 +85,10 @@ export function AltarDetails(props: {
                 className="altar-related-link"
                 onClick={() => props.onViewRelated?.(relatedTxid)}
               >
-                {relationshipLabel} — {t('altarViewRelated')}
+                {relatedName || t('altarViewRelated')}
               </button>
             ) : (
-              relationshipLabel
+              relatedName || t('altarViewRelated')
             )}
           </div>
         </div>

@@ -51,6 +51,7 @@ export type MessageKey =
   | 'altarRelationshipChild'
   | 'altarRelatedTxidLabel'
   | 'altarRelatedTxidPlaceholder'
+  | 'altarNoRecentForRelationship'
   | 'altarErrRelatedTxid'
   | 'altarViewRelated'
   | 'altarErrName'
@@ -174,9 +175,11 @@ const en: Dict = {
   altarRelationshipSpouse: 'Spouse',
   altarRelationshipParent: 'Parent of',
   altarRelationshipChild: 'Child of',
-  altarRelatedTxidLabel: 'Linked altar (paste its wLotus link)',
-  altarRelatedTxidPlaceholder: 'https://wlotus.org/…',
-  altarErrRelatedTxid: 'Paste a valid wLotus altar link to link a relationship.',
+  altarRelatedTxidLabel: 'Linked altar (from your Recent list)',
+  altarRelatedTxidPlaceholder: 'Choose from Recent…',
+  altarNoRecentForRelationship:
+    'Offer to someone in Recent first to link a relationship.',
+  altarErrRelatedTxid: 'Choose a linked altar from your Recent list.',
   altarViewRelated: 'View linked altar',
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
@@ -305,10 +308,11 @@ const vi: Dict = {
   altarRelationshipSpouse: 'Vợ/Chồng của',
   altarRelationshipParent: 'Cha/Mẹ của',
   altarRelationshipChild: 'Con của',
-  altarRelatedTxidLabel: 'Ban thờ liên quan (dán liên kết wLotus)',
-  altarRelatedTxidPlaceholder: 'https://wlotus.org/…',
-  altarErrRelatedTxid:
-    'Dán một liên kết ban thờ wLotus hợp lệ để liên kết mối quan hệ.',
+  altarRelatedTxidLabel: 'Ban thờ liên quan (từ danh sách Gần đây)',
+  altarRelatedTxidPlaceholder: 'Chọn từ Gần đây…',
+  altarNoRecentForRelationship:
+    'Hãy dâng hoa cho người đó trong Gần đây trước để liên kết mối quan hệ.',
+  altarErrRelatedTxid: 'Chọn một ban thờ liên quan từ danh sách Gần đây.',
   altarViewRelated: 'Xem ban thờ liên quan',
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
@@ -435,9 +439,10 @@ const zh: Dict = {
   altarRelationshipSpouse: '配偶',
   altarRelationshipParent: '为其父母',
   altarRelationshipChild: '为其子女',
-  altarRelatedTxidLabel: '关联灵位（粘贴 wLotus 链接）',
-  altarRelatedTxidPlaceholder: 'https://wlotus.org/…',
-  altarErrRelatedTxid: '请粘贴有效的 wLotus 灵位链接以建立关系。',
+  altarRelatedTxidLabel: '关联灵位（来自"最近"列表）',
+  altarRelatedTxidPlaceholder: '从最近选择…',
+  altarNoRecentForRelationship: '请先在"最近"中为对方献花，才能建立关系。',
+  altarErrRelatedTxid: '请从"最近"列表中选择关联灵位。',
   altarViewRelated: '查看关联灵位',
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
