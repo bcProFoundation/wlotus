@@ -11,9 +11,12 @@ export {
   isAltarPackedNote,
   memorialDisplayName,
   normalizeAltarHonorific,
+  normalizeAltarRelatedTxid,
+  normalizeAltarRelationshipType,
   parseAltarNote,
   validateAltarFields,
   type AltarFields,
   type AltarHonorific,
   type AltarLocale,
+  type AltarRelationshipType,
 } from '../../../../src/offering/altarFields.js';

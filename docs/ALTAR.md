@@ -34,6 +34,63 @@ Amendments are rare corrections (name, place, short note) — not an unbounded j
 
 ---
 
+## Relationships — open for now, restrict later
+
+`relationshipType` / `relatedTxid` (fields 9–10) can be set **at altar setup**
+or **added afterward** via an amendment — a star-fragment burn under the same
+root that re-packs the full altar note (`AltarSetupModal` reused for both;
+`apps/web/src/App.tsx` `onOffer({ parentBurnTxid, altar, amend: true })`).
+`dana-index` needs no changes: `GET /api/memorial/:txid` already returns every
+burn under a star (`burns`), and the client picks the most recent
+altar-packed one for display — the same mechanism any future amendment uses.
+
+**Current state: intentionally open.** Any device can set or overwrite the
+relationship (or any other altar field) on **any** altar via this path — the
+same trust level the app already gives re-offers under a star. This matches
+the plan above (minter-only amend, ≤ 10) **in policy** but that restriction is
+**not enforced in code yet**. Track before shipping broadly:
+
+1. Enforce **minter-only amend** + **≤ 10 amends per altar** in mint-api
+   (`apps/mint-api/src/offer.ts`), not just the web client.
+2. Decide what "minter" means operationally (see below).
+
+**Can `installId` be the first defense mechanism?**
+
+`installId` is a `crypto.randomUUID()` written to `localStorage`
+(`wlotus.installId`) — a plain client-supplied string mint-api never
+cryptographically verifies. Two different properties matter here and are
+easy to conflate:
+
+- **As a secret gate against strangers** — reasonable as a first step. If
+  mint-api recorded `creatorInstallId` per root txid (it does not yet; only
+  `apps/dana-index` is queried today and it never sees `installId` — see
+  "Related code" below) and rejected amendments from a different `installId`,
+  a random third party has no way to *guess* the creator's id (it is never
+  published on-chain or by `dana-index`). Cheap to add, no accounts needed.
+- **As a durable "same person / device" credential — no.** Clearing site
+  data, reinstalling the PWA, restoring/factory-resetting the phone, or
+  simply using a different browser on the same device all generate a **new**
+  random `installId` with no link to the old one. A legitimate creator who
+  does any of that permanently loses the ability to amend their own altar,
+  with no recovery path. So `installId` is *fine* as a soft, best-effort
+  speed bump, but must never be the only or final answer.
+
+**Better long-term mechanism.** WLotus already has a matching pattern:
+`burnToken`, a bearer capability returned by `/api/submit` and required to
+complete `/api/burn` / `/api/cancel` (`apps/mint-api/src/offer.ts`). A
+per-altar **edit capability** could follow the same shape — mint-api issues a
+secret token to the creating device at altar-creation time; any future
+amendment for that root must present it. This does not solve durability
+(the token is still device-local and lost on reset, just like `installId`),
+but it is a deliberately-scoped secret instead of a repurposed device id, and
+requires no accounts or wallet keys per offerer (the offerer only performs
+PoW today; mint-api's server wallet signs and broadcasts every burn — see
+`apps/mint-api/README.md`). True cross-device/cross-reset recovery would need
+real identity (an account, or a wallet key the offerer controls and signs
+with), which is a bigger product decision, not a quick fix.
+
+---
+
 ## On-chain encoding — separator fields (not JSON / tags)
 
 Altar payload fields live **on-chain** inside the memorial note (or a future DANA memorial version). Prefer a **single special separator** and a fixed field order by importance — **not** JSON, CBOR maps, or tag/key blobs.
@@ -52,12 +109,22 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 | 6 | Date of death (`YYYY` or `YYYY-MM-DD`) | **required** when altar used | yes |
 | 7 | Place of death | optional | same, then geohash |
 | 8 | Funeral / resting place | optional | same, then geohash |
+| 9 | Relationship type (`spouse` \| `parent` \| `child` \| empty) | optional | yes |
+| 10 | Related altar txid (64-hex original burn, or empty) | optional | yes |
 
 Wire sketch (UTF-8):
 
 ```
-title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace
+title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid
 ```
+
+Fields 9–10 (`relationshipType` / `relatedTxid`, see `src/offering/altarFields.ts`)
+link this altar to another WLotus altar by its original dedication burn
+txid. `parent` / `child` describe **this** altar's role relative to the
+linked one (e.g. `child` = "this person is the child of the linked altar");
+`spouse` is symmetric. Notes packed before this pair existed simply omit the
+slots — readers default missing/invalid values to empty, so old altars parse
+unchanged.
 
 `title` is a **locale-neutral code** (`mr` / `mrs`); UI renders Mr./Mrs., Ông/Bà, 先生/女士. The title slot is always written (may be empty) so readers can tell new wire from legacy name-first packs.
 
@@ -121,6 +188,8 @@ When implementing amendments / richer fields:
 | Piece | Role |
 |-------|------|
 | `src/offering/wlbrMemorial.ts` | DANA v1/v2 memorial EMPP |
-| `src/offering/altarFields.ts` | Separator pack / parse / display name |
+| `src/offering/altarFields.ts` | Separator pack / parse / display name / relationship fields |
 | `apps/dana-index` | Public recent / memorial history from chain |
 | `apps/web` Offer **Thêm** + Recent / Lịch sử | Altar setup; merge index + local under star |
+| `apps/web/src/components/AltarSetupModal.tsx` | Relationship type + linked-altar link input (setup and amend) |
+| `apps/web/src/App.tsx` `onOffer({ amend: true })` | Star-fragment burn that re-packs the full altar (open for now) |

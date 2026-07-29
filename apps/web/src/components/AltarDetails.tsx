@@ -1,6 +1,7 @@
 import {
   altarHonorificLabel,
   formatAltarDateInput,
+  normalizeAltarRelatedTxid,
   type AltarFields,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
@@ -17,6 +18,8 @@ function displayAltarDate(raw: string): string {
 export function AltarDetails(props: {
   altar: AltarFields;
   className?: string;
+  /** Open the linked altar (relationship) when the caller supports it. */
+  onViewRelated?: (relatedTxid: string) => void;
 }) {
   const { locale, t } = useLocale();
   const { altar } = props;
@@ -41,6 +44,16 @@ export function AltarDetails(props: {
     { label: t('altarFuneralPlace'), value: altar.funeralPlace.trim() },
   ].filter(r => r.value.length > 0);
 
+  const relatedTxid = normalizeAltarRelatedTxid(altar.relatedTxid);
+  const relationshipLabel =
+    altar.relationshipType === 'spouse'
+      ? t('altarRelationshipSpouse')
+      : altar.relationshipType === 'parent'
+        ? t('altarRelationshipParent')
+        : altar.relationshipType === 'child'
+          ? t('altarRelationshipChild')
+          : '';
+
   return (
     <div
       className={`altar-details${props.className ? ` ${props.className}` : ''}`}
@@ -51,6 +64,24 @@ export function AltarDetails(props: {
           <div className="altar-details-value">{r.value}</div>
         </div>
       ))}
+      {relationshipLabel && relatedTxid ? (
+        <div className="altar-details-row">
+          <div className="altar-details-label">{t('altarRelationship')}</div>
+          <div className="altar-details-value">
+            {props.onViewRelated ? (
+              <button
+                type="button"
+                className="altar-related-link"
+                onClick={() => props.onViewRelated?.(relatedTxid)}
+              >
+                {relationshipLabel} — {t('altarViewRelated')}
+              </button>
+            ) : (
+              relationshipLabel
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

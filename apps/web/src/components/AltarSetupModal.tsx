@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import {
   emptyAltarFields,
   formatAltarDateInput,
+  normalizeAltarRelatedTxid,
   validateAltarFields,
   type AltarFields,
   type AltarHonorific,
+  type AltarRelationshipType,
 } from '../lib/altarFields.js';
+import { extractBurnTxid } from '../lib/shareLink.js';
 import { useLocale } from '../i18n/LocaleContext.js';
 import { AltarDetails } from './AltarDetails.js';
 
@@ -21,6 +24,8 @@ function normalizeFields(draft: AltarFields): AltarFields {
     deathDate: draft.deathDate.trim(),
     deathPlace: draft.deathPlace.trim(),
     funeralPlace: draft.funeralPlace.trim(),
+    relationshipType: draft.relationshipType,
+    relatedTxid: normalizeAltarRelatedTxid(draft.relatedTxid),
   };
 }
 
@@ -61,6 +66,21 @@ export function AltarSetupModal(props: {
 
   function setHonorific(next: AltarHonorific) {
     setField('title', draft.title === next ? '' : next);
+  }
+
+  function setRelationshipType(next: AltarRelationshipType) {
+    const nextType = draft.relationshipType === next ? '' : next;
+    setDraft(d => ({
+      ...d,
+      relationshipType: nextType,
+      relatedTxid: nextType ? d.relatedTxid : '',
+    }));
+    setErrorKey(null);
+  }
+
+  function setRelatedTxidInput(raw: string) {
+    // Accept a pasted wLotus link and collapse it to the bare burn txid.
+    setField('relatedTxid', extractBurnTxid(raw) ?? raw);
   }
 
   function goReview() {
@@ -248,6 +268,71 @@ export function AltarSetupModal(props: {
                 onChange={e => setField('funeralPlace', e.target.value)}
                 placeholder={t('altarPlaceOptional')}
               />
+            </div>
+
+            <div className="field">
+              <span className="altar-honorific-label" id="altar-relationship-label">
+                {t('altarRelationship')}
+              </span>
+              <div
+                className="altar-honorific altar-relationship"
+                role="group"
+                aria-labelledby="altar-relationship-label"
+              >
+                <button
+                  type="button"
+                  className={
+                    draft.relationshipType === 'spouse'
+                      ? 'altar-honorific-btn is-selected'
+                      : 'altar-honorific-btn'
+                  }
+                  aria-pressed={draft.relationshipType === 'spouse'}
+                  onClick={() => setRelationshipType('spouse')}
+                >
+                  {t('altarRelationshipSpouse')}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    draft.relationshipType === 'parent'
+                      ? 'altar-honorific-btn is-selected'
+                      : 'altar-honorific-btn'
+                  }
+                  aria-pressed={draft.relationshipType === 'parent'}
+                  onClick={() => setRelationshipType('parent')}
+                >
+                  {t('altarRelationshipParent')}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    draft.relationshipType === 'child'
+                      ? 'altar-honorific-btn is-selected'
+                      : 'altar-honorific-btn'
+                  }
+                  aria-pressed={draft.relationshipType === 'child'}
+                  onClick={() => setRelationshipType('child')}
+                >
+                  {t('altarRelationshipChild')}
+                </button>
+              </div>
+              {draft.relationshipType ? (
+                <input
+                  id="altar-related-txid"
+                  type="text"
+                  autoComplete="off"
+                  value={draft.relatedTxid}
+                  onChange={e => setRelatedTxidInput(e.target.value)}
+                  placeholder={t('altarRelatedTxidPlaceholder')}
+                  aria-label={t('altarRelatedTxidLabel')}
+                  style={{ marginTop: '0.5rem' }}
+                />
+              ) : null}
+              {errorKey === 'relatedTxid' || errorKey === 'relationshipType' ? (
+                <p className="hint altar-field-error">
+                  {t('altarErrRelatedTxid')}
+                </p>
+              ) : null}
             </div>
 
             <div className="altar-setup-actions">
