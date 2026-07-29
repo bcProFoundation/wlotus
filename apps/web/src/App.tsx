@@ -1555,11 +1555,6 @@ export default function App() {
                     disabled={busy}
                     actions={[
                       {
-                        key: 'history',
-                        label: t('btnHistory'),
-                        onClick: () => void openMemorialHistory(g),
-                      },
-                      {
                         key: 'open',
                         label: t('btnSwipeOpen'),
                         onClick: () => {
@@ -1620,9 +1615,14 @@ export default function App() {
                         </div>
                       </div>
                       <div className="history-row history-row-secondary">
-                        <span className="history-meta">
+                        <button
+                          type="button"
+                          className="history-meta history-burns-link"
+                          disabled={busy}
+                          onClick={() => void openMemorialHistory(g)}
+                        >
                           {t('burnTotal', { n: g.totalBurns })}
-                        </span>
+                        </button>
                         <div className="history-row-actions">
                           {canReoffer ? (
                             <button

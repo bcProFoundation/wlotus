@@ -242,7 +242,7 @@ const en: Dict = {
   setupDoneIn: 'Profile set up in {duration} for {name}',
   recentTitle: 'Recent',
   reofferHint:
-    'Re-offer a lotus from memorials with a date of death. Swipe left for history, explorer, or delete on this device.',
+    'Re-offer a lotus from memorials with a date of death. Tap the burn count for history; swipe left for explorer or delete on this device.',
   originalBurnBadge: 'Origin',
   burnTotal: '{n} burns',
   latestBurnLink: 'Latest burn',
@@ -397,7 +397,7 @@ const vi: Dict = {
   setupDoneIn: 'Đã thiết lập hồ sơ trong {duration} cho {name}',
   recentTitle: 'Gần đây',
   reofferHint:
-    'Dâng lại hoa sen cho ban thờ đã có ngày mất. Vuốt sang trái để xem lịch sử, mở explorer, hoặc xóa khỏi máy này.',
+    'Dâng lại hoa sen cho ban thờ đã có ngày mất. Chạm số lần dâng để xem lịch sử; vuốt sang trái để mở explorer hoặc xóa khỏi máy này.',
   originalBurnBadge: 'Lập ban',
   burnTotal: '{n} lần dâng',
   latestBurnLink: 'Lần dâng gần nhất',
@@ -549,7 +549,7 @@ const zh: Dict = {
   setupDoneIn: '档案已设置，用时 {duration}，献给 {name}',
   recentTitle: '最近',
   reofferHint:
-    '可为已有去世日期的灵位再次献花。向左滑动可查看历史、打开浏览器，或从本机删除。',
+    '可为已有去世日期的灵位再次献花。点按献花次数查看历史；向左滑动可打开浏览器或从本机删除。',
   originalBurnBadge: '立坛',
   burnTotal: '{n} 次献花',
   latestBurnLink: '最近一次献花',

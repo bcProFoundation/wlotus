@@ -877,6 +877,30 @@ a {
   min-width: 0;
 }
 
+.history-burns-link {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-2);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+  cursor: pointer;
+}
+
+.history-burns-link:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.history-burns-link:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .history-row-actions {
   display: flex;
   flex-shrink: 0;
