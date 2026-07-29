@@ -316,7 +316,7 @@ const en: Dict = {
 
 const vi: Dict = {
   brand: 'W Lotus',
-  tagline: 'Bông hoa của sự tưởng nhớ.',
+  tagline: 'Bông hoa của sự tưởng nhớ vĩnh hằng.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
