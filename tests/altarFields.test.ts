@@ -15,6 +15,7 @@ import {
   altarHasDeathDate,
   altarSpouseRelationshipLabel,
   encodeDeathDateNote,
+  isDeathDateAmendNote,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
@@ -396,6 +397,8 @@ describe('altarFields', () => {
       deathPlace: 'Hà Nội',
       funeralPlace: '',
     });
+    expect(isDeathDateAmendNote(fragment)).toBe(true);
+    expect(isDeathDateAmendNote(root)).toBe(false);
     const merged = mergeAltarFields([fragment, root]);
     expect(merged?.name).toBe('Nguyễn Văn A');
     expect(merged?.deathDate).toBe('2020-01-15');

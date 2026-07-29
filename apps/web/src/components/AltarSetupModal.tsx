@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  altarHasDeathDate,
   altarRelationships,
   altarSpouseRelationshipLabel,
   canAddRelationship,
@@ -332,18 +333,26 @@ export function AltarSetupModal(props: {
   const editTitle = relationshipOnly
     ? t('altarRelationshipTitle')
     : deathOnly
-      ? t('altarDeathAmendTitle')
-      : t('altarTitle');
+      ? t('firstOfferDeathTitle')
+      : altarHasDeathDate(draft)
+        ? t('altarTitle')
+        : t('profileTitle');
   const editHint = relationshipOnly
     ? t('altarRelationshipHint')
     : deathOnly
-      ? t('altarDeathAmendHint')
-      : t('altarHint');
-  const primaryCta = relationshipOnly
-    ? t('btnOffer')
+      ? t('firstOfferDeathHint')
+      : altarHasDeathDate(draft)
+        ? t('altarHint')
+        : t('profileHint');
+  const primaryCta =
+    relationshipOnly || deathOnly ? t('btnOffer') : t('btnSetup');
+  const reviewTitle = relationshipOnly
+    ? t('altarRelationshipTitle')
     : deathOnly
-      ? t('btnRecordDeath')
-      : t('btnSetup');
+      ? t('firstOfferDeathTitle')
+      : altarHasDeathDate(review ?? draft)
+        ? t('altarDetailTitle')
+        : t('profileDetailTitle');
 
   return (
     <div
@@ -622,13 +631,7 @@ export function AltarSetupModal(props: {
           </>
         ) : (
           <>
-            <h2 id="altar-setup-title">
-              {relationshipOnly
-                ? t('altarRelationshipTitle')
-                : deathOnly
-                  ? t('altarDeathAmendTitle')
-                  : t('altarDetailTitle')}
-            </h2>
+            <h2 id="altar-setup-title">{reviewTitle}</h2>
             {review ? (
               <AltarDetails
                 altar={

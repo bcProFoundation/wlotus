@@ -88,6 +88,7 @@ fuel coin from the desk automatically — still prefer running the fund script f
 |--------|------|----------------|
 | GET | `/health` | `ok`, `startedAt`, `deployedAt` (source file mtime), `deploy.gitSha`, `features.raceOpen` |
 | GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, `raceOpen`, `tipFeeAccounts`, `deployedAt`, … |
+| GET | `/api/root-creator?txid=&installId=` | Soft ownership: `{ isCreator, known }` (never returns stored id) |
 | POST | `/api/challenge` | `{ installId, note? }` → includes `tipFeeAddress` |
 | POST | `/api/submit` | `{ installId, challengeId, nonceHex, … }` → remint; temple may set `burnPending` |
 | POST | `/api/burn` | `{ installId, remintTxid, burnToken }` — memorial burn; `burnToken` from submit only |

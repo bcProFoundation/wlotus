@@ -9,6 +9,7 @@
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  *   POST /api/burn       { installId, remintTxid } — temple memorial after soft pray
  *   GET  /api/status?installId=
+ *   GET  /api/root-creator?txid=&installId= → { isCreator, known }
  *   GET  /health         → ok + deploy stamps (file mtime / git sha)
  */
 import { createServer } from 'node:http';
@@ -17,6 +18,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import {
+  checkRootCreator,
   enqueueBurn,
   enqueueCancel,
   enqueueChallenge,
@@ -195,6 +197,17 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/root-creator') {
+      const installId = requireInstallId(url.searchParams.get('installId'));
+      const txid = String(url.searchParams.get('txid') || '').trim();
+      if (!/^[0-9a-fA-F]{64}$/.test(txid)) {
+        json(res, 400, { error: 'txid required (64 hex)' });
+        return;
+      }
+      json(res, 200, checkRootCreator({ rootBurnTxid: txid, installId }));
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/health') {
       json(res, 200, healthPayload());
       return;
@@ -312,7 +325,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn/i.test(
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|txid required/i.test(
         msg,
       )
         ? 400
