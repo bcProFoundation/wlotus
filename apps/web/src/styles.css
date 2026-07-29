@@ -101,13 +101,30 @@ a {
   filter: brightness(0) invert(1);
 }
 
+.brand-letter {
+  display: inline-block;
+}
+
 .brand {
   font-family: var(--font-display);
-  font-size: clamp(2.6rem, 7vw, 3.8rem);
+  font-size: clamp(1.5rem, 7vw, 3.8rem);
   font-weight: 600;
   letter-spacing: -0.03em;
   margin: 0;
   color: #fff;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand--footer {
+  font-size: 1rem;
+  color: var(--muted);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  min-width: auto;
 }
 
 .header-actions {

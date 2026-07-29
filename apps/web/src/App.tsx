@@ -1598,7 +1598,10 @@ export default function App() {
               width={56}
               height={56}
             />
-            <h1 className="brand">{t('brand')}</h1>
+            <h1 className="brand">
+              <span className="brand-letter">{t('brand').charAt(0)}</span>
+              {t('brand').slice(1)}
+            </h1>
           </div>
           <div className="header-actions">
             <button
@@ -2480,7 +2483,11 @@ export default function App() {
       ) : null}
 
       <footer className="footer">
-        {t('footerBrand')} ·{' '}
+        <span className="brand brand--footer">
+          <span className="brand-letter">{t('footerBrand').charAt(0)}</span>
+          {t('footerBrand').slice(1)}
+        </span>{' '}
+        ·{' '}
         <a href="https://wlotus.org">wlotus.org</a>
       </footer>
     </div>

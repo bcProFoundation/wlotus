@@ -149,8 +149,8 @@ export type MessageKey =
 type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
-  brand: 'White Lotus',
-  tagline: 'Offer a lotus of remembrance in eternity.',
+  brand: 'W Lotus',
+  tagline: 'A flower of eternal remembrance.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
@@ -304,7 +304,7 @@ const en: Dict = {
   latestMessageLabel: 'Message: {msg}',
   btnRemoveRecent: 'Delete',
   btnSwipeOpen: 'Open',
-  footerBrand: 'White Lotus',
+  footerBrand: 'W Lotus',
   searchTitle: 'Search',
   searchPlaceholder: 'Search by name…',
   searchHint: 'Find a memorial or profile by name across White Lotus.',
@@ -315,8 +315,8 @@ const en: Dict = {
 };
 
 const vi: Dict = {
-  brand: 'White Lotus',
-  tagline: 'Dâng một đóa sen tưởng nhớ trong vĩnh hằng.',
+  brand: 'W Lotus',
+  tagline: 'Bông hoa của sự tưởng nhớ vĩnh hằng.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
@@ -469,7 +469,7 @@ const vi: Dict = {
   latestMessageLabel: 'Lời tưởng niệm: {msg}',
   btnRemoveRecent: 'Xóa',
   btnSwipeOpen: 'Mở',
-  footerBrand: 'White Lotus',
+  footerBrand: 'W Lotus',
   searchTitle: 'Tìm kiếm',
   searchPlaceholder: 'Tìm theo tên…',
   searchHint: 'Tìm ban thờ hoặc hồ sơ theo tên trên White Lotus.',
@@ -480,8 +480,8 @@ const vi: Dict = {
 };
 
 const zh: Dict = {
-  brand: 'White Lotus',
-  tagline: '献上一朵追思之莲，寄于永恒。',
+  brand: 'W Lotus',
+  tagline: '永恒追思之花。',
   offerTitle: '献花',
   hintPrayMine:
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',
@@ -630,7 +630,7 @@ const zh: Dict = {
   latestMessageLabel: '寄语: {msg}',
   btnRemoveRecent: '删除',
   btnSwipeOpen: '打开',
-  footerBrand: 'White Lotus',
+  footerBrand: 'W Lotus',
   searchTitle: '搜索',
   searchPlaceholder: '按姓名搜索…',
   searchHint: '按姓名在 White Lotus 上查找灵位或个人主页。',
