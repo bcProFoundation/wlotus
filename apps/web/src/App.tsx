@@ -6,7 +6,7 @@ import {
   type ClipboardEvent,
 } from 'react';
 import { LangSwitch } from './components/LangSwitch.js';
-import { AltarDetails } from './components/AltarDetails.js';
+import { AltarDetails, type RelatedAltarOption } from './components/AltarDetails.js';
 import { AltarSetupModal } from './components/AltarSetupModal.js';
 import {
   OpenInBrowserGate,
@@ -35,6 +35,7 @@ import {
   memorialDisplayName,
   memorialNoteMaxBytes,
   mergeAltarFields,
+  altarRelationships,
   MEMORIAL_NOTE_MAX_CHARS,
   parseAltarNote,
   type AltarFields,
@@ -208,6 +209,8 @@ export default function App() {
     parentBurnTxid: string;
     altar: AltarFields;
     extraNote: string;
+    /** Names for relationship links (Recent + index lookups). */
+    relatedOptions: RelatedAltarOption[];
   } | null>(null);
   /**
    * Edit/relationship sheet for an EXISTING altar — reuses AltarSetupModal to
@@ -966,6 +969,31 @@ export default function App() {
     return (remote.originalNote || remote.latestNote || '').trim();
   }
 
+  async function resolveRelatedOptions(
+    altarFields: AltarFields,
+    base: RelatedAltarOption[],
+  ): Promise<RelatedAltarOption[]> {
+    const byTxid = new Map(base.map(o => [o.txid, o]));
+    for (const link of altarRelationships(altarFields)) {
+      if (byTxid.has(link.relatedTxid)) continue;
+      try {
+        const g = await fetchIndexMemorial(link.relatedTxid);
+        const label =
+          memorialDisplayName(
+            g.originalNote || g.latestNote || '',
+            locale,
+          ) || t('altarViewRelated');
+        byTxid.set(link.relatedTxid, { txid: link.relatedTxid, label });
+      } catch {
+        byTxid.set(link.relatedTxid, {
+          txid: link.relatedTxid,
+          label: t('altarViewRelated'),
+        });
+      }
+    }
+    return [...byTxid.values()];
+  }
+
   /** Open re-offer sheet; sync History burns into Recent; hydrate Ban thờ. */
   async function openDedicationSheet(opts: {
     parentBurnTxid: string;
@@ -997,10 +1025,16 @@ export default function App() {
         /* keep local note */
       }
     }
+    const resolved = altar ?? altarFromMemorialNote(memorialNote);
+    const relatedOptions = await resolveRelatedOptions(
+      resolved,
+      relatedAltarOptions,
+    );
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
-      altar: altar ?? altarFromMemorialNote(memorialNote),
+      altar: resolved,
       extraNote: '',
+      relatedOptions,
     });
   }
 
@@ -1522,7 +1556,7 @@ export default function App() {
             <AltarDetails
               altar={dedicationSheet.altar}
               onViewRelated={txid => void viewRelatedAltar(txid)}
-              relatedAltarOptions={relatedAltarOptions}
+              relatedAltarOptions={dedicationSheet.relatedOptions}
             />
             <div className="field">
               <label htmlFor="dedication-extra-note">
@@ -1587,9 +1621,13 @@ export default function App() {
           initial={amendSheet.altar}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
-          relatedAltarOptions={relatedAltarOptions.filter(
-            o => o.txid !== amendSheet.parentBurnTxid,
-          )}
+          relatedAltarOptions={
+            // Prefer dedication-sheet enriched names, then device Recent.
+            (dedicationSheet?.parentBurnTxid === amendSheet.parentBurnTxid
+              ? dedicationSheet.relatedOptions
+              : relatedAltarOptions
+            ).filter(o => o.txid !== amendSheet.parentBurnTxid)
+          }
           onClose={() => setAmendSheet(null)}
           onSave={() => {}}
           onOffer={fields => {

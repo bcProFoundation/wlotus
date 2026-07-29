@@ -10,6 +10,9 @@ import {
   memorialDisplayName,
   memorialNoteMaxBytes,
   mergeAltarFields,
+  canAddRelationship,
+  altarRelationships,
+  MAX_CHILD_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   normalizeAltarRelatedTxid,
@@ -33,6 +36,7 @@ describe('altarFields', () => {
       funeralPlace: '',
       relationshipType: '',
       relatedTxid: '',
+      relationships: [],
     };
     const packed = encodeAltarNote(fields);
     expect(isAltarPackedNote(packed)).toBe(true);
@@ -40,6 +44,7 @@ describe('altarFields', () => {
     expect(parseAltarNote(packed)).toEqual({
       ...fields,
       funeralPlace: '',
+      relationships: [],
     });
     expect(memorialDisplayName(packed, 'vi')).toBe('Ông Cao Lâm Quả');
     expect(memorialDisplayName(packed, 'en')).toBe('Mr. Cao Lâm Quả');
@@ -272,6 +277,7 @@ describe('altarFields', () => {
       funeralPlace: '',
       relationshipType: 'spouse',
       relatedTxid,
+      relationships: [],
     };
     const packed = encodeAltarNote(fields, {
       maxBytes: MEMORIAL_NOTE_MAX_BYTES,
@@ -297,6 +303,7 @@ describe('altarFields', () => {
       funeralPlace: '',
       relationshipType: '',
       relatedTxid: '',
+      relationships: [],
     });
     const fragment = encodeRelationshipNote(
       { relationshipType: 'spouse', relatedTxid },
@@ -305,8 +312,48 @@ describe('altarFields', () => {
     const merged = mergeAltarFields([fragment, root]);
     expect(merged?.relationshipType).toBe('spouse');
     expect(merged?.relatedTxid).toBe(relatedTxid);
+    expect(merged?.relationships).toEqual([
+      { type: 'spouse', relatedTxid },
+    ]);
     expect(merged?.deathPlace).toBe('Hải Cảng, Quy Nhơn, Bình Định');
     expect(merged?.birthPlace).toBe('Mỹ Thành, Phù Mỹ, Bình Định');
+  });
+
+  it('collects multiple relationship fragments (child max 2)', () => {
+    const root = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'A',
+      deathDate: '2001',
+    });
+    const child1 = '1'.repeat(64);
+    const child2 = '2'.repeat(64);
+    const child3 = '3'.repeat(64);
+    const spouse = 'a'.repeat(64);
+    // notes latest-first
+    const merged = mergeAltarFields([
+      encodeRelationshipNote({ relationshipType: 'child', relatedTxid: child2 }),
+      encodeRelationshipNote({ relationshipType: 'spouse', relatedTxid: spouse }),
+      encodeRelationshipNote({ relationshipType: 'child', relatedTxid: child1 }),
+      root,
+    ]);
+    expect(altarRelationships(merged!)).toEqual([
+      { type: 'child', relatedTxid: child1 },
+      { type: 'spouse', relatedTxid: spouse },
+      { type: 'child', relatedTxid: child2 },
+    ]);
+    expect(
+      canAddRelationship(altarRelationships(merged!), {
+        type: 'child',
+        relatedTxid: child3,
+      }),
+    ).toBe('childMax');
+    expect(
+      canAddRelationship(altarRelationships(merged!), {
+        type: 'spouse',
+        relatedTxid: 'b'.repeat(64),
+      }),
+    ).toBeNull();
+    expect(MAX_CHILD_RELATIONSHIPS).toBe(2);
   });
 
   it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {

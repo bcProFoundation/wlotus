@@ -1,8 +1,10 @@
 import {
   altarHonorificLabel,
+  altarRelationships,
   formatAltarDateInput,
-  normalizeAltarRelatedTxid,
   type AltarFields,
+  type AltarRelationshipKind,
+  type AltarRelationshipLink,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
 import { formatLunarDeathDate } from '../lib/lunarCalendar.js';
@@ -20,13 +22,22 @@ export interface RelatedAltarOption {
   label: string;
 }
 
+function relationshipKindLabel(
+  type: AltarRelationshipKind,
+  t: (key: 'altarRelationshipSpouse' | 'altarRelationshipParent' | 'altarRelationshipChild') => string,
+): string {
+  if (type === 'spouse') return t('altarRelationshipSpouse');
+  if (type === 'parent') return t('altarRelationshipParent');
+  return t('altarRelationshipChild');
+}
+
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
 export function AltarDetails(props: {
   altar: AltarFields;
   className?: string;
   /** Open the linked altar (relationship) when the caller supports it. */
   onViewRelated?: (relatedTxid: string) => void;
-  /** Resolve the linked altar's display name (Recent-list options). */
+  /** Resolve the linked altar's display name (Recent-list / index options). */
   relatedAltarOptions?: RelatedAltarOption[];
 }) {
   const { locale, t } = useLocale();
@@ -52,18 +63,7 @@ export function AltarDetails(props: {
     { label: t('altarFuneralPlace'), value: altar.funeralPlace.trim() },
   ].filter(r => r.value.length > 0);
 
-  const relatedTxid = normalizeAltarRelatedTxid(altar.relatedTxid);
-  const relationshipLabel =
-    altar.relationshipType === 'spouse'
-      ? t('altarRelationshipSpouse')
-      : altar.relationshipType === 'parent'
-        ? t('altarRelationshipParent')
-        : altar.relationshipType === 'child'
-          ? t('altarRelationshipChild')
-          : '';
-  const relatedName = props.relatedAltarOptions?.find(
-    o => o.txid === relatedTxid,
-  )?.label;
+  const links: AltarRelationshipLink[] = altarRelationships(altar);
 
   return (
     <div
@@ -75,24 +75,33 @@ export function AltarDetails(props: {
           <div className="altar-details-value">{r.value}</div>
         </div>
       ))}
-      {relationshipLabel && relatedTxid ? (
-        <div className="altar-details-row">
-          <div className="altar-details-label">{relationshipLabel}</div>
-          <div className="altar-details-value">
-            {props.onViewRelated ? (
-              <button
-                type="button"
-                className="altar-related-link"
-                onClick={() => props.onViewRelated?.(relatedTxid)}
-              >
-                {relatedName || t('altarViewRelated')}
-              </button>
-            ) : (
-              relatedName || t('altarViewRelated')
-            )}
+      {links.map(link => {
+        const label = relationshipKindLabel(link.type, t);
+        const relatedName = props.relatedAltarOptions?.find(
+          o => o.txid === link.relatedTxid,
+        )?.label;
+        return (
+          <div
+            key={`${link.type}:${link.relatedTxid}`}
+            className="altar-details-row"
+          >
+            <div className="altar-details-label">{label}</div>
+            <div className="altar-details-value">
+              {props.onViewRelated ? (
+                <button
+                  type="button"
+                  className="altar-related-link"
+                  onClick={() => props.onViewRelated?.(link.relatedTxid)}
+                >
+                  {relatedName || t('altarViewRelated')}
+                </button>
+              ) : (
+                relatedName || t('altarViewRelated')
+              )}
+            </div>
           </div>
-        </div>
-      ) : null}
+        );
+      })}
     </div>
   );
 }
