@@ -143,12 +143,26 @@ export function linksFromSingularFields(
   return [{ type, relatedTxid: txid }];
 }
 
-/** Prefer `relationships`; fall back to singular slots. */
+/** Prefer `relationships`; merge draft singular slots when present (setup / amend). */
 export function altarRelationships(fields: AltarFields): AltarRelationshipLink[] {
-  if (fields.relationships && fields.relationships.length > 0) {
-    return fields.relationships;
+  const fromList = fields.relationships ?? [];
+  const fromSingular = linksFromSingularFields(
+    fields.relationshipType,
+    fields.relatedTxid,
+  );
+  if (fromList.length === 0) return fromSingular;
+  if (fromSingular.length === 0) return fromList;
+  const out = [...fromList];
+  for (const link of fromSingular) {
+    if (
+      !out.some(
+        r => r.type === link.type && r.relatedTxid === link.relatedTxid,
+      )
+    ) {
+      out.push(link);
+    }
   }
-  return linksFromSingularFields(fields.relationshipType, fields.relatedTxid);
+  return out;
 }
 
 export function relationshipLinkKey(link: AltarRelationshipLink): string {

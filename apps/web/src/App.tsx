@@ -271,6 +271,8 @@ export default function App() {
     altar?: AltarFields | null;
     /** Optional remembrance words on a re-offer (on-chain DANA v2 note). */
     extraNote?: string;
+    /** Related-altar labels/titles for relationship rows during the session. */
+    relatedOptions?: RelatedAltarOption[];
   } | null>(null);
   /** Confirm before closing an active offer session (X / Cancel). */
   const [cancelLoseConfirm, setCancelLoseConfirm] = useState(false);
@@ -590,6 +592,8 @@ export default function App() {
      * `relationship` = link only; `death` = death date for a living profile.
      */
     amend?: boolean | 'relationship' | 'death';
+    /** Related-altar meta for session AltarDetails (names + honorifics). */
+    relatedOptions?: RelatedAltarOption[];
   }) {
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
     const amendKind =
@@ -733,14 +737,23 @@ export default function App() {
 
     setDedicationSheet(null);
     setCancelLoseConfirm(false);
+    const sessionAltar =
+      isReoffer
+        ? (opts?.altar ?? null)
+        : activeAltar
+          ? {
+              ...activeAltar,
+              // Fold draft singular link into relationships so session UI shows it.
+              relationships: altarRelationships(activeAltar),
+            }
+          : null;
     setSession({
       reoffer: isReoffer,
       setup: !isReoffer && !isAmend,
       note: historyNote,
-      altar: isReoffer
-        ? (opts?.altar ?? null)
-        : activeAltar,
+      altar: sessionAltar,
       extraNote: extraNote || undefined,
+      relatedOptions: opts?.relatedOptions,
     });
     setLinkedParentBurnTxid(null);
 
@@ -1060,6 +1073,7 @@ export default function App() {
                 relatedTxid: follow.relatedTxid,
               },
               amend: 'relationship',
+              relatedOptions: relatedAltarOptions,
             });
           });
         }
@@ -1816,7 +1830,10 @@ export default function App() {
             setNote(fields.note);
             setLinkedParentBurnTxid(null);
             setAltarOpen(false);
-            void onOffer({ altar: fields });
+            void onOffer({
+              altar: fields,
+              relatedOptions: relatedAltarOptions,
+            });
           }}
         />
       ) : null}
@@ -1980,6 +1997,11 @@ export default function App() {
           onOffer={fields => {
             const parentBurnTxid = amendSheet.parentBurnTxid;
             const kind = amendSheet.kind;
+            const sessionRelatedOptions = (
+              dedicationSheet?.parentBurnTxid === amendSheet.parentBurnTxid
+                ? dedicationSheet.relatedOptions
+                : relatedAltarOptions
+            ).filter(o => o.txid !== amendSheet.parentBurnTxid);
             setAmendSheet(null);
             setDedicationSheet(null);
             if (kind === 'death') {
@@ -1995,6 +2017,7 @@ export default function App() {
                   funeralPlace: fields.funeralPlace,
                 },
                 amend: 'death',
+                relatedOptions: sessionRelatedOptions,
               });
               return;
             }
@@ -2009,6 +2032,7 @@ export default function App() {
                 relatedTxid: fields.relatedTxid,
               },
               amend: 'relationship',
+              relatedOptions: sessionRelatedOptions,
             });
           }}
         />
@@ -2102,7 +2126,12 @@ export default function App() {
                     ? t('profileLabel')
                     : t('altarLabel')}
                 </p>
-                <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
+                <AltarDetails
+                  altar={session.altar}
+                  relatedAltarOptions={
+                    session.relatedOptions ?? relatedAltarOptions
+                  }
+                />
               </>
             ) : (
               <p className="offer-session-note offer-session-original">
@@ -2200,7 +2229,12 @@ export default function App() {
                     ? t('profileLabel')
                     : t('altarLabel')}
                 </p>
-                <AltarDetails altar={session.altar} relatedAltarOptions={relatedAltarOptions} />
+                <AltarDetails
+                  altar={session.altar}
+                  relatedAltarOptions={
+                    session.relatedOptions ?? relatedAltarOptions
+                  }
+                />
               </>
             ) : (
               <>

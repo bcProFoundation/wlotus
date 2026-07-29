@@ -418,6 +418,22 @@ describe('altarFields', () => {
     expect(MAX_PARENT_RELATIONSHIPS).toBe(2);
   });
 
+  it('merges draft singular relationship into existing relationships list', () => {
+    const existing = 'a'.repeat(64);
+    const draft = 'b'.repeat(64);
+    const fields: AltarFields = {
+      ...emptyAltarFields(),
+      name: 'A',
+      relationships: [{ type: 'spouse', relatedTxid: existing }],
+      relationshipType: 'parent',
+      relatedTxid: draft,
+    };
+    expect(altarRelationships(fields)).toEqual([
+      { type: 'spouse', relatedTxid: existing },
+      { type: 'parent', relatedTxid: draft },
+    ]);
+  });
+
   it('labels spouse from this altar honorific', () => {
     expect(altarSpouseRelationshipLabel('mr', 'vi')).toBe('Vợ');
     expect(altarSpouseRelationshipLabel('mrs', 'vi')).toBe('Chồng');

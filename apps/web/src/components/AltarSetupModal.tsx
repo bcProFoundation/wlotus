@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   altarHasDeathDate,
+  altarParentRelationshipLabel,
   altarRelationships,
   altarSpouseRelationshipLabel,
   canAddRelationship,
@@ -57,6 +58,10 @@ function RelationshipFields(props: {
   const { t, locale } = useLocale();
   const { draft } = props;
   const spouseLabel = altarSpouseRelationshipLabel(draft.title, locale);
+  const relatedOpt = props.relatedAltarOptions.find(
+    o => o.txid === draft.relatedTxid,
+  );
+  const parentLabel = altarParentRelationshipLabel(relatedOpt?.title, locale);
   return (
     <div className="field">
       <span className="altar-honorific-label" id="altar-relationship-label">
@@ -78,7 +83,7 @@ function RelationshipFields(props: {
           disabled={props.parentDisabled && draft.relationshipType !== 'parent'}
           onClick={() => props.setRelationshipType('parent')}
         >
-          {t('altarRelationshipParent')}
+          {parentLabel}
         </button>
         <button
           type="button"
