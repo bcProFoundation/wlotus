@@ -203,6 +203,22 @@ Do not require precise coordinates at launch. Convert coarse → geo when the fe
 
 ---
 
+## Avatar / portrait — future enhancement
+
+**Not in scope now.** Optional small portrait for a Ban thờ remains a deferred idea.
+
+eCash caps **all OP_RETURN scripts at ≤ 223 bytes** per transaction (~180 B usable image chunk after a dedicated LOKAD + index + optional parent txid; less if sharing space with ALP BURN + DANA). A tiny compressed face is still multi-tx:
+
+| Encode target | Rough size | Chunks (~180 B) |
+|---------------|------------|-----------------|
+| 32×32 PNG/WebP | ~0.4–0.8 KB | ~3–5 |
+| 48–64×64 WebP/JPEG | ~1–2 KB | ~6–12 |
+| 96–128×128 JPEG | ~3–5 KB | ~17–30 |
+
+If / when built: dedicated chunk burns under the altar star (index + total + root parent), hard encode budget (resize → WebP/PNG), client reassembly + cache. Fees for ~10 XEC txs are small; the product cost is the chunk protocol and UX. Prefer keeping identity fields text-only until then — do not block altar setup on an image.
+
+---
+
 ## Product split — WLotus vs LotusHeart
 
 | | **WLotus** | **LotusHeart** (later) |
