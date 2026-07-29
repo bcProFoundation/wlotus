@@ -8,9 +8,8 @@ import {
   type AltarHonorific,
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
-import { extractBurnTxid } from '../lib/shareLink.js';
 import { useLocale } from '../i18n/LocaleContext.js';
-import { AltarDetails } from './AltarDetails.js';
+import { AltarDetails, type RelatedAltarOption } from './AltarDetails.js';
 
 type Step = 'edit' | 'review';
 
@@ -35,6 +34,8 @@ export function AltarSetupModal(props: {
   fallbackName?: string;
   etaLabel: string;
   offerDisabled?: boolean;
+  /** Altars to link a relationship to — Recent list only (no free-text txid). */
+  relatedAltarOptions: RelatedAltarOption[];
   onClose: () => void;
   /** Persist Ban thờ on the main screen (Next / Offer). */
   onSave: (fields: AltarFields) => void;
@@ -73,14 +74,13 @@ export function AltarSetupModal(props: {
     setDraft(d => ({
       ...d,
       relationshipType: nextType,
-      relatedTxid: nextType ? d.relatedTxid : '',
+      // Keep relatedTxid only if it's still a valid Recent-list option.
+      relatedTxid:
+        nextType && props.relatedAltarOptions.some(o => o.txid === d.relatedTxid)
+          ? d.relatedTxid
+          : '',
     }));
     setErrorKey(null);
-  }
-
-  function setRelatedTxidInput(raw: string) {
-    // Accept a pasted wLotus link and collapse it to the bare burn txid.
-    setField('relatedTxid', extractBurnTxid(raw) ?? raw);
   }
 
   function goReview() {
@@ -317,16 +317,26 @@ export function AltarSetupModal(props: {
                 </button>
               </div>
               {draft.relationshipType ? (
-                <input
-                  id="altar-related-txid"
-                  type="text"
-                  autoComplete="off"
-                  value={draft.relatedTxid}
-                  onChange={e => setRelatedTxidInput(e.target.value)}
-                  placeholder={t('altarRelatedTxidPlaceholder')}
-                  aria-label={t('altarRelatedTxidLabel')}
-                  style={{ marginTop: '0.5rem' }}
-                />
+                props.relatedAltarOptions.length > 0 ? (
+                  <select
+                    id="altar-related-txid"
+                    value={draft.relatedTxid}
+                    onChange={e => setField('relatedTxid', e.target.value)}
+                    aria-label={t('altarRelatedTxidLabel')}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    <option value="">{t('altarRelatedTxidPlaceholder')}</option>
+                    {props.relatedAltarOptions.map(o => (
+                      <option key={o.txid} value={o.txid}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="hint" style={{ marginTop: '0.5rem' }}>
+                    {t('altarNoRecentForRelationship')}
+                  </p>
+                )
               ) : null}
               {errorKey === 'relatedTxid' || errorKey === 'relationshipType' ? (
                 <p className="hint altar-field-error">
@@ -349,7 +359,12 @@ export function AltarSetupModal(props: {
         ) : (
           <>
             <h2 id="altar-setup-title">{t('altarDetailTitle')}</h2>
-            {review ? <AltarDetails altar={review} /> : null}
+            {review ? (
+              <AltarDetails
+                altar={review}
+                relatedAltarOptions={props.relatedAltarOptions}
+              />
+            ) : null}
             <p className="hint eta" style={{ marginTop: '0.85rem' }}>
               {t('etaEstimated', { eta: props.etaLabel })}
             </p>
