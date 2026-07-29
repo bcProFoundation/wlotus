@@ -1621,7 +1621,9 @@ export default function App() {
                           disabled={busy}
                           onClick={() => void openMemorialHistory(g)}
                         >
-                          {t('burnTotal', { n: g.totalBurns })}
+                          {canReoffer
+                            ? t('burnTotal', { n: g.totalBurns })
+                            : t('activityTotal', { n: g.totalBurns })}
                         </button>
                         <div className="history-row-actions">
                           {canReoffer ? (
@@ -1918,13 +1920,19 @@ export default function App() {
             >
               ×
             </button>
-            <h2 id="memorial-history-title">{t('historyTitle')}</h2>
+            <h2 id="memorial-history-title">
+              {altarHasDeathDate(altarFromOfferGroup(historyGroup))
+                ? t('historyTitle')
+                : t('historyActivityTitle')}
+            </h2>
             <p className="offer-session-note offer-session-original">
               {memorialDisplayName(historyGroup.note, locale) ||
                 t('offeringFallback')}
             </p>
             <p className="hint">
-              {t('burnTotal', { n: historyGroup.totalBurns })}
+              {altarHasDeathDate(altarFromOfferGroup(historyGroup))
+                ? t('burnTotal', { n: historyGroup.totalBurns })
+                : t('activityTotal', { n: historyGroup.totalBurns })}
               {historyLoading ? ` · ${t('historyLoading')}` : ''}
             </p>
             {historyError ? (

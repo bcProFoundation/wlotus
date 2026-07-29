@@ -93,11 +93,13 @@ export type MessageKey =
   | 'reofferHint'
   | 'originalBurnBadge'
   | 'burnTotal'
+  | 'activityTotal'
   | 'latestBurnLink'
   | 'openOnExplorer'
   | 'btnReoffer'
   | 'btnHistory'
   | 'historyTitle'
+  | 'historyActivityTitle'
   | 'historyLoading'
   | 'offeringFallback'
   | 'offerSessionTitle'
@@ -245,11 +247,13 @@ const en: Dict = {
     'Re-offer a lotus from memorials with a date of death. Tap the burn count for history; swipe left for explorer or delete on this device.',
   originalBurnBadge: 'Origin',
   burnTotal: '{n} burns',
+  activityTotal: '{n} activities',
   latestBurnLink: 'Latest burn',
   openOnExplorer: 'Open on explorer',
   btnReoffer: 'Re-offer',
   btnHistory: 'History',
   historyTitle: 'Memorial history',
+  historyActivityTitle: 'Activity history',
   historyLoading: 'Loading…',
   offeringFallback: 'Offering',
   offerSessionTitle: 'Offering a flower',
@@ -400,11 +404,13 @@ const vi: Dict = {
     'Dâng lại hoa sen cho ban thờ đã có ngày mất. Chạm số lần dâng để xem lịch sử; vuốt sang trái để mở explorer hoặc xóa khỏi máy này.',
   originalBurnBadge: 'Lập ban',
   burnTotal: '{n} lần dâng',
+  activityTotal: '{n} hoạt động',
   latestBurnLink: 'Lần dâng gần nhất',
   openOnExplorer: 'Mở trên explorer',
   btnReoffer: 'Dâng lại',
   btnHistory: 'Lịch sử',
   historyTitle: 'Lịch sử tưởng niệm',
+  historyActivityTitle: 'Lịch sử hoạt động',
   historyLoading: 'Đang tải…',
   offeringFallback: 'Lần dâng hoa',
   offerSessionTitle: 'Đang dâng hoa',
@@ -552,11 +558,13 @@ const zh: Dict = {
     '可为已有去世日期的灵位再次献花。点按献花次数查看历史；向左滑动可打开浏览器或从本机删除。',
   originalBurnBadge: '立坛',
   burnTotal: '{n} 次献花',
+  activityTotal: '{n} 次活动',
   latestBurnLink: '最近一次献花',
   openOnExplorer: '在浏览器打开',
   btnReoffer: '再献',
   btnHistory: '历史',
   historyTitle: '追思历史',
+  historyActivityTitle: '活动历史',
   historyLoading: '加载中…',
   offeringFallback: '献花',
   offerSessionTitle: '正在献花',
