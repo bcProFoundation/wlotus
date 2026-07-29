@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import {
   altarHonorificLabel,
+  altarParentRelationshipLabel,
   altarRelationships,
   altarSpouseRelationshipLabel,
   formatAltarDateInput,
+  sortAltarRelationships,
   type AltarFields,
   type AltarHonorific,
   type AltarLocale,
@@ -27,19 +29,34 @@ function displayAltarDate(raw: string): string {
 export interface RelatedAltarOption {
   txid: string;
   label: string;
+  /** Related altar honorific — drives Cha / Mẹ labels. */
+  title?: AltarHonorific | string;
+  /** Related birth date/year — sorts Con when present. */
+  birthYear?: string;
 }
 
-function relationshipKindLabel(
+export function relationshipKindLabel(
   type: AltarRelationshipKind,
-  title: AltarHonorific | string,
+  thisTitle: AltarHonorific | string,
   locale: AltarLocale,
-  t: (
-    key: 'altarRelationshipParent' | 'altarRelationshipChild',
-  ) => string,
+  relatedTitle: string | null | undefined,
+  childLabel: string,
 ): string {
-  if (type === 'spouse') return altarSpouseRelationshipLabel(title, locale);
-  if (type === 'parent') return t('altarRelationshipParent');
-  return t('altarRelationshipChild');
+  if (type === 'spouse') return altarSpouseRelationshipLabel(thisTitle, locale);
+  if (type === 'parent') {
+    return altarParentRelationshipLabel(relatedTitle, locale);
+  }
+  return childLabel;
+}
+
+export function relatedMetaMap(
+  options: RelatedAltarOption[] | undefined,
+): Map<string, { title?: string; birthYear?: string }> {
+  const map = new Map<string, { title?: string; birthYear?: string }>();
+  for (const o of options || []) {
+    map.set(o.txid, { title: o.title, birthYear: o.birthYear });
+  }
+  return map;
 }
 
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
@@ -114,7 +131,11 @@ export function AltarDetails(props: {
     return Boolean(r.value);
   });
 
-  const links: AltarRelationshipLink[] = altarRelationships(altar);
+  const meta = relatedMetaMap(props.relatedAltarOptions);
+  const links: AltarRelationshipLink[] = sortAltarRelationships(
+    altarRelationships(altar),
+    meta,
+  );
 
   return (
     <div
@@ -127,10 +148,17 @@ export function AltarDetails(props: {
         </div>
       ))}
       {links.map(link => {
-        const label = relationshipKindLabel(link.type, altar.title, locale, t);
-        const relatedName = props.relatedAltarOptions?.find(
+        const related = props.relatedAltarOptions?.find(
           o => o.txid === link.relatedTxid,
-        )?.label;
+        );
+        const label = relationshipKindLabel(
+          link.type,
+          altar.title,
+          locale,
+          related?.title,
+          t('altarRelationshipChild'),
+        );
+        const relatedName = related?.label;
         return (
           <div
             key={`${link.type}:${link.relatedTxid}`}

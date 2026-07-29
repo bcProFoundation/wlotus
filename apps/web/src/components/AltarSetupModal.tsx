@@ -9,6 +9,7 @@ import {
   formatAltarPersonName,
   MAX_PARENT_RELATIONSHIPS,
   normalizeAltarRelatedTxid,
+  sortAltarRelationships,
   validateAltarFields,
   validateDeathDateFields,
   validateRelationshipFields,
@@ -19,7 +20,12 @@ import {
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
-import { AltarDetails, type RelatedAltarOption } from './AltarDetails.js';
+import {
+  AltarDetails,
+  relatedMetaMap,
+  relationshipKindLabel,
+  type RelatedAltarOption,
+} from './AltarDetails.js';
 
 type Step = 'edit' | 'review';
 type ModalVariant = 'setup' | 'relationship' | 'death';
@@ -149,25 +155,31 @@ function ExistingRelationships(props: {
 }) {
   const { t, locale } = useLocale();
   if (props.links.length === 0) return null;
-  const labelFor = (type: AltarRelationshipKind) =>
-    type === 'spouse'
-      ? altarSpouseRelationshipLabel(props.title, locale)
-      : type === 'parent'
-        ? t('altarRelationshipParent')
-        : t('altarRelationshipChild');
+  const sorted = sortAltarRelationships(
+    props.links,
+    relatedMetaMap(props.relatedAltarOptions),
+  );
   return (
     <div className="field">
       <span className="altar-honorific-label">
         {t('altarExistingRelationships')}
       </span>
       <ul className="altar-existing-relationships">
-        {props.links.map(link => {
-          const name =
-            props.relatedAltarOptions.find(o => o.txid === link.relatedTxid)
-              ?.label || t('altarViewRelated');
+        {sorted.map(link => {
+          const related = props.relatedAltarOptions.find(
+            o => o.txid === link.relatedTxid,
+          );
+          const name = related?.label || t('altarViewRelated');
+          const label = relationshipKindLabel(
+            link.type,
+            props.title,
+            locale,
+            related?.title,
+            t('altarRelationshipChild'),
+          );
           return (
             <li key={`${link.type}:${link.relatedTxid}`}>
-              <span className="altar-details-label">{labelFor(link.type)}</span>
+              <span className="altar-details-label">{label}</span>
               {' · '}
               <span className="altar-details-value">{name}</span>
             </li>

@@ -13,6 +13,7 @@ import {
   canAddRelationship,
   altarRelationships,
   altarHasDeathDate,
+  altarParentRelationshipLabel,
   altarSpouseRelationshipLabel,
   encodeDeathDateNote,
   isDeathDateAmendNote,
@@ -22,6 +23,7 @@ import {
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
   parseAltarNote,
+  sortAltarRelationships,
   truncateUtf8Bytes,
   validateAltarFields,
   type AltarFields,
@@ -277,7 +279,7 @@ describe('altarFields', () => {
     expect(new TextEncoder().encode(out).length).toBeLessThanOrEqual(10);
   });
 
-  it('prefers keeping root places over packing relationship on a large altar', () => {
+  it('prefers keeping relationship on the root over long place text', () => {
     const relatedTxid = 'f'.repeat(64);
     const fields: AltarFields = {
       title: 'mr',
@@ -297,10 +299,51 @@ describe('altarFields', () => {
     });
     const parsed = parseAltarNote(packed)!;
     expect(parsed.name).toBe('Cao Lâm Quả');
-    expect(parsed.deathPlace).toBe('Hải Cảng, Quy Nhơn, Bình Định');
-    // Relationship omitted from the root so places fit — add via fragment.
-    expect(parsed.relationshipType).toBe('');
-    expect(parsed.relatedTxid).toBe('');
+    expect(parsed.relationshipType).toBe('spouse');
+    expect(parsed.relatedTxid).toBe(relatedTxid);
+    // Place text may be dropped so the relationship link fits.
+    expect(
+      !parsed.deathPlace ||
+        parsed.deathPlace === 'Hải Cảng, Quy Nhơn, Bình Định',
+    ).toBe(true);
+  });
+
+  it('sorts relationships Cha → Mẹ → spouse → children by birth year', () => {
+    const father = '1'.repeat(64);
+    const mother = '2'.repeat(64);
+    const spouse = '3'.repeat(64);
+    const childOlder = '4'.repeat(64);
+    const childYounger = '5'.repeat(64);
+    const parentUnknown = '6'.repeat(64);
+    const links = [
+      { type: 'child' as const, relatedTxid: childYounger },
+      { type: 'spouse' as const, relatedTxid: spouse },
+      { type: 'parent' as const, relatedTxid: mother },
+      { type: 'child' as const, relatedTxid: childOlder },
+      { type: 'parent' as const, relatedTxid: father },
+      { type: 'parent' as const, relatedTxid: parentUnknown },
+    ];
+    const meta = new Map([
+      [father, { title: 'mr', birthYear: '1920' }],
+      [mother, { title: 'mrs', birthYear: '1925' }],
+      [spouse, { title: 'mrs', birthYear: '1950' }],
+      [childOlder, { title: 'mr', birthYear: '1970-01-01' }],
+      [childYounger, { title: 'mrs', birthYear: '1975' }],
+      [parentUnknown, { title: '', birthYear: '' }],
+    ]);
+    expect(sortAltarRelationships(links, meta).map(l => l.relatedTxid)).toEqual([
+      father,
+      mother,
+      parentUnknown,
+      spouse,
+      childOlder,
+      childYounger,
+    ]);
+    expect(altarParentRelationshipLabel('mr', 'vi')).toBe('Cha');
+    expect(altarParentRelationshipLabel('mrs', 'vi')).toBe('Mẹ');
+    expect(altarParentRelationshipLabel('', 'vi')).toBe('Cha/Mẹ');
+    expect(altarParentRelationshipLabel('mr', 'en')).toBe('Father');
+    expect(altarParentRelationshipLabel('mrs', 'en')).toBe('Mother');
   });
 
   it('merges a relationship fragment with the richer root note', () => {
