@@ -9,6 +9,7 @@ import {
   MAX_PARENT_RELATIONSHIPS,
   normalizeAltarRelatedTxid,
   validateAltarFields,
+  validateDeathDateFields,
   validateRelationshipFields,
   type AltarFields,
   type AltarHonorific,
@@ -20,6 +21,7 @@ import { useLocale } from '../i18n/LocaleContext.js';
 import { AltarDetails, type RelatedAltarOption } from './AltarDetails.js';
 
 type Step = 'edit' | 'review';
+type ModalVariant = 'setup' | 'relationship' | 'death';
 
 function normalizeFields(draft: AltarFields): AltarFields {
   return {
@@ -178,7 +180,8 @@ function ExistingRelationships(props: {
 export function AltarSetupModal(props: {
   initial: AltarFields | null;
   fallbackName?: string;
-  variant?: 'setup' | 'relationship';
+  /** setup = new profile; relationship / death = star-fragment amend. */
+  variant?: ModalVariant;
   etaLabel: string;
   offerDisabled?: boolean;
   relatedAltarOptions: RelatedAltarOption[];
@@ -187,7 +190,9 @@ export function AltarSetupModal(props: {
   onOffer: (fields: AltarFields) => void;
 }) {
   const { t, locale } = useLocale();
-  const relationshipOnly = props.variant === 'relationship';
+  const variant: ModalVariant = props.variant ?? 'setup';
+  const relationshipOnly = variant === 'relationship';
+  const deathOnly = variant === 'death';
   const existingLinks = altarRelationships(props.initial ?? emptyAltarFields());
   const parentCount = existingLinks.filter(l => l.type === 'parent').length;
   const parentAtMax = parentCount >= MAX_PARENT_RELATIONSHIPS;
@@ -197,6 +202,17 @@ export function AltarSetupModal(props: {
     if (relationshipOnly) {
       return {
         ...(props.initial ?? emptyAltarFields()),
+        relationshipType: '',
+        relatedTxid: '',
+        relationships: existingLinks,
+      };
+    }
+    if (deathOnly) {
+      return {
+        ...(props.initial ?? emptyAltarFields()),
+        deathDate: '',
+        deathPlace: props.initial?.deathPlace || '',
+        funeralPlace: props.initial?.funeralPlace || '',
         relationshipType: '',
         relatedTxid: '',
         relationships: existingLinks,
@@ -260,8 +276,14 @@ export function AltarSetupModal(props: {
     return canAddRelationship(existingLinks, { type, relatedTxid: txid });
   }
 
+  function validateDraft(): string | null {
+    if (relationshipOnly) return validateAdd();
+    if (deathOnly) return validateDeathDateFields(draft);
+    return validateAltarFields(draft);
+  }
+
   function goReview() {
-    const err = relationshipOnly ? validateAdd() : validateAltarFields(draft);
+    const err = validateDraft();
     if (err) {
       setErrorKey(err);
       return;
@@ -280,18 +302,20 @@ export function AltarSetupModal(props: {
 
   function offer() {
     const fields = review ?? normalizeFields(draft);
-    const err = relationshipOnly
-      ? (() => {
-          const pairErr =
-            validateRelationshipFields(fields) ||
-            (!fields.relationshipType ? 'relationshipType' : null);
-          if (pairErr) return pairErr;
-          return canAddRelationship(existingLinks, {
-            type: fields.relationshipType as AltarRelationshipKind,
-            relatedTxid: normalizeAltarRelatedTxid(fields.relatedTxid),
-          });
-        })()
-      : validateAltarFields(fields);
+    const err = (() => {
+      if (relationshipOnly) {
+        const pairErr =
+          validateRelationshipFields(fields) ||
+          (!fields.relationshipType ? 'relationshipType' : null);
+        if (pairErr) return pairErr;
+        return canAddRelationship(existingLinks, {
+          type: fields.relationshipType as AltarRelationshipKind,
+          relatedTxid: normalizeAltarRelatedTxid(fields.relatedTxid),
+        });
+      }
+      if (deathOnly) return validateDeathDateFields(fields);
+      return validateAltarFields(fields);
+    })();
     if (err) {
       setErrorKey(err);
       setStep('edit');
@@ -304,6 +328,22 @@ export function AltarSetupModal(props: {
   const personLabel =
     formatAltarPersonName(props.initial ?? draft, locale) ||
     t('offeringFallback');
+
+  const editTitle = relationshipOnly
+    ? t('altarRelationshipTitle')
+    : deathOnly
+      ? t('altarDeathAmendTitle')
+      : t('altarTitle');
+  const editHint = relationshipOnly
+    ? t('altarRelationshipHint')
+    : deathOnly
+      ? t('altarDeathAmendHint')
+      : t('altarHint');
+  const primaryCta = relationshipOnly
+    ? t('btnOffer')
+    : deathOnly
+      ? t('btnRecordDeath')
+      : t('btnSetup');
 
   return (
     <div
@@ -324,12 +364,8 @@ export function AltarSetupModal(props: {
 
         {step === 'edit' ? (
           <>
-            <h2 id="altar-setup-title">
-              {relationshipOnly ? t('altarRelationshipTitle') : t('altarTitle')}
-            </h2>
-            <p className="hint">
-              {relationshipOnly ? t('altarRelationshipHint') : t('altarHint')}
-            </p>
+            <h2 id="altar-setup-title">{editTitle}</h2>
+            <p className="hint">{editHint}</p>
 
             {relationshipOnly ? (
               <>
@@ -349,6 +385,61 @@ export function AltarSetupModal(props: {
                   setRelationshipType={setRelationshipType}
                   setRelatedTxid={txid => setField('relatedTxid', txid)}
                 />
+              </>
+            ) : deathOnly ? (
+              <>
+                <p className="offer-session-note offer-session-original">
+                  {personLabel}
+                </p>
+                <div className="field">
+                  <label htmlFor="altar-death-place">
+                    {t('altarDeathPlace')}
+                  </label>
+                  <input
+                    id="altar-death-place"
+                    type="text"
+                    value={draft.deathPlace}
+                    onChange={e => setField('deathPlace', e.target.value)}
+                    placeholder={t('altarPlaceOptional')}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="altar-death-date">
+                    {t('altarDeathDate')}
+                  </label>
+                  <input
+                    id="altar-death-date"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={10}
+                    value={draft.deathDate}
+                    onChange={e =>
+                      setField(
+                        'deathDate',
+                        formatAltarDateInput(e.target.value),
+                      )
+                    }
+                    placeholder={t('altarDeathDatePlaceholder')}
+                  />
+                  {errorKey === 'deathDate' ? (
+                    <p className="hint altar-field-error">
+                      {t('altarErrDeathDate')}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="field">
+                  <label htmlFor="altar-funeral-place">
+                    {t('altarFuneralPlace')}
+                  </label>
+                  <input
+                    id="altar-funeral-place"
+                    type="text"
+                    value={draft.funeralPlace}
+                    onChange={e => setField('funeralPlace', e.target.value)}
+                    placeholder={t('altarPlaceOptional')}
+                  />
+                </div>
               </>
             ) : (
               <>
@@ -468,7 +559,10 @@ export function AltarSetupModal(props: {
                 </div>
 
                 <div className="field">
-                  <label htmlFor="altar-death-date">{t('altarDeathDate')}</label>
+                  <label htmlFor="altar-death-date">
+                    {t('altarDeathDate')}{' '}
+                    <span className="hint">({t('altarPlaceOptional')})</span>
+                  </label>
                   <input
                     id="altar-death-date"
                     type="text"
@@ -531,7 +625,9 @@ export function AltarSetupModal(props: {
             <h2 id="altar-setup-title">
               {relationshipOnly
                 ? t('altarRelationshipTitle')
-                : t('altarDetailTitle')}
+                : deathOnly
+                  ? t('altarDeathAmendTitle')
+                  : t('altarDetailTitle')}
             </h2>
             {review ? (
               <AltarDetails
@@ -551,7 +647,16 @@ export function AltarSetupModal(props: {
                         relationshipType: review.relationshipType,
                         relatedTxid: review.relatedTxid,
                       }
-                    : review
+                    : deathOnly && props.initial
+                      ? {
+                          ...props.initial,
+                          deathDate: review.deathDate,
+                          deathPlace:
+                            review.deathPlace || props.initial.deathPlace,
+                          funeralPlace:
+                            review.funeralPlace || props.initial.funeralPlace,
+                        }
+                      : review
                 }
                 relatedAltarOptions={props.relatedAltarOptions}
               />
@@ -574,7 +679,7 @@ export function AltarSetupModal(props: {
                 disabled={props.offerDisabled}
                 onClick={offer}
               >
-                {t('btnOffer')}
+                {primaryCta}
               </button>
             </div>
           </>

@@ -29,12 +29,14 @@ import {
 import {
   emptyAltarFields,
   encodeAltarNote,
+  encodeDeathDateNote,
   encodeRelationshipNote,
   formatAltarPersonName,
   isAltarPackedNote,
   memorialDisplayName,
   memorialNoteMaxBytes,
   mergeAltarFields,
+  altarHasDeathDate,
   altarRelationships,
   MEMORIAL_NOTE_MAX_CHARS,
   parseAltarNote,
@@ -213,13 +215,13 @@ export default function App() {
     relatedOptions: RelatedAltarOption[];
   } | null>(null);
   /**
-   * Edit/relationship sheet for an EXISTING altar — reuses AltarSetupModal to
-   * submit a star-fragment burn (amendment) under the same root. Open for
-   * now: any device may amend; see docs/ALTAR.md restriction plan.
+   * Edit sheet for an EXISTING altar — relationship or death-date star
+   * fragment under the same root. Open for now; see docs/ALTAR.md.
    */
   const [amendSheet, setAmendSheet] = useState<{
     parentBurnTxid: string;
     altar: AltarFields;
+    kind: 'relationship' | 'death';
   } | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
@@ -245,9 +247,11 @@ export default function App() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
-  /** Active offer overlay (new or re-offer) — keeps timer/cancel on screen. */
+  /** Active offer overlay (new setup, re-offer, or amend) — keeps timer/cancel on screen. */
   const [session, setSession] = useState<{
     reoffer: boolean;
+    /** Root Ban thờ setup (not a flower re-offer). */
+    setup?: boolean;
     note: string;
     /** Structured altar shown during the offer session (new dedications). */
     altar?: AltarFields | null;
@@ -556,14 +560,19 @@ export default function App() {
     /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
     /**
-     * Relationship star-fragment under an existing altar (parent = root).
-     * On-chain note carries only the relationship link — not a full altar
-     * re-pack. Open for now; see docs/ALTAR.md.
+     * Star-fragment under an existing altar (parent = root).
+     * `relationship` = link only; `death` = death date for a living profile.
      */
-    amend?: boolean;
+    amend?: boolean | 'relationship' | 'death';
   }) {
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
-    const isAmend = Boolean(parentBurnTxid) && Boolean(opts?.amend);
+    const amendKind =
+      opts?.amend === true
+        ? 'relationship'
+        : opts?.amend === 'relationship' || opts?.amend === 'death'
+          ? opts.amend
+          : null;
+    const isAmend = Boolean(parentBurnTxid) && Boolean(amendKind);
     const isReoffer = Boolean(parentBurnTxid) && !isAmend;
     const extraNote = isReoffer
       ? (opts?.extraNote ?? '').trim()
@@ -571,10 +580,33 @@ export default function App() {
     let challengeNote: string;
     let historyNote: string;
     const activeAltar = !isReoffer ? (opts?.altar ?? altar) : null;
+
     if (isReoffer) {
+      if (opts?.altar && !altarHasDeathDate(opts.altar)) {
+        setMsg({ kind: 'err', text: t('reofferNeedsDeathDate') });
+        return;
+      }
       // Re-offer: parent txid only + optional extra memorial message.
       challengeNote = extraNote ?? '';
       historyNote = (opts?.displayNote ?? '').trim();
+    } else if (isAmend && amendKind === 'death' && activeAltar) {
+      try {
+        challengeNote = encodeDeathDateNote(
+          {
+            deathDate: activeAltar.deathDate,
+            deathPlace: activeAltar.deathPlace,
+            funeralPlace: activeAltar.funeralPlace,
+          },
+          { maxBytes: memorialNoteMaxBytes(true) },
+        );
+      } catch {
+        setMsg({ kind: 'err', text: t('altarErrDeathDate') });
+        return;
+      }
+      historyNote =
+        formatAltarPersonName(activeAltar, locale) ||
+        (opts?.displayNote ?? '').trim() ||
+        t('offeringFallback');
     } else if (isAmend && activeAltar) {
       // Relationship fragment: do not re-pack name/places/dates.
       try {
@@ -599,11 +631,15 @@ export default function App() {
           maxBytes: memorialNoteMaxBytes(Boolean(parentBurnTxid)),
         });
       } catch (e) {
-        const overBudget =
-          e instanceof Error && e.message.includes('OP_RETURN budget');
+        const raw = e instanceof Error ? e.message : '';
+        const overBudget = raw.includes('OP_RETURN budget');
         setMsg({
           kind: 'err',
-          text: overBudget ? t('altarErrOpreturn') : t('altarErrDeathDate'),
+          text: overBudget
+            ? t('altarErrOpreturn')
+            : raw.includes('name')
+              ? t('altarErrName')
+              : t('altarErrDeathDate'),
         });
         return;
       }
@@ -619,6 +655,7 @@ export default function App() {
     setCancelLoseConfirm(false);
     setSession({
       reoffer: isReoffer,
+      setup: !isReoffer && !isAmend,
       note: historyNote,
       altar: isReoffer
         ? (opts?.altar ?? null)
@@ -866,15 +903,22 @@ export default function App() {
             memorialDisplayName(historyNote, localeRef.current) ||
             memorialDisplayName(challengeNote, localeRef.current) ||
             tRef.current('offeringFallback');
+          const duration = formatActualDurationLocale(
+            uiPowMs / 1000,
+            localeRef.current,
+          );
           setMsg({
             kind: 'success',
-            text: tRef.current('offeredIn', {
-              duration: formatActualDurationLocale(
-                uiPowMs / 1000,
-                localeRef.current,
-              ),
-              name: offeredFor,
-            }),
+            text:
+              !isReoffer && !isAmend
+                ? tRef.current('setupDoneIn', {
+                    duration,
+                    name: offeredFor,
+                  })
+                : tRef.current('offeredIn', {
+                    duration,
+                    name: offeredFor,
+                  }),
           });
           return;
         } catch (e) {
@@ -931,6 +975,14 @@ export default function App() {
     if (packed) return packed;
     const name = raw.trim();
     return { ...emptyAltarFields(), name };
+  }
+
+  /** Merged Ban thờ fields from local burns under a Recent group. */
+  function altarFromOfferGroup(g: OfferGroup): AltarFields {
+    const notes = g.burns
+      .map(b => (b.note || '').trim())
+      .filter(Boolean);
+    return mergeAltarFields(notes) ?? altarFromMemorialNote(g.note);
   }
 
   /** Persist index burns for a dedication so Recent total matches History. */
@@ -1165,10 +1217,14 @@ export default function App() {
     phase === 'challenge' || phase === 'mining'
       ? t('btnPraying')
       : phase === 'holding' || phase === 'submit' || phase === 'burn'
-        ? t('btnOffering')
+        ? session?.setup
+          ? t('btnSettingUp')
+          : t('btnOffering')
         : linkedParentBurnTxid
           ? t('btnReoffer')
-          : t('btnOffer');
+          : altar
+            ? t('btnSetup')
+            : t('btnOffer');
 
   if (shareInAppBrowserGate.active) {
     return (
@@ -1395,6 +1451,8 @@ export default function App() {
                   latestText !== originalText);
               const lastWhen = new Date(last.at).toLocaleString(locale);
               const rootId = g.original.burnTxid;
+              const groupAltar = altarFromOfferGroup(g);
+              const canReoffer = altarHasDeathDate(groupAltar);
               return (
                 <li key={rootId}>
                   <SwipeReveal
@@ -1474,26 +1532,42 @@ export default function App() {
                           {t('burnTotal', { n: g.totalBurns })}
                         </span>
                         <div className="history-row-actions">
-                          <button
-                            type="button"
-                            className="btn btn-reoffer-lotus"
-                            disabled={!canOffer}
-                            onClick={() =>
-                              void openDedicationSheet({
-                                parentBurnTxid: rootId,
-                                memorialNote: g.note,
-                              })
-                            }
-                          >
-                            <img
-                              src="/images/wlotus.png"
-                              alt=""
-                              width={22}
-                              height={22}
-                              draggable={false}
-                            />
-                            <span>{t('btnReoffer')}</span>
-                          </button>
+                          {canReoffer ? (
+                            <button
+                              type="button"
+                              className="btn btn-reoffer-lotus"
+                              disabled={!canOffer}
+                              onClick={() =>
+                                void openDedicationSheet({
+                                  parentBurnTxid: rootId,
+                                  memorialNote: g.note,
+                                })
+                              }
+                            >
+                              <img
+                                src="/images/wlotus.png"
+                                alt=""
+                                width={22}
+                                height={22}
+                                draggable={false}
+                              />
+                              <span>{t('btnReoffer')}</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn btn-ghost"
+                              disabled={!canOffer}
+                              onClick={() =>
+                                void openDedicationSheet({
+                                  parentBurnTxid: rootId,
+                                  memorialNote: g.note,
+                                })
+                              }
+                            >
+                              {t('btnRecordDeath')}
+                            </button>
+                          )}
                         </div>
                       </div>
                       <span className="history-meta">
@@ -1558,66 +1632,107 @@ export default function App() {
               onViewRelated={txid => void viewRelatedAltar(txid)}
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />
-            <div className="field">
-              <label htmlFor="dedication-extra-note">
-                {t('reofferExtraNoteLabel')}
-              </label>
-              <textarea
-                id="dedication-extra-note"
-                rows={2}
-                maxLength={80}
-                value={dedicationSheet.extraNote}
-                onChange={e =>
-                  setDedicationSheet(d =>
-                    d
-                      ? { ...d, extraNote: e.target.value.slice(0, 80) }
-                      : d,
-                  )
-                }
-                placeholder={t('reofferExtraNotePlaceholder')}
-              />
-            </div>
-            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-            <p className="hint">{t('hintKeepScreen')}</p>
-            <div className="offer-actions offer-session-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-offer"
-                disabled={!canOffer}
-                onClick={() =>
-                  void onOffer({
-                    parentBurnTxid: dedicationSheet.parentBurnTxid,
-                    displayNote:
-                      formatAltarPersonName(dedicationSheet.altar, locale) ||
-                      t('offeringFallback'),
-                    altar: dedicationSheet.altar,
-                    extraNote: dedicationSheet.extraNote,
-                  })
-                }
-              >
-                {t('btnOffer')}
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                disabled={!canOffer}
-                onClick={() =>
-                  setAmendSheet({
-                    parentBurnTxid: dedicationSheet.parentBurnTxid,
-                    altar: dedicationSheet.altar,
-                  })
-                }
-              >
-                {t('btnAmendAltar')}
-              </button>
-            </div>
+            {altarHasDeathDate(dedicationSheet.altar) ? (
+              <>
+                <div className="field">
+                  <label htmlFor="dedication-extra-note">
+                    {t('reofferExtraNoteLabel')}
+                  </label>
+                  <textarea
+                    id="dedication-extra-note"
+                    rows={2}
+                    maxLength={80}
+                    value={dedicationSheet.extraNote}
+                    onChange={e =>
+                      setDedicationSheet(d =>
+                        d
+                          ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                          : d,
+                      )
+                    }
+                    placeholder={t('reofferExtraNotePlaceholder')}
+                  />
+                </div>
+                <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+                <p className="hint">{t('hintKeepScreen')}</p>
+                <div className="offer-actions offer-session-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-offer"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      void onOffer({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        displayNote:
+                          formatAltarPersonName(dedicationSheet.altar, locale) ||
+                          t('offeringFallback'),
+                        altar: dedicationSheet.altar,
+                        extraNote: dedicationSheet.extraNote,
+                      })
+                    }
+                  >
+                    {t('btnOffer')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      setAmendSheet({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        altar: dedicationSheet.altar,
+                        kind: 'relationship',
+                      })
+                    }
+                  >
+                    {t('btnAmendAltar')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="hint">{t('reofferNeedsDeathDate')}</p>
+                <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+                <p className="hint">{t('hintKeepScreen')}</p>
+                <div className="offer-actions offer-session-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-offer"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      setAmendSheet({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        altar: dedicationSheet.altar,
+                        kind: 'death',
+                      })
+                    }
+                  >
+                    {t('btnRecordDeath')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      setAmendSheet({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        altar: dedicationSheet.altar,
+                        kind: 'relationship',
+                      })
+                    }
+                  >
+                    {t('btnAmendAltar')}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : null}
 
       {amendSheet && !busy ? (
         <AltarSetupModal
-          variant="relationship"
+          variant={amendSheet.kind === 'death' ? 'death' : 'relationship'}
           initial={amendSheet.altar}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
@@ -1632,8 +1747,25 @@ export default function App() {
           onSave={() => {}}
           onOffer={fields => {
             const parentBurnTxid = amendSheet.parentBurnTxid;
+            const kind = amendSheet.kind;
             setAmendSheet(null);
             setDedicationSheet(null);
+            if (kind === 'death') {
+              void onOffer({
+                parentBurnTxid,
+                displayNote:
+                  formatAltarPersonName(amendSheet.altar, locale) ||
+                  t('offeringFallback'),
+                altar: {
+                  ...amendSheet.altar,
+                  deathDate: fields.deathDate,
+                  deathPlace: fields.deathPlace,
+                  funeralPlace: fields.funeralPlace,
+                },
+                amend: 'death',
+              });
+              return;
+            }
             void onOffer({
               parentBurnTxid,
               displayNote:
@@ -1644,7 +1776,7 @@ export default function App() {
                 relationshipType: fields.relationshipType,
                 relatedTxid: fields.relatedTxid,
               },
-              amend: true,
+              amend: 'relationship',
             });
           }}
         />
@@ -1816,7 +1948,9 @@ export default function App() {
             >
               ×
             </button>
-            <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
+            <h2 id="offer-session-title">
+              {session.setup ? t('setupSessionTitle') : t('offerSessionTitle')}
+            </h2>
             {session.altar ? (
               <>
                 <p className="offer-session-label">{t('altarLabel')}</p>
