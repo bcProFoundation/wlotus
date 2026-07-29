@@ -88,19 +88,18 @@ export function AltarDetails(props: {
     },
     {
       key: 'deathDate',
-      label: (
-        <span className="altar-details-label-row">
-          <span>{t('altarDeathDate')}</span>
-          {canToggleDeath ? (
-            <button
-              type="button"
-              className="altar-cal-toggle"
-              onClick={() => setShowLunarDeath(v => !v)}
-            >
-              {showLunarDeath ? t('altarCalSolar') : t('altarCalLunar')}
-            </button>
-          ) : null}
-        </span>
+      label: canToggleDeath ? (
+        <button
+          type="button"
+          className="altar-cal-toggle"
+          onClick={() => setShowLunarDeath(v => !v)}
+        >
+          {showLunarDeath
+            ? t('altarDeathDateLunar')
+            : t('altarDeathDateSolar')}
+        </button>
+      ) : (
+        t('altarDeathDate')
       ),
       value: deathValue,
     },
