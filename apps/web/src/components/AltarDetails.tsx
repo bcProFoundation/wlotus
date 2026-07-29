@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react';
 import {
   altarHonorificLabel,
   altarRelationships,
@@ -7,7 +8,10 @@ import {
   type AltarRelationshipLink,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
-import { formatLunarDeathDate } from '../lib/lunarCalendar.js';
+import {
+  formatLunarBirthYear,
+  formatLunarDeathDate,
+} from '../lib/lunarCalendar.js';
 
 /** Normalize stored dates for display (YYYY / YYYY-MM / YYYY-MM-DD). */
 function displayAltarDate(raw: string): string {
@@ -24,7 +28,12 @@ export interface RelatedAltarOption {
 
 function relationshipKindLabel(
   type: AltarRelationshipKind,
-  t: (key: 'altarRelationshipSpouse' | 'altarRelationshipParent' | 'altarRelationshipChild') => string,
+  t: (
+    key:
+      | 'altarRelationshipSpouse'
+      | 'altarRelationshipParent'
+      | 'altarRelationshipChild',
+  ) => string,
 ): string {
   if (type === 'spouse') return t('altarRelationshipSpouse');
   if (type === 'parent') return t('altarRelationshipParent');
@@ -43,25 +52,67 @@ export function AltarDetails(props: {
   const { locale, t } = useLocale();
   const { altar } = props;
   const honorific = altarHonorificLabel(altar.title, locale);
-  // vi/zh giỗ (death anniversary) tradition tracks the lunar date, not the
-  // Gregorian one — show it in place of the solar date when we can convert
-  // (requires a full YYYY-MM-DD; partial YYYY/YYYY-MM falls back to solar).
+  const solarDeath = displayAltarDate(altar.deathDate);
   const lunarDeathDate = formatLunarDeathDate(altar.deathDate.trim(), locale);
-  const rows: { label: string; value: string }[] = [
-    { label: t('altarHonorific'), value: honorific },
-    { label: t('altarName'), value: altar.name.trim() },
-    { label: t('altarNote'), value: altar.note.trim() },
-    { label: t('altarBirthPlace'), value: altar.birthPlace.trim() },
+  // Default to lunar for vi/zh when a full death date converts (giỗ tradition).
+  const [showLunarDeath, setShowLunarDeath] = useState(() =>
+    Boolean(lunarDeathDate),
+  );
+  const deathValue =
+    showLunarDeath && lunarDeathDate ? lunarDeathDate : solarDeath;
+  const canToggleDeath = Boolean(lunarDeathDate && solarDeath);
+
+  const solarBirth = displayAltarDate(altar.birthYear);
+  const lunarBirthYear = formatLunarBirthYear(altar.birthYear.trim(), locale);
+  const birthValue =
+    solarBirth && lunarBirthYear
+      ? `${solarBirth} (${lunarBirthYear})`
+      : solarBirth;
+
+  const rows: { key: string; label: string; value: ReactNode }[] = [
+    { key: 'honorific', label: t('altarHonorific'), value: honorific },
+    { key: 'name', label: t('altarName'), value: altar.name.trim() },
+    { key: 'note', label: t('altarNote'), value: altar.note.trim() },
     {
-      label: t('altarBirthDate'),
-      value: displayAltarDate(altar.birthYear),
+      key: 'birthPlace',
+      label: t('altarBirthPlace'),
+      value: altar.birthPlace.trim(),
     },
-    { label: t('altarDeathPlace'), value: altar.deathPlace.trim() },
-    lunarDeathDate
-      ? { label: t('altarDeathDateLunar'), value: lunarDeathDate }
-      : { label: t('altarDeathDate'), value: displayAltarDate(altar.deathDate) },
-    { label: t('altarFuneralPlace'), value: altar.funeralPlace.trim() },
-  ].filter(r => r.value.length > 0);
+    { key: 'birthDate', label: t('altarBirthDate'), value: birthValue },
+    {
+      key: 'deathPlace',
+      label: t('altarDeathPlace'),
+      value: altar.deathPlace.trim(),
+    },
+    {
+      key: 'deathDate',
+      label: t('altarDeathDate'),
+      value: deathValue ? (
+        <span className="altar-death-date-value">
+          <span>{deathValue}</span>
+          {canToggleDeath ? (
+            <button
+              type="button"
+              className="altar-cal-toggle"
+              onClick={() => setShowLunarDeath(v => !v)}
+            >
+              {showLunarDeath ? t('altarCalSolar') : t('altarCalLunar')}
+            </button>
+          ) : null}
+        </span>
+      ) : (
+        ''
+      ),
+    },
+    {
+      key: 'funeralPlace',
+      label: t('altarFuneralPlace'),
+      value: altar.funeralPlace.trim(),
+    },
+  ].filter(r => {
+    if (typeof r.value === 'string') return r.value.length > 0;
+    return Boolean(r.value);
+  });
 
   const links: AltarRelationshipLink[] = altarRelationships(altar);
 
@@ -70,7 +121,7 @@ export function AltarDetails(props: {
       className={`altar-details${props.className ? ` ${props.className}` : ''}`}
     >
       {rows.map(r => (
-        <div key={r.label} className="altar-details-row">
+        <div key={r.key} className="altar-details-row">
           <div className="altar-details-label">{r.label}</div>
           <div className="altar-details-value">{r.value}</div>
         </div>

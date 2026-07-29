@@ -231,3 +231,58 @@ export function formatLunarDeathDate(
   const leapNote = lunar.leap ? ' (nhuận)' : '';
   return `Ngày ${lunar.day} tháng ${lunar.month}${leapNote} năm ${cc}`;
 }
+
+/** Last calendar day of a Gregorian month (1–12). */
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/**
+ * Pick a solar (d, m, y) to convert for birth-year Can-Chi display.
+ * - `YYYY-MM-DD` → that day
+ * - `YYYY-MM` → last day of that month
+ * - `YYYY` → 31 Dec of that year (a solar year spans two lunar years;
+ *   year-end anchors the Can-Chi year people usually mean for "năm sinh")
+ */
+export function solarDateForBirthYearLookup(
+  isoDate: string,
+): { day: number; month: number; year: number } | null {
+  const t = isoDate.trim();
+  const full = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (full) {
+    const year = Number(full[1]);
+    const month = Number(full[2]);
+    const day = Number(full[3]);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return { day, month, year };
+  }
+  const ym = /^(\d{4})-(\d{2})$/.exec(t);
+  if (ym) {
+    const year = Number(ym[1]);
+    const month = Number(ym[2]);
+    if (month < 1 || month > 12) return null;
+    return { day: lastDayOfMonth(year, month), month, year };
+  }
+  const y = /^(\d{4})$/.exec(t);
+  if (y) {
+    const year = Number(y[1]);
+    return { day: 31, month: 12, year };
+  }
+  return null;
+}
+
+/**
+ * Lunar Can-Chi year for a birth date field (`YYYY` / `YYYY-MM` / `YYYY-MM-DD`).
+ * Year-only uses 31 Dec for conversion. `null` for en / unparsable.
+ */
+export function formatLunarBirthYear(
+  isoDate: string,
+  locale: 'vi' | 'zh' | 'en',
+): string | null {
+  if (locale !== 'vi' && locale !== 'zh') return null;
+  const solar = solarDateForBirthYearLookup(isoDate);
+  if (!solar) return null;
+  const timeZone = locale === 'zh' ? 8 : 7;
+  const lunar = solarToLunar(solar.day, solar.month, solar.year, timeZone);
+  return canChiYear(lunar.year, locale);
+}

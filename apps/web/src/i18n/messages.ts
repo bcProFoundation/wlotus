@@ -41,6 +41,8 @@ export type MessageKey =
   | 'altarDeathDate'
   | 'altarDeathDateLunar'
   | 'altarDeathDatePlaceholder'
+  | 'altarCalLunar'
+  | 'altarCalSolar'
   | 'altarDeathPlace'
   | 'altarFuneralPlace'
   | 'altarPlaceOptional'
@@ -171,9 +173,11 @@ const en: Dict = {
   altarBirthDate: 'Date of birth (YYYY-MM-DD)',
   altarBirthDatePlaceholder: 'YYYY or YYYY-MM-DD',
   altarErrBirthDate: 'Enter year of birth as YYYY or YYYY-MM-DD.',
-  altarDeathDate: 'Date of death (YYYY-MM-DD)',
+  altarDeathDate: 'Date of death',
   altarDeathDateLunar: 'Date of death (lunar)',
   altarDeathDatePlaceholder: 'YYYY or YYYY-MM-DD',
+  altarCalLunar: 'Lunar',
+  altarCalSolar: 'Solar',
   altarDeathPlace: 'Place of residence',
   altarFuneralPlace: 'Burial place',
   altarPlaceOptional: 'Optional',
@@ -313,9 +317,11 @@ const vi: Dict = {
   altarBirthDate: 'Năm sinh (YYYY-MM-DD)',
   altarBirthDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
   altarErrBirthDate: 'Năm sinh dạng YYYY hoặc YYYY-MM-DD.',
-  altarDeathDate: 'Ngày mất (YYYY-MM-DD)',
+  altarDeathDate: 'Ngày mất',
   altarDeathDateLunar: 'Ngày mất (Âm lịch)',
   altarDeathDatePlaceholder: 'YYYY hoặc YYYY-MM-DD',
+  altarCalLunar: 'Âm lịch',
+  altarCalSolar: 'Dương lịch',
   altarDeathPlace: 'Nơi sinh sống',
   altarFuneralPlace: 'Nơi an táng',
   altarPlaceOptional: 'Tuỳ chọn',
@@ -453,9 +459,11 @@ const zh: Dict = {
   altarBirthDate: '出生日期 (YYYY-MM-DD)',
   altarBirthDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
   altarErrBirthDate: '出生年请用 YYYY 或 YYYY-MM-DD。',
-  altarDeathDate: '去世日期 (YYYY-MM-DD)',
+  altarDeathDate: '去世日期',
   altarDeathDateLunar: '去世日期（农历）',
   altarDeathDatePlaceholder: 'YYYY 或 YYYY-MM-DD',
+  altarCalLunar: '农历',
+  altarCalSolar: '阳历',
   altarDeathPlace: '居住地',
   altarFuneralPlace: '安葬地',
   altarPlaceOptional: '可选',

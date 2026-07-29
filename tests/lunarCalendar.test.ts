@@ -1,6 +1,8 @@
 import {
   canChiYear,
+  formatLunarBirthYear,
   formatLunarDeathDate,
+  solarDateForBirthYearLookup,
   solarToLunar,
 } from '../apps/web/src/lib/lunarCalendar.js';
 
@@ -58,5 +60,35 @@ describe('lunarCalendar', () => {
     expect(formatLunarDeathDate('2001-12', 'vi')).toBeNull();
     expect(formatLunarDeathDate('not-a-date', 'vi')).toBeNull();
     expect(formatLunarDeathDate('', 'zh')).toBeNull();
+  });
+
+  it('uses 31 Dec when looking up Can-Chi for a year-only birth', () => {
+    expect(solarDateForBirthYearLookup('1926')).toEqual({
+      day: 31,
+      month: 12,
+      year: 1926,
+    });
+    expect(solarDateForBirthYearLookup('1945-09-02')).toEqual({
+      day: 2,
+      month: 9,
+      year: 1945,
+    });
+    expect(solarDateForBirthYearLookup('1945-09')).toEqual({
+      day: 30,
+      month: 9,
+      year: 1945,
+    });
+  });
+
+  it('formats lunar birth year (Can-Chi) with year-only Dec 31 rule', () => {
+    // 31/12/1926 → lunar year for Can-Chi
+    expect(formatLunarBirthYear('1926', 'vi')).toBe(
+      canChiYear(solarToLunar(31, 12, 1926, 7).year, 'vi'),
+    );
+    expect(formatLunarBirthYear('1945-09-02', 'vi')).toBe(
+      canChiYear(solarToLunar(2, 9, 1945, 7).year, 'vi'),
+    );
+    expect(formatLunarBirthYear('1926', 'en')).toBeNull();
+    expect(formatLunarBirthYear('', 'vi')).toBeNull();
   });
 });
