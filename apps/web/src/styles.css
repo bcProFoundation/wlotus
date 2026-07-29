@@ -101,6 +101,10 @@ a {
   filter: brightness(0) invert(1);
 }
 
+.brand-letter {
+  display: inline-block;
+}
+
 .brand {
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 7vw, 3.8rem);

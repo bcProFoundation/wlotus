@@ -1598,7 +1598,10 @@ export default function App() {
               width={56}
               height={56}
             />
-            <h1 className="brand">{t('brand')}</h1>
+            <h1 className="brand">
+              <span className="brand-letter">{t('brand').charAt(0)}</span>
+              {t('brand').slice(1)}
+            </h1>
           </div>
           <div className="header-actions">
             <button
