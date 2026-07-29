@@ -43,6 +43,12 @@ memorial note carries **only** the relationship slots (optional short message
 in the note field may be truncated/dropped to fit OP_RETURN). It does **not**
 re-pack name / places / dates — those live on the root and do not change.
 
+**Multiple links (add-only):** each relationship fragment adds one link.
+Spouse and parent may repeat; **child is capped at 2**. Duplicates
+(same type + related txid) are rejected in the UI. Deletion is not supported
+yet (a future “mark deleted” burn may land later). The client merges all
+fragments under a star into `AltarFields.relationships` for Ban thờ details.
+
 Re-offers are the same shape without relationship: parent = root + optional
 extra memorial message only.
 

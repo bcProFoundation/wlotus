@@ -548,6 +548,46 @@ a {
   text-underline-offset: 0.12em;
 }
 
+.altar-death-date-value {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.altar-cal-toggle {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--accent, #c4a574);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.altar-cal-toggle:hover {
+  opacity: 0.85;
+}
+
+.altar-existing-relationships {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.altar-existing-relationships li {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
 .altar-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
