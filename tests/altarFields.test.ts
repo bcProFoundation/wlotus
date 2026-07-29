@@ -1,6 +1,7 @@
 import {
   ALTAR_SEP,
   encodeAltarNote,
+  encodeRelationshipNote,
   emptyAltarFields,
   formatAltarDateInput,
   formatAltarPersonName,
@@ -61,6 +62,41 @@ describe('altarFields', () => {
     const parsed = parseAltarNote(packed);
     expect(parsed?.relationshipType).toBe('spouse');
     expect(parsed?.relatedTxid).toBe(relatedTxid);
+  });
+
+  it('packs a relationship-only star fragment without altar identity', () => {
+    const relatedTxid = 'f'.repeat(64);
+    const packed = encodeRelationshipNote(
+      { relationshipType: 'spouse', relatedTxid },
+      { maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT },
+    );
+    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
+      MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+    );
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('');
+    expect(parsed.deathDate).toBe('');
+    expect(parsed.relationshipType).toBe('spouse');
+    expect(parsed.relatedTxid).toBe(relatedTxid);
+    expect(memorialDisplayName(packed, 'vi')).toBe('');
+  });
+
+  it('drops optional memorial message before the relationship link', () => {
+    const relatedTxid = 'c'.repeat(64);
+    const packed = encodeRelationshipNote(
+      {
+        relationshipType: 'parent',
+        relatedTxid,
+        note: 'x'.repeat(200),
+      },
+      { maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT },
+    );
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.relationshipType).toBe('parent');
+    expect(parsed.relatedTxid).toBe(relatedTxid);
+    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
+      MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+    );
   });
 
   it('round-trips a parent/child relationship link on a legacy (no-title) pack', () => {
@@ -223,7 +259,7 @@ describe('altarFields', () => {
     expect(new TextEncoder().encode(out).length).toBeLessThanOrEqual(10);
   });
 
-  it('drops optional places to fit OP_RETURN amend budget with a relationship', () => {
+  it('prefers keeping root places over packing relationship on a large altar', () => {
     const relatedTxid = 'f'.repeat(64);
     const fields: AltarFields = {
       title: 'mr',
@@ -238,21 +274,17 @@ describe('altarFields', () => {
       relatedTxid,
     };
     const packed = encodeAltarNote(fields, {
-      maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+      maxBytes: MEMORIAL_NOTE_MAX_BYTES,
     });
-    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
-      MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
-    );
     const parsed = parseAltarNote(packed)!;
-    expect(parsed.relationshipType).toBe('spouse');
-    expect(parsed.relatedTxid).toBe(relatedTxid);
     expect(parsed.name).toBe('Cao Lâm Quả');
-    expect(parsed.deathDate).toBe('2001-12-04');
-    // Places dropped so the link fits under the amend budget.
-    expect(parsed.deathPlace).toBe('');
+    expect(parsed.deathPlace).toBe('Hải Cảng, Quy Nhơn, Bình Định');
+    // Relationship omitted from the root so places fit — add via fragment.
+    expect(parsed.relationshipType).toBe('');
+    expect(parsed.relatedTxid).toBe('');
   });
 
-  it('merges a trimmed relationship amend with the richer root note', () => {
+  it('merges a relationship fragment with the richer root note', () => {
     const relatedTxid = 'a'.repeat(64);
     const root = encodeAltarNote({
       title: 'mr',
@@ -266,22 +298,11 @@ describe('altarFields', () => {
       relationshipType: '',
       relatedTxid: '',
     });
-    const amend = encodeAltarNote(
-      {
-        title: 'mr',
-        name: 'Cao Lâm Quả',
-        note: '',
-        birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
-        birthYear: '1945-09-02',
-        deathDate: '2001-12-04',
-        deathPlace: 'Hải Cảng, Quy Nhơn, Bình Định',
-        funeralPlace: '',
-        relationshipType: 'spouse',
-        relatedTxid,
-      },
+    const fragment = encodeRelationshipNote(
+      { relationshipType: 'spouse', relatedTxid },
       { maxBytes: memorialNoteMaxBytes(true) },
     );
-    const merged = mergeAltarFields([amend, root]);
+    const merged = mergeAltarFields([fragment, root]);
     expect(merged?.relationshipType).toBe('spouse');
     expect(merged?.relatedTxid).toBe(relatedTxid);
     expect(merged?.deathPlace).toBe('Hải Cảng, Quy Nhơn, Bình Định');

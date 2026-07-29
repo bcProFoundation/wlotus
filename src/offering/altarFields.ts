@@ -6,6 +6,13 @@
  *   title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate
  *     \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid
  *
+ * Star-fragment burns under a root do **not** re-pack the full altar:
+ *   - Re-offer: DANA v2 parent = root + optional free-text memorial message
+ *   - Relationship: DANA v2 parent = root + relationship slots only
+ *     (optional short message in the note slot; dropped first if over budget)
+ * Altar identity fields are written once on the root dedication and do not
+ * change. Clients merge burns under a star for display.
+ *
  * `title` is a locale-neutral honorific code: `` | `mr` | `mrs`
  * (UI: Mr./Mrs. · Ông/Bà · 先生/女士).
  *
@@ -18,11 +25,9 @@
  * On the wire, relationship type is packed as a one-letter code (`s`/`p`/`c`)
  * to save OP_RETURN budget; readers still accept the long forms.
  *
- * Writing / amending this pair is intentionally left OPEN (any device, at
- * setup or later via a star-fragment burn under the same root) — see
- * docs/ALTAR.md § "Relationships — open for now, restrict later" for the
- * planned minter-only restriction and why a device `installId` cannot be a
- * durable creator credential.
+ * Writing relationship links is intentionally left OPEN (any device, at
+ * setup or later via a relationship star-fragment) — see docs/ALTAR.md
+ * § "Relationships — open for now, restrict later".
  */
 
 export const ALTAR_SEP = '\u001f';
@@ -39,7 +44,7 @@ export const OP_RETURN_SCRIPT_MAX_BYTES = 223;
  *
  * Empirically measured with ecash-lib `emppScript([alpBurn, memorial])`:
  *   - DANA v1 (root, no parent): note ≤ 157
- *   - DANA v2 (amend / re-offer with 32-byte parent): note ≤ 124
+ *   - DANA v2 (re-offer / relationship with 32-byte parent): note ≤ 124
  *
  * Soft caps leave a small margin under those ceilings.
  * EMPP `noteLen` is still a u8 (max 255) — the OP_RETURN limit binds first.
@@ -186,6 +191,7 @@ export function isAltarPackedNote(raw: string): boolean {
 /**
  * New wire starts with honorific (`mr`/`mrs`) or an empty title slot (`\x1f…`).
  * Legacy test burns kept name in slot 0 — still readable.
+ * Relationship-only fragments start with an empty title slot.
  */
 function isTitleFirstWire(parts: string[]): boolean {
   const raw0 = parts[0] ?? '';
@@ -228,8 +234,8 @@ export function parseAltarNote(raw: string): AltarFields | null {
 
 /**
  * Merge altar-packed notes (latest-first). For each field, keep the first
- * non-empty value so a size-trimmed relationship amend can omit places and
- * still display birth/death place from the original root burn.
+ * non-empty value so a relationship-only star fragment can omit identity
+ * fields and still display name/places from the original root burn.
  */
 export function mergeAltarFields(
   notes: Iterable<string>,
@@ -261,6 +267,7 @@ export function mergeAltarFields(
 /**
  * Display name for Recent / share labels.
  * Packed altar → titled name (fallback note); plain note → as-is.
+ * Relationship-only packs (no name) → empty (callers fall back to root).
  */
 export function memorialDisplayName(
   raw: string,
@@ -270,7 +277,7 @@ export function memorialDisplayName(
   if (!t) return '';
   const altar = parseAltarNote(t);
   if (!altar) return t;
-  return formatAltarPersonName(altar, locale) || t;
+  return formatAltarPersonName(altar, locale);
 }
 
 const ALTAR_DATE_RE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
@@ -299,6 +306,15 @@ export function validateAltarFields(a: AltarFields): string | null {
   if (!death || !ALTAR_DATE_RE.test(death)) return 'deathDate';
   const birth = scrub(a.birthYear);
   if (birth && !ALTAR_DATE_RE.test(birth)) return 'birthYear';
+  const relErr = validateRelationshipFields(a);
+  if (relErr) return relErr;
+  return null;
+}
+
+/** Relationship pair only (for relationship star-fragment burns). */
+export function validateRelationshipFields(
+  a: Pick<AltarFields, 'relationshipType' | 'relatedTxid'>,
+): string | null {
   const relTypeRaw = (a.relationshipType || '').trim();
   if (relTypeRaw && !normalizeAltarRelationshipType(relTypeRaw)) {
     return 'relationshipType';
@@ -307,8 +323,6 @@ export function validateAltarFields(a: AltarFields): string | null {
   if (relTxidRaw && !normalizeAltarRelatedTxid(relTxidRaw)) {
     return 'relatedTxid';
   }
-  // A relationship needs both a type and a linked altar — one without the
-  // other is an incomplete / stale entry.
   if (relTypeRaw && !relTxidRaw) return 'relatedTxid';
   if (relTxidRaw && !relTypeRaw) return 'relationshipType';
   return null;
@@ -331,7 +345,7 @@ export type EncodeAltarNoteOptions = {
   /**
    * Max UTF-8 note bytes. Defaults to {@link MEMORIAL_NOTE_MAX_BYTES}.
    * Use {@link memorialNoteMaxBytes}(true) when the burn will carry a DANA v2
-   * parent (amend / re-offer under a star).
+   * parent (re-offer / relationship under a star).
    */
   maxBytes?: number;
 };
@@ -343,13 +357,14 @@ function joinAltarParts(parts: string[]): string {
 }
 
 /**
- * Pack altar fields for the DANA memorial note.
+ * Pack altar identity fields for the **root** dedication note.
  * Omits trailing empty fields. Throws if required fields missing.
  * Always writes the title slot first (may be empty) so readers detect new wire.
  *
- * Fits within `maxBytes` by dropping optional fields (funeral → note → death
- * place → birth place → birth year) before touching name / deathDate /
- * relationship. Never mid-truncates `relatedTxid` (that would corrupt the link).
+ * Relationship may be included when it fits. Fit order prefers keeping place
+ * text on the root: drop funeral → remembrance note → relationship → places →
+ * birth year. Prefer setting relationship via {@link encodeRelationshipNote}
+ * as a separate star fragment when the root is already large.
  */
 export function encodeAltarNote(
   fields: AltarFields,
@@ -362,10 +377,8 @@ export function encodeAltarNote(
   const title = normalizeAltarHonorific(fields.title);
   const name = scrub(fields.name);
   const deathDate = scrub(fields.deathDate);
-  const relType = normalizeAltarRelationshipType(fields.relationshipType);
-  const relTxid = normalizeAltarRelatedTxid(fields.relatedTxid);
-  const relWire = wireRelationshipType(relType);
-
+  let relType = normalizeAltarRelationshipType(fields.relationshipType);
+  let relTxid = normalizeAltarRelatedTxid(fields.relatedTxid);
   let note = scrub(fields.note);
   let birthPlace = scrub(fields.birthPlace);
   let birthYear = scrub(fields.birthYear);
@@ -382,19 +395,20 @@ export function encodeAltarNote(
       deathDate,
       deathPlace,
       funeralPlace,
-      relWire,
+      wireRelationshipType(relType),
       relTxid,
     ]);
 
-  // Drop whole optional fields first so a later merge can restore them from
-  // an earlier (richer) burn under the same star — mid-truncation would
-  // block that fallback.
   const dropOrder: Array<() => void> = [
     () => {
       funeralPlace = '';
     },
     () => {
       note = '';
+    },
+    () => {
+      relType = '';
+      relTxid = '';
     },
     () => {
       deathPlace = '';
@@ -417,6 +431,75 @@ export function encodeAltarNote(
   if (utf8ByteLength(packed) > maxBytes) {
     throw new Error(
       `altar note exceeds OP_RETURN budget (${utf8ByteLength(packed)} > ${maxBytes} bytes)`,
+    );
+  }
+  return packed;
+}
+
+/**
+ * Pack a **relationship-only** star fragment (DANA v2 parent = root).
+ * Does not re-state name / places / dates — those stay on the root burn.
+ * Optional `note` is a short memorial message; it is truncated/dropped first
+ * so the relationship link always fits under the parent OP_RETURN budget.
+ */
+export function encodeRelationshipNote(
+  fields: Pick<AltarFields, 'relationshipType' | 'relatedTxid'> & {
+    note?: string;
+  },
+  opts?: EncodeAltarNoteOptions,
+): string {
+  const relType = normalizeAltarRelationshipType(fields.relationshipType);
+  const relTxid = normalizeAltarRelatedTxid(fields.relatedTxid);
+  if (!relType || !relTxid) {
+    throw new Error(
+      `invalid altar field: ${!relType ? 'relationshipType' : 'relatedTxid'}`,
+    );
+  }
+
+  const maxBytes = opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT;
+  let note = scrub(fields.note || '');
+
+  const pack = (): string =>
+    joinAltarParts([
+      '',
+      '',
+      note,
+      '',
+      '',
+      '',
+      '',
+      '',
+      wireRelationshipType(relType),
+      relTxid,
+    ]);
+
+  let packed = pack();
+  if (utf8ByteLength(packed) > maxBytes && note) {
+    const overhead = utf8ByteLength(
+      joinAltarParts([
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        wireRelationshipType(relType),
+        relTxid,
+      ]),
+    );
+    const noteBudget = Math.max(0, maxBytes - overhead);
+    note = truncateUtf8Bytes(note, noteBudget);
+    packed = pack();
+  }
+  if (utf8ByteLength(packed) > maxBytes) {
+    note = '';
+    packed = pack();
+  }
+  if (utf8ByteLength(packed) > maxBytes) {
+    throw new Error(
+      `relationship note exceeds OP_RETURN budget (${utf8ByteLength(packed)} > ${maxBytes} bytes)`,
     );
   }
   return packed;

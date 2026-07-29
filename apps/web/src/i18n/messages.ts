@@ -45,6 +45,8 @@ export type MessageKey =
   | 'altarFuneralPlace'
   | 'altarPlaceOptional'
   | 'altarRelationship'
+  | 'altarRelationshipTitle'
+  | 'altarRelationshipHint'
   | 'altarRelationshipNone'
   | 'altarRelationshipSpouse'
   | 'altarRelationshipParent'
@@ -172,6 +174,9 @@ const en: Dict = {
   altarFuneralPlace: 'Burial place',
   altarPlaceOptional: 'Optional',
   altarRelationship: 'Relationship',
+  altarRelationshipTitle: 'Relationship',
+  altarRelationshipHint:
+    'Link this altar to another in Recent. The original Ban thờ details stay on the first burn — this only adds the relationship.',
   altarRelationshipNone: 'None',
   altarRelationshipSpouse: 'Spouse',
   altarRelationshipParent: 'Parent of',
@@ -222,7 +227,7 @@ const en: Dict = {
   sessionNoteLabel: 'In remembrance',
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
-  btnAmendAltar: 'Edit altar details / relationship',
+  btnAmendAltar: 'Add / edit relationship',
   btnOfferLotus: 'Offer a lotus',
   btnClose: 'Close',
   cancelOfferMsg: 'Stop this offering and return to the home screen?',
@@ -307,6 +312,9 @@ const vi: Dict = {
   altarFuneralPlace: 'Nơi an táng',
   altarPlaceOptional: 'Tuỳ chọn',
   altarRelationship: 'Mối quan hệ',
+  altarRelationshipTitle: 'Mối quan hệ',
+  altarRelationshipHint:
+    'Liên kết ban thờ này với một ban thờ trong Gần đây. Chi tiết ban thờ gốc giữ trên lần đốt đầu — lần này chỉ thêm mối quan hệ.',
   altarRelationshipNone: 'Không có',
   altarRelationshipSpouse: 'Vợ/Chồng của',
   altarRelationshipParent: 'Cha/Mẹ của',
@@ -356,7 +364,7 @@ const vi: Dict = {
   sessionNoteLabel: 'Lời tưởng niệm',
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
-  btnAmendAltar: 'Sửa chi tiết ban thờ / mối quan hệ',
+  btnAmendAltar: 'Thêm / sửa mối quan hệ',
   btnOfferLotus: 'Dâng hoa sen',
   btnClose: 'Đóng',
   cancelOfferMsg: 'Dừng dâng hoa và quay lại màn hình chính?',
@@ -440,6 +448,9 @@ const zh: Dict = {
   altarFuneralPlace: '安葬地',
   altarPlaceOptional: '可选',
   altarRelationship: '关系',
+  altarRelationshipTitle: '关系',
+  altarRelationshipHint:
+    '将此灵位关联到“最近”中的另一灵位。原有灵位详情保留在首次供奉上——这次只添加关系。',
   altarRelationshipNone: '无',
   altarRelationshipSpouse: '配偶',
   altarRelationshipParent: '为其父母',
@@ -486,7 +497,7 @@ const zh: Dict = {
   sessionNoteLabel: '追思寄语',
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
-  btnAmendAltar: '编辑灵位详情 / 关系',
+  btnAmendAltar: '添加 / 编辑关系',
   btnOfferLotus: '献上莲花',
   btnClose: '关闭',
   cancelOfferMsg: '停止献花并返回主页？',

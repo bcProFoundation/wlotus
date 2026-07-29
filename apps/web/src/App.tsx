@@ -29,6 +29,7 @@ import {
 import {
   emptyAltarFields,
   encodeAltarNote,
+  encodeRelationshipNote,
   formatAltarPersonName,
   isAltarPackedNote,
   memorialDisplayName,
@@ -552,10 +553,9 @@ export default function App() {
     /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
     /**
-     * Amend an existing altar (star fragment burn under the same root that
-     * carries the full re-packed altar note, e.g. to add/edit a relationship
-     * after setup). Intentionally OPEN for now — any device may amend any
-     * altar; see docs/ALTAR.md "Relationships — open for now, restrict later".
+     * Relationship star-fragment under an existing altar (parent = root).
+     * On-chain note carries only the relationship link — not a full altar
+     * re-pack. Open for now; see docs/ALTAR.md.
      */
     amend?: boolean;
   }) {
@@ -569,11 +569,29 @@ export default function App() {
     let historyNote: string;
     const activeAltar = !isReoffer ? (opts?.altar ?? altar) : null;
     if (isReoffer) {
+      // Re-offer: parent txid only + optional extra memorial message.
       challengeNote = extraNote ?? '';
       historyNote = (opts?.displayNote ?? '').trim();
+    } else if (isAmend && activeAltar) {
+      // Relationship fragment: do not re-pack name/places/dates.
+      try {
+        challengeNote = encodeRelationshipNote(
+          {
+            relationshipType: activeAltar.relationshipType,
+            relatedTxid: activeAltar.relatedTxid,
+          },
+          { maxBytes: memorialNoteMaxBytes(true) },
+        );
+      } catch {
+        setMsg({ kind: 'err', text: t('altarErrRelatedTxid') });
+        return;
+      }
+      historyNote =
+        formatAltarPersonName(activeAltar, locale) ||
+        (opts?.displayNote ?? '').trim() ||
+        t('offeringFallback');
     } else if (activeAltar) {
       try {
-        // Amend / star burns carry DANA v2 parent → tighter OP_RETURN budget.
         challengeNote = encodeAltarNote(activeAltar, {
           maxBytes: memorialNoteMaxBytes(Boolean(parentBurnTxid)),
         });
@@ -922,8 +940,7 @@ export default function App() {
 
   /**
    * Merge altar-packed burns under a star (latest-first). Relationship
-   * amends may omit long place fields to fit OP_RETURN; merging restores
-   * places from the original root while keeping the latest link.
+   * fragments carry only the link; identity/places come from the root.
    * `remote.burns` is latest-first.
    */
   function pickDisplayAltarFields(
@@ -1566,6 +1583,7 @@ export default function App() {
 
       {amendSheet && !busy ? (
         <AltarSetupModal
+          variant="relationship"
           initial={amendSheet.altar}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
@@ -1581,9 +1599,13 @@ export default function App() {
             void onOffer({
               parentBurnTxid,
               displayNote:
-                formatAltarPersonName(fields, locale) ||
+                formatAltarPersonName(amendSheet.altar, locale) ||
                 t('offeringFallback'),
-              altar: fields,
+              altar: {
+                ...amendSheet.altar,
+                relationshipType: fields.relationshipType,
+                relatedTxid: fields.relatedTxid,
+              },
               amend: true,
             });
           }}
