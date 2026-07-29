@@ -37,12 +37,19 @@ Amendments are rare corrections (name, place, short note) — not an unbounded j
 ## Relationships — open for now, restrict later
 
 `relationshipType` / `relatedTxid` (fields 9–10) can be set **at altar setup**
-or **added afterward** via an amendment — a star-fragment burn under the same
-root that re-packs the full altar note (`AltarSetupModal` reused for both;
-`apps/web/src/App.tsx` `onOffer({ parentBurnTxid, altar, amend: true })`).
+(on the root note, when they fit) or **added afterward** as a **relationship
+star-fragment**: DANA v2 `parentBurnTxid` = original dedication, and the
+memorial note carries **only** the relationship slots (optional short message
+in the note field may be truncated/dropped to fit OP_RETURN). It does **not**
+re-pack name / places / dates — those live on the root and do not change.
+
+Re-offers are the same shape without relationship: parent = root + optional
+extra memorial message only.
+
 `dana-index` needs no changes: `GET /api/memorial/:txid` already returns every
-burn under a star (`burns`), and the client picks the most recent
-altar-packed one for display — the same mechanism any future amendment uses.
+burn under a star (`burns`). The client **merges** packed notes (latest-first,
+first non-empty per field) so a relationship fragment supplies the link while
+identity/places come from the root.
 
 The UI only lets a user link to an altar already in **this device's Recent
 list** (`AltarSetupModal` `relatedAltarOptions`, sourced from `recentGroups`
@@ -52,10 +59,10 @@ does not enforce or depend on it, so it does not change anything about the
 open-write discussion below.
 
 **Current state: intentionally open.** Any device can set or overwrite the
-relationship (or any other altar field) on **any** altar via this path — the
-same trust level the app already gives re-offers under a star. This matches
-the plan above (minter-only amend, ≤ 10) **in policy** but that restriction is
-**not enforced in code yet**. Track before shipping broadly:
+relationship on **any** altar via this path — the same trust level the app
+already gives re-offers under a star. This matches the plan above
+(minter-only amend, ≤ 10) **in policy** but that restriction is **not
+enforced in code yet**. Track before shipping broadly:
 
 1. Enforce **minter-only amend** + **≤ 10 amends per altar** in mint-api
    (`apps/mint-api/src/offer.ts`), not just the web client.
@@ -116,7 +123,7 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 | 6 | Date of death (`YYYY` or `YYYY-MM-DD`) | **required** when altar used | yes |
 | 7 | Place of death | optional | same, then geohash |
 | 8 | Funeral / resting place | optional | same, then geohash |
-| 9 | Relationship type (`spouse` \| `parent` \| `child` \| empty) | optional | yes |
+| 9 | Relationship type (wire `s`/`p`/`c`; long forms still parse) | optional | yes |
 | 10 | Related altar txid (64-hex original burn, or empty) | optional | yes |
 
 Wire sketch (UTF-8):
@@ -129,15 +136,40 @@ Fields 9–10 (`relationshipType` / `relatedTxid`, see `src/offering/altarFields
 link this altar to another WLotus altar by its original dedication burn
 txid. `parent` / `child` describe **this** altar's role relative to the
 linked one (e.g. `child` = "this person is the child of the linked altar");
-`spouse` is symmetric. Notes packed before this pair existed simply omit the
-slots — readers default missing/invalid values to empty, so old altars parse
-unchanged.
+`spouse` is symmetric. On the wire, relationship type is packed as a
+one-letter code (`s` / `p` / `c`); readers still accept the long forms
+`spouse` / `parent` / `child`. Notes packed before this pair existed simply
+omit the slots — readers default missing/invalid values to empty, so old
+altars parse unchanged.
 
 `title` is a **locale-neutral code** (`mr` / `mrs`); UI renders Mr./Mrs., Ông/Bà, 先生/女士. The title slot is always written (may be empty) so readers can tell new wire from legacy name-first packs.
 
 Trailing empty fields may be omitted. Readers split on `\x1f` and take positions by index.
 
-**Note size:** EMPP `noteLen` is one byte (max **255** UTF-8 bytes). Desk + UI soft-cap ≈ **220** bytes (`MEMORIAL_NOTE_MAX_BYTES` in `altarFields.ts`).
+**Note size:** EMPP `noteLen` is one byte (max **255** UTF-8 bytes), but the
+binding limit is eCash’s **OP_RETURN script ≤ 223 bytes** for the full burn
+(`ALP BURN` + DANA memorial EMPP). Measured soft caps in `altarFields.ts`:
+
+| Burn kind | DANA | Note soft-cap |
+|-----------|------|---------------|
+| Root dedication | v1 | `MEMORIAL_NOTE_MAX_BYTES` (**150**) |
+| Amend / re-offer (parent txid) | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**120**) |
+
+`encodeAltarNote` packs the **root** dedication. Fit order prefers keeping
+places on the root (drop funeral → remembrance note → relationship → places).
+Prefer `encodeRelationshipNote` as a separate star fragment when the root is
+already large.
+
+Star fragments under a root:
+
+| Kind | Note contents |
+|------|----------------|
+| Re-offer | Optional free-text memorial message only |
+| Relationship | Relationship slots only (`encodeRelationshipNote`); optional message truncated/dropped first |
+
+Clients merge altar-packed burns under a star (latest-first, first non-empty
+per field) so a relationship fragment can omit identity fields and still show
+name/places from the original root.
 
 **Plain notes (no separator):** still valid — treat the whole string as the display dedication (legacy / quick offer).
 
@@ -198,5 +230,5 @@ When implementing amendments / richer fields:
 | `src/offering/altarFields.ts` | Separator pack / parse / display name / relationship fields |
 | `apps/dana-index` | Public recent / memorial history from chain |
 | `apps/web` Offer **Thêm** + Recent / Lịch sử | Altar setup; merge index + local under star |
-| `apps/web/src/components/AltarSetupModal.tsx` | Relationship type + linked-altar picker — Recent list only (setup and amend) |
+| `apps/web/src/components/AltarSetupModal.tsx` | Setup (full altar) or `variant="relationship"` (link only) |
 | `apps/web/src/App.tsx` `onOffer({ amend: true })` | Star-fragment burn that re-packs the full altar (open for now) |

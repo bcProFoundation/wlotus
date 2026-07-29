@@ -29,9 +29,12 @@ import {
 import {
   emptyAltarFields,
   encodeAltarNote,
+  encodeRelationshipNote,
   formatAltarPersonName,
   isAltarPackedNote,
   memorialDisplayName,
+  memorialNoteMaxBytes,
+  mergeAltarFields,
   MEMORIAL_NOTE_MAX_CHARS,
   parseAltarNote,
   type AltarFields,
@@ -550,10 +553,9 @@ export default function App() {
     /** Additional remembrance words — on-chain for re-offers (DANA v2 note). */
     extraNote?: string;
     /**
-     * Amend an existing altar (star fragment burn under the same root that
-     * carries the full re-packed altar note, e.g. to add/edit a relationship
-     * after setup). Intentionally OPEN for now — any device may amend any
-     * altar; see docs/ALTAR.md "Relationships — open for now, restrict later".
+     * Relationship star-fragment under an existing altar (parent = root).
+     * On-chain note carries only the relationship link — not a full altar
+     * re-pack. Open for now; see docs/ALTAR.md.
      */
     amend?: boolean;
   }) {
@@ -567,13 +569,39 @@ export default function App() {
     let historyNote: string;
     const activeAltar = !isReoffer ? (opts?.altar ?? altar) : null;
     if (isReoffer) {
+      // Re-offer: parent txid only + optional extra memorial message.
       challengeNote = extraNote ?? '';
       historyNote = (opts?.displayNote ?? '').trim();
+    } else if (isAmend && activeAltar) {
+      // Relationship fragment: do not re-pack name/places/dates.
+      try {
+        challengeNote = encodeRelationshipNote(
+          {
+            relationshipType: activeAltar.relationshipType,
+            relatedTxid: activeAltar.relatedTxid,
+          },
+          { maxBytes: memorialNoteMaxBytes(true) },
+        );
+      } catch {
+        setMsg({ kind: 'err', text: t('altarErrRelatedTxid') });
+        return;
+      }
+      historyNote =
+        formatAltarPersonName(activeAltar, locale) ||
+        (opts?.displayNote ?? '').trim() ||
+        t('offeringFallback');
     } else if (activeAltar) {
       try {
-        challengeNote = encodeAltarNote(activeAltar);
-      } catch {
-        setMsg({ kind: 'err', text: t('altarErrDeathDate') });
+        challengeNote = encodeAltarNote(activeAltar, {
+          maxBytes: memorialNoteMaxBytes(Boolean(parentBurnTxid)),
+        });
+      } catch (e) {
+        const overBudget =
+          e instanceof Error && e.message.includes('OP_RETURN budget');
+        setMsg({
+          kind: 'err',
+          text: overBudget ? t('altarErrOpreturn') : t('altarErrDeathDate'),
+        });
         return;
       }
       historyNote =
@@ -911,10 +939,25 @@ export default function App() {
   }
 
   /**
-   * Prefer the most recent altar-packed burn under a star (an amendment,
-   * e.g. one that added/edited a relationship) over the original note, so
-   * later edits actually show up. `remote.burns` is latest-first.
+   * Merge altar-packed burns under a star (latest-first). Relationship
+   * fragments carry only the link; identity/places come from the root.
+   * `remote.burns` is latest-first.
    */
+  function pickDisplayAltarFields(
+    remote: IndexMemorialGroup,
+  ): AltarFields | null {
+    const notes: string[] = [];
+    for (const b of remote.burns) {
+      const n = (b.note || '').trim();
+      if (n) notes.push(n);
+    }
+    const original = (remote.originalNote || '').trim();
+    if (original) notes.push(original);
+    const latest = (remote.latestNote || '').trim();
+    if (latest) notes.push(latest);
+    return mergeAltarFields(notes);
+  }
+
   function pickDisplayAltarNote(remote: IndexMemorialGroup): string {
     for (const b of remote.burns) {
       const n = (b.note || '').trim();
@@ -929,15 +972,19 @@ export default function App() {
     memorialNote: string;
   }) {
     let memorialNote = opts.memorialNote;
+    let altar: AltarFields | null = null;
     try {
       const remote = await fetchIndexMemorial(opts.parentBurnTxid);
       persistMemorialSync(remote);
-      const remoteNote = pickDisplayAltarNote(remote);
-      if (
-        remoteNote &&
-        (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
-      ) {
-        memorialNote = remoteNote;
+      altar = pickDisplayAltarFields(remote);
+      if (!altar) {
+        const remoteNote = pickDisplayAltarNote(remote);
+        if (
+          remoteNote &&
+          (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
+        ) {
+          memorialNote = remoteNote;
+        }
       }
     } catch {
       // Test / offline index: still hydrate full Ban thờ from chain.
@@ -952,7 +999,7 @@ export default function App() {
     }
     setDedicationSheet({
       parentBurnTxid: opts.parentBurnTxid,
-      altar: altarFromMemorialNote(memorialNote),
+      altar: altar ?? altarFromMemorialNote(memorialNote),
       extraNote: '',
     });
   }
@@ -1536,6 +1583,7 @@ export default function App() {
 
       {amendSheet && !busy ? (
         <AltarSetupModal
+          variant="relationship"
           initial={amendSheet.altar}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
@@ -1551,9 +1599,13 @@ export default function App() {
             void onOffer({
               parentBurnTxid,
               displayNote:
-                formatAltarPersonName(fields, locale) ||
+                formatAltarPersonName(amendSheet.altar, locale) ||
                 t('offeringFallback'),
-              altar: fields,
+              altar: {
+                ...amendSheet.altar,
+                relationshipType: fields.relationshipType,
+                relatedTxid: fields.relatedTxid,
+              },
               amend: true,
             });
           }}

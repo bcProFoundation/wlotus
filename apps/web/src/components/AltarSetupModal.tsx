@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   emptyAltarFields,
   formatAltarDateInput,
+  formatAltarPersonName,
   normalizeAltarRelatedTxid,
   validateAltarFields,
+  validateRelationshipFields,
   type AltarFields,
   type AltarHonorific,
   type AltarRelationshipType,
@@ -28,10 +30,101 @@ function normalizeFields(draft: AltarFields): AltarFields {
   };
 }
 
+function RelationshipFields(props: {
+  draft: AltarFields;
+  errorKey: string | null;
+  relatedAltarOptions: RelatedAltarOption[];
+  setRelationshipType: (next: AltarRelationshipType) => void;
+  setRelatedTxid: (txid: string) => void;
+}) {
+  const { t } = useLocale();
+  const { draft } = props;
+  return (
+    <div className="field">
+      <span className="altar-honorific-label" id="altar-relationship-label">
+        {t('altarRelationship')}
+      </span>
+      <div
+        className="altar-honorific altar-relationship"
+        role="group"
+        aria-labelledby="altar-relationship-label"
+      >
+        <button
+          type="button"
+          className={
+            draft.relationshipType === 'spouse'
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={draft.relationshipType === 'spouse'}
+          onClick={() => props.setRelationshipType('spouse')}
+        >
+          {t('altarRelationshipSpouse')}
+        </button>
+        <button
+          type="button"
+          className={
+            draft.relationshipType === 'parent'
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={draft.relationshipType === 'parent'}
+          onClick={() => props.setRelationshipType('parent')}
+        >
+          {t('altarRelationshipParent')}
+        </button>
+        <button
+          type="button"
+          className={
+            draft.relationshipType === 'child'
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={draft.relationshipType === 'child'}
+          onClick={() => props.setRelationshipType('child')}
+        >
+          {t('altarRelationshipChild')}
+        </button>
+      </div>
+      {draft.relationshipType ? (
+        props.relatedAltarOptions.length > 0 ? (
+          <select
+            id="altar-related-txid"
+            value={draft.relatedTxid}
+            onChange={e => props.setRelatedTxid(e.target.value)}
+            aria-label={t('altarRelatedTxidLabel')}
+            style={{ marginTop: '0.5rem' }}
+          >
+            <option value="">{t('altarRelatedTxidPlaceholder')}</option>
+            {props.relatedAltarOptions.map(o => (
+              <option key={o.txid} value={o.txid}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p className="hint" style={{ marginTop: '0.5rem' }}>
+            {t('altarNoRecentForRelationship')}
+          </p>
+        )
+      ) : null}
+      {props.errorKey === 'relatedTxid' ||
+      props.errorKey === 'relationshipType' ? (
+        <p className="hint altar-field-error">{t('altarErrRelatedTxid')}</p>
+      ) : null}
+    </div>
+  );
+}
+
 export function AltarSetupModal(props: {
   initial: AltarFields | null;
   /** Prefill name from the simple note when opening altar the first time. */
   fallbackName?: string;
+  /**
+   * `setup` — full Ban thờ form (root dedication).
+   * `relationship` — link only; altar identity stays on the root burn.
+   */
+  variant?: 'setup' | 'relationship';
   etaLabel: string;
   offerDisabled?: boolean;
   /** Altars to link a relationship to — Recent list only (no free-text txid). */
@@ -42,7 +135,8 @@ export function AltarSetupModal(props: {
   /** Start offering from the review step. */
   onOffer: (fields: AltarFields) => void;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const relationshipOnly = props.variant === 'relationship';
   const cardRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>('edit');
   const [draft, setDraft] = useState<AltarFields>(() => {
@@ -84,7 +178,10 @@ export function AltarSetupModal(props: {
   }
 
   function goReview() {
-    const err = validateAltarFields(draft);
+    const err = relationshipOnly
+      ? validateRelationshipFields(draft) ||
+        (!draft.relationshipType ? 'relationshipType' : null)
+      : validateAltarFields(draft);
     if (err) {
       setErrorKey(err);
       return;
@@ -103,7 +200,10 @@ export function AltarSetupModal(props: {
 
   function offer() {
     const fields = review ?? normalizeFields(draft);
-    const err = validateAltarFields(fields);
+    const err = relationshipOnly
+      ? validateRelationshipFields(fields) ||
+        (!fields.relationshipType ? 'relationshipType' : null)
+      : validateAltarFields(fields);
     if (err) {
       setErrorKey(err);
       setStep('edit');
@@ -112,6 +212,10 @@ export function AltarSetupModal(props: {
     props.onSave(fields);
     props.onOffer(fields);
   }
+
+  const personLabel =
+    formatAltarPersonName(props.initial ?? draft, locale) ||
+    t('offeringFallback');
 
   return (
     <div
@@ -132,218 +236,191 @@ export function AltarSetupModal(props: {
 
         {step === 'edit' ? (
           <>
-            <h2 id="altar-setup-title">{t('altarTitle')}</h2>
-            <p className="hint">{t('altarHint')}</p>
+            <h2 id="altar-setup-title">
+              {relationshipOnly ? t('altarRelationshipTitle') : t('altarTitle')}
+            </h2>
+            <p className="hint">
+              {relationshipOnly
+                ? t('altarRelationshipHint')
+                : t('altarHint')}
+            </p>
 
-            <div className="field">
-              <span className="altar-honorific-label" id="altar-honorific-label">
-                {t('altarHonorific')}
-              </span>
-              <div
-                className="altar-honorific"
-                role="group"
-                aria-labelledby="altar-honorific-label"
-              >
-                <button
-                  type="button"
-                  className={
-                    draft.title === 'mr'
-                      ? 'altar-honorific-btn is-selected'
-                      : 'altar-honorific-btn'
-                  }
-                  aria-pressed={draft.title === 'mr'}
-                  onClick={() => setHonorific('mr')}
-                >
-                  {t('altarHonorificMr')}
-                </button>
-                <button
-                  type="button"
-                  className={
-                    draft.title === 'mrs'
-                      ? 'altar-honorific-btn is-selected'
-                      : 'altar-honorific-btn'
-                  }
-                  aria-pressed={draft.title === 'mrs'}
-                  onClick={() => setHonorific('mrs')}
-                >
-                  {t('altarHonorificMrs')}
-                </button>
-              </div>
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-name">{t('altarName')}</label>
-              <input
-                id="altar-name"
-                type="text"
-                autoComplete="name"
-                value={draft.name}
-                onChange={e => setField('name', e.target.value)}
-                placeholder={t('altarNamePlaceholder')}
-              />
-              {errorKey === 'name' ? (
-                <p className="hint altar-field-error">{t('altarErrName')}</p>
-              ) : null}
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-note">{t('altarNote')}</label>
-              <textarea
-                id="altar-note"
-                rows={2}
-                value={draft.note}
-                onChange={e => setField('note', e.target.value)}
-                placeholder={t('altarNotePlaceholder')}
-              />
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-birth-place">{t('altarBirthPlace')}</label>
-              <input
-                id="altar-birth-place"
-                type="text"
-                value={draft.birthPlace}
-                onChange={e => setField('birthPlace', e.target.value)}
-                placeholder={t('altarPlaceOptional')}
-              />
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-birth-date">{t('altarBirthDate')}</label>
-              <input
-                id="altar-birth-date"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={10}
-                value={draft.birthYear}
-                onChange={e =>
-                  setField('birthYear', formatAltarDateInput(e.target.value))
-                }
-                placeholder={t('altarBirthDatePlaceholder')}
-              />
-              {errorKey === 'birthYear' ? (
-                <p className="hint altar-field-error">{t('altarErrBirthDate')}</p>
-              ) : null}
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-death-place">{t('altarDeathPlace')}</label>
-              <input
-                id="altar-death-place"
-                type="text"
-                value={draft.deathPlace}
-                onChange={e => setField('deathPlace', e.target.value)}
-                placeholder={t('altarPlaceOptional')}
-              />
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-death-date">{t('altarDeathDate')}</label>
-              <input
-                id="altar-death-date"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={10}
-                value={draft.deathDate}
-                onChange={e =>
-                  setField('deathDate', formatAltarDateInput(e.target.value))
-                }
-                placeholder={t('altarDeathDatePlaceholder')}
-              />
-              {errorKey === 'deathDate' ? (
-                <p className="hint altar-field-error">{t('altarErrDeathDate')}</p>
-              ) : null}
-            </div>
-
-            <div className="field">
-              <label htmlFor="altar-funeral-place">
-                {t('altarFuneralPlace')}
-              </label>
-              <input
-                id="altar-funeral-place"
-                type="text"
-                value={draft.funeralPlace}
-                onChange={e => setField('funeralPlace', e.target.value)}
-                placeholder={t('altarPlaceOptional')}
-              />
-            </div>
-
-            <div className="field">
-              <span className="altar-honorific-label" id="altar-relationship-label">
-                {t('altarRelationship')}
-              </span>
-              <div
-                className="altar-honorific altar-relationship"
-                role="group"
-                aria-labelledby="altar-relationship-label"
-              >
-                <button
-                  type="button"
-                  className={
-                    draft.relationshipType === 'spouse'
-                      ? 'altar-honorific-btn is-selected'
-                      : 'altar-honorific-btn'
-                  }
-                  aria-pressed={draft.relationshipType === 'spouse'}
-                  onClick={() => setRelationshipType('spouse')}
-                >
-                  {t('altarRelationshipSpouse')}
-                </button>
-                <button
-                  type="button"
-                  className={
-                    draft.relationshipType === 'parent'
-                      ? 'altar-honorific-btn is-selected'
-                      : 'altar-honorific-btn'
-                  }
-                  aria-pressed={draft.relationshipType === 'parent'}
-                  onClick={() => setRelationshipType('parent')}
-                >
-                  {t('altarRelationshipParent')}
-                </button>
-                <button
-                  type="button"
-                  className={
-                    draft.relationshipType === 'child'
-                      ? 'altar-honorific-btn is-selected'
-                      : 'altar-honorific-btn'
-                  }
-                  aria-pressed={draft.relationshipType === 'child'}
-                  onClick={() => setRelationshipType('child')}
-                >
-                  {t('altarRelationshipChild')}
-                </button>
-              </div>
-              {draft.relationshipType ? (
-                props.relatedAltarOptions.length > 0 ? (
-                  <select
-                    id="altar-related-txid"
-                    value={draft.relatedTxid}
-                    onChange={e => setField('relatedTxid', e.target.value)}
-                    aria-label={t('altarRelatedTxidLabel')}
-                    style={{ marginTop: '0.5rem' }}
-                  >
-                    <option value="">{t('altarRelatedTxidPlaceholder')}</option>
-                    {props.relatedAltarOptions.map(o => (
-                      <option key={o.txid} value={o.txid}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p className="hint" style={{ marginTop: '0.5rem' }}>
-                    {t('altarNoRecentForRelationship')}
-                  </p>
-                )
-              ) : null}
-              {errorKey === 'relatedTxid' || errorKey === 'relationshipType' ? (
-                <p className="hint altar-field-error">
-                  {t('altarErrRelatedTxid')}
+            {relationshipOnly ? (
+              <>
+                <p className="offer-session-note offer-session-original">
+                  {personLabel}
                 </p>
-              ) : null}
-            </div>
+                <RelationshipFields
+                  draft={draft}
+                  errorKey={errorKey}
+                  relatedAltarOptions={props.relatedAltarOptions}
+                  setRelationshipType={setRelationshipType}
+                  setRelatedTxid={txid => setField('relatedTxid', txid)}
+                />
+              </>
+            ) : (
+              <>
+                <div className="field">
+                  <span
+                    className="altar-honorific-label"
+                    id="altar-honorific-label"
+                  >
+                    {t('altarHonorific')}
+                  </span>
+                  <div
+                    className="altar-honorific"
+                    role="group"
+                    aria-labelledby="altar-honorific-label"
+                  >
+                    <button
+                      type="button"
+                      className={
+                        draft.title === 'mr'
+                          ? 'altar-honorific-btn is-selected'
+                          : 'altar-honorific-btn'
+                      }
+                      aria-pressed={draft.title === 'mr'}
+                      onClick={() => setHonorific('mr')}
+                    >
+                      {t('altarHonorificMr')}
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        draft.title === 'mrs'
+                          ? 'altar-honorific-btn is-selected'
+                          : 'altar-honorific-btn'
+                      }
+                      aria-pressed={draft.title === 'mrs'}
+                      onClick={() => setHonorific('mrs')}
+                    >
+                      {t('altarHonorificMrs')}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-name">{t('altarName')}</label>
+                  <input
+                    id="altar-name"
+                    type="text"
+                    autoComplete="name"
+                    value={draft.name}
+                    onChange={e => setField('name', e.target.value)}
+                    placeholder={t('altarNamePlaceholder')}
+                  />
+                  {errorKey === 'name' ? (
+                    <p className="hint altar-field-error">{t('altarErrName')}</p>
+                  ) : null}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-note">{t('altarNote')}</label>
+                  <textarea
+                    id="altar-note"
+                    rows={2}
+                    value={draft.note}
+                    onChange={e => setField('note', e.target.value)}
+                    placeholder={t('altarNotePlaceholder')}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-birth-place">
+                    {t('altarBirthPlace')}
+                  </label>
+                  <input
+                    id="altar-birth-place"
+                    type="text"
+                    value={draft.birthPlace}
+                    onChange={e => setField('birthPlace', e.target.value)}
+                    placeholder={t('altarPlaceOptional')}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-birth-date">{t('altarBirthDate')}</label>
+                  <input
+                    id="altar-birth-date"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={10}
+                    value={draft.birthYear}
+                    onChange={e =>
+                      setField(
+                        'birthYear',
+                        formatAltarDateInput(e.target.value),
+                      )
+                    }
+                    placeholder={t('altarBirthDatePlaceholder')}
+                  />
+                  {errorKey === 'birthYear' || errorKey === 'birthDate' ? (
+                    <p className="hint altar-field-error">
+                      {t('altarErrBirthDate')}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-death-place">
+                    {t('altarDeathPlace')}
+                  </label>
+                  <input
+                    id="altar-death-place"
+                    type="text"
+                    value={draft.deathPlace}
+                    onChange={e => setField('deathPlace', e.target.value)}
+                    placeholder={t('altarPlaceOptional')}
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-death-date">{t('altarDeathDate')}</label>
+                  <input
+                    id="altar-death-date"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={10}
+                    value={draft.deathDate}
+                    onChange={e =>
+                      setField(
+                        'deathDate',
+                        formatAltarDateInput(e.target.value),
+                      )
+                    }
+                    placeholder={t('altarDeathDatePlaceholder')}
+                  />
+                  {errorKey === 'deathDate' ? (
+                    <p className="hint altar-field-error">
+                      {t('altarErrDeathDate')}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="altar-funeral-place">
+                    {t('altarFuneralPlace')}
+                  </label>
+                  <input
+                    id="altar-funeral-place"
+                    type="text"
+                    value={draft.funeralPlace}
+                    onChange={e => setField('funeralPlace', e.target.value)}
+                    placeholder={t('altarPlaceOptional')}
+                  />
+                </div>
+
+                <RelationshipFields
+                  draft={draft}
+                  errorKey={errorKey}
+                  relatedAltarOptions={props.relatedAltarOptions}
+                  setRelationshipType={setRelationshipType}
+                  setRelatedTxid={txid => setField('relatedTxid', txid)}
+                />
+              </>
+            )}
 
             <div className="altar-setup-actions">
               <span />
@@ -358,10 +435,22 @@ export function AltarSetupModal(props: {
           </>
         ) : (
           <>
-            <h2 id="altar-setup-title">{t('altarDetailTitle')}</h2>
+            <h2 id="altar-setup-title">
+              {relationshipOnly
+                ? t('altarRelationshipTitle')
+                : t('altarDetailTitle')}
+            </h2>
             {review ? (
               <AltarDetails
-                altar={review}
+                altar={
+                  relationshipOnly && props.initial
+                    ? {
+                        ...props.initial,
+                        relationshipType: review.relationshipType,
+                        relatedTxid: review.relatedTxid,
+                      }
+                    : review
+                }
                 relatedAltarOptions={props.relatedAltarOptions}
               />
             ) : null}
