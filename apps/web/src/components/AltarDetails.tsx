@@ -71,7 +71,7 @@ export function AltarDetails(props: {
       ? `${solarBirth} (${lunarBirthYear})`
       : solarBirth;
 
-  const rows: { key: string; label: string; value: ReactNode }[] = [
+  const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
     { key: 'honorific', label: t('altarHonorific'), value: honorific },
     { key: 'name', label: t('altarName'), value: altar.name.trim() },
     { key: 'note', label: t('altarNote'), value: altar.note.trim() },
@@ -88,10 +88,9 @@ export function AltarDetails(props: {
     },
     {
       key: 'deathDate',
-      label: t('altarDeathDate'),
-      value: deathValue ? (
-        <span className="altar-death-date-value">
-          <span>{deathValue}</span>
+      label: (
+        <span className="altar-details-label-row">
+          <span>{t('altarDeathDate')}</span>
           {canToggleDeath ? (
             <button
               type="button"
@@ -102,9 +101,8 @@ export function AltarDetails(props: {
             </button>
           ) : null}
         </span>
-      ) : (
-        ''
       ),
+      value: deathValue,
     },
     {
       key: 'funeralPlace',

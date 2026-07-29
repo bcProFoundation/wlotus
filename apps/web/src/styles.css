@@ -427,6 +427,14 @@ a {
   line-height: 1.35;
 }
 
+.altar-details-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
 .altar-details-value {
   display: block;
   margin: 0;
@@ -548,13 +556,6 @@ a {
   text-underline-offset: 0.12em;
 }
 
-.altar-death-date-value {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
 .altar-cal-toggle {
   appearance: none;
   border: 0;
@@ -564,10 +565,11 @@ a {
   cursor: pointer;
   color: var(--accent, #c4a574);
   font: inherit;
-  font-size: 0.9em;
+  font-size: 0.85em;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 0.12em;
+  flex-shrink: 0;
 }
 
 .altar-cal-toggle:hover {
