@@ -1004,6 +1004,18 @@ export default function App() {
             }
           } else if (isAmend && amendKind === 'relationship') {
             pendingRelationshipFollowUpRef.current = null;
+            // Open profile/Ban thờ from local burns so the new link shows
+            // immediately (dana-index may lag by minutes).
+            if (parentBurnTxid) {
+              const root = parentBurnTxid;
+              const note = historyNote;
+              queueMicrotask(() => {
+                void openDedicationSheet({
+                  parentBurnTxid: root,
+                  memorialNote: note,
+                });
+              });
+            }
           }
           setNote('');
           setAltar(null);
@@ -1190,38 +1202,54 @@ export default function App() {
     memorialNote: string;
   }) {
     let memorialNote = opts.memorialNote;
-    let altar: AltarFields | null = null;
+    const rootId = opts.parentBurnTxid.trim().toLowerCase();
+    const localGroup = () =>
+      groupOffersByOriginal(loadOffers()).find(
+        g => g.original.burnTxid.trim().toLowerCase() === rootId,
+      );
+    const resolveLocal = (note: string): AltarFields => {
+      const g = localGroup();
+      return g ? altarFromOfferGroup(g) : altarFromMemorialNote(note);
+    };
+
+    // Show device burns immediately (relationship fragments are local before
+    // dana-index catches up — often minutes later).
+    let resolved = resolveLocal(memorialNote);
+    let isCreator =
+      isLocalCreatedRoot(rootId) || creatorByRoot.get(rootId) === true;
+    setDedicationSheet({
+      parentBurnTxid: opts.parentBurnTxid,
+      altar: resolved,
+      extraNote: '',
+      relatedOptions: relatedAltarOptions,
+      isCreator,
+    });
+
     try {
       const remote = await fetchIndexMemorial(opts.parentBurnTxid);
+      // Union into localStorage — keeps device-only relationship / death
+      // fragments that the index has not indexed yet.
       persistMemorialSync(remote);
-      altar = pickDisplayAltarFields(remote);
-      if (!altar) {
-        const remoteNote = pickDisplayAltarNote(remote);
-        if (
-          remoteNote &&
-          (!isAltarPackedNote(memorialNote) || isAltarPackedNote(remoteNote))
-        ) {
-          memorialNote = remoteNote;
-        }
-      }
+      resolved = resolveLocal(memorialNote);
     } catch {
       // Test / offline index: still hydrate full Ban thờ from chain.
       try {
         const { lookupDedication } = await import('./lib/lookupDedication.js');
         const d = await lookupDedication(opts.parentBurnTxid);
         const chainNote = d.note.trim();
-        if (chainNote) memorialNote = chainNote;
+        if (chainNote) {
+          memorialNote = chainNote;
+          if (!localGroup()) resolved = altarFromMemorialNote(memorialNote);
+        }
       } catch {
-        /* keep local note */
+        /* keep local */
       }
     }
-    const resolved = altar ?? altarFromMemorialNote(memorialNote);
+
     const relatedOptions = await resolveRelatedOptions(
       resolved,
       relatedAltarOptions,
     );
-    const rootId = opts.parentBurnTxid.trim().toLowerCase();
-    let isCreator = isLocalCreatedRoot(rootId) || creatorByRoot.get(rootId) === true;
     try {
       const own = await fetchRootCreator({
         installId,
@@ -1236,13 +1264,17 @@ export default function App() {
     } catch {
       /* offline mint-api — local cache only */
     }
-    setDedicationSheet({
-      parentBurnTxid: opts.parentBurnTxid,
-      altar: resolved,
-      extraNote: '',
-      relatedOptions,
-      isCreator,
-    });
+    setDedicationSheet(prev =>
+      prev &&
+      prev.parentBurnTxid.trim().toLowerCase() === rootId
+        ? {
+            ...prev,
+            altar: resolved,
+            relatedOptions,
+            isCreator,
+          }
+        : prev,
+    );
   }
 
   /** Follow a relationship link (Spouse / Parent / Child) to the linked altar. */
