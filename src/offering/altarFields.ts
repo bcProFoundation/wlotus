@@ -499,6 +499,34 @@ export function memorialDisplayName(
   return formatAltarPersonName(altar, locale);
 }
 
+/**
+ * Normalize free text for name search: case, diacritics, and Vietnamese
+ * `đ`/`Đ` insensitive so "qua" matches "Quả", "ba" matches "Bà", etc.
+ */
+export function normalizeAltarSearchText(raw: string): string {
+  return raw
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .trim();
+}
+
+/**
+ * Relevance tier for name search — used to rank search results before
+ * falling back to offering count: `3` exact match, `2` prefix, `1` contains,
+ * `0` no match.
+ */
+export function altarSearchRelevance(name: string, query: string): number {
+  const n = normalizeAltarSearchText(name);
+  const q = normalizeAltarSearchText(query);
+  if (!n || !q) return 0;
+  if (n === q) return 3;
+  if (n.startsWith(q)) return 2;
+  if (n.includes(q)) return 1;
+  return 0;
+}
+
 const ALTAR_DATE_RE = /^\d{4}(-\d{2}(-\d{2})?)?$/;
 
 /**

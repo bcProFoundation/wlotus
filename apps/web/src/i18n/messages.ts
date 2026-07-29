@@ -138,7 +138,13 @@ export type MessageKey =
   | 'latestMessageLabel'
   | 'btnRemoveRecent'
   | 'btnSwipeOpen'
-  | 'footerBrand';
+  | 'footerBrand'
+  | 'searchTitle'
+  | 'searchPlaceholder'
+  | 'searchHint'
+  | 'searchLoading'
+  | 'searchNoResults'
+  | 'searchIndexUnavailable';
 
 type Dict = Record<MessageKey, string>;
 
@@ -299,6 +305,13 @@ const en: Dict = {
   btnRemoveRecent: 'Delete',
   btnSwipeOpen: 'Open',
   footerBrand: 'White Lotus',
+  searchTitle: 'Search',
+  searchPlaceholder: 'Search by name…',
+  searchHint: 'Find a memorial or profile by name across White Lotus.',
+  searchLoading: 'Searching…',
+  searchNoResults: 'No matches found.',
+  searchIndexUnavailable:
+    'Could not reach the memorial index — showing matches from this device only.',
 };
 
 const vi: Dict = {
@@ -457,6 +470,13 @@ const vi: Dict = {
   btnRemoveRecent: 'Xóa',
   btnSwipeOpen: 'Mở',
   footerBrand: 'White Lotus',
+  searchTitle: 'Tìm kiếm',
+  searchPlaceholder: 'Tìm theo tên…',
+  searchHint: 'Tìm ban thờ hoặc hồ sơ theo tên trên White Lotus.',
+  searchLoading: 'Đang tìm…',
+  searchNoResults: 'Không tìm thấy kết quả.',
+  searchIndexUnavailable:
+    'Không kết nối được mục lục tưởng niệm — chỉ hiện kết quả trên máy này.',
 };
 
 const zh: Dict = {
@@ -611,6 +631,12 @@ const zh: Dict = {
   btnRemoveRecent: '删除',
   btnSwipeOpen: '打开',
   footerBrand: 'White Lotus',
+  searchTitle: '搜索',
+  searchPlaceholder: '按姓名搜索…',
+  searchHint: '按姓名在 White Lotus 上查找灵位或个人主页。',
+  searchLoading: '搜索中…',
+  searchNoResults: '未找到匹配结果。',
+  searchIndexUnavailable: '无法连接追思索引 — 仅显示本机记录。',
 };
 
 export const MESSAGES: Record<Locale, Dict> = { en, vi, zh };

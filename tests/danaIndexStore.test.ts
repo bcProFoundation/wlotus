@@ -92,4 +92,46 @@ describe('BurnStore', () => {
     );
     expect(store.recentGroups(10)).toHaveLength(0);
   });
+
+  it('searches by name, ranking exact match before contains', () => {
+    const rootA =
+      'd38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const rootB =
+      'e38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const rootC =
+      'f38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    store.upsert(burn({ burnTxid: rootA, note: 'Cao Lâm Quả' }));
+    store.upsert(burn({ burnTxid: rootB, note: 'Quả' }));
+    store.upsert(burn({ burnTxid: rootC, note: 'Nguyễn Văn A' }));
+
+    const results = store.searchGroups('quả', 10);
+    expect(results.map(r => r.originalBurnTxid)).toEqual([rootB, rootA]);
+    expect(store.searchGroups('nguyen', 10)).toHaveLength(1);
+    expect(store.searchGroups('', 10)).toHaveLength(0);
+    expect(store.searchGroups('không tồn tại', 10)).toHaveLength(0);
+  });
+
+  it('breaks ties within the same relevance tier by offering count', () => {
+    const rootA =
+      '138825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const rootB =
+      '238825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    store.upsert(burn({ burnTxid: rootA, note: 'Cao Lâm Quả' }));
+    store.upsert(burn({ burnTxid: rootB, note: 'Cao Lâm An' }));
+    // Both match "cao" at the same (contains) tier — rootB gets more
+    // fragments, so it should rank first on offering score.
+    for (let i = 0; i < 4; i++) {
+      store.upsert(
+        burn({
+          burnTxid: `${rootB.slice(0, 62)}${i}${i}`,
+          note: '',
+          parentBurnTxid: rootB,
+          blockTimestamp: 1_700_000_100 + i,
+        }),
+      );
+    }
+
+    const results = store.searchGroups('cao', 10);
+    expect(results.map(r => r.originalBurnTxid)).toEqual([rootB, rootA]);
+  });
 });
