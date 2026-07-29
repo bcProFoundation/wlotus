@@ -50,8 +50,8 @@ export type MessageKey =
   | 'altarRelationshipTitle'
   | 'altarRelationshipHint'
   | 'altarExistingRelationships'
-  | 'altarChildMaxHint'
-  | 'altarErrChildMax'
+  | 'altarParentMaxHint'
+  | 'altarErrParentMax'
   | 'altarErrDuplicateRel'
   | 'altarRelationshipNone'
   | 'altarRelationshipSpouse'
@@ -186,13 +186,13 @@ const en: Dict = {
   altarRelationshipHint:
     'Link this altar to another in Recent. The original Ban thờ details stay on the first burn — this only adds the relationship.',
   altarExistingRelationships: 'Current relationships',
-  altarChildMaxHint: 'At most {n} child links (add-only for now).',
-  altarErrChildMax: 'Already has {n} child links.',
+  altarParentMaxHint: 'At most {n} parents (Cha/mẹ) — add-only for now.',
+  altarErrParentMax: 'Already has {n} parent links.',
   altarErrDuplicateRel: 'That relationship is already linked.',
   altarRelationshipNone: 'None',
   altarRelationshipSpouse: 'Spouse',
-  altarRelationshipParent: 'Parent of',
-  altarRelationshipChild: 'Child of',
+  altarRelationshipParent: 'Parent',
+  altarRelationshipChild: 'Child',
   altarRelatedTxidLabel: 'Linked altar (from your Recent list)',
   altarRelatedTxidPlaceholder: 'Choose from Recent…',
   altarNoRecentForRelationship:
@@ -330,13 +330,13 @@ const vi: Dict = {
   altarRelationshipHint:
     'Liên kết ban thờ này với một ban thờ trong Gần đây. Chi tiết ban thờ gốc giữ trên lần đốt đầu — lần này chỉ thêm mối quan hệ.',
   altarExistingRelationships: 'Mối quan hệ hiện có',
-  altarChildMaxHint: 'Tối đa {n} mối quan hệ con (hiện chỉ thêm, chưa xoá).',
-  altarErrChildMax: 'Đã có đủ {n} mối quan hệ con.',
+  altarParentMaxHint: 'Tối đa {n} cha/mẹ (hiện chỉ thêm, chưa xoá).',
+  altarErrParentMax: 'Đã có đủ {n} mối quan hệ cha/mẹ.',
   altarErrDuplicateRel: 'Mối quan hệ này đã được liên kết.',
   altarRelationshipNone: 'Không có',
-  altarRelationshipSpouse: 'Vợ/Chồng của',
-  altarRelationshipParent: 'Cha/Mẹ của',
-  altarRelationshipChild: 'Con của',
+  altarRelationshipSpouse: 'Vợ/Chồng',
+  altarRelationshipParent: 'Cha/Mẹ',
+  altarRelationshipChild: 'Con',
   altarRelatedTxidLabel: 'Ban thờ liên quan (từ danh sách Gần đây)',
   altarRelatedTxidPlaceholder: 'Chọn từ Gần đây…',
   altarNoRecentForRelationship:
@@ -472,13 +472,13 @@ const zh: Dict = {
   altarRelationshipHint:
     '将此灵位关联到“最近”中的另一灵位。原有灵位详情保留在首次供奉上——这次只添加关系。',
   altarExistingRelationships: '现有关系',
-  altarChildMaxHint: '最多 {n} 条子辈关系（目前只能添加，暂不支持删除）。',
-  altarErrChildMax: '已有 {n} 条子辈关系。',
+  altarParentMaxHint: '最多 {n} 位父母（目前只能添加，暂不支持删除）。',
+  altarErrParentMax: '已有 {n} 位父母关系。',
   altarErrDuplicateRel: '该关系已关联。',
   altarRelationshipNone: '无',
   altarRelationshipSpouse: '配偶',
-  altarRelationshipParent: '为其父母',
-  altarRelationshipChild: '为其子女',
+  altarRelationshipParent: '父母',
+  altarRelationshipChild: '子女',
   altarRelatedTxidLabel: '关联灵位（来自"最近"列表）',
   altarRelatedTxidPlaceholder: '从最近选择…',
   altarNoRecentForRelationship: '请先在"最近"中为对方献花，才能建立关系。',

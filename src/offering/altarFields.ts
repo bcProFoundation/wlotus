@@ -21,7 +21,8 @@
  *
  * `relationshipType` / `relatedTxid` link this altar to another WLotus altar
  * (its original dedication burn txid): `spouse` | `parent` | `child`, where
- * `parent`/`child` describe THIS altar's role relative to the linked one.
+ * each value is the **related** person's role toward this memorial
+ * (`parent` = Cha/mẹ, `child` = Con, `spouse` = Vợ/Chồng).
  * On the wire, relationship type is packed as a one-letter code (`s`/`p`/`c`)
  * to save OP_RETURN budget; readers still accept the long forms.
  *
@@ -60,8 +61,8 @@ export const MEMORIAL_NOTE_MAX_CHARS = 200;
 export type AltarHonorific = '' | 'mr' | 'mrs';
 
 /**
- * Link type to another altar: empty (none), `spouse` (symmetric), or
- * `parent` / `child` — THIS altar's role relative to `relatedTxid`.
+ * Link type to another altar: empty (none), or the **related** person's role
+ * toward this memorial — `parent` (Cha/mẹ), `child` (Con), `spouse` (Vợ/Chồng).
  */
 export type AltarRelationshipType = '' | 'spouse' | 'parent' | 'child';
 
@@ -76,8 +77,8 @@ export interface AltarRelationshipLink {
   relatedTxid: string;
 }
 
-/** Soft cap — child links only. Spouse and parent are unlimited for now. */
-export const MAX_CHILD_RELATIONSHIPS = 2;
+/** Soft cap — parent (Cha/mẹ) links only. Child and spouse are unlimited for now. */
+export const MAX_PARENT_RELATIONSHIPS = 2;
 
 export interface AltarFields {
   /** Mr. / Mrs. — stored as `mr` | `mrs` (optional). */
@@ -149,13 +150,13 @@ export function relationshipLinkKey(link: AltarRelationshipLink): string {
 }
 
 /**
- * Add-only rules: no duplicates; child ≤ {@link MAX_CHILD_RELATIONSHIPS};
- * spouse and parent unlimited. Deletion not supported yet.
+ * Add-only rules: no duplicates; parent ≤ {@link MAX_PARENT_RELATIONSHIPS};
+ * child and spouse unlimited. Deletion not supported yet.
  */
 export function canAddRelationship(
   existing: AltarRelationshipLink[],
   next: AltarRelationshipLink,
-): 'duplicate' | 'childMax' | null {
+): 'duplicate' | 'parentMax' | null {
   if (
     existing.some(
       r => r.type === next.type && r.relatedTxid === next.relatedTxid,
@@ -163,9 +164,9 @@ export function canAddRelationship(
   ) {
     return 'duplicate';
   }
-  if (next.type === 'child') {
-    const n = existing.filter(r => r.type === 'child').length;
-    if (n >= MAX_CHILD_RELATIONSHIPS) return 'childMax';
+  if (next.type === 'parent') {
+    const n = existing.filter(r => r.type === 'parent').length;
+    if (n >= MAX_PARENT_RELATIONSHIPS) return 'parentMax';
   }
   return null;
 }
@@ -232,6 +233,31 @@ export function altarHonorificLabel(
       return h === 'mrs' ? '女士' : '先生';
     default:
       return h === 'mrs' ? 'Bà' : 'Ông';
+  }
+}
+
+/**
+ * Spouse label for the related person, from **this** altar's honorific:
+ * Ông/Mr → Vợ/Wife; Bà/Mrs → Chồng/Husband; unknown → Vợ/Chồng / Spouse.
+ */
+export function altarSpouseRelationshipLabel(
+  title: string | null | undefined,
+  locale: AltarLocale = 'vi',
+): string {
+  const h = normalizeAltarHonorific(title);
+  switch (locale) {
+    case 'en':
+      if (h === 'mr') return 'Wife';
+      if (h === 'mrs') return 'Husband';
+      return 'Spouse';
+    case 'zh':
+      if (h === 'mr') return '妻';
+      if (h === 'mrs') return '夫';
+      return '配偶';
+    default:
+      if (h === 'mr') return 'Vợ';
+      if (h === 'mrs') return 'Chồng';
+      return 'Vợ/Chồng';
   }
 }
 

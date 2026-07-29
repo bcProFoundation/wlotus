@@ -12,7 +12,8 @@ import {
   mergeAltarFields,
   canAddRelationship,
   altarRelationships,
-  MAX_CHILD_RELATIONSHIPS,
+  altarSpouseRelationshipLabel,
+  MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   normalizeAltarRelatedTxid,
@@ -319,41 +320,55 @@ describe('altarFields', () => {
     expect(merged?.birthPlace).toBe('Mỹ Thành, Phù Mỹ, Bình Định');
   });
 
-  it('collects multiple relationship fragments (child max 2)', () => {
+  it('collects multiple relationship fragments (parent max 2)', () => {
     const root = encodeAltarNote({
       ...emptyAltarFields(),
       name: 'A',
       deathDate: '2001',
     });
-    const child1 = '1'.repeat(64);
-    const child2 = '2'.repeat(64);
-    const child3 = '3'.repeat(64);
+    const parent1 = '1'.repeat(64);
+    const parent2 = '2'.repeat(64);
+    const parent3 = '3'.repeat(64);
     const spouse = 'a'.repeat(64);
     // notes latest-first
     const merged = mergeAltarFields([
-      encodeRelationshipNote({ relationshipType: 'child', relatedTxid: child2 }),
+      encodeRelationshipNote({ relationshipType: 'parent', relatedTxid: parent2 }),
       encodeRelationshipNote({ relationshipType: 'spouse', relatedTxid: spouse }),
-      encodeRelationshipNote({ relationshipType: 'child', relatedTxid: child1 }),
+      encodeRelationshipNote({ relationshipType: 'parent', relatedTxid: parent1 }),
       root,
     ]);
     expect(altarRelationships(merged!)).toEqual([
-      { type: 'child', relatedTxid: child1 },
+      { type: 'parent', relatedTxid: parent1 },
       { type: 'spouse', relatedTxid: spouse },
-      { type: 'child', relatedTxid: child2 },
+      { type: 'parent', relatedTxid: parent2 },
     ]);
     expect(
       canAddRelationship(altarRelationships(merged!), {
-        type: 'child',
-        relatedTxid: child3,
+        type: 'parent',
+        relatedTxid: parent3,
       }),
-    ).toBe('childMax');
+    ).toBe('parentMax');
     expect(
       canAddRelationship(altarRelationships(merged!), {
-        type: 'spouse',
+        type: 'child',
         relatedTxid: 'b'.repeat(64),
       }),
     ).toBeNull();
-    expect(MAX_CHILD_RELATIONSHIPS).toBe(2);
+    expect(
+      canAddRelationship(altarRelationships(merged!), {
+        type: 'spouse',
+        relatedTxid: 'c'.repeat(64),
+      }),
+    ).toBeNull();
+    expect(MAX_PARENT_RELATIONSHIPS).toBe(2);
+  });
+
+  it('labels spouse from this altar honorific', () => {
+    expect(altarSpouseRelationshipLabel('mr', 'vi')).toBe('Vợ');
+    expect(altarSpouseRelationshipLabel('mrs', 'vi')).toBe('Chồng');
+    expect(altarSpouseRelationshipLabel('', 'vi')).toBe('Vợ/Chồng');
+    expect(altarSpouseRelationshipLabel('mr', 'en')).toBe('Wife');
+    expect(altarSpouseRelationshipLabel('mrs', 'en')).toBe('Husband');
   });
 
   it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {
