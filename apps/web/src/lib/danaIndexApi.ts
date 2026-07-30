@@ -134,23 +134,31 @@ export async function searchIndexMemorials(
 ): Promise<IndexMemorialGroup[]> {
   const q = query.trim();
   if (!q) return [];
-  const res = await fetch(
-    indexUrl(`/api/search?q=${encodeURIComponent(q)}&limit=${limit}`),
-  );
-  const body = await readJson<{
-    ok?: boolean;
-    items?: IndexMemorialGroup[];
-    error?: string;
-  }>(res);
-  if (res.status === 404) {
-    // Older deployed dana-index without GET /api/search — rank /api/recent instead.
+
+  async function fallbackViaRecent(): Promise<IndexMemorialGroup[]> {
     const recent = await fetchIndexRecent(200);
     return searchViaRecentGroups(recent, q, limit);
   }
-  if (!res.ok || body.ok === false) {
-    throw new Error(body.error || `Index search ${res.status}`);
+
+  try {
+    const res = await fetch(
+      indexUrl(`/api/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+    );
+    if (res.status === 404) {
+      return fallbackViaRecent();
+    }
+    const body = await readJson<{
+      ok?: boolean;
+      items?: IndexMemorialGroup[];
+      error?: string;
+    }>(res);
+    if (!res.ok || body.ok === false) {
+      return fallbackViaRecent();
+    }
+    return body.items ?? [];
+  } catch {
+    return fallbackViaRecent();
   }
-  return body.items ?? [];
 }
 
 /** Best-effort: ask index to pull a burn tx now. */

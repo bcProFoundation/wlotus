@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { useLocale } from '../i18n/LocaleContext.js';
 import type { SearchResultRow } from '../lib/searchAltars.js';
+import { SearchResultsList } from './SearchResultsList.js';
 
 /** Search by name across White Lotus — ordered by relevance then offering score. */
 export function SearchOverlay(props: {
@@ -13,6 +15,11 @@ export function SearchOverlay(props: {
 }) {
   const { t } = useLocale();
   const hasQuery = props.query.trim().length > 0;
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    cardRef.current?.scrollTo({ top: 0 });
+  }, [props.query, props.results, props.loading]);
 
   return (
     <div
@@ -21,7 +28,7 @@ export function SearchOverlay(props: {
       aria-modal="true"
       aria-labelledby="search-overlay-title"
     >
-      <div className="offer-modal-card">
+      <div className="offer-modal-card offer-modal-card--search" ref={cardRef}>
         <button
           type="button"
           className="offer-modal-close"
@@ -49,24 +56,11 @@ export function SearchOverlay(props: {
           <p className="hint">{t('searchNoResults')}</p>
         ) : null}
 
-        {props.results.length > 0 ? (
-          <ul className="search-results-list">
-            {props.results.map(r => (
-              <li key={r.txid}>
-                <button
-                  type="button"
-                  className="search-result-row"
-                  onClick={() => props.onSelect(r.txid)}
-                >
-                  <span className="search-result-name">{r.label}</span>
-                  <span className="search-result-count">
-                    {t('burnTotal', { n: r.totalBurns })}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <SearchResultsList
+          results={props.results}
+          scrollKey={props.query}
+          onSelect={props.onSelect}
+        />
       </div>
     </div>
   );
