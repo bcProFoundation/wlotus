@@ -1,4 +1,5 @@
 import { BurnStore, type IndexedBurn } from '../apps/dana-index/src/store.js';
+import { ALTAR_SEP } from '../src/offering/altarFields.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -133,5 +134,65 @@ describe('BurnStore', () => {
 
     const results = store.searchGroups('cao', 10);
     expect(results.map(r => r.originalBurnTxid)).toEqual([rootB, rootA]);
+  });
+
+  it('ranks honorific-prefixed names by offering score when query matches bare name', () => {
+    const rootHigh =
+      '338825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const rootMid =
+      '438825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const rootLow =
+      '538825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    store.upsert(
+      burn({
+        burnTxid: rootHigh,
+        note: `mr${ALTAR_SEP}Cao Lâm Quả${ALTAR_SEP}`,
+      }),
+    );
+    store.upsert(
+      burn({
+        burnTxid: rootMid,
+        note: `mr${ALTAR_SEP}Cao Lâm Thanh${ALTAR_SEP}`,
+      }),
+    );
+    store.upsert(burn({ burnTxid: rootLow, note: 'Cao Lâm Quả' }));
+    for (let i = 0; i < 8; i++) {
+      store.upsert(
+        burn({
+          burnTxid: `${rootHigh.slice(0, 62)}${i}${i}`,
+          note: '',
+          parentBurnTxid: rootHigh,
+          blockTimestamp: 1_700_000_200 + i,
+        }),
+      );
+    }
+    for (let i = 0; i < 3; i++) {
+      store.upsert(
+        burn({
+          burnTxid: `${rootMid.slice(0, 62)}${i}${i}`,
+          note: '',
+          parentBurnTxid: rootMid,
+          blockTimestamp: 1_700_000_300 + i,
+        }),
+      );
+    }
+    for (let i = 0; i < 2; i++) {
+      store.upsert(
+        burn({
+          burnTxid: `${rootLow.slice(0, 62)}${i}${i}`,
+          note: '',
+          parentBurnTxid: rootLow,
+          blockTimestamp: 1_700_000_400 + i,
+        }),
+      );
+    }
+
+    const results = store.searchGroups('cao', 10);
+    expect(results.map(r => r.originalBurnTxid)).toEqual([
+      rootHigh,
+      rootMid,
+      rootLow,
+    ]);
+    expect(results.map(r => r.totalBurns)).toEqual([9, 4, 3]);
   });
 });

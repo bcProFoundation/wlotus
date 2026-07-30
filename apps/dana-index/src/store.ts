@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import {
+  altarBareNameFromNote,
   altarSearchRelevance,
   memorialDisplayName,
 } from '../../../src/offering/altarFields.js';
@@ -150,7 +151,8 @@ export class BurnStore {
     const scored = this.buildGroups()
       .map(group => {
         const name = memorialDisplayName(group.originalNote) || group.originalNote;
-        return { group, tier: altarSearchRelevance(name, q) };
+        const bare = altarBareNameFromNote(group.originalNote);
+        return { group, tier: altarSearchRelevance(name, q, bare) };
       })
       .filter(x => x.tier > 0);
 

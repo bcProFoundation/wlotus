@@ -1,6 +1,7 @@
 /** Client for the DANA memorial index (`/index-api`). */
 
 import {
+  altarBareNameFromNote,
   altarSearchRelevance,
   memorialDisplayName,
 } from './altarFields.js';
@@ -108,7 +109,8 @@ function searchViaRecentGroups(
     .map(group => {
       const name =
         memorialDisplayName(group.originalNote) || group.originalNote.trim();
-      return { group, tier: altarSearchRelevance(name, q) };
+      const bare = altarBareNameFromNote(group.originalNote);
+      return { group, tier: altarSearchRelevance(name, q, bare) };
     })
     .filter(x => x.tier > 0);
 

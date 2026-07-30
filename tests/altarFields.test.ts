@@ -14,6 +14,7 @@ import {
   altarRelationships,
   altarHasDeathDate,
   altarParentRelationshipLabel,
+  altarSearchRelevance,
   altarSpouseRelationshipLabel,
   encodeDeathDateNote,
   isDeathDateAmendNote,
@@ -470,5 +471,13 @@ describe('altarFields', () => {
     expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
     expect(memorialNoteMaxBytes(false)).toBe(150);
     expect(memorialNoteMaxBytes(true)).toBe(120);
+  });
+});
+
+describe('altarSearchRelevance', () => {
+  it('treats honorific-prefixed display names as prefix match on bare name', () => {
+    expect(altarSearchRelevance('Ông Cao Lâm Quả', 'cao', 'Cao Lâm Quả')).toBe(2);
+    expect(altarSearchRelevance('Cao Lâm Quả', 'cao')).toBe(2);
+    expect(altarSearchRelevance('Ông Cao Lâm Quả', 'cao')).toBe(1);
   });
 });

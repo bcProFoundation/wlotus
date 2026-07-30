@@ -47,6 +47,35 @@ describe('rankSearchCandidates', () => {
     ];
     expect(rankSearchCandidates(candidates, 'nguyen')).toEqual([]);
   });
+
+  it('ranks by offering score when bare-name prefix tier ties', () => {
+    const rows = rankSearchCandidates(
+      [
+        {
+          txid: 'a',
+          name: 'Ông Cao Lâm Quả',
+          bareName: 'Cao Lâm Quả',
+          totalBurns: 9,
+          atMs: 1,
+        },
+        {
+          txid: 'b',
+          name: 'Ông Cao Lâm Thanh',
+          bareName: 'Cao Lâm Thanh',
+          totalBurns: 4,
+          atMs: 1,
+        },
+        {
+          txid: 'c',
+          name: 'Cao Lâm Quả',
+          totalBurns: 3,
+          atMs: 1,
+        },
+      ],
+      'cao',
+    );
+    expect(rows.map(r => r.txid)).toEqual(['a', 'b', 'c']);
+  });
 });
 
 describe('mergeSearchResults', () => {

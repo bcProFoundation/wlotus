@@ -9,6 +9,8 @@ import { altarSearchRelevance } from './altarFields.js';
 export interface SearchCandidate {
   txid: string;
   name: string;
+  /** Person name without honorific — improves prefix match for search ranking. */
+  bareName?: string;
   /** Public or local offering count — the "offering score" tie-break. */
   totalBurns: number;
   atMs: number;
@@ -30,7 +32,7 @@ export function rankSearchCandidates(
 ): SearchResultRow[] {
   const scored = candidates
     .filter(c => c.name.trim().length > 0)
-    .map(c => ({ c, tier: altarSearchRelevance(c.name, query) }))
+    .map(c => ({ c, tier: altarSearchRelevance(c.name, query, c.bareName) }))
     .filter(x => x.tier > 0);
 
   scored.sort((a, b) => {

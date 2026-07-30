@@ -1447,6 +1447,7 @@ export default function App() {
 
     const localCandidates: SearchCandidate[] = recentGroups.map(g => {
       const a = altarFromOfferGroup(g);
+      const bareName = (a.name || a.note || '').trim();
       const name =
         formatAltarPersonName(a, locale) ||
         memorialDisplayName(g.note, locale) ||
@@ -1454,6 +1455,7 @@ export default function App() {
       return {
         txid: g.original.burnTxid,
         name,
+        bareName: bareName || undefined,
         totalBurns: g.totalBurns,
         atMs: Date.parse(g.latest.at) || 0,
       };
