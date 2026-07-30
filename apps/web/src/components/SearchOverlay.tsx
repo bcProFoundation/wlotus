@@ -11,7 +11,7 @@ export function SearchOverlay(props: {
   loading: boolean;
   error: string;
   onSelect: (txid: string) => void;
-  /** Open Ban thờ / hồ sơ setup (Thêm). */
+  /** Open Ban thờ / hồ sơ setup (thêm mới). */
   onAdd?: () => void;
   addDisabled?: boolean;
   onClose: () => void;
@@ -40,19 +40,7 @@ export function SearchOverlay(props: {
         >
           ×
         </button>
-        <div className="field-label-row search-overlay-title-row">
-          <h2 id="search-overlay-title">{t('searchTitle')}</h2>
-          {props.onAdd ? (
-            <button
-              type="button"
-              className="link-more"
-              disabled={props.addDisabled}
-              onClick={props.onAdd}
-            >
-              {t('btnAltarMore')}
-            </button>
-          ) : null}
-        </div>
+        <h2 id="search-overlay-title">{t('searchTitle')}</h2>
         <div className="field">
           <input
             type="search"
@@ -64,7 +52,6 @@ export function SearchOverlay(props: {
           />
         </div>
 
-        {!hasQuery ? <p className="hint">{t('searchHint')}</p> : null}
         {props.loading ? <p className="hint">{t('searchLoading')}</p> : null}
         {props.error ? <div className="msg hint-inline">{props.error}</div> : null}
         {hasQuery && !props.loading && props.results.length === 0 ? (
@@ -76,6 +63,21 @@ export function SearchOverlay(props: {
           scrollKey={props.query}
           onSelect={props.onSelect}
         />
+
+        {props.onAdd ? (
+          <p className="hint search-add-hint">
+            {t('searchHintPrefix')}{' '}
+            <button
+              type="button"
+              className="link-more search-add-link"
+              disabled={props.addDisabled}
+              onClick={props.onAdd}
+            >
+              {t('searchAddNew')}
+            </button>
+            {t('searchHintSuffix')}
+          </p>
+        ) : null}
       </div>
     </div>
   );
