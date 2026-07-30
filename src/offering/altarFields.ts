@@ -499,6 +499,15 @@ export function memorialDisplayName(
   return formatAltarPersonName(altar, locale);
 }
 
+/** Person name without honorific prefix — used for search relevance. */
+export function altarBareNameFromNote(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  const altar = parseAltarNote(t);
+  if (altar) return scrub(altar.name) || scrub(altar.note);
+  return t;
+}
+
 /**
  * Normalize free text for name search: case, diacritics, and Vietnamese
  * `đ`/`Đ` insensitive so "qua" matches "Quả", "ba" matches "Bà", etc.
@@ -516,15 +525,34 @@ export function normalizeAltarSearchText(raw: string): string {
  * Relevance tier for name search — used to rank search results before
  * falling back to offering count: `3` exact match, `2` prefix, `1` contains,
  * `0` no match.
+ *
+ * When `bareName` is given (person name without honorific), prefix/contains
+ * are also checked against it so "cao" matches "Ông Cao Lâm Quả" at prefix
+ * tier, not demoted to contains because of the honorific prefix.
  */
-export function altarSearchRelevance(name: string, query: string): number {
-  const n = normalizeAltarSearchText(name);
+export function altarSearchRelevance(
+  name: string,
+  query: string,
+  bareName?: string,
+): number {
   const q = normalizeAltarSearchText(query);
-  if (!n || !q) return 0;
-  if (n === q) return 3;
-  if (n.startsWith(q)) return 2;
-  if (n.includes(q)) return 1;
-  return 0;
+  if (!q) return 0;
+
+  const score = (raw: string): number => {
+    const n = normalizeAltarSearchText(raw);
+    if (!n) return 0;
+    if (n === q) return 3;
+    if (n.startsWith(q)) return 2;
+    if (n.includes(q)) return 1;
+    return 0;
+  };
+
+  let best = score(name);
+  const bare = bareName?.trim();
+  if (bare && normalizeAltarSearchText(bare) !== normalizeAltarSearchText(name)) {
+    best = Math.max(best, score(bare));
+  }
+  return best;
 }
 
 const ALTAR_DATE_RE = /^\d{4}(-\d{2}(-\d{2})?)?$/;

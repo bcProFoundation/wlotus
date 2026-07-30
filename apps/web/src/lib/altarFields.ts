@@ -8,6 +8,7 @@ export {
   altarHasDeathDate,
   altarHonorificLabel,
   altarParentRelationshipLabel,
+  altarBareNameFromNote,
   altarSearchRelevance,
   altarSpouseRelationshipLabel,
   altarRelationships,
