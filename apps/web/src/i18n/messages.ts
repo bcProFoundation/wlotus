@@ -139,7 +139,9 @@ export type MessageKey =
   | 'footerBrand'
   | 'searchTitle'
   | 'searchPlaceholder'
-  | 'searchHint'
+  | 'searchHintPrefix'
+  | 'searchAddNew'
+  | 'searchHintSuffix'
   | 'searchCta'
   | 'searchLoading'
   | 'searchNoResults'
@@ -304,7 +306,9 @@ const en: Dict = {
   footerBrand: 'W Lotus',
   searchTitle: 'Search',
   searchPlaceholder: 'Search by name…',
-  searchHint: 'Find a memorial or profile by name, or add a new one.',
+  searchHintPrefix: 'Find a profile by name, or',
+  searchAddNew: 'add a new one',
+  searchHintSuffix: '.',
   searchCta: 'Search',
   searchLoading: 'Searching…',
   searchNoResults: 'No matches found.',
@@ -468,7 +472,9 @@ const vi: Dict = {
   footerBrand: 'W Lotus',
   searchTitle: 'Tìm kiếm',
   searchPlaceholder: 'Tìm theo tên…',
-  searchHint: 'Tìm ban thờ hoặc hồ sơ theo tên, hoặc thêm mới.',
+  searchHintPrefix: 'Tìm hồ sơ theo tên, hoặc',
+  searchAddNew: 'thêm mới',
+  searchHintSuffix: '.',
   searchCta: 'Tìm kiếm',
   searchLoading: 'Đang tìm…',
   searchNoResults: 'Không tìm thấy kết quả.',
@@ -628,7 +634,9 @@ const zh: Dict = {
   footerBrand: 'W Lotus',
   searchTitle: '搜索',
   searchPlaceholder: '按姓名搜索…',
-  searchHint: '按姓名查找灵位或档案，或添加新的。',
+  searchHintPrefix: '按姓名查找档案，或',
+  searchAddNew: '添加新的',
+  searchHintSuffix: '。',
   searchCta: '搜索',
   searchLoading: '搜索中…',
   searchNoResults: '未找到匹配结果。',

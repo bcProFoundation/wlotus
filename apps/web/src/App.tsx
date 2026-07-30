@@ -1629,11 +1629,6 @@ export default function App() {
         <p className="hint">
           {t('hintPrayMine', { ticker, max: maxOffersPerDay })}
         </p>
-        <p className="hint">{t('hintKeepScreen')}</p>
-
-        <p className="hint eta" aria-live="off">
-          {t('etaEstimated', { eta: etaLabel })}
-        </p>
 
         <div className="field">
           {altar ? (
@@ -1740,19 +1735,19 @@ export default function App() {
           </div>
         ) : null}
 
-        <p className="hint share-hint">
-          {shareLookingUp
-            ? t('shareLookingUp')
-            : linkedParentBurnTxid
-              ? t('shareLinked', {
+        {shareLookingUp || linkedParentBurnTxid ? (
+          <p className="hint share-hint">
+            {shareLookingUp
+              ? t('shareLookingUp')
+              : t('shareLinked', {
                   name:
                     (altar
                       ? formatAltarPersonName(altar, locale)
                       : memorialDisplayName(note, locale)) ||
                     t('offeringFallback'),
-                })
-              : t('shareHint')}
-        </p>
+                })}
+          </p>
+        ) : null}
 
         <details className="how-offer">
           <summary>{t('howTitle')}</summary>
@@ -1785,25 +1780,11 @@ export default function App() {
           </ol>
         </details>
 
-        <p className="meta">
-          {apiOnline === null
-            ? t('connecting')
-            : apiOnline === false
-              ? t('apiOffline')
-              : t('leftToday', { n: remaining ?? '—' })}
-          {tokenId ? (
-            <>
-              {' · '}
-              <a
-                href={`https://explorer.e.cash/tx/${tokenId}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {ticker} {shortTx(tokenId)}
-              </a>
-            </>
-          ) : null}
-        </p>
+        {apiOnline === null || apiOnline === false ? (
+          <p className="meta">
+            {apiOnline === null ? t('connecting') : t('apiOffline')}
+          </p>
+        ) : null}
 
         {!busy &&
         msg &&
@@ -2490,6 +2471,18 @@ export default function App() {
         </span>{' '}
         ·{' '}
         <a href="https://wlotus.org">wlotus.org</a>
+        {tokenId ? (
+          <>
+            {' · '}
+            <a
+              href={`https://explorer.e.cash/tx/${tokenId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {ticker} {shortTx(tokenId)}
+            </a>
+          </>
+        ) : null}
       </footer>
     </div>
   );
