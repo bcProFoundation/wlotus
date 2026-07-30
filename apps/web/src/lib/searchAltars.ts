@@ -58,3 +58,14 @@ export function mergeSearchResults(
   const rest = extra.filter(r => !seen.has(r.txid.toLowerCase()));
   return [...primary, ...rest].slice(0, Math.max(1, limit));
 }
+
+/**
+ * Whether the memorial textarea value should trigger name suggestions.
+ * Skips share links, multi-line dedications, and very short / long free text.
+ */
+export function noteLooksLikeNameQuery(raw: string): boolean {
+  const t = raw.trim();
+  if (t.length < 2 || t.length > 80) return false;
+  if (/[\r\n]/.test(raw)) return false;
+  return true;
+}

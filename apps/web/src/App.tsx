@@ -12,6 +12,7 @@ import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
 } from './components/OpenInBrowserGate.js';
+import { MemorialSuggestList } from './components/MemorialSuggestList.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import {
@@ -82,6 +83,7 @@ import {
 } from './lib/danaIndexApi.js';
 import {
   mergeSearchResults,
+  noteLooksLikeNameQuery,
   rankSearchCandidates,
   type SearchCandidate,
   type SearchResultRow,
@@ -332,6 +334,13 @@ export default function App() {
   const [searchError, setSearchError] = useState('');
   const searchGenRef = useRef(0);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Inline name suggestions under the main memorial field. */
+  const [noteSuggestResults, setNoteSuggestResults] = useState<SearchResultRow[]>(
+    [],
+  );
+  const [noteSuggestLoading, setNoteSuggestLoading] = useState(false);
+  const noteSuggestGenRef = useRef(0);
+  const noteSuggestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tRef = useRef(t);
   const localeRef = useRef(locale);
   tRef.current = t;
@@ -1319,24 +1328,11 @@ export default function App() {
     });
   }, [canOffer, pendingDeeplinkOffer]);
 
-  function onNoteInput(value: string) {
-    setNote(value.slice(0, MEMORIAL_NOTE_MAX_CHARS));
-    setLinkedParentBurnTxid(null);
-    if (shareLookupTimerRef.current != null) {
-      clearTimeout(shareLookupTimerRef.current);
-      shareLookupTimerRef.current = null;
-    }
-    if (!looksLikeShareInput(value)) return;
-    shareLookupTimerRef.current = setTimeout(() => {
-      shareLookupTimerRef.current = null;
-      void applyDedicationLink(value);
-    }, 450);
-  }
-
   function onNotePaste(e: ClipboardEvent<HTMLTextAreaElement>) {
     const text = e.clipboardData.getData('text');
     if (!looksLikeShareInput(text)) return;
     e.preventDefault();
+    clearNoteSuggest();
     void applyDedicationLink(text);
   }
 
@@ -1440,11 +1436,9 @@ export default function App() {
    * with this device's Recent when the index is offline or has not indexed
    * a fresh burn yet.
    */
-  async function runSearch(query: string): Promise<void> {
-    const gen = ++searchGenRef.current;
-    setSearchLoading(true);
-    setSearchError('');
-
+  async function fetchNameSearchRows(
+    query: string,
+  ): Promise<{ rows: SearchResultRow[]; indexUnavailable: boolean }> {
     const localCandidates: SearchCandidate[] = recentGroups.map(g => {
       const a = altarFromOfferGroup(g);
       const bareName = (a.name || a.note || '').trim();
@@ -1464,7 +1458,6 @@ export default function App() {
 
     try {
       const indexGroups = await searchIndexMemorials(query, 20);
-      if (searchGenRef.current !== gen) return;
       const indexRows: SearchResultRow[] = indexGroups.map(g => ({
         txid: g.originalBurnTxid,
         label:
@@ -1473,15 +1466,60 @@ export default function App() {
           g.originalBurnTxid,
         totalBurns: g.totalBurns,
       }));
-      setSearchResults(mergeSearchResults(indexRows, localRows));
+      return {
+        rows: mergeSearchResults(indexRows, localRows),
+        indexUnavailable: false,
+      };
     } catch {
-      if (searchGenRef.current !== gen) return;
-      // Offline / test index — this device's Recent is still searchable.
-      setSearchError(t('searchIndexUnavailable'));
-      setSearchResults(localRows);
-    } finally {
-      if (searchGenRef.current === gen) setSearchLoading(false);
+      return { rows: localRows, indexUnavailable: true };
     }
+  }
+
+  async function runSearch(query: string): Promise<void> {
+    const gen = ++searchGenRef.current;
+    setSearchLoading(true);
+    setSearchError('');
+
+    const { rows, indexUnavailable } = await fetchNameSearchRows(query);
+    if (searchGenRef.current !== gen) return;
+    setSearchResults(rows);
+    setSearchError(indexUnavailable ? t('searchIndexUnavailable') : '');
+    setSearchLoading(false);
+  }
+
+  function clearNoteSuggest() {
+    noteSuggestGenRef.current += 1;
+    if (noteSuggestTimerRef.current != null) {
+      clearTimeout(noteSuggestTimerRef.current);
+      noteSuggestTimerRef.current = null;
+    }
+    setNoteSuggestResults([]);
+    setNoteSuggestLoading(false);
+  }
+
+  async function runNoteSuggest(query: string): Promise<void> {
+    const gen = ++noteSuggestGenRef.current;
+    setNoteSuggestLoading(true);
+    const { rows } = await fetchNameSearchRows(query);
+    if (noteSuggestGenRef.current !== gen) return;
+    setNoteSuggestResults(rows.slice(0, 8));
+    setNoteSuggestLoading(false);
+  }
+
+  function scheduleNoteSuggest(value: string) {
+    if (noteSuggestTimerRef.current != null) {
+      clearTimeout(noteSuggestTimerRef.current);
+      noteSuggestTimerRef.current = null;
+    }
+    if (!noteLooksLikeNameQuery(value) || looksLikeShareInput(value)) {
+      clearNoteSuggest();
+      return;
+    }
+    const q = value.trim();
+    noteSuggestTimerRef.current = setTimeout(() => {
+      noteSuggestTimerRef.current = null;
+      void runNoteSuggest(q);
+    }, 350);
   }
 
   function openSearch() {
@@ -1524,6 +1562,29 @@ export default function App() {
   function onSearchSelect(txid: string) {
     closeSearch();
     void openDedicationSheet({ parentBurnTxid: txid, memorialNote: '' });
+  }
+
+  function onNoteSuggestSelect(txid: string) {
+    clearNoteSuggest();
+    setNote('');
+    setLinkedParentBurnTxid(null);
+    void openDedicationSheet({ parentBurnTxid: txid, memorialNote: '' });
+  }
+
+  function onNoteInput(value: string) {
+    setNote(value.slice(0, MEMORIAL_NOTE_MAX_CHARS));
+    setLinkedParentBurnTxid(null);
+    if (shareLookupTimerRef.current != null) {
+      clearTimeout(shareLookupTimerRef.current);
+      shareLookupTimerRef.current = null;
+    }
+    scheduleNoteSuggest(value);
+    if (!looksLikeShareInput(value)) return;
+    clearNoteSuggest();
+    shareLookupTimerRef.current = setTimeout(() => {
+      shareLookupTimerRef.current = null;
+      void applyDedicationLink(value);
+    }, 450);
   }
 
   function removeRecentGroup(g: OfferGroup) {
@@ -1692,16 +1753,25 @@ export default function App() {
           {altar ? (
             <AltarDetails altar={altar} relatedAltarOptions={relatedAltarOptions} />
           ) : (
-            <textarea
-              id="note"
-              rows={2}
-              maxLength={MEMORIAL_NOTE_MAX_CHARS}
-              value={note}
-              onChange={e => onNoteInput(e.target.value)}
-              onPaste={onNotePaste}
-              placeholder={t('notePlaceholder')}
-              disabled={busy || apiOnline === false || shareLookingUp}
-            />
+            <div className="note-suggest-wrap">
+              <textarea
+                id="note"
+                rows={2}
+                maxLength={MEMORIAL_NOTE_MAX_CHARS}
+                value={note}
+                onChange={e => onNoteInput(e.target.value)}
+                onPaste={onNotePaste}
+                placeholder={t('notePlaceholder')}
+                disabled={busy || apiOnline === false || shareLookingUp}
+                aria-autocomplete="list"
+                aria-controls="note-suggest-list"
+              />
+              <MemorialSuggestList
+                results={noteSuggestResults}
+                loading={noteSuggestLoading}
+                onSelect={onNoteSuggestSelect}
+              />
+            </div>
           )}
         </div>
 
