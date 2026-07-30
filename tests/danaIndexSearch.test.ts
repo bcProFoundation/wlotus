@@ -73,4 +73,27 @@ describe('searchIndexMemorials', () => {
     expect(results).toHaveLength(1);
     expect(results[0]?.originalBurnTxid).toBe('cccc'.padEnd(64, 'c'));
   });
+
+  it('falls back to /api/recent when /api/search returns HTML', async () => {
+    global.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/search')) {
+        return new Response('<!doctype html><html></html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        });
+      }
+      if (url.includes('/api/recent')) {
+        return new Response(JSON.stringify(recentPayload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    }) as typeof fetch;
+
+    const results = await searchIndexMemorials('cao', 10);
+    expect(results).toHaveLength(1);
+    expect(results[0]?.originalBurnTxid).toBe('aaaa'.padEnd(64, 'a'));
+  });
 });

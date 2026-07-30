@@ -1,7 +1,8 @@
 import { useLocale } from '../i18n/LocaleContext.js';
 import type { SearchResultRow } from '../lib/searchAltars.js';
+import { SearchResultsList } from './SearchResultsList.js';
 
-/** Inline name suggestions under the main memorial field. */
+/** Inline name suggestions above the main memorial field (drop-up). */
 export function MemorialSuggestList(props: {
   results: SearchResultRow[];
   loading: boolean;
@@ -11,30 +12,17 @@ export function MemorialSuggestList(props: {
   if (!props.loading && props.results.length === 0) return null;
 
   return (
-    <div className="note-suggest" role="listbox" aria-label={t('searchTitle')}>
+    <div className="note-suggest" aria-live="polite">
       {props.loading && props.results.length === 0 ? (
         <p className="hint note-suggest-status">{t('searchLoading')}</p>
       ) : null}
-      {props.results.length > 0 ? (
-        <ul id="note-suggest-list" className="note-suggest-list">
-          {props.results.map(r => (
-            <li key={r.txid}>
-              <button
-                type="button"
-                className="search-result-row note-suggest-row"
-                role="option"
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => props.onSelect(r.txid)}
-              >
-                <span className="search-result-name">{r.label}</span>
-                <span className="search-result-count">
-                  {t('burnTotal', { n: r.totalBurns })}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <SearchResultsList
+        listId="note-suggest-list"
+        results={props.results}
+        className="note-suggest-list"
+        rowClassName="note-suggest-row"
+        onSelect={props.onSelect}
+      />
     </div>
   );
 }

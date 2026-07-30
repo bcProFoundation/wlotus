@@ -1754,6 +1754,11 @@ export default function App() {
             <AltarDetails altar={altar} relatedAltarOptions={relatedAltarOptions} />
           ) : (
             <div className="note-suggest-wrap">
+              <MemorialSuggestList
+                results={noteSuggestResults}
+                loading={noteSuggestLoading}
+                onSelect={onNoteSuggestSelect}
+              />
               <textarea
                 id="note"
                 rows={2}
@@ -1765,11 +1770,9 @@ export default function App() {
                 disabled={busy || apiOnline === false || shareLookingUp}
                 aria-autocomplete="list"
                 aria-controls="note-suggest-list"
-              />
-              <MemorialSuggestList
-                results={noteSuggestResults}
-                loading={noteSuggestLoading}
-                onSelect={onNoteSuggestSelect}
+                aria-expanded={
+                  noteSuggestLoading || noteSuggestResults.length > 0
+                }
               />
             </div>
           )}
