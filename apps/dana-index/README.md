@@ -70,5 +70,9 @@ Quick restart after a successful pull:
 ```bash
 sudo systemctl restart wlotus-dana-index
 curl -sS http://127.0.0.1:8788/health | jq .
+curl -sS 'http://127.0.0.1:8788/api/search?q=test&limit=5' | jq .
 curl -sS "http://127.0.0.1:8788/og/<txid>?lang=vi" | grep og:title
 ```
+
+If `/api/search` returns 404, the web app falls back to ranking `/api/recent`
+client-side (works for small indexes; restart dana-index after pulling search support).
