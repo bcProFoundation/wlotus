@@ -17,11 +17,9 @@ export type MessageKey =
   | 'howEternalTitle'
   | 'howEternalBody'
   | 'etaEstimated'
-  | 'noteLabel'
-  | 'notePlaceholder'
-  | 'btnAltarMore'
   | 'btnAltarEdit'
   | 'btnAltarDelete'
+  | 'btnAltarMore'
   | 'altarLabel'
   | 'profileLabel'
   | 'altarTitle'
@@ -142,6 +140,7 @@ export type MessageKey =
   | 'searchTitle'
   | 'searchPlaceholder'
   | 'searchHint'
+  | 'searchCta'
   | 'searchLoading'
   | 'searchNoResults'
   | 'searchIndexUnavailable';
@@ -170,8 +169,6 @@ const en: Dict = {
   howEternalBody:
     'Each offering is recorded forever on the blockchain — a mark of lasting reverence.',
   etaEstimated: 'Estimated time {eta}',
-  noteLabel: 'Words of remembrance…',
-  notePlaceholder: 'Name, dedication, or paste a wLotus link',
   btnAltarMore: 'More',
   btnAltarEdit: 'Edit',
   btnAltarDelete: 'Delete',
@@ -282,7 +279,7 @@ const en: Dict = {
   btnConfirmCancel: 'Yes, cancel',
   btnConfirmLoseOffer: 'Cancel and lose turn',
   btnKeepOffering: 'Continue offering',
-  shareHint: 'Paste a wLotus link to continue that dedication.',
+  shareHint: 'Open a wLotus link to continue that dedication.',
   shareLookingUp: 'Looking up dedication…',
   shareLinked: 'Linked · {name}',
   shareLookupFailed: 'Could not find that dedication on-chain.',
@@ -307,7 +304,8 @@ const en: Dict = {
   footerBrand: 'W Lotus',
   searchTitle: 'Search',
   searchPlaceholder: 'Search by name…',
-  searchHint: 'Find a memorial or profile by name across White Lotus.',
+  searchHint: 'Find a memorial or profile by name, or add a new one.',
+  searchCta: 'Search',
   searchLoading: 'Searching…',
   searchNoResults: 'No matches found.',
   searchIndexUnavailable:
@@ -336,8 +334,6 @@ const vi: Dict = {
   howEternalBody:
     'Mỗi lần dâng sen được ghi lại mãi mãi trên chuỗi khối, đánh dấu cho lòng thành kính vĩnh hằng.',
   etaEstimated: 'Thời gian ước tính {eta}',
-  noteLabel: 'Lời tưởng niệm...',
-  notePlaceholder: 'Tên, lời tưởng niệm, hoặc dán liên kết wLotus',
   btnAltarMore: 'Thêm',
   btnAltarEdit: 'Sửa',
   btnAltarDelete: 'Xoá',
@@ -447,7 +443,7 @@ const vi: Dict = {
   btnConfirmCancel: 'Đồng ý hủy',
   btnConfirmLoseOffer: 'Hủy và mất lượt',
   btnKeepOffering: 'Tiếp tục dâng',
-  shareHint: 'Dán liên kết wLotus để tiếp tục lời tưởng niệm đó.',
+  shareHint: 'Mở liên kết wLotus để tiếp tục lời tưởng niệm đó.',
   shareLookingUp: 'Đang tìm lời tưởng niệm…',
   shareLinked: 'Đã liên kết · {name}',
   shareLookupFailed: 'Không tìm thấy lời tưởng niệm trên chuỗi.',
@@ -472,7 +468,8 @@ const vi: Dict = {
   footerBrand: 'W Lotus',
   searchTitle: 'Tìm kiếm',
   searchPlaceholder: 'Tìm theo tên…',
-  searchHint: 'Tìm ban thờ hoặc hồ sơ theo tên trên White Lotus.',
+  searchHint: 'Tìm ban thờ hoặc hồ sơ theo tên, hoặc thêm mới.',
+  searchCta: 'Tìm kiếm',
   searchLoading: 'Đang tìm…',
   searchNoResults: 'Không tìm thấy kết quả.',
   searchIndexUnavailable:
@@ -501,9 +498,7 @@ const zh: Dict = {
   howEternalBody:
     '每一次献花都会永久记在区块链上，铭刻一份永恒的敬意。',
   etaEstimated: '预计时间 {eta}',
-  noteLabel: '追思寄语…',
-  notePlaceholder: '姓名、寄语，或粘贴 wLotus 链接',
-  btnAltarMore: '更多',
+  btnAltarMore: '添加',
   btnAltarEdit: '编辑',
   btnAltarDelete: '删除',
   altarLabel: '灵位',
@@ -609,7 +604,7 @@ const zh: Dict = {
   btnConfirmCancel: '确认取消',
   btnConfirmLoseOffer: '取消并失去名额',
   btnKeepOffering: '继续献花',
-  shareHint: '粘贴 wLotus 链接以继续该追思。',
+  shareHint: '打开 wLotus 链接以继续该追思。',
   shareLookingUp: '正在查找追思…',
   shareLinked: '已关联 · {name}',
   shareLookupFailed: '链上未找到该追思。',
@@ -633,7 +628,8 @@ const zh: Dict = {
   footerBrand: 'W Lotus',
   searchTitle: '搜索',
   searchPlaceholder: '按姓名搜索…',
-  searchHint: '按姓名在 White Lotus 上查找灵位或个人主页。',
+  searchHint: '按姓名查找灵位或档案，或添加新的。',
+  searchCta: '搜索',
   searchLoading: '搜索中…',
   searchNoResults: '未找到匹配结果。',
   searchIndexUnavailable: '无法连接追思索引 — 仅显示本机记录。',
