@@ -1034,6 +1034,43 @@ a {
   color: var(--muted);
 }
 
+.note-suggest-wrap {
+  position: relative;
+}
+
+.note-suggest {
+  margin-top: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.note-suggest-status {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+}
+
+.note-suggest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.note-suggest-list li {
+  border-bottom: 1px solid var(--line);
+}
+
+.note-suggest-list li:last-child {
+  border-bottom: 0;
+}
+
+.note-suggest-row {
+  padding: 0.6rem 0.75rem;
+}
+
 .memorial-history-list {
   list-style: none;
   padding: 0;
