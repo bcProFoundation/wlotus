@@ -1,6 +1,5 @@
 import {
   mergeSearchResults,
-  noteLooksLikeNameQuery,
   rankSearchCandidates,
   type SearchCandidate,
 } from '../apps/web/src/lib/searchAltars.js';
@@ -99,19 +98,5 @@ describe('mergeSearchResults', () => {
       { txid: 'c', label: 'C', totalBurns: 1 },
     ];
     expect(mergeSearchResults(primary, extra, 2)).toHaveLength(2);
-  });
-});
-
-describe('noteLooksLikeNameQuery', () => {
-  it('accepts short single-line name queries', () => {
-    expect(noteLooksLikeNameQuery('cao')).toBe(true);
-    expect(noteLooksLikeNameQuery('Cao Lâm')).toBe(true);
-  });
-
-  it('rejects empty, multi-line, and very long text', () => {
-    expect(noteLooksLikeNameQuery('')).toBe(false);
-    expect(noteLooksLikeNameQuery('a')).toBe(false);
-    expect(noteLooksLikeNameQuery('line1\nline2')).toBe(false);
-    expect(noteLooksLikeNameQuery('x'.repeat(81))).toBe(false);
   });
 });

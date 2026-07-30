@@ -3,7 +3,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type ClipboardEvent,
 } from 'react';
 import { LangSwitch } from './components/LangSwitch.js';
 import { AltarDetails, type RelatedAltarOption } from './components/AltarDetails.js';
@@ -12,7 +11,6 @@ import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
 } from './components/OpenInBrowserGate.js';
-import { MemorialSuggestList } from './components/MemorialSuggestList.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import {
@@ -40,7 +38,6 @@ import {
   mergeAltarFields,
   altarHasDeathDate,
   altarRelationships,
-  MEMORIAL_NOTE_MAX_CHARS,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
   parseAltarNote,
@@ -83,7 +80,6 @@ import {
 } from './lib/danaIndexApi.js';
 import {
   mergeSearchResults,
-  noteLooksLikeNameQuery,
   rankSearchCandidates,
   type SearchCandidate,
   type SearchResultRow,
@@ -334,13 +330,6 @@ export default function App() {
   const [searchError, setSearchError] = useState('');
   const searchGenRef = useRef(0);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Inline name suggestions under the main memorial field. */
-  const [noteSuggestResults, setNoteSuggestResults] = useState<SearchResultRow[]>(
-    [],
-  );
-  const [noteSuggestLoading, setNoteSuggestLoading] = useState(false);
-  const noteSuggestGenRef = useRef(0);
-  const noteSuggestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tRef = useRef(t);
   const localeRef = useRef(locale);
   tRef.current = t;
@@ -1328,14 +1317,6 @@ export default function App() {
     });
   }, [canOffer, pendingDeeplinkOffer]);
 
-  function onNotePaste(e: ClipboardEvent<HTMLTextAreaElement>) {
-    const text = e.clipboardData.getData('text');
-    if (!looksLikeShareInput(text)) return;
-    e.preventDefault();
-    clearNoteSuggest();
-    void applyDedicationLink(text);
-  }
-
   async function shareDedication(originalBurnTxid: string, label: string) {
     // Embed sender locale so OG crawlers show the sharer's language preview.
     const url = dedicationShareUrl(originalBurnTxid, undefined, locale);
@@ -1487,41 +1468,6 @@ export default function App() {
     setSearchLoading(false);
   }
 
-  function clearNoteSuggest() {
-    noteSuggestGenRef.current += 1;
-    if (noteSuggestTimerRef.current != null) {
-      clearTimeout(noteSuggestTimerRef.current);
-      noteSuggestTimerRef.current = null;
-    }
-    setNoteSuggestResults([]);
-    setNoteSuggestLoading(false);
-  }
-
-  async function runNoteSuggest(query: string): Promise<void> {
-    const gen = ++noteSuggestGenRef.current;
-    setNoteSuggestLoading(true);
-    const { rows } = await fetchNameSearchRows(query);
-    if (noteSuggestGenRef.current !== gen) return;
-    setNoteSuggestResults(rows.slice(0, 8));
-    setNoteSuggestLoading(false);
-  }
-
-  function scheduleNoteSuggest(value: string) {
-    if (noteSuggestTimerRef.current != null) {
-      clearTimeout(noteSuggestTimerRef.current);
-      noteSuggestTimerRef.current = null;
-    }
-    if (!noteLooksLikeNameQuery(value) || looksLikeShareInput(value)) {
-      clearNoteSuggest();
-      return;
-    }
-    const q = value.trim();
-    noteSuggestTimerRef.current = setTimeout(() => {
-      noteSuggestTimerRef.current = null;
-      void runNoteSuggest(q);
-    }, 350);
-  }
-
   function openSearch() {
     setSearchQuery('');
     setSearchResults([]);
@@ -1564,27 +1510,9 @@ export default function App() {
     void openDedicationSheet({ parentBurnTxid: txid, memorialNote: '' });
   }
 
-  function onNoteSuggestSelect(txid: string) {
-    clearNoteSuggest();
-    setNote('');
-    setLinkedParentBurnTxid(null);
-    void openDedicationSheet({ parentBurnTxid: txid, memorialNote: '' });
-  }
-
-  function onNoteInput(value: string) {
-    setNote(value.slice(0, MEMORIAL_NOTE_MAX_CHARS));
-    setLinkedParentBurnTxid(null);
-    if (shareLookupTimerRef.current != null) {
-      clearTimeout(shareLookupTimerRef.current);
-      shareLookupTimerRef.current = null;
-    }
-    scheduleNoteSuggest(value);
-    if (!looksLikeShareInput(value)) return;
-    clearNoteSuggest();
-    shareLookupTimerRef.current = setTimeout(() => {
-      shareLookupTimerRef.current = null;
-      void applyDedicationLink(value);
-    }, 450);
+  function onSearchAdd() {
+    closeSearch();
+    setAltarOpen(true);
   }
 
   function removeRecentGroup(g: OfferGroup) {
@@ -1708,103 +1636,99 @@ export default function App() {
         </p>
 
         <div className="field">
-          <div className="field-label-row">
-            <label>
-              {altar
-                ? altarHasDeathDate(altar)
-                  ? t('altarLabel')
-                  : t('profileLabel')
-                : t('noteLabel')}
-            </label>
-            {altar && !linkedParentBurnTxid ? (
-              <div className="field-label-links">
-                <button
-                  type="button"
-                  className="link-more"
-                  disabled={busy || apiOnline === false}
-                  onClick={() => setAltarOpen(true)}
-                >
-                  {t('btnAltarEdit')}
-                </button>
-                <button
-                  type="button"
-                  className="link-more"
-                  disabled={busy}
-                  onClick={() => {
-                    setAltar(null);
-                    setNote('');
-                    setLinkedParentBurnTxid(null);
-                  }}
-                >
-                  {t('btnAltarDelete')}
-                </button>
-              </div>
-            ) : !altar ? (
-              <button
-                type="button"
-                className="link-more"
-                disabled={busy || apiOnline === false}
-                onClick={() => setAltarOpen(true)}
-              >
-                {t('btnAltarMore')}
-              </button>
-            ) : null}
-          </div>
           {altar ? (
-            <AltarDetails altar={altar} relatedAltarOptions={relatedAltarOptions} />
+            <>
+              <div className="field-label-row">
+                <label>
+                  {altarHasDeathDate(altar)
+                    ? t('altarLabel')
+                    : t('profileLabel')}
+                </label>
+                {!linkedParentBurnTxid ? (
+                  <div className="field-label-links">
+                    <button
+                      type="button"
+                      className="link-more"
+                      disabled={busy || apiOnline === false}
+                      onClick={() => setAltarOpen(true)}
+                    >
+                      {t('btnAltarEdit')}
+                    </button>
+                    <button
+                      type="button"
+                      className="link-more"
+                      disabled={busy}
+                      onClick={() => {
+                        setAltar(null);
+                        setNote('');
+                        setLinkedParentBurnTxid(null);
+                      }}
+                    >
+                      {t('btnAltarDelete')}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+              <AltarDetails
+                altar={altar}
+                relatedAltarOptions={relatedAltarOptions}
+              />
+            </>
           ) : (
-            <div className="note-suggest-wrap">
-              <MemorialSuggestList
-                results={noteSuggestResults}
-                loading={noteSuggestLoading}
-                onSelect={onNoteSuggestSelect}
-              />
-              <textarea
-                id="note"
-                rows={2}
-                maxLength={MEMORIAL_NOTE_MAX_CHARS}
-                value={note}
-                onChange={e => onNoteInput(e.target.value)}
-                onPaste={onNotePaste}
-                placeholder={t('notePlaceholder')}
-                disabled={busy || apiOnline === false || shareLookingUp}
-                aria-autocomplete="list"
-                aria-controls="note-suggest-list"
-                aria-expanded={
-                  noteSuggestLoading || noteSuggestResults.length > 0
-                }
-              />
-            </div>
+            <button
+              type="button"
+              className="btn btn-search-cta"
+              disabled={busy || apiOnline === false}
+              onClick={openSearch}
+            >
+              <svg
+                className="btn-icon-svg"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm10 17-5.6-5.6"
+                />
+              </svg>
+              <span>{t('searchCta')}</span>
+            </button>
           )}
         </div>
 
-        <div className="offer-actions">
-          <button
-            id="offer-flower-btn"
-            className="btn btn-primary btn-offer"
-            disabled={!canOffer || shareLookingUp}
-            onClick={() => {
-              if (linkedParentBurnTxid) {
-                let memorialNote = note;
-                if (altar) {
+        {altar ? (
+          <div className="offer-actions">
+            <button
+              id="offer-flower-btn"
+              className="btn btn-primary btn-offer"
+              disabled={!canOffer || shareLookingUp}
+              onClick={() => {
+                if (linkedParentBurnTxid) {
+                  let memorialNote = note;
                   try {
                     memorialNote = encodeAltarNote(altar);
                   } catch {
                     memorialNote = altar.name;
                   }
+                  void openDedicationSheet({
+                    parentBurnTxid: linkedParentBurnTxid,
+                    memorialNote,
+                  });
+                  return;
                 }
-                void openDedicationSheet({
-                  parentBurnTxid: linkedParentBurnTxid,
-                  memorialNote,
-                });
-                return;
-              }
-              void onOffer();
-            }}
-          >
-            {buttonLabel}
-          </button>
-        </div>
+                void onOffer();
+              }}
+            >
+              {buttonLabel}
+            </button>
+          </div>
+        ) : null}
 
         {!busy && msg?.kind === 'success' ? (
           <div
@@ -2292,6 +2216,8 @@ export default function App() {
           loading={searchLoading}
           error={searchError}
           onSelect={onSearchSelect}
+          onAdd={onSearchAdd}
+          addDisabled={busy || apiOnline === false}
           onClose={closeSearch}
         />
       ) : null}

@@ -11,6 +11,9 @@ export function SearchOverlay(props: {
   loading: boolean;
   error: string;
   onSelect: (txid: string) => void;
+  /** Open Ban thờ / hồ sơ setup (Thêm). */
+  onAdd?: () => void;
+  addDisabled?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLocale();
@@ -37,7 +40,19 @@ export function SearchOverlay(props: {
         >
           ×
         </button>
-        <h2 id="search-overlay-title">{t('searchTitle')}</h2>
+        <div className="field-label-row search-overlay-title-row">
+          <h2 id="search-overlay-title">{t('searchTitle')}</h2>
+          {props.onAdd ? (
+            <button
+              type="button"
+              className="link-more"
+              disabled={props.addDisabled}
+              onClick={props.onAdd}
+            >
+              {t('btnAltarMore')}
+            </button>
+          ) : null}
+        </div>
         <div className="field">
           <input
             type="search"
