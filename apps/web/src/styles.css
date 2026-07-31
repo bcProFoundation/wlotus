@@ -44,10 +44,10 @@
   --accent: #7a2e22;
   --accent-2: #5c4030;
   --danger: #b54545;
-  --card: rgba(90, 55, 25, 0.06);
+  /* One cream surface with the page — borders carry hierarchy, not fills. */
+  --card: transparent;
   --line: rgba(90, 60, 30, 0.2);
-  /* Soft warm elevated surface — not stark white against the temple card. */
-  --panel: #ebe3d6;
+  --panel: #f3ebe0;
   --surface: rgba(90, 55, 25, 0.07);
   --surface-strong: rgba(90, 55, 25, 0.12);
   --surface-inset: rgba(90, 55, 25, 0.08);
@@ -959,7 +959,7 @@ a {
 .swipe-reveal {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .swipe-reveal-actions {
@@ -999,7 +999,12 @@ a {
 .swipe-reveal-track {
   position: relative;
   z-index: 1;
-  background: var(--panel);
+  /* Same formal fill as the Search CTA (`--surface` over page bg); opaque for swipe. */
+  background:
+    linear-gradient(var(--surface), var(--surface)),
+    var(--bg0);
+  border: 1px solid var(--line);
+  border-radius: 14px;
   transition: transform 0.18s ease-out;
   /* Let the page scroll vertically; JS takes over once a horizontal swipe wins. */
   touch-action: pan-y;
