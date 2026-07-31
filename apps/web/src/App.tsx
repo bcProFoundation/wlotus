@@ -2308,7 +2308,18 @@ export default function App() {
             >
               ×
             </button>
-            <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
+            <h2 id="offer-session-title" className="offer-session-title">
+              <img
+                className="offer-session-title-mark"
+                src="/images/W.png"
+                alt=""
+                width={28}
+                height={28}
+                draggable={false}
+                aria-hidden="true"
+              />
+              <span>{t('offerSessionTitle')}</span>
+            </h2>
             <div className="offer-session-body">
               {session.altar ? (
                 <>
@@ -2400,8 +2411,19 @@ export default function App() {
             >
               ×
             </button>
-            <h2 id="offer-session-title">
-              {session.setup ? t('setupSessionTitle') : t('offerSessionTitle')}
+            <h2 id="offer-session-title" className="offer-session-title">
+              <img
+                className="offer-session-title-mark"
+                src="/images/W.png"
+                alt=""
+                width={28}
+                height={28}
+                draggable={false}
+                aria-hidden="true"
+              />
+              <span>
+                {session.setup ? t('setupSessionTitle') : t('offerSessionTitle')}
+              </span>
             </h2>
             <div className="offer-session-body">
               {session.altar ? (
