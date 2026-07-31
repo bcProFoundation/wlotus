@@ -79,8 +79,10 @@ npm run fund-tip-fee-wallets
 
 Optional env: `MINT_DESK_RESERVE_SATS` (default 10000), `MINT_FUELS_PER_TIP` (default 3).
 
-If a tip wallet is empty at challenge time, mint-api will try to top up **one** sized
-fuel coin from the desk automatically — still prefer running the fund script first.
+If a tip wallet is empty at challenge time, mint-api auto top-ups **~1000 XEC**
+(`TIP_TOPUP_SATS` / `MINT_TIP_TOPUP_SATS`) from the desk, then peels a **~40 XEC**
+remint fuel coin on the tip. Remint still must use the small fuel coin (no change
+out). Prefer running the fund script after depositing to the desk.
 
 ## Endpoints
 

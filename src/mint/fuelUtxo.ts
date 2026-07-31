@@ -11,6 +11,16 @@ export const REMINT_FUEL_MAX_SATS = REMINT_FUEL_SATS + 1_000n;
 /** Need this much headroom above target to split (target + network fee). */
 export const REMINT_FUEL_SPLIT_MIN_SATS = REMINT_FUEL_SATS + 2_000n;
 
+/**
+ * Desk → tip fee wallet refill chunk (1000 XEC).
+ * Larger than one remint fuel so auto top-ups do not pay a network fee per
+ * offering; the tip then peels REMINT_FUEL_SATS coins locally.
+ */
+export const TIP_TOPUP_SATS = 100_000n;
+
+/** Keep at least this much pure XEC on the desk when auto-topping a tip. */
+export const DESK_TOPUP_RESERVE_SATS = 10_000n;
+
 export interface PureUtxoLike {
   outpoint: { txid: string; outIdx: number };
   sats: bigint;

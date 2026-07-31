@@ -1543,14 +1543,21 @@ export default function App() {
   }
 
   async function openMemorialHistory(g: OfferGroup) {
+    const rootKey = g.original.burnTxid.trim().toLowerCase();
     setHistoryGroup(g);
     setHistoryError('');
     setHistoryLoading(true);
     try {
       const remote = await fetchIndexMemorial(g.original.burnTxid);
       const next = persistMemorialSync(remote);
+      // mergeIndexAndLocalOffers returns ALL local groups sorted by latest —
+      // pick this dedication, not merged[0] (that was always the newest altar).
       const merged = mergeIndexAndLocalOffers([remote], next);
-      setHistoryGroup(merged[0] ?? g);
+      const match =
+        merged.find(
+          m => m.original.burnTxid.trim().toLowerCase() === rootKey,
+        ) ?? g;
+      setHistoryGroup(match);
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
       // Local burns already shown — only surface a soft hint when index is down.

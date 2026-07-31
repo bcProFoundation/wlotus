@@ -49,9 +49,12 @@ import {
 } from '../../../src/offering/altarFields.js';
 import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
 import {
+  DESK_TOPUP_RESERVE_SATS,
   REMINT_FUEL_SATS,
+  TIP_TOPUP_SATS,
   pickSizedFuelUtxo,
   pickSplitSourceUtxo,
+  pureXecBalance,
 } from '../../../src/mint/fuelUtxo.js';
 import {
   loadTipFeeWallet,
@@ -509,33 +512,40 @@ async function splitSizedFuel(wallet: Wallet): Promise<void> {
 }
 
 /**
- * Send one sized fuel coin from the main desk → tip fee wallet.
- * Used when the tip account is empty but the desk still has treasury XEC.
+ * Refill tip fee wallet from the main desk with a large XEC chunk.
+ * Remint fuel stays small (~40 XEC) — oversized coins on the tip are peeled
+ * afterward. Auto top-up used to send only one fuel coin (40 XEC) per empty
+ * tip, which wasted a network fee on every refill.
  */
 async function topUpTipFuelFromDesk(
   desk: Wallet,
   tipWallet: Wallet,
 ): Promise<void> {
   await desk.sync();
-  const source =
-    pickSizedFuelUtxo(desk.utxos) ?? pickSplitSourceUtxo(desk.utxos);
-  if (!source) {
+  const pure = pureXecBalance(desk.utxos);
+  const available =
+    pure > DESK_TOPUP_RESERVE_SATS ? pure - DESK_TOPUP_RESERVE_SATS : 0n;
+  if (available < REMINT_FUEL_SATS) {
     throw new Error(
       `Tip fee wallet ${tipWallet.address} is empty and desk has no XEC to fund it. ` +
         `Run: npm run fund-tip-fee-wallets`,
     );
   }
-  // If desk only has oversized coins, peel a sized one onto the tip directly.
+  const envTop = process.env.MINT_TIP_TOPUP_SATS?.trim();
+  const configured = envTop && /^\d+$/.test(envTop) ? BigInt(envTop) : TIP_TOPUP_SATS;
+  const want = configured >= REMINT_FUEL_SATS ? configured : TIP_TOPUP_SATS;
+  const send = available >= want ? want : available;
+
   const { payment } = await import('ecash-lib');
   const action: payment.Action = {
-    outputs: [{ sats: REMINT_FUEL_SATS, script: tipWallet.script }],
+    outputs: [{ sats: send, script: tipWallet.script }],
   };
   const resp = await desk.action(action).build().broadcast();
   if (!resp.success || !resp.broadcasted?.length) {
     throw new Error(`Desk→tip fuel top-up failed: ${JSON.stringify(resp)}`);
   }
   console.log(
-    `desk→tip fuel ${resp.broadcasted[0]} ${REMINT_FUEL_SATS} sats → ${tipWallet.address}`,
+    `desk→tip top-up ${resp.broadcasted[0]} ${Number(send) / 100} XEC (${send} sats) → ${tipWallet.address}`,
   );
   await tipWallet.sync();
 }
@@ -597,9 +607,7 @@ async function ensureTipSizedFuel(
     await splitSizedFuel(tipWallet);
   } else {
     await topUpTipFuelFromDesk(desk, tipWallet);
-    // Top-up sends exactly REMINT_FUEL_SATS; if desk spent an oversized coin
-    // with change, tip already has a sized coin. If tip somehow got a lump,
-    // split again.
+    // Top-up sends a tip treasury chunk; peel a sized remint fuel coin next.
     if (!pickSizedFuelUtxo(tipWallet.utxos)) {
       await splitSizedFuel(tipWallet);
     }
