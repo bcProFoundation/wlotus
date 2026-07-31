@@ -1920,7 +1920,7 @@ export default function App() {
                                 })
                               }
                             >
-                              <BrandMark width={22} height={22} />
+                              <BrandMark badge width={22} height={22} />
                               <span>{t('btnReoffer')}</span>
                             </button>
                           ) : showFirstOffer ? (
@@ -1935,7 +1935,7 @@ export default function App() {
                                 })
                               }
                             >
-                              <BrandMark width={22} height={22} />
+                              <BrandMark badge width={22} height={22} />
                               <span>{t('btnOffer')}</span>
                             </button>
                           ) : null}
@@ -2244,7 +2244,7 @@ export default function App() {
                   <li key={b.burnTxid}>
                     <div className="memorial-history-main">
                       <span className="memorial-history-note">
-                        <BrandMark width={22} height={22} />
+                        <BrandMark badge width={22} height={22} />
                         {noteText ? (
                           <span className="memorial-history-note-text">
                             {noteText}
