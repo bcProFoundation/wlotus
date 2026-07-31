@@ -2311,7 +2311,7 @@ export default function App() {
             <h2 id="offer-session-title" className="offer-session-title">
               <img
                 className="offer-session-title-mark"
-                src="/images/W.png"
+                src="/images/W-bold.png"
                 alt=""
                 width={28}
                 height={28}
@@ -2414,7 +2414,7 @@ export default function App() {
             <h2 id="offer-session-title" className="offer-session-title">
               <img
                 className="offer-session-title-mark"
-                src="/images/W.png"
+                src="/images/W-bold.png"
                 alt=""
                 width={28}
                 height={28}
