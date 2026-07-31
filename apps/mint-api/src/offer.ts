@@ -46,6 +46,7 @@ import {
   memorialNoteMaxBytes,
   truncateUtf8Bytes,
   isDeathDateAmendNote,
+  isRelationshipAmendNote,
 } from '../../../src/offering/altarFields.js';
 import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
 import {
@@ -675,11 +676,18 @@ async function createChallengeOnce(opts: {
   const parentBurnTxid = opts.parentBurnTxid
     ? parseParentBurnTxidHex(opts.parentBurnTxid)
     : undefined;
-  // Death-date star fragments are creator-only (installId soft ownership).
+  // Death-date / relationship star fragments are creator-only (installId).
   if (parentBurnTxid && isDeathDateAmendNote(opts.note)) {
     if (!isKnownRootCreator(parentBurnTxid, opts.installId)) {
       throw new Error(
         'Only the profile creator can record a death date on this dedication',
+      );
+    }
+  }
+  if (parentBurnTxid && isRelationshipAmendNote(opts.note)) {
+    if (!isKnownRootCreator(parentBurnTxid, opts.installId)) {
+      throw new Error(
+        'Only the profile creator can edit relationships on this dedication',
       );
     }
   }

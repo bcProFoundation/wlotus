@@ -1,8 +1,9 @@
 /**
  * Soft ownership of altar/profile root burns by installId.
- * Cached on disk for death-date / first-flower gates until a real ownership
- * transaction from the desk exists. installId is a weak bearer — never
- * expose stored ids to clients; only return isCreator for the caller.
+ * Cached on disk for death-date / relationship / first-flower gates until a
+ * real ownership transaction from the desk exists. installId is a weak
+ * bearer — never expose stored ids to clients; only return isCreator for the
+ * caller.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

@@ -34,7 +34,7 @@ Amendments are rare corrections (name, place, short note) — not an unbounded j
 
 ---
 
-## Relationships — open for now, restrict later
+## Relationships — creator-only (installId soft gate)
 
 `relationshipType` / `relatedTxid` (fields 9–10) can be set **at altar setup**
 (on the root note, when they fit) or **added afterward** as a **relationship
@@ -50,7 +50,7 @@ yet (a future “mark deleted” burn may land later). The client merges all
 fragments under a star into `AltarFields.relationships` for Ban thờ details.
 
 Re-offers are the same shape without relationship: parent = root + optional
-extra memorial message only.
+extra memorial message only — **anyone** may still re-offer a flower.
 
 `dana-index` needs no changes: `GET /api/memorial/:txid` already returns every
 burn under a star (`burns`). The client **merges** packed notes (latest-first,
@@ -59,20 +59,14 @@ identity/places come from the root.
 
 The UI only lets a user link to an altar already in **this device's Recent
 list** (`AltarSetupModal` `relatedAltarOptions`, sourced from `recentGroups`
-in `App.tsx`) — no free-text txid entry. This is a UX constraint on the
-client only; the wire format itself (`relatedTxid`) is just a 64-hex txid and
-does not enforce or depend on it, so it does not change anything about the
-open-write discussion below.
+in `App.tsx`) — no free-text txid entry.
 
-**Current state: intentionally open.** Any device can set or overwrite the
-relationship on **any** altar via this path — the same trust level the app
-already gives re-offers under a star. This matches the plan above
-(minter-only amend, ≤ 10) **in policy** but that restriction is **not
-enforced in code yet**. Track before shipping broadly:
+**Enforced now (same as death-date):** mint-api rejects relationship star
+fragments unless `installId` matches the recorded root creator
+(`isKnownRootCreator` / `data/root-creators.json`). The web UI hides
+“Add relationship” for non-creators. This is a soft gate — see below.
 
-1. Enforce **minter-only amend** + **≤ 10 amends per altar** in mint-api
-   (`apps/mint-api/src/offer.ts`), not just the web client.
-2. Decide what "minter" means operationally (see below).
+**Still open:** ≤ 10 amendments per altar (not counted yet).
 
 **Can `installId` be the first defense mechanism?**
 
@@ -81,12 +75,11 @@ enforced in code yet**. Track before shipping broadly:
 cryptographically verifies. Two different properties matter here and are
 easy to conflate:
 
-- **As a secret gate against strangers** — reasonable as a first step. If
-  mint-api recorded `creatorInstallId` per root txid (it does not yet; only
-  `apps/dana-index` is queried today and it never sees `installId` — see
-  "Related code" below) and rejected amendments from a different `installId`,
-  a random third party has no way to *guess* the creator's id (it is never
-  published on-chain or by `dana-index`). Cheap to add, no accounts needed.
+- **As a secret gate against strangers** — in use for death-date and
+  relationship amends. mint-api records `creatorInstallId` per root at setup
+  and rejects amendments from a different `installId`. A random third party
+  has no way to *guess* the creator's id (it is never published on-chain or
+  by `dana-index`).
 - **As a durable "same person / device" credential — no.** Clearing site
   data, reinstalling the PWA, restoring/factory-resetting the phone, or
   simply using a different browser on the same device all generate a **new**

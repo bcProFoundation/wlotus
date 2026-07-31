@@ -641,6 +641,23 @@ export default function App() {
     let historyNote: string;
     const activeAltar = !isReoffer ? (opts?.altar ?? altar) : null;
 
+    // Death-date and relationship amends: same installId soft ownership as mint-api.
+    if (isAmend && parentBurnTxid) {
+      const rootKey = parentBurnTxid.toLowerCase();
+      const allowed =
+        creatorByRoot.get(rootKey) === true || isLocalCreatedRoot(rootKey);
+      if (!allowed) {
+        setMsg({
+          kind: 'err',
+          text:
+            amendKind === 'death'
+              ? t('firstOfferDeathHint')
+              : t('amendRelationshipCreatorOnly'),
+        });
+        return;
+      }
+    }
+
     if (isReoffer) {
       if (opts?.altar && !altarHasDeathDate(opts.altar)) {
         setMsg({ kind: 'err', text: t('firstOfferDeathHint') });
@@ -2078,20 +2095,22 @@ export default function App() {
                     >
                       {t('btnOffer')}
                     </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      disabled={!canOffer}
-                      onClick={() =>
-                        setAmendSheet({
-                          parentBurnTxid: dedicationSheet.parentBurnTxid,
-                          altar: dedicationSheet.altar,
-                          kind: 'relationship',
-                        })
-                      }
-                    >
-                      {t('btnAmendAltar')}
-                    </button>
+                    {dedicationSheet.isCreator ? (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        disabled={!canOffer}
+                        onClick={() =>
+                          setAmendSheet({
+                            parentBurnTxid: dedicationSheet.parentBurnTxid,
+                            altar: dedicationSheet.altar,
+                            kind: 'relationship',
+                          })
+                        }
+                      >
+                        {t('btnAmendAltar')}
+                      </button>
+                    ) : null}
                   </div>
                 </>
               ) : dedicationSheet.isCreator ? (
@@ -2132,24 +2151,7 @@ export default function App() {
                     </button>
                   </div>
                 </>
-              ) : (
-                <div className="offer-actions offer-session-actions">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      setAmendSheet({
-                        parentBurnTxid: dedicationSheet.parentBurnTxid,
-                        altar: dedicationSheet.altar,
-                        kind: 'relationship',
-                      })
-                    }
-                  >
-                    {t('btnAmendAltar')}
-                  </button>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

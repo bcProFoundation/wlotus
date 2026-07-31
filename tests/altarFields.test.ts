@@ -18,6 +18,7 @@ import {
   altarSpouseRelationshipLabel,
   encodeDeathDateNote,
   isDeathDateAmendNote,
+  isRelationshipAmendNote,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
@@ -459,11 +460,30 @@ describe('altarFields', () => {
     });
     expect(isDeathDateAmendNote(fragment)).toBe(true);
     expect(isDeathDateAmendNote(root)).toBe(false);
+    expect(isRelationshipAmendNote(fragment)).toBe(false);
     const merged = mergeAltarFields([fragment, root]);
     expect(merged?.name).toBe('Nguyễn Văn A');
     expect(merged?.deathDate).toBe('2020-01-15');
     expect(merged?.deathPlace).toBe('Hà Nội');
     expect(altarHasDeathDate(merged!)).toBe(true);
+  });
+
+  it('detects relationship-only star fragments for creator gates', () => {
+    const related = 'a'.repeat(64);
+    const fragment = encodeRelationshipNote({
+      relationshipType: 'child',
+      relatedTxid: related,
+    });
+    expect(isRelationshipAmendNote(fragment)).toBe(true);
+    expect(isDeathDateAmendNote(fragment)).toBe(false);
+    const root = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      birthYear: '1945',
+      deathDate: '2020-01-15',
+    });
+    expect(isRelationshipAmendNote(root)).toBe(false);
   });
 
   it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {
