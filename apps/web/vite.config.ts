@@ -22,8 +22,8 @@ export default defineConfig({
       // use now that registration is hand-rolled).
       injectRegister: false,
       includeAssets: [
-        'images/W.png',
-        'images/W-black.png',
+        'images/W-bold.png',
+        'images/W-black-bold.png',
         'images/wlotus.png',
         'images/wlotus-icon-32.png',
         'images/wlotus-icon-180.png',

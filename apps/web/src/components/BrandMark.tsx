@@ -1,4 +1,4 @@
-/** Theme-aware W mark: white on dark UI, black on temple (light) UI. */
+/** Theme-aware bold W mark: white on dark UI, black on temple (light) UI. */
 export function BrandMark(props: {
   className?: string;
   width?: number;
@@ -11,7 +11,7 @@ export function BrandMark(props: {
     <span className={wrapClass} aria-hidden="true">
       <img
         className="brand-mark brand-mark--on-dark"
-        src="/images/W.png"
+        src="/images/W-bold.png"
         alt=""
         width={w}
         height={h}
@@ -19,7 +19,7 @@ export function BrandMark(props: {
       />
       <img
         className="brand-mark brand-mark--on-light"
-        src="/images/W-black.png"
+        src="/images/W-black-bold.png"
         alt=""
         width={w}
         height={h}
