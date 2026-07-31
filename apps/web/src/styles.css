@@ -636,7 +636,13 @@ a {
   max-height: min(92vh, 720px);
 }
 
-/* Pin session actions; only altar / note content scrolls. */
+/* Altar detail: whole card scrolls (header + fields + actions). */
+.offer-modal-card.altar-detail-card {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Offering session: pin status/actions; only altar details scroll. */
 .offer-modal-card.offer-session-card {
   display: flex;
   flex-direction: column;

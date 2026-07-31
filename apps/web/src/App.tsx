@@ -2017,7 +2017,7 @@ export default function App() {
           aria-modal="true"
           aria-labelledby="altar-detail-title"
         >
-          <div className="offer-modal-card altar-setup-card offer-session-card">
+          <div className="offer-modal-card altar-setup-card altar-detail-card">
             <button
               type="button"
               className="offer-modal-close"
@@ -2031,100 +2031,58 @@ export default function App() {
                 ? t('altarDetailTitle')
                 : t('profileDetailTitle')}
             </h2>
-            <div className="offer-session-body">
-              <AltarDetails
-                altar={dedicationSheet.altar}
-                onViewRelated={txid => void viewRelatedAltar(txid)}
-                relatedAltarOptions={dedicationSheet.relatedOptions}
-              />
-            </div>
-            <div className="offer-session-footer">
-              {altarHasDeathDate(dedicationSheet.altar) ? (
-                <>
-                  <div className="field">
-                    <label htmlFor="dedication-extra-note">
-                      {t('reofferExtraNoteLabel')}
-                    </label>
-                    <textarea
-                      id="dedication-extra-note"
-                      rows={2}
-                      maxLength={80}
-                      value={dedicationSheet.extraNote}
-                      onChange={e =>
-                        setDedicationSheet(d =>
-                          d
-                            ? { ...d, extraNote: e.target.value.slice(0, 80) }
-                            : d,
-                        )
-                      }
-                      placeholder={t('reofferExtraNotePlaceholder')}
-                    />
-                  </div>
-                  <p className="hint eta">
-                    {t('etaEstimated', { eta: etaLabel })}
-                  </p>
-                  <p className="hint">{t('hintKeepScreen')}</p>
-                  <div className="offer-actions offer-session-actions">
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-offer"
-                      disabled={!canOffer}
-                      onClick={() =>
-                        void onOffer({
-                          parentBurnTxid: dedicationSheet.parentBurnTxid,
-                          displayNote:
-                            formatAltarPersonName(
-                              dedicationSheet.altar,
-                              locale,
-                            ) || t('offeringFallback'),
-                          altar: dedicationSheet.altar,
-                          extraNote: dedicationSheet.extraNote,
-                          relatedOptions: dedicationSheet.relatedOptions,
-                        })
-                      }
-                    >
-                      {t('btnOffer')}
-                    </button>
-                    {dedicationSheet.isCreator ? (
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        disabled={!canOffer}
-                        onClick={() =>
-                          setAmendSheet({
-                            parentBurnTxid: dedicationSheet.parentBurnTxid,
-                            altar: dedicationSheet.altar,
-                            kind: 'relationship',
-                          })
-                        }
-                      >
-                        {t('btnAmendAltar')}
-                      </button>
-                    ) : null}
-                  </div>
-                </>
-              ) : dedicationSheet.isCreator ? (
-                <>
-                  <p className="hint">{t('firstOfferDeathHint')}</p>
-                  <p className="hint eta">
-                    {t('etaEstimated', { eta: etaLabel })}
-                  </p>
-                  <p className="hint">{t('hintKeepScreen')}</p>
-                  <div className="offer-actions offer-session-actions">
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-offer"
-                      disabled={!canOffer}
-                      onClick={() =>
-                        setAmendSheet({
-                          parentBurnTxid: dedicationSheet.parentBurnTxid,
-                          altar: dedicationSheet.altar,
-                          kind: 'death',
-                        })
-                      }
-                    >
-                      {t('btnOffer')}
-                    </button>
+            <AltarDetails
+              altar={dedicationSheet.altar}
+              onViewRelated={txid => void viewRelatedAltar(txid)}
+              relatedAltarOptions={dedicationSheet.relatedOptions}
+            />
+            {altarHasDeathDate(dedicationSheet.altar) ? (
+              <>
+                <div className="field">
+                  <label htmlFor="dedication-extra-note">
+                    {t('reofferExtraNoteLabel')}
+                  </label>
+                  <textarea
+                    id="dedication-extra-note"
+                    rows={2}
+                    maxLength={80}
+                    value={dedicationSheet.extraNote}
+                    onChange={e =>
+                      setDedicationSheet(d =>
+                        d
+                          ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                          : d,
+                      )
+                    }
+                    placeholder={t('reofferExtraNotePlaceholder')}
+                  />
+                </div>
+                <p className="hint eta">
+                  {t('etaEstimated', { eta: etaLabel })}
+                </p>
+                <p className="hint">{t('hintKeepScreen')}</p>
+                <div className="offer-actions offer-session-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-offer"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      void onOffer({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        displayNote:
+                          formatAltarPersonName(
+                            dedicationSheet.altar,
+                            locale,
+                          ) || t('offeringFallback'),
+                        altar: dedicationSheet.altar,
+                        extraNote: dedicationSheet.extraNote,
+                        relatedOptions: dedicationSheet.relatedOptions,
+                      })
+                    }
+                  >
+                    {t('btnOffer')}
+                  </button>
+                  {dedicationSheet.isCreator ? (
                     <button
                       type="button"
                       className="btn btn-ghost"
@@ -2139,10 +2097,48 @@ export default function App() {
                     >
                       {t('btnAmendAltar')}
                     </button>
-                  </div>
-                </>
-              ) : null}
-            </div>
+                  ) : null}
+                </div>
+              </>
+            ) : dedicationSheet.isCreator ? (
+              <>
+                <p className="hint">{t('firstOfferDeathHint')}</p>
+                <p className="hint eta">
+                  {t('etaEstimated', { eta: etaLabel })}
+                </p>
+                <p className="hint">{t('hintKeepScreen')}</p>
+                <div className="offer-actions offer-session-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-offer"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      setAmendSheet({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        altar: dedicationSheet.altar,
+                        kind: 'death',
+                      })
+                    }
+                  >
+                    {t('btnOffer')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={!canOffer}
+                    onClick={() =>
+                      setAmendSheet({
+                        parentBurnTxid: dedicationSheet.parentBurnTxid,
+                        altar: dedicationSheet.altar,
+                        kind: 'relationship',
+                      })
+                    }
+                  >
+                    {t('btnAmendAltar')}
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -2361,7 +2357,6 @@ export default function App() {
                 ) : null}
               </div>
               <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-              <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
                   <p>
@@ -2459,7 +2454,6 @@ export default function App() {
                 ) : null}
               </div>
               <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-              <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
                   <p>
