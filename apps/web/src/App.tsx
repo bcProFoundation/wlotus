@@ -1998,7 +1998,7 @@ export default function App() {
           aria-modal="true"
           aria-labelledby="altar-detail-title"
         >
-          <div className="offer-modal-card altar-setup-card">
+          <div className="offer-modal-card altar-setup-card offer-session-card">
             <button
               type="button"
               className="offer-modal-close"
@@ -2012,52 +2012,115 @@ export default function App() {
                 ? t('altarDetailTitle')
                 : t('profileDetailTitle')}
             </h2>
-            <AltarDetails
-              altar={dedicationSheet.altar}
-              onViewRelated={txid => void viewRelatedAltar(txid)}
-              relatedAltarOptions={dedicationSheet.relatedOptions}
-            />
-            {altarHasDeathDate(dedicationSheet.altar) ? (
-              <>
-                <div className="field">
-                  <label htmlFor="dedication-extra-note">
-                    {t('reofferExtraNoteLabel')}
-                  </label>
-                  <textarea
-                    id="dedication-extra-note"
-                    rows={2}
-                    maxLength={80}
-                    value={dedicationSheet.extraNote}
-                    onChange={e =>
-                      setDedicationSheet(d =>
-                        d
-                          ? { ...d, extraNote: e.target.value.slice(0, 80) }
-                          : d,
-                      )
-                    }
-                    placeholder={t('reofferExtraNotePlaceholder')}
-                  />
-                </div>
-                <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-                <p className="hint">{t('hintKeepScreen')}</p>
+            <div className="offer-session-body">
+              <AltarDetails
+                altar={dedicationSheet.altar}
+                onViewRelated={txid => void viewRelatedAltar(txid)}
+                relatedAltarOptions={dedicationSheet.relatedOptions}
+              />
+            </div>
+            <div className="offer-session-footer">
+              {altarHasDeathDate(dedicationSheet.altar) ? (
+                <>
+                  <div className="field">
+                    <label htmlFor="dedication-extra-note">
+                      {t('reofferExtraNoteLabel')}
+                    </label>
+                    <textarea
+                      id="dedication-extra-note"
+                      rows={2}
+                      maxLength={80}
+                      value={dedicationSheet.extraNote}
+                      onChange={e =>
+                        setDedicationSheet(d =>
+                          d
+                            ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                            : d,
+                        )
+                      }
+                      placeholder={t('reofferExtraNotePlaceholder')}
+                    />
+                  </div>
+                  <p className="hint eta">
+                    {t('etaEstimated', { eta: etaLabel })}
+                  </p>
+                  <p className="hint">{t('hintKeepScreen')}</p>
+                  <div className="offer-actions offer-session-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-offer"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        void onOffer({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          displayNote:
+                            formatAltarPersonName(
+                              dedicationSheet.altar,
+                              locale,
+                            ) || t('offeringFallback'),
+                          altar: dedicationSheet.altar,
+                          extraNote: dedicationSheet.extraNote,
+                        })
+                      }
+                    >
+                      {t('btnOffer')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        setAmendSheet({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          altar: dedicationSheet.altar,
+                          kind: 'relationship',
+                        })
+                      }
+                    >
+                      {t('btnAmendAltar')}
+                    </button>
+                  </div>
+                </>
+              ) : dedicationSheet.isCreator ? (
+                <>
+                  <p className="hint">{t('firstOfferDeathHint')}</p>
+                  <p className="hint eta">
+                    {t('etaEstimated', { eta: etaLabel })}
+                  </p>
+                  <p className="hint">{t('hintKeepScreen')}</p>
+                  <div className="offer-actions offer-session-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-offer"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        setAmendSheet({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          altar: dedicationSheet.altar,
+                          kind: 'death',
+                        })
+                      }
+                    >
+                      {t('btnOffer')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        setAmendSheet({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          altar: dedicationSheet.altar,
+                          kind: 'relationship',
+                        })
+                      }
+                    >
+                      {t('btnAmendAltar')}
+                    </button>
+                  </div>
+                </>
+              ) : (
                 <div className="offer-actions offer-session-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-offer"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      void onOffer({
-                        parentBurnTxid: dedicationSheet.parentBurnTxid,
-                        displayNote:
-                          formatAltarPersonName(dedicationSheet.altar, locale) ||
-                          t('offeringFallback'),
-                        altar: dedicationSheet.altar,
-                        extraNote: dedicationSheet.extraNote,
-                      })
-                    }
-                  >
-                    {t('btnOffer')}
-                  </button>
                   <button
                     type="button"
                     className="btn btn-ghost"
@@ -2073,61 +2136,8 @@ export default function App() {
                     {t('btnAmendAltar')}
                   </button>
                 </div>
-              </>
-            ) : dedicationSheet.isCreator ? (
-              <>
-                <p className="hint">{t('firstOfferDeathHint')}</p>
-                <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-                <p className="hint">{t('hintKeepScreen')}</p>
-                <div className="offer-actions offer-session-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-offer"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      setAmendSheet({
-                        parentBurnTxid: dedicationSheet.parentBurnTxid,
-                        altar: dedicationSheet.altar,
-                        kind: 'death',
-                      })
-                    }
-                  >
-                    {t('btnOffer')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      setAmendSheet({
-                        parentBurnTxid: dedicationSheet.parentBurnTxid,
-                        altar: dedicationSheet.altar,
-                        kind: 'relationship',
-                      })
-                    }
-                  >
-                    {t('btnAmendAltar')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="offer-actions offer-session-actions">
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  disabled={!canOffer}
-                  onClick={() =>
-                    setAmendSheet({
-                      parentBurnTxid: dedicationSheet.parentBurnTxid,
-                      altar: dedicationSheet.altar,
-                      kind: 'relationship',
-                    })
-                  }
-                >
-                  {t('btnAmendAltar')}
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       ) : null}
@@ -2284,7 +2294,7 @@ export default function App() {
           aria-modal="true"
           aria-labelledby="offer-session-title"
         >
-          <div className="offer-modal-card">
+          <div className="offer-modal-card offer-session-card">
             <button
               type="button"
               className="offer-modal-close"
@@ -2294,86 +2304,90 @@ export default function App() {
               ×
             </button>
             <h2 id="offer-session-title">{t('offerSessionTitle')}</h2>
-            {session.altar ? (
-              <>
-                <p className="offer-session-label">
-                  {session.altar && !altarHasDeathDate(session.altar)
-                    ? t('profileLabel')
-                    : t('altarLabel')}
+            <div className="offer-session-body">
+              {session.altar ? (
+                <>
+                  <p className="offer-session-label">
+                    {session.altar && !altarHasDeathDate(session.altar)
+                      ? t('profileLabel')
+                      : t('altarLabel')}
+                  </p>
+                  <AltarDetails
+                    altar={session.altar}
+                    relatedAltarOptions={
+                      session.relatedOptions ?? relatedAltarOptions
+                    }
+                  />
+                </>
+              ) : (
+                <p className="offer-session-note offer-session-original">
+                  {session.note.trim() || t('offeringFallback')}
                 </p>
-                <AltarDetails
-                  altar={session.altar}
-                  relatedAltarOptions={
-                    session.relatedOptions ?? relatedAltarOptions
-                  }
-                />
-              </>
-            ) : (
-              <p className="offer-session-note offer-session-original">
-                {session.note.trim() || t('offeringFallback')}
+              )}
+              {session.extraNote ? (
+                <>
+                  <p className="offer-session-label">
+                    {t('reofferExtraNoteLabel')}
+                  </p>
+                  <p className="offer-session-note offer-session-extra">
+                    {session.extraNote}
+                  </p>
+                </>
+              ) : null}
+            </div>
+            <div className="offer-session-footer">
+              <p className="offer-session-status" aria-live="polite">
+                {buttonLabel}
               </p>
-            )}
-            {session.extraNote ? (
-              <>
-                <p className="offer-session-label">
-                  {t('reofferExtraNoteLabel')}
+              {mineStartedAt != null ? (
+                <p
+                  className="mine-progress offer-session-elapsed"
+                  aria-live="polite"
+                >
+                  {t('miningElapsed', { elapsed: elapsedDisplay })}
                 </p>
-                <p className="offer-session-note offer-session-extra">
-                  {session.extraNote}
-                </p>
-              </>
-            ) : null}
-            <p className="offer-session-status" aria-live="polite">
-              {buttonLabel}
-            </p>
-            {mineStartedAt != null ? (
-              <p
-                className="mine-progress offer-session-elapsed"
-                aria-live="polite"
-              >
-                {t('miningElapsed', { elapsed: elapsedDisplay })}
-              </p>
-            ) : null}
-            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-            <p className="hint">{t('hintKeepScreen')}</p>
-            {cancelLoseConfirm ? (
-              <div className="offer-cancel-confirm" role="alertdialog">
-                <p>
-                  {pendingMemorial
-                    ? t('cancelLoseOfferMsg')
-                    : t('cancelOfferMsg')}
-                </p>
-                <div className="offer-cancel-confirm-actions">
+              ) : null}
+              <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+              <p className="hint">{t('hintKeepScreen')}</p>
+              {cancelLoseConfirm ? (
+                <div className="offer-cancel-confirm" role="alertdialog">
+                  <p>
+                    {pendingMemorial
+                      ? t('cancelLoseOfferMsg')
+                      : t('cancelOfferMsg')}
+                  </p>
+                  <div className="offer-cancel-confirm-actions">
+                    <button
+                      type="button"
+                      className="btn btn-session-cancel"
+                      onClick={() => setCancelLoseConfirm(false)}
+                    >
+                      {t('btnKeepOffering')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-confirm-lose"
+                      onClick={() => void onCancelMine()}
+                    >
+                      {pendingMemorial
+                        ? t('btnConfirmLoseOffer')
+                        : t('btnConfirmCancel')}
+                    </button>
+                  </div>
+                </div>
+              ) : showCancel ? (
+                <div className="offer-actions offer-session-actions">
                   <button
                     type="button"
                     className="btn btn-session-cancel"
-                    onClick={() => setCancelLoseConfirm(false)}
+                    onClick={() => requestCancelOffer()}
                   >
-                    {t('btnKeepOffering')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-confirm-lose"
-                    onClick={() => void onCancelMine()}
-                  >
-                    {pendingMemorial
-                      ? t('btnConfirmLoseOffer')
-                      : t('btnConfirmCancel')}
+                    {t('btnCancel')}
                   </button>
                 </div>
-              </div>
-            ) : showCancel ? (
-              <div className="offer-actions offer-session-actions">
-                <button
-                  type="button"
-                  className="btn btn-session-cancel"
-                  onClick={() => requestCancelOffer()}
-                >
-                  {t('btnCancel')}
-                </button>
-              </div>
-            ) : null}
-            {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
+              ) : null}
+              {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
+            </div>
           </div>
         </div>
       ) : null}
@@ -2385,7 +2399,7 @@ export default function App() {
           aria-modal="true"
           aria-labelledby="offer-session-title"
         >
-          <div className="offer-modal-card">
+          <div className="offer-modal-card offer-session-card">
             <button
               type="button"
               className="offer-modal-close"
@@ -2397,79 +2411,83 @@ export default function App() {
             <h2 id="offer-session-title">
               {session.setup ? t('setupSessionTitle') : t('offerSessionTitle')}
             </h2>
-            {session.altar ? (
-              <>
-                <p className="offer-session-label">
-                  {session.altar && !altarHasDeathDate(session.altar)
-                    ? t('profileLabel')
-                    : t('altarLabel')}
-                </p>
-                <AltarDetails
-                  altar={session.altar}
-                  relatedAltarOptions={
-                    session.relatedOptions ?? relatedAltarOptions
-                  }
-                />
-              </>
-            ) : (
-              <>
-                <p className="offer-session-label">{t('sessionNoteLabel')}</p>
-                <p className="offer-session-note">
-                  {session.note.trim() || t('offeringFallback')}
-                </p>
-              </>
-            )}
-            <p className="offer-session-status" aria-live="polite">
-              {buttonLabel}
-            </p>
-            {mineStartedAt != null ? (
-              <p
-                className="mine-progress offer-session-elapsed"
-                aria-live="polite"
-              >
-                {t('miningElapsed', { elapsed: elapsedDisplay })}
+            <div className="offer-session-body">
+              {session.altar ? (
+                <>
+                  <p className="offer-session-label">
+                    {session.altar && !altarHasDeathDate(session.altar)
+                      ? t('profileLabel')
+                      : t('altarLabel')}
+                  </p>
+                  <AltarDetails
+                    altar={session.altar}
+                    relatedAltarOptions={
+                      session.relatedOptions ?? relatedAltarOptions
+                    }
+                  />
+                </>
+              ) : (
+                <>
+                  <p className="offer-session-label">{t('sessionNoteLabel')}</p>
+                  <p className="offer-session-note">
+                    {session.note.trim() || t('offeringFallback')}
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="offer-session-footer">
+              <p className="offer-session-status" aria-live="polite">
+                {buttonLabel}
               </p>
-            ) : null}
-            <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
-            <p className="hint">{t('hintKeepScreen')}</p>
-            {cancelLoseConfirm ? (
-              <div className="offer-cancel-confirm" role="alertdialog">
-                <p>
-                  {pendingMemorial
-                    ? t('cancelLoseOfferMsg')
-                    : t('cancelOfferMsg')}
+              {mineStartedAt != null ? (
+                <p
+                  className="mine-progress offer-session-elapsed"
+                  aria-live="polite"
+                >
+                  {t('miningElapsed', { elapsed: elapsedDisplay })}
                 </p>
-                <div className="offer-cancel-confirm-actions">
+              ) : null}
+              <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
+              <p className="hint">{t('hintKeepScreen')}</p>
+              {cancelLoseConfirm ? (
+                <div className="offer-cancel-confirm" role="alertdialog">
+                  <p>
+                    {pendingMemorial
+                      ? t('cancelLoseOfferMsg')
+                      : t('cancelOfferMsg')}
+                  </p>
+                  <div className="offer-cancel-confirm-actions">
+                    <button
+                      type="button"
+                      className="btn btn-session-cancel"
+                      onClick={() => setCancelLoseConfirm(false)}
+                    >
+                      {t('btnKeepOffering')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-confirm-lose"
+                      onClick={() => void onCancelMine()}
+                    >
+                      {pendingMemorial
+                        ? t('btnConfirmLoseOffer')
+                        : t('btnConfirmCancel')}
+                    </button>
+                  </div>
+                </div>
+              ) : showCancel ? (
+                <div className="offer-actions offer-session-actions">
                   <button
                     type="button"
                     className="btn btn-session-cancel"
-                    onClick={() => setCancelLoseConfirm(false)}
+                    onClick={() => requestCancelOffer()}
                   >
-                    {t('btnKeepOffering')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-confirm-lose"
-                    onClick={() => void onCancelMine()}
-                  >
-                    {pendingMemorial
-                      ? t('btnConfirmLoseOffer')
-                      : t('btnConfirmCancel')}
+                    {t('btnCancel')}
                   </button>
                 </div>
-              </div>
-            ) : showCancel ? (
-              <div className="offer-actions offer-session-actions">
-                <button
-                  type="button"
-                  className="btn btn-session-cancel"
-                  onClick={() => requestCancelOffer()}
-                >
-                  {t('btnCancel')}
-                </button>
-              </div>
-            ) : null}
-            {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
+              ) : null}
+              {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
+            </div>
           </div>
         </div>
       ) : null}

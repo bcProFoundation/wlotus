@@ -634,7 +634,39 @@ a {
 
 .altar-setup-card {
   max-height: min(92vh, 720px);
-  overflow: auto;
+}
+
+/* Pin session actions; only altar / note content scrolls. */
+.offer-modal-card.offer-session-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.offer-session-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 0.15rem;
+}
+
+.offer-session-footer {
+  flex: 0 0 auto;
+  margin-top: 0.65rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.offer-session-footer .hint:first-child,
+.offer-session-footer .field:first-child {
+  margin-top: 0;
+}
+
+.offer-session-footer .offer-session-actions {
+  margin-top: 0.85rem;
 }
 
 .altar-honorific-label {
