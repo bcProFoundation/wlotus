@@ -12,6 +12,7 @@ import {
   tryAutoEscapeInAppBrowser,
   type InAppApp,
 } from '../lib/inAppBrowser.js';
+import { BrandMark } from './BrandMark.js';
 
 /**
  * When a dedication share link opens inside a messenger WebView, offer
@@ -85,13 +86,7 @@ export function OpenInBrowserGate(props: {
       aria-modal="true"
     >
       <div className="offer-modal-card open-browser-card">
-        <img
-          className="brand-mark"
-          src="/images/wlotus.png"
-          alt=""
-          width={56}
-          height={56}
-        />
+        <BrandMark className="open-browser-brand" />
         <h2>{t('openInBrowserTitle', { app: appName })}</h2>
         <p className="hint">{t('openInBrowserBody', { app: appName })}</p>
         <p className="hint">{t('openInBrowserHint')}</p>

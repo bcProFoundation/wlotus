@@ -7,6 +7,7 @@ import {
 import { LangSwitch } from './components/LangSwitch.js';
 import { AltarDetails, type RelatedAltarOption } from './components/AltarDetails.js';
 import { AltarSetupModal } from './components/AltarSetupModal.js';
+import { BrandMark } from './components/BrandMark.js';
 import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
@@ -1597,17 +1598,8 @@ export default function App() {
       <header className="hero">
         <div className="brand-row">
           <div className="brand-main">
-            <img
-              className="brand-mark"
-              src="/images/wlotus.png"
-              alt=""
-              width={56}
-              height={56}
-            />
-            <h1 className="brand">
-              <span className="brand-letter">{t('brand').charAt(0)}</span>
-              {t('brand').slice(1)}
-            </h1>
+            <BrandMark />
+            <h1 className="brand">{t('brandWithLogo')}</h1>
           </div>
           <div className="header-actions">
             <button

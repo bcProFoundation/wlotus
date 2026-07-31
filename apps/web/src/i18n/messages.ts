@@ -3,6 +3,8 @@ import type { Locale } from './types.js';
 /** Flat UI strings. Use `{name}` placeholders. */
 export type MessageKey =
   | 'brand'
+  /** Wordmark next to the W logo — omit the leading W (it is in the mark). */
+  | 'brandWithLogo'
   | 'tagline'
   | 'offerTitle'
   | 'hintPrayMine'
@@ -151,6 +153,7 @@ type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
   brand: 'W Lotus',
+  brandWithLogo: 'Lotus',
   tagline: 'A flower of eternal remembrance.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
@@ -318,6 +321,7 @@ const en: Dict = {
 
 const vi: Dict = {
   brand: 'W Lotus',
+  brandWithLogo: 'Lotus',
   tagline: 'Bông hoa của sự tưởng nhớ vĩnh hằng.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
@@ -484,6 +488,7 @@ const vi: Dict = {
 
 const zh: Dict = {
   brand: 'W Lotus',
+  brandWithLogo: 'Lotus',
   tagline: '永恒追思之花。',
   offerTitle: '献花',
   hintPrayMine:

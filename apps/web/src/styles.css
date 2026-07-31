@@ -20,6 +20,7 @@
   --btn-primary-ink: #0a0a0a;
   --btn-primary-hover: #e5e5e5;
   --brand-ink: #ffffff;
+  /* Flower icons (re-offer) are dark ink — invert on the black UI. */
   --brand-mark-filter: brightness(0) invert(1);
   --body-glow: rgba(255, 255, 255, 0.06);
   --modal-scrim: rgba(0, 0, 0, 0.72);
@@ -146,14 +147,31 @@ a {
   min-width: 0;
 }
 
-.brand-mark {
-  width: clamp(2.75rem, 8vw, 3.5rem);
-  height: clamp(2.75rem, 8vw, 3.5rem);
-  object-fit: contain;
+.brand-mark-wrap {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
-  border-radius: 0.35rem;
-  /* Dark source mark → white on dark UI; natural ink on temple. */
-  filter: var(--brand-mark-filter);
+  height: clamp(2.75rem, 8vw, 3.5rem);
+}
+
+.brand-mark {
+  display: block;
+  height: clamp(2.75rem, 8vw, 3.5rem);
+  width: auto;
+  max-width: clamp(4.25rem, 14vw, 5.5rem);
+  object-fit: contain;
+}
+
+.brand-mark--on-light {
+  display: none;
+}
+
+[data-theme='temple'] .brand-mark--on-dark {
+  display: none;
+}
+
+[data-theme='temple'] .brand-mark--on-light {
+  display: block;
 }
 
 .brand-letter {
@@ -748,7 +766,8 @@ a {
   max-height: none;
 }
 
-.open-browser-card .brand-mark {
+.open-browser-card .brand-mark-wrap,
+.open-browser-card .open-browser-brand {
   margin: 0.25rem auto 0.85rem;
 }
 
