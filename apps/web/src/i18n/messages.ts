@@ -153,7 +153,7 @@ export type MessageKey =
 type Dict = Record<MessageKey, string>;
 
 const en: Dict = {
-  brand: 'Lotus',
+  brand: 'W Lotus',
   brandWithLogo: 'Lotus',
   tagline: 'A flower of eternal remembrance.',
   offerTitle: 'Offer a Flower',
@@ -323,7 +323,7 @@ const en: Dict = {
 };
 
 const vi: Dict = {
-  brand: 'Lotus',
+  brand: 'W Lotus',
   brandWithLogo: 'Lotus',
   tagline: 'Bông hoa của sự tưởng nhớ vĩnh hằng.',
   offerTitle: 'Dâng Hoa',
@@ -492,7 +492,7 @@ const vi: Dict = {
 };
 
 const zh: Dict = {
-  brand: 'Lotus',
+  brand: 'W Lotus',
   brandWithLogo: 'Lotus',
   tagline: '永恒追思之花。',
   offerTitle: '献花',
