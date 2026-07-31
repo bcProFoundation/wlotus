@@ -183,23 +183,12 @@ a {
   display: block;
 }
 
-/* Favicon-style chip: always white bold W on black rounded square. */
+/* Prebuilt favicon asset — white bold W already sized on black rounded square. */
 .brand-mark-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  padding: 12%;
-  border-radius: 22%;
-  background: #050505;
-  overflow: hidden;
-}
-
-.brand-mark-badge-img {
   display: block;
-  width: 100%;
-  height: 100%;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
   object-fit: contain;
 }
 
@@ -1242,7 +1231,8 @@ a {
 }
 
 .memorial-history-note .brand-mark-badge {
-  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .memorial-history-note-text {
@@ -1326,8 +1316,8 @@ a {
 }
 
 .btn-reoffer-lotus .brand-mark-badge {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .btn-reoffer-lotus span {
