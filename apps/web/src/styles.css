@@ -999,8 +999,11 @@ a {
 .swipe-reveal-track {
   position: relative;
   z-index: 1;
-  /* Match page/panel fill so rows do not introduce a second surface color. */
-  background: var(--bg0);
+  /* Same formal fill as the Search CTA (`--surface` over page bg); opaque for swipe. */
+  background:
+    linear-gradient(var(--surface), var(--surface)),
+    var(--bg0);
+  border: 1px solid var(--line);
   border-radius: 14px;
   transition: transform 0.18s ease-out;
   /* Let the page scroll vertically; JS takes over once a horizontal swipe wins. */
