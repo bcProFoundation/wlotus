@@ -777,14 +777,26 @@ export default function App() {
               relationships: altarRelationships(activeAltar),
             }
           : null;
+    // Seed with caller options (dedication sheet may already have index names)
+    // or Recent; hydrate missing related altars from dana-index like the detail page.
+    const seedRelated = opts?.relatedOptions ?? relatedAltarOptions;
     setSession({
       reoffer: isReoffer,
       setup: !isReoffer && !isAmend,
       note: historyNote,
       altar: sessionAltar,
       extraNote: extraNote || undefined,
-      relatedOptions: opts?.relatedOptions,
+      relatedOptions: seedRelated,
     });
+    if (sessionAltar) {
+      void resolveRelatedOptions(sessionAltar, seedRelated).then(related => {
+        setSession(prev =>
+          prev && prev.altar === sessionAltar
+            ? { ...prev, relatedOptions: related }
+            : prev,
+        );
+      });
+    }
     setLinkedParentBurnTxid(null);
 
     const prevId = challengeIdRef.current;
@@ -2060,6 +2072,7 @@ export default function App() {
                             ) || t('offeringFallback'),
                           altar: dedicationSheet.altar,
                           extraNote: dedicationSheet.extraNote,
+                          relatedOptions: dedicationSheet.relatedOptions,
                         })
                       }
                     >
