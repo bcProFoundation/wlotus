@@ -46,7 +46,8 @@
   --danger: #b54545;
   --card: rgba(90, 55, 25, 0.06);
   --line: rgba(90, 60, 30, 0.2);
-  --panel: #fff8ef;
+  /* Soft warm elevated surface — not stark white against the temple card. */
+  --panel: #ebe3d6;
   --surface: rgba(90, 55, 25, 0.07);
   --surface-strong: rgba(90, 55, 25, 0.12);
   --surface-inset: rgba(90, 55, 25, 0.08);
@@ -935,13 +936,12 @@ a {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
 }
 
 .history > li {
-  border-bottom: 1px solid var(--line);
-}
-
-.history > li:last-child {
   border-bottom: 0;
 }
 
@@ -950,15 +950,16 @@ a {
   flex-direction: column;
   align-items: stretch;
   gap: 0.35rem;
-  padding: 0.75rem 0.15rem;
+  padding: 0.75rem 0.85rem;
   font-size: 0.92rem;
-  /* Opaque so the Remove action does not show through the row. */
-  background: var(--panel);
+  /* Track provides the opaque swipe cover; keep the row itself clear. */
+  background: transparent;
 }
 
 .swipe-reveal {
   position: relative;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .swipe-reveal-actions {

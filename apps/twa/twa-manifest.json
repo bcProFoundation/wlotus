@@ -1,8 +1,8 @@
 {
   "packageId": "org.wlotus.twa",
   "host": "wlotus.org",
-  "name": "W Lotus",
-  "launcherName": "W Lotus",
+  "name": "Lotus",
+  "launcherName": "Lotus",
   "display": "standalone",
   "orientation": "portrait",
   "themeColor": "#0a0a0a",

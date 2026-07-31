@@ -33,8 +33,8 @@ export default defineConfig({
       ],
       manifest: {
         id: '/',
-        name: 'W Lotus',
-        short_name: 'W Lotus',
+        name: 'Lotus',
+        short_name: 'Lotus',
         description: 'Offer a lotus — memorial and dana on eCash',
         theme_color: '#0a0a0a',
         background_color: '#050505',
