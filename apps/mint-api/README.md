@@ -29,6 +29,9 @@ minted miner atom and must fund the burn fee.
 
 **Critical:** remint has **no change output**. Fuel must be a small coin
 (~40 XEC / 4000 sats). Attaching a large UTXO burns almost all of it as miner fee.
+So the tip fee wallet should hold a **large** XEC balance and peel ~40 XEC coins
+locally. Desk→tip auto top-up sends ~1000 XEC (`TIP_TOPUP_SATS`) when the tip is
+empty — not 40 XEC per offering (that extra hop wastes a network fee).
 
 ```
 POST /api/challenge  { installId, note? }  → preimage + bits
@@ -81,8 +84,10 @@ Optional env: `MINT_DESK_RESERVE_SATS` (default 10000), `MINT_FUELS_PER_TIP` (de
 
 If a tip wallet is empty at challenge time, mint-api auto top-ups **~1000 XEC**
 (`TIP_TOPUP_SATS` / `MINT_TIP_TOPUP_SATS`) from the desk, then peels a **~40 XEC**
-remint fuel coin on the tip. Remint still must use the small fuel coin (no change
-out). Prefer running the fund script after depositing to the desk.
+remint fuel coin on the tip — **change stays on the tip receive address**. Remint
+still must use the small fuel coin (no change out). Do not set
+`MINT_TIP_TOPUP_SATS` below 1000 XEC (undersized values are ignored). Prefer
+running the fund script after depositing to the desk.
 
 ## Endpoints
 

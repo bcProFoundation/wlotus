@@ -57,6 +57,7 @@ import {
   pickSplitSourceUtxo,
   pureXecBalance,
 } from '../../../src/mint/fuelUtxo.js';
+import { peelSizedFuel } from '../../../src/mint/peelSizedFuel.js';
 import {
   loadTipFeeWallet,
   tipFeeWalletSummary,
@@ -488,28 +489,15 @@ type FuelCoin = { txid: string; outIdx: number; sats: string };
 /**
  * Peel one REMINT_FUEL_SATS coin from an oversized UTXO on `wallet`.
  * Remint has no change out — oversized fuel would burn almost entirely as fee.
+ * Leftover XEC stays on the tip receive address (see peelSizedFuel).
  */
 async function splitSizedFuel(wallet: Wallet): Promise<void> {
-  await wallet.sync();
-  if (pickSizedFuelUtxo(wallet.utxos)) return;
-  const big = pickSplitSourceUtxo(wallet.utxos);
-  if (!big) {
-    throw new Error(
-      `Need XEC ≥ ${Number(REMINT_FUEL_SATS) / 100} for a sized remint fee UTXO`,
+  const txid = await peelSizedFuel(wallet);
+  if (txid) {
+    console.log(
+      `fuel split ${txid} → ${REMINT_FUEL_SATS} sats (refused oversized fuel)`,
     );
   }
-  const { payment } = await import('ecash-lib');
-  const action: payment.Action = {
-    outputs: [{ sats: REMINT_FUEL_SATS, script: wallet.script }],
-  };
-  const resp = await wallet.action(action).build().broadcast();
-  if (!resp.success || !resp.broadcasted?.length) {
-    throw new Error(`Fuel split failed: ${JSON.stringify(resp)}`);
-  }
-  console.log(
-    `fuel split ${resp.broadcasted[0]} → ${REMINT_FUEL_SATS} sats (refused oversized fuel)`,
-  );
-  await wallet.sync();
 }
 
 /**
@@ -533,9 +521,17 @@ async function topUpTipFuelFromDesk(
     );
   }
   const envTop = process.env.MINT_TIP_TOPUP_SATS?.trim();
-  const configured = envTop && /^\d+$/.test(envTop) ? BigInt(envTop) : TIP_TOPUP_SATS;
-  const want = configured >= REMINT_FUEL_SATS ? configured : TIP_TOPUP_SATS;
-  const send = available >= want ? want : available;
+  let configured =
+    envTop && /^\d+$/.test(envTop) ? BigInt(envTop) : TIP_TOPUP_SATS;
+  // One-fuel top-ups reintroduce a desk→tip fee per offering (and were the
+  // historical default). Ignore undersized overrides.
+  if (configured < TIP_TOPUP_SATS) {
+    console.warn(
+      `MINT_TIP_TOPUP_SATS=${configured} < ${TIP_TOPUP_SATS}; using ${TIP_TOPUP_SATS}`,
+    );
+    configured = TIP_TOPUP_SATS;
+  }
+  const send = available >= configured ? configured : available;
 
   const { payment } = await import('ecash-lib');
   const action: payment.Action = {
