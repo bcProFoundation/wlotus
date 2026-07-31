@@ -7,7 +7,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // it and point `webDir` at a local build) to test against test.wlotus.org.
 const config: CapacitorConfig = {
   appId: 'org.wlotus.app',
-  appName: 'Lotus',
+  appName: 'W Lotus',
   webDir: '../web/dist',
   server: {
     url: 'https://wlotus.org',
