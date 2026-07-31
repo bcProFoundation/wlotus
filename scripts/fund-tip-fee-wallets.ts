@@ -29,6 +29,7 @@ import {
   pickSplitSourceUtxo,
   pureXecBalance,
 } from '../src/mint/fuelUtxo.js';
+import { peelSizedFuel } from '../src/mint/peelSizedFuel.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
@@ -70,20 +71,12 @@ async function splitSizedFuels(
       made++;
       break;
     }
-    const action: payment.Action = {
-      outputs: [{ sats: REMINT_FUEL_SATS, script: wallet.script }],
-    };
-    const resp = await wallet.action(action).build().broadcast();
-    if (!resp.success || !resp.broadcasted?.length) {
-      throw new Error(
-        `Tip ${tipIndex} fuel split failed: ${JSON.stringify(resp)}`,
-      );
-    }
+    const txid = await peelSizedFuel(wallet);
+    if (!txid) break;
     console.log(
-      `tip ${tipIndex}: split fuel tx ${resp.broadcasted[0]} (${REMINT_FUEL_SATS} sats)`,
+      `tip ${tipIndex}: split fuel tx ${txid} (${REMINT_FUEL_SATS} sats)`,
     );
     made++;
-    await wallet.sync();
   }
   return made;
 }
