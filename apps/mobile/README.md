@@ -1,4 +1,4 @@
-# White Lotus — Capacitor shell (iOS + optional Android)
+# W Lotus — Capacitor shell (iOS + optional Android)
 
 Wraps the live `https://wlotus.org` PWA in a native app shell via
 [Capacitor](https://capacitorjs.com). `capacitor.config.ts` points

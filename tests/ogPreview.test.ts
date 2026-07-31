@@ -64,11 +64,11 @@ describe('ogPreview', () => {
   });
 
   it('uses brand fallback without a name', () => {
-    expect(ogCopy('vi', '').title).toBe('White Lotus - Đoá sen vĩnh hằng');
+    expect(ogCopy('vi', '').title).toBe('W Lotus - Đoá sen vĩnh hằng');
     expect(ogCopy('vi', '').description).toBe(
-      'Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.',
+      'Gửi lời tưởng nhớ vĩnh hằng trên W Lotus.',
     );
-    expect(ogCopy('en', '').title).toBe('White Lotus - Eternal lotus');
+    expect(ogCopy('en', '').title).toBe('W Lotus - Eternal lotus');
   });
 
   it('renders escaped OG HTML with SPA boot for browsers', () => {

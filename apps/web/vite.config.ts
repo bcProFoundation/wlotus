@@ -22,6 +22,8 @@ export default defineConfig({
       // use now that registration is hand-rolled).
       injectRegister: false,
       includeAssets: [
+        'images/W.png',
+        'images/W-black.png',
         'images/wlotus.png',
         'images/wlotus-icon-32.png',
         'images/wlotus-icon-180.png',
@@ -31,9 +33,9 @@ export default defineConfig({
       ],
       manifest: {
         id: '/',
-        name: 'White Lotus',
-        short_name: 'White Lotus',
-        description: 'Offer a white lotus — memorial and dana on eCash',
+        name: 'W Lotus',
+        short_name: 'W Lotus',
+        description: 'Offer a lotus — memorial and dana on eCash',
         theme_color: '#0a0a0a',
         background_color: '#050505',
         display: 'standalone',

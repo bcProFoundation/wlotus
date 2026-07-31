@@ -32,9 +32,9 @@ The OG page boots the SPA in browsers; crawlers keep the meta tags.
 | Case | `og:title` (default VI) |
 |------|-------------------------|
 | Altar / named dedication | `Tưởng nhớ {name}` |
-| No name | `White Lotus - Đoá sen vĩnh hằng` |
+| No name | `W Lotus - Đoá sen vĩnh hằng` |
 
-`og:description` (no name): `Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.`
+`og:description` (no name): `Gửi lời tưởng nhớ vĩnh hằng trên W Lotus.`
 
 Optional `?lang=en|vi|zh` localizes the card. The web Share action embeds the
 **sender's** current app locale in the URL. Crawler `Accept-Language` is

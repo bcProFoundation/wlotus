@@ -7,6 +7,7 @@ import {
 import { LangSwitch } from './components/LangSwitch.js';
 import { AltarDetails, type RelatedAltarOption } from './components/AltarDetails.js';
 import { AltarSetupModal } from './components/AltarSetupModal.js';
+import { BrandMark } from './components/BrandMark.js';
 import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
@@ -348,6 +349,21 @@ export default function App() {
   }, []);
 
   const busy = phase !== 'idle';
+
+  /** EN stays dark; VI/ZH use warm temple browse, dark during the offer ritual. */
+  useEffect(() => {
+    const warmBrowse = locale === 'vi' || locale === 'zh';
+    const theme = warmBrowse && !busy ? 'temple' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute(
+        'content',
+        theme === 'temple' ? '#f3ebe0' : '#050505',
+      );
+    }
+  }, [locale, busy]);
+
   /**
    * Keep Cancel mounted for the whole offer session (except final burn).
    * Hiding it only in `mining`|`holding` flickered: with bits=0, mining is
@@ -1582,17 +1598,8 @@ export default function App() {
       <header className="hero">
         <div className="brand-row">
           <div className="brand-main">
-            <img
-              className="brand-mark"
-              src="/images/wlotus.png"
-              alt=""
-              width={56}
-              height={56}
-            />
-            <h1 className="brand">
-              <span className="brand-letter">{t('brand').charAt(0)}</span>
-              {t('brand').slice(1)}
-            </h1>
+            <BrandMark />
+            <h1 className="brand">{t('brandWithLogo')}</h1>
           </div>
           <div className="header-actions">
             <button
