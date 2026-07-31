@@ -2354,7 +2354,6 @@ export default function App() {
                   </p>
                 ) : null}
               </div>
-              <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
               <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
@@ -2452,7 +2451,6 @@ export default function App() {
                   </p>
                 ) : null}
               </div>
-              <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
               <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
