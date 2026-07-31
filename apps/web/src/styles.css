@@ -1556,10 +1556,24 @@ a {
   color: var(--ink);
 }
 
+.offer-session-status-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.offer-session-status-row .offer-session-status {
+  flex: 1;
+  min-width: 0;
+}
+
 .offer-session-elapsed {
-  margin-top: 0.45rem;
+  margin-top: 0;
   font-size: 1.15rem;
   color: var(--ink);
+  flex-shrink: 0;
+  text-align: right;
 }
 
 .offer-session-actions {

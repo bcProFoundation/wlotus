@@ -364,16 +364,6 @@ export default function App() {
     }
   }, [locale, busy]);
 
-  /**
-   * Keep Cancel mounted for the whole offer session (except final burn).
-   * Hiding it only in `mining`|`holding` flickered: with bits=0, mining is
-   * instant → submit hides Cancel for the remint RTT → holding shows it again.
-   */
-  const showCancel =
-    phase === 'challenge' ||
-    phase === 'mining' ||
-    phase === 'submit' ||
-    phase === 'holding';
   const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
     bits: baseZeroBits,
@@ -2351,17 +2341,14 @@ export default function App() {
               ) : null}
             </div>
             <div className="offer-session-footer">
-              <p className="offer-session-status" aria-live="polite">
-                {buttonLabel}
-              </p>
-              {mineStartedAt != null ? (
-                <p
-                  className="mine-progress offer-session-elapsed"
-                  aria-live="polite"
-                >
-                  {t('miningElapsed', { elapsed: elapsedDisplay })}
-                </p>
-              ) : null}
+              <div className="offer-session-status-row" aria-live="polite">
+                <p className="offer-session-status">{buttonLabel}</p>
+                {mineStartedAt != null ? (
+                  <p className="mine-progress offer-session-elapsed">
+                    {t('miningElapsed', { elapsed: elapsedDisplay })}
+                  </p>
+                ) : null}
+              </div>
               <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
               <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
@@ -2389,16 +2376,6 @@ export default function App() {
                         : t('btnConfirmCancel')}
                     </button>
                   </div>
-                </div>
-              ) : showCancel ? (
-                <div className="offer-actions offer-session-actions">
-                  <button
-                    type="button"
-                    className="btn btn-session-cancel"
-                    onClick={() => requestCancelOffer()}
-                  >
-                    {t('btnCancel')}
-                  </button>
                 </div>
               ) : null}
               {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
@@ -2451,17 +2428,14 @@ export default function App() {
               )}
             </div>
             <div className="offer-session-footer">
-              <p className="offer-session-status" aria-live="polite">
-                {buttonLabel}
-              </p>
-              {mineStartedAt != null ? (
-                <p
-                  className="mine-progress offer-session-elapsed"
-                  aria-live="polite"
-                >
-                  {t('miningElapsed', { elapsed: elapsedDisplay })}
-                </p>
-              ) : null}
+              <div className="offer-session-status-row" aria-live="polite">
+                <p className="offer-session-status">{buttonLabel}</p>
+                {mineStartedAt != null ? (
+                  <p className="mine-progress offer-session-elapsed">
+                    {t('miningElapsed', { elapsed: elapsedDisplay })}
+                  </p>
+                ) : null}
+              </div>
               <p className="hint eta">{t('etaEstimated', { eta: etaLabel })}</p>
               <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
@@ -2489,16 +2463,6 @@ export default function App() {
                         : t('btnConfirmCancel')}
                     </button>
                   </div>
-                </div>
-              ) : showCancel ? (
-                <div className="offer-actions offer-session-actions">
-                  <button
-                    type="button"
-                    className="btn btn-session-cancel"
-                    onClick={() => requestCancelOffer()}
-                  >
-                    {t('btnCancel')}
-                  </button>
                 </div>
               ) : null}
               {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
