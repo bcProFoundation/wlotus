@@ -183,6 +183,26 @@ a {
   display: block;
 }
 
+/* Favicon-style chip: always white bold W on black rounded square. */
+.brand-mark-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 12%;
+  border-radius: 22%;
+  background: #050505;
+  overflow: hidden;
+}
+
+.brand-mark-badge-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .brand-letter {
   display: inline-block;
 }
@@ -1221,7 +1241,7 @@ a {
   line-height: 1.4;
 }
 
-.memorial-history-note .brand-mark-wrap {
+.memorial-history-note .brand-mark-badge {
   flex-shrink: 0;
 }
 
@@ -1305,8 +1325,9 @@ a {
   cursor: not-allowed;
 }
 
-.btn-reoffer-lotus .brand-mark-wrap {
-  height: 1.2rem;
+.btn-reoffer-lotus .brand-mark-badge {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .btn-reoffer-lotus span {
