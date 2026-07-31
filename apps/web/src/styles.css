@@ -1494,6 +1494,19 @@ a {
   padding-right: 2rem;
 }
 
+.offer-session-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.offer-session-title-mark {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
+}
+
 .offer-session-label {
   margin: 0;
   color: var(--muted);
