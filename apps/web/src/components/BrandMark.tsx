@@ -8,7 +8,11 @@ export function BrandMark(props: {
   const w = props.width ?? 56;
   const h = props.height ?? 56;
   return (
-    <span className={wrapClass} aria-hidden="true">
+    <span
+      className={wrapClass}
+      style={{ height: h }}
+      aria-hidden="true"
+    >
       <img
         className="brand-mark brand-mark--on-dark"
         src="/images/W-bold.png"

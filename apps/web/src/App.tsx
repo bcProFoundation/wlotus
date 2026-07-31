@@ -1920,13 +1920,7 @@ export default function App() {
                                 })
                               }
                             >
-                              <img
-                                src="/images/wlotus.png"
-                                alt=""
-                                width={22}
-                                height={22}
-                                draggable={false}
-                              />
+                              <BrandMark width={22} height={22} />
                               <span>{t('btnReoffer')}</span>
                             </button>
                           ) : showFirstOffer ? (
@@ -1941,13 +1935,7 @@ export default function App() {
                                 })
                               }
                             >
-                              <img
-                                src="/images/wlotus.png"
-                                alt=""
-                                width={22}
-                                height={22}
-                                draggable={false}
-                              />
+                              <BrandMark width={22} height={22} />
                               <span>{t('btnOffer')}</span>
                             </button>
                           ) : null}
@@ -2245,30 +2233,38 @@ export default function App() {
               <div className="msg hint-inline">{historyError}</div>
             ) : null}
             <ul className="memorial-history-list">
-              {historyGroup.burns.map(b => (
-                <li key={b.burnTxid}>
-                  <div className="memorial-history-main">
-                    <span className="memorial-history-note">
-                      {(b.note || '').trim()
-                        ? memorialDisplayName(b.note, locale)
-                        : !b.parentBurnTxid
-                          ? memorialDisplayName(historyGroup.note, locale) ||
-                            t('offeringFallback')
-                          : ''}
+              {historyGroup.burns.map(b => {
+                const noteText = (b.note || '').trim()
+                  ? memorialDisplayName(b.note, locale)
+                  : !b.parentBurnTxid
+                    ? memorialDisplayName(historyGroup.note, locale) ||
+                      t('offeringFallback')
+                    : '';
+                return (
+                  <li key={b.burnTxid}>
+                    <div className="memorial-history-main">
+                      <span className="memorial-history-note">
+                        <BrandMark width={22} height={22} />
+                        {noteText ? (
+                          <span className="memorial-history-note-text">
+                            {noteText}
+                          </span>
+                        ) : null}
+                      </span>
+                      <ExplorerLinkIcon
+                        txid={b.burnTxid}
+                        label={t('openOnExplorer')}
+                      />
+                    </div>
+                    <span className="history-meta">
+                      {new Date(b.at).toLocaleString(locale)}
+                      {!b.parentBurnTxid
+                        ? ` · ${t('originalBurnBadge')}`
+                        : ''}
                     </span>
-                    <ExplorerLinkIcon
-                      txid={b.burnTxid}
-                      label={t('openOnExplorer')}
-                    />
-                  </div>
-                  <span className="history-meta">
-                    {new Date(b.at).toLocaleString(locale)}
-                    {!b.parentBurnTxid
-                      ? ` · ${t('originalBurnBadge')}`
-                      : ''}
-                  </span>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

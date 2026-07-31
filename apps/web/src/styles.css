@@ -152,15 +152,23 @@ a {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  height: clamp(2.75rem, 8vw, 3.5rem);
 }
 
 .brand-mark {
   display: block;
-  height: clamp(2.75rem, 8vw, 3.5rem);
+  height: 100%;
   width: auto;
-  max-width: clamp(4.25rem, 14vw, 5.5rem);
   object-fit: contain;
+}
+
+/* Hero lockup — larger mark beside “Lotus”. */
+.brand-main .brand-mark-wrap {
+  height: clamp(2.75rem, 8vw, 3.5rem);
+}
+
+.brand-main .brand-mark {
+  height: clamp(2.75rem, 8vw, 3.5rem);
+  max-width: clamp(4.25rem, 14vw, 5.5rem);
 }
 
 .brand-mark--on-light {
@@ -1201,6 +1209,9 @@ a {
 }
 
 .memorial-history-note {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   flex: 1;
   min-width: 0;
   font-family: var(--font-display);
@@ -1208,6 +1219,14 @@ a {
   font-weight: 600;
   word-break: break-word;
   line-height: 1.4;
+}
+
+.memorial-history-note .brand-mark-wrap {
+  flex-shrink: 0;
+}
+
+.memorial-history-note-text {
+  min-width: 0;
 }
 
 .btn-reoffer {
@@ -1286,13 +1305,8 @@ a {
   cursor: not-allowed;
 }
 
-.btn-reoffer-lotus img {
-  display: block;
-  width: 1.2rem;
+.btn-reoffer-lotus .brand-mark-wrap {
   height: 1.2rem;
-  object-fit: contain;
-  /* Source mark is dark ink — invert on dark UI; natural on temple. */
-  filter: var(--brand-mark-filter);
 }
 
 .btn-reoffer-lotus span {
