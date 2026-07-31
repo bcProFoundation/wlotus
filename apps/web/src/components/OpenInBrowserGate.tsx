@@ -22,7 +22,7 @@ import {
 export function OpenInBrowserGate(props: {
   /** Current absolute URL (usually location.href). */
   href: string;
-  /** Dismiss the gate and use White Lotus inside this WebView. */
+  /** Dismiss the gate and use W Lotus inside this WebView. */
   onContinue: () => void;
   hostApp: InAppApp | null;
 }) {

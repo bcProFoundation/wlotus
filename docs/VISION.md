@@ -48,7 +48,7 @@ Traditional **vàng mã** shares the memorial intent: offerings for the departed
 
 | Layer | Name | Role |
 |-------|------|------|
-| **App title (human)** | **White Lotus** / **wLotus** | Primary display name — flower + memorial meaning |
+| **App title (human)** | **W Lotus** / **wLotus** | Primary display name — flower + memorial meaning |
 | **Ticker / domain** | **WLOTUS** · `wlotus.org` | Tech identity |
 | **Economic companion** | **Golden Lotus** / ticker **GLOTUS** | Event burns & later commerce |
 | **Family (later)** | **LotusHeart** | Family-oriented; may use off-chain data — not WLotus |

@@ -69,18 +69,18 @@ export function ogCopy(
   switch (locale) {
     case 'en':
       return {
-        title: 'White Lotus - Eternal lotus',
-        description: 'Send eternal remembrance on White Lotus.',
+        title: 'W Lotus - Eternal lotus',
+        description: 'Send eternal remembrance on W Lotus.',
       };
     case 'zh':
       return {
-        title: 'White Lotus - 永恒莲花',
-        description: '在 White Lotus 上寄托永恒的追思。',
+        title: 'W Lotus - 永恒莲花',
+        description: '在 W Lotus 上寄托永恒的追思。',
       };
     default:
       return {
-        title: 'White Lotus - Đoá sen vĩnh hằng',
-        description: 'Gửi lời tưởng nhớ vĩnh hằng trên White Lotus.',
+        title: 'W Lotus - Đoá sen vĩnh hằng',
+        description: 'Gửi lời tưởng nhớ vĩnh hằng trên W Lotus.',
       };
   }
 }
@@ -170,7 +170,7 @@ export function buildOgHtml(opts: {
     <meta name="description" content="${desc}" />
     <link rel="canonical" href="${url}" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="White Lotus" />
+    <meta property="og:site_name" content="W Lotus" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${desc}" />
     <meta property="og:url" content="${url}" />

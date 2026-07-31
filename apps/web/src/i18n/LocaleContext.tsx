@@ -48,6 +48,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang =
       locale === 'zh' ? 'zh-Hans' : locale === 'vi' ? 'vi' : 'en';
+    document.title = MESSAGES[locale].brand;
   }, [locale]);
 
   const setLocale = useCallback((next: Locale) => {

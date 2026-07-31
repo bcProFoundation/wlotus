@@ -1,5 +1,5 @@
 /**
- * White Lotus web — Offer client (mobile-first).
+ * W Lotus web — Offer client (mobile-first).
  * Device PoW; server pays fees; wLotus burns miner atom for memorial.
  */
 

@@ -348,6 +348,21 @@ export default function App() {
   }, []);
 
   const busy = phase !== 'idle';
+
+  /** EN stays dark; VI/ZH use warm temple browse, dark during the offer ritual. */
+  useEffect(() => {
+    const warmBrowse = locale === 'vi' || locale === 'zh';
+    const theme = warmBrowse && !busy ? 'temple' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute(
+        'content',
+        theme === 'temple' ? '#f3ebe0' : '#050505',
+      );
+    }
+  }, [locale, busy]);
+
   /**
    * Keep Cancel mounted for the whole offer session (except final burn).
    * Hiding it only in `mining`|`holding` flickered: with bits=0, mining is

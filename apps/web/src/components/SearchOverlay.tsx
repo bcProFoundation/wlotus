@@ -3,7 +3,7 @@ import { useLocale } from '../i18n/LocaleContext.js';
 import type { SearchResultRow } from '../lib/searchAltars.js';
 import { SearchResultsList } from './SearchResultsList.js';
 
-/** Search by name across White Lotus — ordered by relevance then offering score. */
+/** Search by name across W Lotus — ordered by relevance then offering score. */
 export function SearchOverlay(props: {
   query: string;
   onQueryChange: (value: string) => void;

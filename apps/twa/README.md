@@ -1,4 +1,4 @@
-# White Lotus — Android TWA (Trusted Web Activity)
+# W Lotus — Android TWA (Trusted Web Activity)
 
 Wraps the live `https://wlotus.org` PWA in a thin Android shell so it can be
 listed on the Google Play Store. A TWA renders through the device's real
