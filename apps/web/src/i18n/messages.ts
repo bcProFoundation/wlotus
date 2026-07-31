@@ -110,6 +110,7 @@ export type MessageKey =
   | 'reofferExtraNoteLabel'
   | 'reofferExtraNotePlaceholder'
   | 'btnAmendAltar'
+  | 'amendRelationshipCreatorOnly'
   | 'firstOfferDeathTitle'
   | 'firstOfferDeathHint'
   | 'btnOfferLotus'
@@ -273,6 +274,8 @@ const en: Dict = {
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
   btnAmendAltar: 'Add relationship',
+  amendRelationshipCreatorOnly:
+    'Only the creator of this altar can add relationships.',
   firstOfferDeathTitle: 'Offer a flower',
   firstOfferDeathHint:
     'Date of death is required. This records it on-chain and offers a flower. Only the creator of this profile can do this.',
@@ -440,6 +443,8 @@ const vi: Dict = {
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   btnAmendAltar: 'Thêm mối quan hệ',
+  amendRelationshipCreatorOnly:
+    'Chỉ người tạo ban thờ mới có thể thêm mối quan hệ.',
   firstOfferDeathTitle: 'Dâng hoa',
   firstOfferDeathHint:
     'Bắt buộc nhập ngày mất. Lần này ghi ngày mất trên chuỗi và dâng hoa. Chỉ người tạo hồ sơ mới làm được.',
@@ -604,6 +609,7 @@ const zh: Dict = {
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
   btnAmendAltar: '添加关系',
+  amendRelationshipCreatorOnly: '仅档案创建者可添加关系。',
   firstOfferDeathTitle: '献花',
   firstOfferDeathHint:
     '必须填写去世日期。本次会在链上记录去世日期并献花。仅档案创建者可操作。',
