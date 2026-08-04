@@ -3,6 +3,7 @@ import {
   addCalendarDays,
   burnAtomsForDeskKeep,
   DEFAULT_SPECIAL_DESK_KEEP,
+  effectiveEventDate,
   globalCivilDayWindowUtc,
   isActiveSpecialOffer,
   isWithinGlobalCivilDay,
@@ -11,6 +12,7 @@ import {
   resolveOfferBurnAtoms,
   resolveTempleSpecialsStatus,
 } from '../src/params/templeSpecials.js';
+import { lunarYmdToSolarYmd, lunarToSolar } from '../src/lib/lunarCalendar.js';
 
 describe('templeSpecials', () => {
   it('parses global civil-day window for a fixed ymd', () => {
@@ -60,6 +62,7 @@ describe('templeSpecials', () => {
         profileId: profile,
         kind: 'ghost' as const,
         eventDate: '2026-08-28',
+        eventCalendar: 'solar' as const,
         name: 'Cô Hồn',
       },
     ];
@@ -100,6 +103,7 @@ describe('templeSpecials', () => {
           profileId: profile,
           kind: 'hero',
           eventDate: '2026-09-02',
+          eventCalendar: 'solar',
           birthDate: '1925-09-02',
           name: 'Hero',
         },
@@ -108,6 +112,7 @@ describe('templeSpecials', () => {
     expect(fromJson).toHaveLength(1);
     expect(fromJson[0]!.kind).toBe('hero');
     expect(fromJson[0]!.birthDate).toBe('1925-09-02');
+    expect(fromJson[0]!.eventCalendar).toBe('solar');
 
     // Legacy env must be ignored
     const fromLegacy = loadTempleSpecialsFromEnv({
@@ -124,6 +129,7 @@ describe('templeSpecials', () => {
         profileId: 'a'.repeat(64),
         kind: 'ghost' as const,
         eventDate: '2026-08-28',
+        eventCalendar: 'solar' as const,
       },
     ];
     const st = resolveTempleSpecialsStatus(
@@ -137,5 +143,48 @@ describe('templeSpecials', () => {
     expect(st.burnAtoms).toBe('96');
     expect(st.active).toHaveLength(1);
     expect(st.active[0]!.effectiveEventDate).toBe('2026-08-13');
+  });
+
+  it('defaults eventCalendar to lunar and converts to solar', () => {
+    // Lunar 2026-07-15 (Hungry Ghost / Vu Lan mid-month) → solar ~2026-08-28
+    // (exact conversion depends on algorithm; we assert round-trip shape)
+    const solar = lunarYmdToSolarYmd('2026-07-15', 7);
+    expect(solar).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+    const effective = effectiveEventDate('2026-07-15', 0, 'lunar');
+    expect(effective).toBe(solar);
+
+    // Solar calendar leaves the date unchanged
+    expect(effectiveEventDate('2026-09-02', 0, 'solar')).toBe('2026-09-02');
+  });
+
+  it('solar eventCalendar for heroes (e.g. Hồ Chí Minh 2 Sep)', () => {
+    const profile = 'c'.repeat(64);
+    const specials = [
+      {
+        profileId: profile,
+        kind: 'hero' as const,
+        eventDate: '2026-09-02',
+        eventCalendar: 'solar' as const,
+        name: 'Hồ Chí Minh',
+      },
+    ];
+    const st = resolveTempleSpecialsStatus(
+      specials,
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-09-02T12:00:00Z'),
+    );
+    expect(st.active).toHaveLength(1);
+    expect(st.active[0]!.eventCalendar).toBe('solar');
+    expect(st.active[0]!.effectiveEventDate).toBe('2026-09-02');
+  });
+
+  it('lunarToSolar is inverse of solarToLunar for common dates', () => {
+    // 2024-02-10 solar was lunar 2024-01-01 (non-leap) in VN calendar
+    const s = lunarToSolar(1, 1, 2024, false, 7);
+    expect(s).not.toBeNull();
+    expect(s!.year).toBe(2024);
+    expect(s!.month).toBe(2);
+    expect(s!.day).toBe(10);
   });
 });

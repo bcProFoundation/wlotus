@@ -33,7 +33,19 @@ Set via **`TEMPLE_SPECIAL_DESK_KEEP`** (mint-api) / **`VITE_TEMPLE_SPECIAL_DESK_
 effective event date **earlier** by N days so the window can be exercised on a
 test env before launch. Set **0** in production.
 
-Example: eventDate `2026-08-28`, offset `15` → effective day `2026-08-13`.
+Example: solar eventDate `2026-08-28`, offset `15` → effective day `2026-08-13`.
+
+### Event calendar (lunar vs solar)
+
+Each profile’s `eventDate` is interpreted according to **`eventCalendar`**:
+
+| `eventCalendar` | Meaning | Example |
+|-----------------|---------|---------|
+| **`lunar`** (default) | `eventDate` is âm lịch YYYY-MM-DD; converted to solar via Hồ Ngọc Đức (VN UTC+7) before the civil-day window | Cô Hồn / Vu Lan: lunar `2026-07-15` |
+| **`solar`** | `eventDate` is already Gregorian YYYY-MM-DD | Hồ Chí Minh death anniversary: `2026-09-02` |
+
+Leap months are not yet supported in the JSON (`eventLeap`); use the non-leap
+month or set `eventCalendar: "solar"` with the known solar date.
 
 ### Kinds
 
@@ -48,7 +60,7 @@ the special registry is server-side authority for windows + burn amount.
 
 ### Window (server clock)
 
-Global civil day around the effective event date (UTC−12 … UTC+14, ~50 h).
+Global civil day around the **effective solar** event date (UTC−12 … UTC+14, ~50 h).
 Client clock cannot unlock a higher burn early.
 
 ## Config
@@ -60,20 +72,23 @@ TEMPLE_SPECIALS_JSON='[
   {
     "profileId": "<64-hex root burn>",
     "kind": "ghost",
-    "eventDate": "2026-08-28",
+    "eventDate": "2026-07-15",
+    "eventCalendar": "lunar",
     "name": "Cô Hồn"
   },
   {
     "profileId": "<64-hex>",
     "kind": "hero",
     "eventDate": "2026-09-02",
-    "birthDate": "1925-09-02",
-    "name": "…"
+    "eventCalendar": "solar",
+    "birthDate": "1890-05-19",
+    "name": "Hồ Chí Minh"
   }
 ]'
 ```
 
-No `deskKeep` or `testOffsetDays` inside the JSON — those are global only.
+- `eventCalendar` is optional; **defaults to `"lunar"`**.
+- No `deskKeep` or `testOffsetDays` inside the JSON — those are global only.
 
 ### Global env / GitHub variables
 
@@ -94,7 +109,10 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
   "deskKeep": 6,
   "testOffsetDays": 0,
   "burnAtoms": "96",
-  "profiles": [ { "profileId", "kind", "active", "effectiveEventDate", "windowStartUtc", "windowEndUtc", … } ],
+  "profiles": [ {
+    "profileId", "kind", "eventDate", "eventCalendar",
+    "effectiveEventDate", "active", "windowStartUtc", "windowEndUtc", …
+  } ],
   "active": [ /* subset currently in window */ ]
 }
 ```
@@ -103,6 +121,8 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 
 1. Create the profile on-chain (root burn) — name, death date (ghosts), optional birth (heroes).
 2. Set `TEMPLE_SPECIALS_JSON` on the VM and matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build.
+   - Use `"eventCalendar": "lunar"` (or omit) for âm lịch festivals.
+   - Use `"eventCalendar": "solar"` for fixed Gregorian anniversaries (Hồ Chí Minh, etc.).
 3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` for full burn, or leave default `6`).
 4. Restart mint-api; confirm `/api/status` → `templeSpecials.active` during the window.
 5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` (e.g. `7` or `15`), verify burns, then set back to `0` for prod.
@@ -111,7 +131,8 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 
 | Piece | Role |
 |-------|------|
-| `src/params/templeSpecials.ts` | Config, window, burn resolution |
+| `src/params/templeSpecials.ts` | Config, window, burn resolution, lunar/solar |
+| `src/lib/lunarCalendar.ts` | Hồ Ngọc Đức lunar ↔ solar (shared) |
 | `src/offering/burnPrayer.ts` | `burnOnePrayer({ burnAtoms })` |
 | mint-api `offer.ts` | Resolve burn at `/api/burn` time; status field |
 | web specials helpers | Cúng copy when active ghost |

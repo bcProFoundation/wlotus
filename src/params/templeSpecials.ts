@@ -2,7 +2,7 @@
  * Temple-managed specials — ghosts & heroes.
  *
  * Desk/temple creates dedicated profiles (root burns) and registers them in
- * TEMPLE_SPECIALS_JSON. On each profile's solar event date, re-offers burn more
+ * TEMPLE_SPECIALS_JSON. On each profile's event date, re-offers burn more
  * than the usual 1-atom flower:
  *   burnAtoms = WLOTUS_MINER_ATOMS - deskKeep
  * where deskKeep is a **global** env (TEMPLE_SPECIAL_DESK_KEEP), not per-profile.
@@ -13,6 +13,11 @@
  *   - ghost  — wandering spirits / Cô Hồn style; typically no birth date
  *   - hero   — commemorated figures; may set birthDate (event can be birth or death)
  *
+ * Event calendar:
+ *   - lunar (default) — eventDate is a lunar YYYY-MM-DD; converted to solar
+ *     via Hồ Ngọc Đức algorithm (VN timeZone 7) before the civil-day window.
+ *   - solar — eventDate is already a Gregorian YYYY-MM-DD (e.g. Hồ Chí Minh).
+ *
  * Window is the global civil day (UTC−12 … UTC+14) around the effective event
  * date, using **server time only**.
  *
@@ -21,8 +26,12 @@
  */
 
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
+import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
 
 export type TempleSpecialKind = 'ghost' | 'hero';
+
+/** Calendar used for `eventDate`. Default lunar (Vietnamese âm lịch). */
+export type TempleEventCalendar = 'lunar' | 'solar';
 
 /** Default desk retain during a special event (burn 102 − 6 = 96). */
 export const DEFAULT_SPECIAL_DESK_KEEP = 6;
@@ -36,13 +45,19 @@ export interface TempleSpecial {
   profileId: string;
   kind: TempleSpecialKind;
   /**
-   * Solar YYYY-MM-DD of the commemorative day.
+   * YYYY-MM-DD of the commemorative day, in the calendar given by
+   * {@link eventCalendar}.
    * Ghosts: death / festival day. Heroes: birth or death anniversary.
    */
   eventDate: string;
   /**
+   * Calendar of `eventDate`. Default `'lunar'` (âm lịch).
+   * Use `'solar'` for fixed Gregorian anniversaries (e.g. Hồ Chí Minh 2 Sep).
+   */
+  eventCalendar?: TempleEventCalendar;
+  /**
    * Optional birth date (heroes). Ghosts should leave empty — no birthday.
-   * Shapes: YYYY | YYYY-MM | YYYY-MM-DD.
+   * Shapes: YYYY | YYYY-MM | YYYY-MM-DD. Always solar for display.
    */
   birthDate?: string;
   /** Optional display name (UI / status). */
@@ -68,8 +83,10 @@ export interface TempleSpecialPublic {
   profileId: string;
   kind: TempleSpecialKind;
   name: string | null;
+  /** Original eventDate as configured (lunar or solar). */
   eventDate: string;
-  /** eventDate shifted by global testOffsetDays. */
+  eventCalendar: TempleEventCalendar;
+  /** Solar YYYY-MM-DD used for the window (after lunar→solar + testOffset). */
   effectiveEventDate: string;
   birthDate: string | null;
   active: boolean;
@@ -148,18 +165,36 @@ export function burnAtomsForDeskKeep(deskKeep: number): bigint {
   return burn < 1n ? 1n : burn;
 }
 
+/**
+ * Resolve the solar YYYY-MM-DD used for the civil-day window.
+ * - solar calendar → eventDate as-is
+ * - lunar calendar → convert via Hồ Ngọc Đức (VN timeZone 7), non-leap
+ * Then apply testOffsetDays (shift earlier).
+ */
 export function effectiveEventDate(
   eventDate: string,
   testOffsetDays: number,
+  eventCalendar: TempleEventCalendar = 'lunar',
 ): string | null {
   if (!parseYmd(eventDate)) return null;
-  if (testOffsetDays <= 0) return eventDate.trim();
-  return addCalendarDays(eventDate.trim(), -testOffsetDays);
+  let solarYmd = eventDate.trim();
+  if (eventCalendar === 'lunar') {
+    const converted = lunarYmdToSolarYmd(solarYmd, 7, false);
+    if (!converted) return null;
+    solarYmd = converted;
+  }
+  if (testOffsetDays <= 0) return solarYmd;
+  return addCalendarDays(solarYmd, -testOffsetDays);
 }
 
 function normalizeKind(raw: unknown): TempleSpecialKind {
   const t = String(raw ?? '').trim().toLowerCase();
   return t === 'hero' ? 'hero' : 'ghost';
+}
+
+function normalizeEventCalendar(raw: unknown): TempleEventCalendar {
+  const t = String(raw ?? '').trim().toLowerCase();
+  return t === 'solar' ? 'solar' : 'lunar';
 }
 
 function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
@@ -172,11 +207,14 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
   ).trim();
   if (!parseYmd(eventDate)) return null;
   const kind = normalizeKind(raw.kind);
+  const eventCalendar = normalizeEventCalendar(
+    raw.eventCalendar ?? raw.event_calendar,
+  );
   const birthRaw = String(raw.birthDate ?? raw.birth_date ?? '').trim();
   // Ghosts: drop accidental birth. Heroes: keep when present.
   const birthDate = kind === 'hero' && birthRaw ? birthRaw : undefined;
   const name = String(raw.name ?? '').trim() || undefined;
-  return { profileId, kind, eventDate, birthDate, name };
+  return { profileId, kind, eventDate, eventCalendar, birthDate, name };
 }
 
 /**
@@ -245,7 +283,8 @@ export function toPublicSpecial(
   testOffsetDays: number,
   nowMs: number,
 ): TempleSpecialPublic | null {
-  const effective = effectiveEventDate(s.eventDate, testOffsetDays);
+  const cal = s.eventCalendar ?? 'lunar';
+  const effective = effectiveEventDate(s.eventDate, testOffsetDays, cal);
   if (!effective) return null;
   const w = globalCivilDayWindowUtc(effective);
   if (!w) return null;
@@ -255,6 +294,7 @@ export function toPublicSpecial(
     kind: s.kind,
     name: s.name ?? null,
     eventDate: s.eventDate.trim(),
+    eventCalendar: cal,
     effectiveEventDate: effective,
     birthDate: s.birthDate?.trim() || null,
     active,
