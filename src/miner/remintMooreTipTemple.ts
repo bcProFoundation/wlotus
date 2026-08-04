@@ -58,7 +58,7 @@ export function mooreTipTempleMinerBanner(
   return [
     'MooreTipTemple wLotus miner',
     `baseZeroBits=${p.baseZeroBits}`,
-    `mint=7 (1 miner + 6 temple)`,
+    `mint=108 (102 miner + 6 temple)`,
     `tipLocktime=${p.tipLocktime}`,
     'hard next-P2SH + tip anti-rewind',
   ].join(' | ');

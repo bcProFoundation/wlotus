@@ -13,7 +13,8 @@ This repository holds the **covenant, remint miner, mint-api, and offerings app*
 | Meaning | Memorial (hoa sen trắng) + dana — [docs/VISION.md](./docs/VISION.md) |
 | Host | eCash (XEC) |
 | Token | ALP (`SLP2` / eMPP) |
-| Issuance | MooreTip PoW remint — mint **7** → **1** miner + **6** temple |
+| Issuance | MooreTip PoW remint — mint **108** → **102** miner + **6** temple |
+| Desk offer | Fee sponsor receives 102, burns **1**, keeps **101** inventory |
 | Burn | Intentional ALP burn — `apps/web` (XEC fees; postage later) |
 | Clock | Base **0** bits; +1 bit / **500** days; hard sunset at **128** |
 
