@@ -16,7 +16,8 @@ export const CANDLE_TICKER = 'CANDLE';
 export const CANDLE_NAME = 'Candle';
 
 export const PROD_TOKEN_TICKER = 'WLOTUS';
-export const PROD_TOKEN_NAME = 'wLotus';
+/** On-chain ALP name (immutable at genesis). Matches app brand "W Lotus". */
+export const PROD_TOKEN_NAME = 'W Lotus';
 export const FLOWER_TICKER = PROD_TOKEN_TICKER;
 export const FLOWER_NAME = 'Flower';
 

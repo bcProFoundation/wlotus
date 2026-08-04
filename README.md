@@ -1,6 +1,6 @@
-# wLotus
+# W Lotus
 
-**wLotus** (ticker **WLOTUS**) — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
+**W Lotus** (ticker **WLOTUS**) — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
 
 Companion economic token: **Golden Lotus** (ticker **GLOTUS**) — permissionless remint, premine, event burns. See [docs/ECONOMICS_WLOTUS_GLOTUS.md](./docs/ECONOMICS_WLOTUS_GLOTUS.md).
 
