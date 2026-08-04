@@ -5,9 +5,9 @@ import {
 } from '../src/params/wlotusMint.js';
 
 describe('wLotus mint split constants', () => {
-  it('is 108 = 1 miner + 107 temple (one mala)', () => {
+  it('is 7 = 1 miner + 6 temple (reduced issuer tax)', () => {
     expect(WLOTUS_MINER_ATOMS).toBe(1n);
-    expect(WLOTUS_TEMPLE_ATOMS).toBe(107n);
-    expect(WLOTUS_MINT_ATOMS).toBe(108n);
+    expect(WLOTUS_TEMPLE_ATOMS).toBe(6n);
+    expect(WLOTUS_MINT_ATOMS).toBe(7n);
   });
 });

@@ -1,8 +1,8 @@
-// wLotus temple remint: mint 108 (one mala) → 1 miner + 107 temple P2SH.
+// wLotus temple remint: mint 7 → 1 miner + 6 temple P2SH.
 // Same Moore tip / hard next-P2SH / whole-byte PoW as WlotusPowRemintMooreTip.
 // Redeem ≤520; non-push ops ≤201. Cap bits ≤ 128.
 // Ctor: templeScriptHash (20) — IFP-style immutable P2SH sink (multisig / cold).
-// Outputs: OP_RETURN | miner P2PKH (1) | temple P2SH (107) | baton P2SH
+// Outputs: OP_RETURN | miner P2PKH (1) | temple P2SH (6) | baton P2SH
 // Layout: econHead(99 bytes) | 0x20 prefixHash | 0x04 tipLe | codeBytes
 
 contract WlotusPowRemintMooreTipTemple(
@@ -63,13 +63,13 @@ contract WlotusPowRemintMooreTipTemple(
             num2bin(extraBits, 4) .
             num2bin(locktime, 4);
 
-        // ALP MINT: 2 amounts (1 miner, 107 temple) + 1 baton — LE6
+        // ALP MINT: 2 amounts (1 miner, 6 temple) + 1 baton — LE6
         [byte] mintSection =
             0x534c503200044d494e54 .
             tokenIdRev .
             0x02 .
             0x010000000000 .
-            0x6b0000000000 .
+            0x060000000000 .
             0x01;
 
         [byte] opReturnScript =
