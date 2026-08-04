@@ -1,4 +1,4 @@
-# Economics — wLotus + Golden Lotus
+# Economics — W Lotus + Golden Lotus
 
 **Status:** design update (2026-08-04) — mint **108** = **102** miner + **6** temple; sponsored desk burns **1**, keeps **101**.  
 Related: [VISION.md](./VISION.md) · [ECONOMICS.md](./ECONOMICS.md) · [CLOCK.md](./CLOCK.md)
@@ -9,14 +9,14 @@ Related: [VISION.md](./VISION.md) · [ECONOMICS.md](./ECONOMICS.md) · [CLOCK.md
 
 | Token | Ticker | Role | Monetary? | Mint posture |
 |-------|--------|------|-----------|--------------|
-| **wLotus** | `WLOTUS` (test: `dWLOTUS`) | Memorial / dana proof | **No** (ceremonial) | Light temple tax; mobile may get **sponsored XEC fees** |
+| **W Lotus** | `WLOTUS` (test: `dWLOTUS`) | Memorial / dana proof | **No** (ceremonial) | Light temple tax; mobile may get **sponsored XEC fees** |
 | **Golden Lotus** | `GLOTUS` | Scarce burnable value for special events & later commerce | **Yes** (real cost) | **Permissionless** remint; miner pays own XEC; **no platform mint tax** |
 
 ```text
 Offer (mobile, temple-sponsored fees)
         │
         ▼
-   Mint 108 wLotus (one mala)
+   Mint 108 W Lotus (one mala)
         ├── 102 → miner (desk key when sponsored)
         └──   6 → temple P2SH
 
@@ -28,7 +28,7 @@ Mine GLOTUS ← open; no temple mint tax
 
 ---
 
-## wLotus
+## W Lotus
 
 ### Issuance split (covenant-enforced)
 

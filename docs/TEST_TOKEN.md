@@ -1,21 +1,22 @@
 # Test token — dWLOTUS / DWLOTUS
 
-Use Contabo **test** / local dogfood. Same covenant as prod **WLOTUS**; only the ticker (and deployment JSON) differ. ALP stores the ticker uppercase (`DWLOTUS`); docs often write `dWLOTUS`.
+Use Contabo **test** / local dogfood. Same covenant as prod **WLOTUS**; only the ticker (and deployment JSON) differ. ALP stores the ticker uppercase (`DWLOTUS`); docs often write `dWLOTUS`. On-chain name is **W Lotus** (same as prod).
 
 | Field | Value |
 |-------|-------|
+| Name (ALP) | `W Lotus` |
 | Ticker (ALP) | `DWLOTUS` |
-| Token id | `7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359` |
+| Token id | *(set after next dryrun genesis — old 1/107 id is obsolete)* |
 | Covenant | `WlotusPowRemintMooreTipTemple` |
-| Mint / remint | **108** → **1** miner + **107** temple |
+| Mint / remint | **108** → **102** miner + **6** temple |
+| Desk after burn | keeps **101** |
 | Base bits | **0** |
 | Moore | **+1 bit / 500 days** |
 | Batons | **28** |
-| Explorer | https://explorer.e.cash/tx/7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359 |
 
 Record: [`deployments/mainnet-dryrun-wlotus.json`](../deployments/mainnet-dryrun-wlotus.json) (also `mainnet-dryrun-active.json`).
 
-GitHub Actions (test): set variable **`VITE_PRAYER_TOKEN_ID`** to this token id so the SPA bake matches the desk.
+GitHub Actions (test): set variable **`VITE_PRAYER_TOKEN_ID`** to the live dryrun token id so the SPA bake matches the desk.
 
 ```bash
 TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
