@@ -52,22 +52,22 @@ Launch **baseZeroBits = 0** already equalizes mobile and professional PoW wall-c
 - Preserves mala symbolism (108 total)
 - Lets the desk still fund inventory when it sponsors fees (101 after burn)
 
-### Miner profitability (reference fees)
+### Miner profitability (operational fees)
 
-Assume remint fee **~5.46 XEC**; memorial burn adds another **~5.46 XEC** when the desk sponsors remint + burn (**~11 XEC** all-in).
+Operational remint fuel is **40 XEC** (`REMINT_FUEL_SATS = 4000`). Memorial burn is a second transaction of similar size, so the desk all-in for a sponsored flower is ~80 XEC.
 
 | Actor | XEC out | WLOTUS kept | Implied cost / lotus |
 |-------|--------:|------------:|---------------------:|
-| **Independent miner** (pays remint; keeps 102) | ≥ ~5.46 | **102** | **≥ ~0.054 XEC** |
-| **Desk sponsor** (remint + burn 1) | ~11 | **101** inventory | **~0.109 XEC** |
+| **Independent miner** (pays remint; keeps 102) | ≥ **40** | **102** | **≥ ~0.39 XEC** |
+| **Desk sponsor** (remint + burn 1) | ~**80** | **101** inventory | **~0.79 XEC** |
 | **Temple** (no XEC; covenant output) | 0 | **6** | — |
 
-**Implication:** independent fee-paying miners have a **better cost basis** than the desk. That is intentional under an open-mining posture, but it means:
+**Implication:** independent fee-paying miners still have a **better cost basis** than the desk (~2× cheaper per lotus). That is intentional under an open-mining posture, but it means:
 
-1. Professional / GPU hashrate can farm inventory cheaply while PoW stays soft.
+1. Professional / GPU hashrate can farm inventory relatively cheaply while PoW stays soft.
 2. Desk inventory is **not** structurally cheaper than independent supply (opposite of the old 1/107 model).
 3. Desk advantage is **UX** (sponsored fees, soft pray, mobile Offer), not XEC cost dominance.
-4. Secondary-market dumps from independent miners are a real risk if demand lags issuance.
+4. Secondary-market dumps from independent miners remain a real risk if demand lags issuance.
 
 **Rate limits that still matter:** baton tip count, tip races, soft pray (official client only), Moore ramp over years, 128-bit sunset.
 
@@ -97,6 +97,7 @@ Unchanged intent: permissionless remint, miner pays XEC only, **no** temple mint
 - Covenant: `WlotusPowRemintMooreTipTemple` — mint **108**; **102** miner P2PKH + **6** temple P2SH.
 - **Memorial:** burn **1** after sponsored remint (`DANA` LOKAD).
 - Constants: `WLOTUS_MINER_ATOMS=102`, `WLOTUS_TEMPLE_ATOMS=6`, `WLOTUS_DESK_KEEP_AFTER_BURN=101`.
+- Fuel: `REMINT_FUEL_SATS = 4000` (40 XEC).
 - **Immutability:** changing the split requires a **new genesis**.
 
 Settled intent: open miner majority + light temple tax + desk as fee sponsor for mobile offerings.
