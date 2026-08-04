@@ -12,7 +12,7 @@ Related: [VISION.md](./VISION.md) · [ECONOMICS.md](./ECONOMICS.md) · [CLOCK.md
 | **wLotus** | `WLOTUS` (test: `dWLOTUS`) | Memorial / dana proof | **No** (ceremonial) | Light temple tax; mobile may get **sponsored XEC fees** |
 | **Golden Lotus** | `GLOTUS` | Scarce burnable value for special events & later commerce | **Yes** (real cost) | **Permissionless** remint; miner pays own XEC; **no platform mint tax** |
 
-```
+```text
 Offer (mobile, temple-sponsored fees)
         │
         ▼
