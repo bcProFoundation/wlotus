@@ -54,20 +54,23 @@ Launch **baseZeroBits = 0** already equalizes mobile and professional PoW wall-c
 
 ### Miner profitability (operational fees)
 
-Operational remint fuel is **40 XEC** (`REMINT_FUEL_SATS = 4000`). Memorial burn is a second transaction of similar size, so the desk all-in for a sponsored flower is ~80 XEC.
+- Remint fuel: **40 XEC** (`REMINT_FUEL_SATS = 4000`)
+- Memorial burn: **~5.46 XEC** (small pure-XEC burn tx, not another sized remint fuel)
+- Desk + temple are the **same entity** today → the **6** temple atoms are also a desk advantage
 
-| Actor | XEC out | WLOTUS kept | Implied cost / lotus |
-|-------|--------:|------------:|---------------------:|
-| **Independent miner** (pays remint; keeps 102) | ≥ **40** | **102** | **≥ ~0.39 XEC** |
-| **Desk sponsor** (remint + burn 1) | ~**80** | **101** inventory | **~0.79 XEC** |
-| **Temple** (no XEC; covenant output) | 0 | **6** | — |
+| Actor | XEC out | WLOTUS kept (effective) | Implied cost / lotus |
+|-------|--------:|------------------------:|---------------------:|
+| **Independent miner** | ≥ **40** | **102** | **≥ ~0.39 XEC** |
+| **Desk + temple** (remint 40 + burn ~5.46) | **~45.5** | **101 inventory + 6 temple = 107** | **~0.425 XEC** |
 
-**Implication:** independent fee-paying miners still have a **better cost basis** than the desk (~2× cheaper per lotus). That is intentional under an open-mining posture, but it means:
+**Implication:** with temple counted as desk, cost bases are nearly parity (~0.39 vs ~0.425). The open-mining posture no longer gives independents a large structural discount; the 6 temple atoms close most of the gap.
 
-1. Professional / GPU hashrate can farm inventory relatively cheaply while PoW stays soft.
-2. Desk inventory is **not** structurally cheaper than independent supply (opposite of the old 1/107 model).
-3. Desk advantage is **UX** (sponsored fees, soft pray, mobile Offer), not XEC cost dominance.
-4. Secondary-market dumps from independent miners remain a real risk if demand lags issuance.
+Still true:
+
+1. Soft PoW (`baseZeroBits=0`) lets GPU/ASIC farm inventory while difficulty is low.
+2. Desk advantage is primarily **UX** (sponsored fees, soft pray, mobile Offer) plus the small temple share, not a large XEC cost moat.
+3. Secondary-market dumps from independent miners remain a risk if demand lags issuance.
+4. Soft pray is official-client only — permissionless miners skip the attention tax.
 
 **Rate limits that still matter:** baton tip count, tip races, soft pray (official client only), Moore ramp over years, 128-bit sunset.
 
@@ -97,7 +100,7 @@ Unchanged intent: permissionless remint, miner pays XEC only, **no** temple mint
 - Covenant: `WlotusPowRemintMooreTipTemple` — mint **108**; **102** miner P2PKH + **6** temple P2SH.
 - **Memorial:** burn **1** after sponsored remint (`DANA` LOKAD).
 - Constants: `WLOTUS_MINER_ATOMS=102`, `WLOTUS_TEMPLE_ATOMS=6`, `WLOTUS_DESK_KEEP_AFTER_BURN=101`.
-- Fuel: `REMINT_FUEL_SATS = 4000` (40 XEC).
+- Fuel: `REMINT_FUEL_SATS = 4000` (40 XEC); burn tx ~5.46 XEC.
 - **Immutability:** changing the split requires a **new genesis**.
 
 Settled intent: open miner majority + light temple tax + desk as fee sponsor for mobile offerings.
