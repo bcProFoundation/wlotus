@@ -8,23 +8,32 @@ memorial burn above the normal 1-atom flower.
 | Mode | When | Burn | Desk keeps (of 102) | UI |
 |------|------|------|---------------------|----|
 | Flower | Always (default) | **1** | 101 | Dâng Hoa |
-| Special | Active window + parent = registered profile | **102 − deskKeep** | **deskKeep** | Cúng (ghosts) |
+| Special | Active window + parent = registered profile | **102 − deskKeep** | **deskKeep** (global) | Cúng (ghosts) |
 
 - Temple still receives **6** from the covenant on every remint.
 - **Outside the window the profile stays fully offerable** — only the burn
   amount changes on the event day. Challenges are never rejected for being
   “off day”.
 
-### deskKeep
+### Global `deskKeep` (not per-profile)
 
-Configurable **atoms the desk retains** after the memorial burn during the
-active window:
+Atoms the desk retains after a special-event burn. One value for all specials:
 
 | deskKeep | burnAtoms | Use |
 |----------|-----------|-----|
 | **6** (default) | 96 | Partial special offering |
-| **0** | 102 | Full miner-share burn (classic Hungry Ghost) |
+| **0** | 102 | Full miner-share burn |
 | 101 | 1 | Same as normal flower |
+
+Set via **`TEMPLE_SPECIAL_DESK_KEEP`** (mint-api) / **`VITE_TEMPLE_SPECIAL_DESK_KEEP`** (SPA).
+
+### Global test offset
+
+**`TEMPLE_SPECIAL_TEST_OFFSET_DAYS`** (and `VITE_*`) shifts **every** profile’s
+effective event date **earlier** by N days so the window can be exercised on a
+test env before launch. Set **0** in production.
+
+Example: eventDate `2026-08-28`, offset `15` → effective day `2026-08-13`.
 
 ### Kinds
 
@@ -34,8 +43,8 @@ active window:
 | `hero` | optional / recommended | birth or death anniversary |
 
 Ghosts and heroes are **created by the desk/temple** (root dedication burn),
-then registered in config. On-chain altar fields stay as today; the special
-registry is server-side authority for burn amount + window.
+then registered in `TEMPLE_SPECIALS_JSON`. On-chain altar fields stay as today;
+the special registry is server-side authority for windows + burn amount.
 
 ### Window (server clock)
 
@@ -44,7 +53,7 @@ Client clock cannot unlock a higher burn early.
 
 ## Config
 
-### Preferred — multiple specials
+### Profiles — `TEMPLE_SPECIALS_JSON`
 
 ```bash
 TEMPLE_SPECIALS_JSON='[
@@ -52,30 +61,29 @@ TEMPLE_SPECIALS_JSON='[
     "profileId": "<64-hex root burn>",
     "kind": "ghost",
     "eventDate": "2026-08-28",
-    "deskKeep": 0,
-    "name": "Cô Hồn",
-    "testOffsetDays": 0
+    "name": "Cô Hồn"
   },
   {
     "profileId": "<64-hex>",
     "kind": "hero",
     "eventDate": "2026-09-02",
     "birthDate": "1925-09-02",
-    "deskKeep": 6,
     "name": "…"
   }
 ]'
 ```
 
-### Legacy — single Hungry Ghost
+No `deskKeep` or `testOffsetDays` inside the JSON — those are global only.
 
-| mint-api | SPA (Vite) | Meaning |
-|----------|------------|---------|
-| `HUNGRY_GHOST_PROFILE_ID` | `VITE_HUNGRY_GHOST_PROFILE_ID` | Root burn txid |
-| `HUNGRY_GHOST_DEAD_DATE` | `VITE_HUNGRY_GHOST_DEAD_DATE` | Solar event date |
-| `HUNGRY_GHOST_DESK_KEEP` | `VITE_HUNGRY_GHOST_DESK_KEEP` | Default **6**; set **0** for full 102 burn |
-| `HUNGRY_GHOST_TEST_OFFSET_DAYS` | `VITE_HUNGRY_GHOST_TEST_OFFSET_DAYS` | Shift event earlier for tests |
-| `HUNGRY_GHOST_NAME` | `VITE_HUNGRY_GHOST_NAME` | Display name (default Cô Hồn) |
+### Global env / GitHub variables
+
+| mint-api / Contabo | GitHub Actions (SPA) | Meaning |
+|--------------------|----------------------|---------|
+| `TEMPLE_SPECIALS_JSON` | `VITE_TEMPLE_SPECIALS_JSON` | Profile list (JSON array) |
+| `TEMPLE_SPECIAL_DESK_KEEP` | `VITE_TEMPLE_SPECIAL_DESK_KEEP` | Desk retain on specials (default **6**) |
+| `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` | `VITE_TEMPLE_SPECIAL_TEST_OFFSET_DAYS` | Shift all event dates earlier (test only; default **0**) |
+
+There is **no** legacy `HUNGRY_GHOST_*` config.
 
 `GET /api/status` → `templeSpecials`:
 
@@ -83,7 +91,10 @@ TEMPLE_SPECIALS_JSON='[
 {
   "enabled": true,
   "serverNow": "…",
-  "profiles": [ { "profileId", "kind", "active", "burnAtoms", "deskKeep", "windowStartUtc", "windowEndUtc", … } ],
+  "deskKeep": 6,
+  "testOffsetDays": 0,
+  "burnAtoms": "96",
+  "profiles": [ { "profileId", "kind", "active", "effectiveEventDate", "windowStartUtc", "windowEndUtc", … } ],
   "active": [ /* subset currently in window */ ]
 }
 ```
@@ -91,9 +102,10 @@ TEMPLE_SPECIALS_JSON='[
 ## Ops checklist
 
 1. Create the profile on-chain (root burn) — name, death date (ghosts), optional birth (heroes).
-2. Register in `TEMPLE_SPECIALS_JSON` or legacy `HUNGRY_GHOST_*` on the VM + matching `VITE_*` for the SPA.
-3. Restart mint-api; confirm `/api/status` → `templeSpecials.active` during the window.
-4. Dryrun: set `testOffsetDays` (or `HUNGRY_GHOST_TEST_OFFSET_DAYS`), verify burn amount, then clear offset for prod.
+2. Set `TEMPLE_SPECIALS_JSON` on the VM and matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build.
+3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` for full burn, or leave default `6`).
+4. Restart mint-api; confirm `/api/status` → `templeSpecials.active` during the window.
+5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` (e.g. `7` or `15`), verify burns, then set back to `0` for prod.
 
 ## Code
 
@@ -102,4 +114,4 @@ TEMPLE_SPECIALS_JSON='[
 | `src/params/templeSpecials.ts` | Config, window, burn resolution |
 | `src/offering/burnPrayer.ts` | `burnOnePrayer({ burnAtoms })` |
 | mint-api `offer.ts` | Resolve burn at `/api/burn` time; status field |
-| web `hungryGhostUi.ts` / specials helpers | Cúng copy when active ghost |
+| web specials helpers | Cúng copy when active ghost |

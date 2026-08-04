@@ -7,11 +7,12 @@ import {
   isActiveSpecialOffer,
   isWithinGlobalCivilDay,
   loadTempleSpecialsFromEnv,
+  loadTempleSpecialsGlobalConfig,
   resolveOfferBurnAtoms,
   resolveTempleSpecialsStatus,
 } from '../src/params/templeSpecials.js';
 
-describe('templeSpecials calendar window', () => {
+describe('templeSpecials', () => {
   it('parses global civil-day window for a fixed ymd', () => {
     const w = globalCivilDayWindowUtc('2026-08-28');
     expect(w).not.toBeNull();
@@ -38,6 +39,20 @@ describe('templeSpecials calendar window', () => {
     expect(burnAtomsForDeskKeep(101)).toBe(1n);
   });
 
+  it('loads global deskKeep and testOffsetDays from env', () => {
+    expect(
+      loadTempleSpecialsGlobalConfig({
+        TEMPLE_SPECIAL_DESK_KEEP: '0',
+        TEMPLE_SPECIAL_TEST_OFFSET_DAYS: '15',
+      }),
+    ).toEqual({ deskKeep: 0, testOffsetDays: 15 });
+
+    expect(loadTempleSpecialsGlobalConfig({})).toEqual({
+      deskKeep: 6,
+      testOffsetDays: 0,
+    });
+  });
+
   it('outside window always burns 1 flower (never rejects)', () => {
     const profile = 'b'.repeat(64);
     const specials = [
@@ -45,15 +60,15 @@ describe('templeSpecials calendar window', () => {
         profileId: profile,
         kind: 'ghost' as const,
         eventDate: '2026-08-28',
-        deskKeep: 0,
-        testOffsetDays: 0,
         name: 'Cô Hồn',
       },
     ];
-    // Outside window
+    const globalCfg = { deskKeep: 0, testOffsetDays: 0 };
+
     const off = resolveOfferBurnAtoms({
       parentBurnTxid: profile,
       specials,
+      globalCfg,
       nowMs: Date.parse('2026-01-01T12:00:00Z'),
     });
     expect(off.burnAtoms).toBe(1n);
@@ -62,21 +77,22 @@ describe('templeSpecials calendar window', () => {
       isActiveSpecialOffer({
         parentBurnTxid: profile,
         specials,
+        globalCfg,
         nowMs: Date.parse('2026-01-01T12:00:00Z'),
       }),
     ).toBe(false);
 
-    // Inside window
     const on = resolveOfferBurnAtoms({
       parentBurnTxid: profile,
       specials,
+      globalCfg,
       nowMs: Date.parse('2026-08-28T12:00:00Z'),
     });
     expect(on.burnAtoms).toBe(102n);
     expect(on.special?.kind).toBe('ghost');
   });
 
-  it('loads TEMPLE_SPECIALS_JSON and legacy HUNGRY_GHOST_*', () => {
+  it('loads TEMPLE_SPECIALS_JSON only (no legacy HUNGRY_GHOST_*)', () => {
     const profile = ('ab' + 'cd'.repeat(31)).toLowerCase();
     const fromJson = loadTempleSpecialsFromEnv({
       TEMPLE_SPECIALS_JSON: JSON.stringify([
@@ -85,7 +101,6 @@ describe('templeSpecials calendar window', () => {
           kind: 'hero',
           eventDate: '2026-09-02',
           birthDate: '1925-09-02',
-          deskKeep: 6,
           name: 'Hero',
         },
       ]),
@@ -93,37 +108,34 @@ describe('templeSpecials calendar window', () => {
     expect(fromJson).toHaveLength(1);
     expect(fromJson[0]!.kind).toBe('hero');
     expect(fromJson[0]!.birthDate).toBe('1925-09-02');
-    expect(fromJson[0]!.deskKeep).toBe(6);
 
+    // Legacy env must be ignored
     const fromLegacy = loadTempleSpecialsFromEnv({
       HUNGRY_GHOST_PROFILE_ID: profile,
       HUNGRY_GHOST_DEAD_DATE: '2026-08-28',
-      HUNGRY_GHOST_DESK_KEEP: '0',
-      HUNGRY_GHOST_TEST_OFFSET_DAYS: '7',
     });
-    expect(fromLegacy).toHaveLength(1);
-    expect(fromLegacy[0]!.kind).toBe('ghost');
-    expect(fromLegacy[0]!.deskKeep).toBe(0);
-    expect(fromLegacy[0]!.testOffsetDays).toBe(7);
+    expect(fromLegacy).toHaveLength(0);
   });
 
-  it('applies test offset days', () => {
+  it('applies global testOffsetDays to all profiles', () => {
     expect(addCalendarDays('2026-08-28', -15)).toBe('2026-08-13');
     const specials = [
       {
         profileId: 'a'.repeat(64),
         kind: 'ghost' as const,
         eventDate: '2026-08-28',
-        deskKeep: 6,
-        testOffsetDays: 15,
       },
     ];
     const st = resolveTempleSpecialsStatus(
       specials,
+      { deskKeep: 6, testOffsetDays: 15 },
       Date.parse('2026-08-13T12:00:00Z'),
     );
     expect(st.enabled).toBe(true);
+    expect(st.testOffsetDays).toBe(15);
+    expect(st.deskKeep).toBe(6);
+    expect(st.burnAtoms).toBe('96');
     expect(st.active).toHaveLength(1);
-    expect(st.active[0]!.burnAtoms).toBe('96');
+    expect(st.active[0]!.effectiveEventDate).toBe('2026-08-13');
   });
 });

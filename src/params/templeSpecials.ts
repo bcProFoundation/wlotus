@@ -1,9 +1,11 @@
 /**
  * Temple-managed specials — ghosts & heroes.
  *
- * Desk/temple creates dedicated profiles (root burns) and registers them here.
- * On each profile's solar event date, re-offers burn more than the usual 1-atom
- * flower: burnAtoms = WLOTUS_MINER_ATOMS - deskKeep (deskKeep 0..101).
+ * Desk/temple creates dedicated profiles (root burns) and registers them in
+ * TEMPLE_SPECIALS_JSON. On each profile's solar event date, re-offers burn more
+ * than the usual 1-atom flower:
+ *   burnAtoms = WLOTUS_MINER_ATOMS - deskKeep
+ * where deskKeep is a **global** env (TEMPLE_SPECIAL_DESK_KEEP), not per-profile.
  *
  * Outside the event window the profile is still fully offerable — burn stays 1.
  *
@@ -13,6 +15,9 @@
  *
  * Window is the global civil day (UTC−12 … UTC+14) around the effective event
  * date, using **server time only**.
+ *
+ * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
+ * event date earlier by N days so the window can be exercised before launch.
  */
 
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
@@ -25,6 +30,7 @@ export const DEFAULT_SPECIAL_DESK_KEEP = 6;
 /** Normal flower burn (always used outside an active special window). */
 export const NORMAL_FLOWER_BURN_ATOMS = 1n;
 
+/** One registered temple profile (no burn economics — those are global). */
 export interface TempleSpecial {
   /** Root dedication burn txid (64 hex). */
   profileId: string;
@@ -39,16 +45,23 @@ export interface TempleSpecial {
    * Shapes: YYYY | YYYY-MM | YYYY-MM-DD.
    */
   birthDate?: string;
+  /** Optional display name (UI / status). */
+  name?: string;
+}
+
+/** Global economics + test shift (from env / GitHub variables). */
+export interface TempleSpecialsGlobalConfig {
   /**
-   * Atoms the desk keeps after the memorial burn **during the active window**.
-   * burnAtoms = WLOTUS_MINER_ATOMS - deskKeep (clamped so burn ≥ 1).
+   * Atoms the desk keeps after a special-event burn (0..101).
+   * burnAtoms = WLOTUS_MINER_ATOMS - deskKeep.
    * Default {@link DEFAULT_SPECIAL_DESK_KEEP} (6). Set 0 for full miner-share burn.
    */
   deskKeep: number;
-  /** Shift effective event date earlier by N days for pre-launch testing. */
+  /**
+   * Shift every profile's effective event date **earlier** by N days.
+   * For test/dryrun only — set 0 in production.
+   */
   testOffsetDays: number;
-  /** Optional display name (UI / status). */
-  name?: string;
 }
 
 export interface TempleSpecialPublic {
@@ -56,11 +69,9 @@ export interface TempleSpecialPublic {
   kind: TempleSpecialKind;
   name: string | null;
   eventDate: string;
+  /** eventDate shifted by global testOffsetDays. */
   effectiveEventDate: string;
   birthDate: string | null;
-  deskKeep: number;
-  /** Atoms burned when active + re-offer to this profile. */
-  burnAtoms: string;
   active: boolean;
   windowStartUtc: string;
   windowEndUtc: string;
@@ -69,6 +80,12 @@ export interface TempleSpecialPublic {
 export interface TempleSpecialsPublicStatus {
   enabled: boolean;
   serverNow: string;
+  /** Global desk retain during active specials. */
+  deskKeep: number;
+  /** Global test shift applied to all event dates. */
+  testOffsetDays: number;
+  /** Atoms burned when offering to an active special (102 − deskKeep). */
+  burnAtoms: string;
   profiles: TempleSpecialPublic[];
   active: TempleSpecialPublic[];
 }
@@ -97,6 +114,11 @@ export function addCalendarDays(ymd: string, deltaDays: number): string | null {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Global civil-day window for `ymd`.
+ * start = ymd 00:00 at UTC+14 → (ymd − 1 day) 10:00 UTC
+ * end   = ymd 24:00 at UTC−12 → (ymd + 1 day) 12:00 UTC
+ */
 export function globalCivilDayWindowUtc(ymd: string): {
   startMs: number;
   endMs: number;
@@ -127,11 +149,12 @@ export function burnAtomsForDeskKeep(deskKeep: number): bigint {
 }
 
 export function effectiveEventDate(
-  s: Pick<TempleSpecial, 'eventDate' | 'testOffsetDays'>,
+  eventDate: string,
+  testOffsetDays: number,
 ): string | null {
-  if (!parseYmd(s.eventDate)) return null;
-  if (s.testOffsetDays <= 0) return s.eventDate.trim();
-  return addCalendarDays(s.eventDate.trim(), -s.testOffsetDays);
+  if (!parseYmd(eventDate)) return null;
+  if (testOffsetDays <= 0) return eventDate.trim();
+  return addCalendarDays(eventDate.trim(), -testOffsetDays);
 }
 
 function normalizeKind(raw: unknown): TempleSpecialKind {
@@ -145,39 +168,49 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     .toLowerCase();
   if (!TXID_RE.test(profileId)) return null;
   const eventDate = String(
-    raw.eventDate ?? raw.event_date ?? raw.deadDate ?? '',
+    raw.eventDate ?? raw.event_date ?? '',
   ).trim();
   if (!parseYmd(eventDate)) return null;
   const kind = normalizeKind(raw.kind);
   const birthRaw = String(raw.birthDate ?? raw.birth_date ?? '').trim();
-  const birthDate =
-    kind === 'hero' && birthRaw ? birthRaw : kind === 'hero' ? birthRaw || undefined : undefined;
-  const deskKeep = clampDeskKeep(
-    raw.deskKeep ?? raw.desk_keep ?? DEFAULT_SPECIAL_DESK_KEEP,
-  );
-  const testOffsetDays = Math.max(
-    0,
-    Math.floor(Number(raw.testOffsetDays ?? raw.test_offset_days ?? 0) || 0),
-  );
+  // Ghosts: drop accidental birth. Heroes: keep when present.
+  const birthDate = kind === 'hero' && birthRaw ? birthRaw : undefined;
   const name = String(raw.name ?? '').trim() || undefined;
-  return {
-    profileId,
-    kind,
-    eventDate,
-    birthDate,
-    deskKeep,
-    testOffsetDays,
-    name,
-  };
+  return { profileId, kind, eventDate, birthDate, name };
 }
 
 /**
- * Load specials from env.
+ * Global deskKeep + testOffsetDays from env / GitHub variables.
  *
- * Primary: `TEMPLE_SPECIALS_JSON` — JSON array of {@link TempleSpecial}.
- * Legacy shorthand (one ghost):
- *   HUNGRY_GHOST_PROFILE_ID + HUNGRY_GHOST_DEAD_DATE
- *   [+ HUNGRY_GHOST_DESK_KEEP, HUNGRY_GHOST_TEST_OFFSET_DAYS, HUNGRY_GHOST_NAME]
+ *   TEMPLE_SPECIAL_DESK_KEEP          (default 6)
+ *   TEMPLE_SPECIAL_TEST_OFFSET_DAYS   (default 0; test env only)
+ *
+ * VITE_* mirrors accepted for SPA builds that bake the same values.
+ */
+export function loadTempleSpecialsGlobalConfig(
+  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
+): TempleSpecialsGlobalConfig {
+  const deskKeep = clampDeskKeep(
+    env.TEMPLE_SPECIAL_DESK_KEEP?.trim() ||
+      env.VITE_TEMPLE_SPECIAL_DESK_KEEP?.trim() ||
+      DEFAULT_SPECIAL_DESK_KEEP,
+  );
+  const testOffsetDays = Math.max(
+    0,
+    Math.floor(
+      Number(
+        env.TEMPLE_SPECIAL_TEST_OFFSET_DAYS?.trim() ||
+          env.VITE_TEMPLE_SPECIAL_TEST_OFFSET_DAYS?.trim() ||
+          '0',
+      ) || 0,
+    ),
+  );
+  return { deskKeep, testOffsetDays };
+}
+
+/**
+ * Load profile list from TEMPLE_SPECIALS_JSON (no legacy HUNGRY_GHOST_*).
+ * deskKeep / testOffsetDays are **not** read from the JSON — use global env.
  */
 export function loadTempleSpecialsFromEnv(
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
@@ -185,84 +218,38 @@ export function loadTempleSpecialsFromEnv(
   const out: TempleSpecial[] = [];
   const seen = new Set<string>();
 
-  const push = (s: TempleSpecial | null) => {
-    if (!s || seen.has(s.profileId)) return;
-    seen.add(s.profileId);
-    out.push(s);
-  };
-
   const jsonRaw =
     env.TEMPLE_SPECIALS_JSON?.trim() ||
     env.VITE_TEMPLE_SPECIALS_JSON?.trim() ||
     '';
-  if (jsonRaw) {
-    try {
-      const parsed = JSON.parse(jsonRaw) as unknown;
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) {
-          if (item && typeof item === 'object') {
-            push(normalizeSpecial(item as Record<string, unknown>));
-          }
-        }
-      }
-    } catch {
-      /* ignore bad JSON */
+  if (!jsonRaw) return out;
+
+  try {
+    const parsed = JSON.parse(jsonRaw) as unknown;
+    if (!Array.isArray(parsed)) return out;
+    for (const item of parsed) {
+      if (!item || typeof item !== 'object') continue;
+      const s = normalizeSpecial(item as Record<string, unknown>);
+      if (!s || seen.has(s.profileId)) continue;
+      seen.add(s.profileId);
+      out.push(s);
     }
+  } catch {
+    /* ignore bad JSON */
   }
-
-  const legacyId = (
-    env.HUNGRY_GHOST_PROFILE_ID?.trim() ||
-    env.VITE_HUNGRY_GHOST_PROFILE_ID?.trim() ||
-    ''
-  ).toLowerCase();
-  const legacyDate = (
-    env.HUNGRY_GHOST_DEAD_DATE?.trim() ||
-    env.VITE_HUNGRY_GHOST_DEAD_DATE?.trim() ||
-    ''
-  );
-  if (TXID_RE.test(legacyId) && parseYmd(legacyDate)) {
-    const deskKeep = clampDeskKeep(
-      env.HUNGRY_GHOST_DESK_KEEP?.trim() ||
-        env.VITE_HUNGRY_GHOST_DESK_KEEP?.trim() ||
-        DEFAULT_SPECIAL_DESK_KEEP,
-    );
-    const testOffsetDays = Math.max(
-      0,
-      Math.floor(
-        Number(
-          env.HUNGRY_GHOST_TEST_OFFSET_DAYS?.trim() ||
-            env.VITE_HUNGRY_GHOST_TEST_OFFSET_DAYS?.trim() ||
-            '0',
-        ) || 0,
-      ),
-    );
-    const name =
-      env.HUNGRY_GHOST_NAME?.trim() ||
-      env.VITE_HUNGRY_GHOST_NAME?.trim() ||
-      'Cô Hồn';
-    push({
-      profileId: legacyId,
-      kind: 'ghost',
-      eventDate: legacyDate,
-      deskKeep,
-      testOffsetDays,
-      name,
-    });
-  }
-
   return out;
 }
 
 export function toPublicSpecial(
   s: TempleSpecial,
+  testOffsetDays: number,
   nowMs: number,
 ): TempleSpecialPublic | null {
-  const effective = effectiveEventDate(s);
+  const effective = effectiveEventDate(s.eventDate, testOffsetDays);
   if (!effective) return null;
   const w = globalCivilDayWindowUtc(effective);
   if (!w) return null;
   const active = nowMs >= w.startMs && nowMs < w.endMs;
-  const burn = burnAtomsForDeskKeep(s.deskKeep);
   return {
     profileId: s.profileId,
     kind: s.kind,
@@ -270,8 +257,6 @@ export function toPublicSpecial(
     eventDate: s.eventDate.trim(),
     effectiveEventDate: effective,
     birthDate: s.birthDate?.trim() || null,
-    deskKeep: clampDeskKeep(s.deskKeep),
-    burnAtoms: burn.toString(),
     active,
     windowStartUtc: new Date(w.startMs).toISOString(),
     windowEndUtc: new Date(w.endMs).toISOString(),
@@ -280,17 +265,24 @@ export function toPublicSpecial(
 
 export function resolveTempleSpecialsStatus(
   specials: TempleSpecial[] = loadTempleSpecialsFromEnv(),
+  globalCfg: TempleSpecialsGlobalConfig = loadTempleSpecialsGlobalConfig(),
   nowMs = Date.now(),
 ): TempleSpecialsPublicStatus {
   const serverNow = new Date(nowMs).toISOString();
+  const deskKeep = clampDeskKeep(globalCfg.deskKeep);
+  const testOffsetDays = Math.max(0, Math.floor(globalCfg.testOffsetDays || 0));
+  const burn = burnAtomsForDeskKeep(deskKeep);
   const profiles: TempleSpecialPublic[] = [];
   for (const s of specials) {
-    const pub = toPublicSpecial(s, nowMs);
+    const pub = toPublicSpecial(s, testOffsetDays, nowMs);
     if (pub) profiles.push(pub);
   }
   return {
     enabled: profiles.length > 0,
     serverNow,
+    deskKeep,
+    testOffsetDays,
+    burnAtoms: burn.toString(),
     profiles,
     active: profiles.filter(p => p.active),
   };
@@ -299,12 +291,13 @@ export function resolveTempleSpecialsStatus(
 /**
  * Resolve burn atoms for a re-offer.
  * Outside any matching active special → 1 (normal flower).
- * Inside active special for this parent → configured burn.
+ * Inside active special for this parent → global special burn.
  * Never rejects — specials only raise the burn amount.
  */
 export function resolveOfferBurnAtoms(opts: {
   parentBurnTxid?: string;
   specials?: TempleSpecial[];
+  globalCfg?: TempleSpecialsGlobalConfig;
   nowMs?: number;
 }): { burnAtoms: bigint; special: TempleSpecialPublic | null } {
   const parent = (opts.parentBurnTxid ?? '').trim().toLowerCase();
@@ -313,18 +306,20 @@ export function resolveOfferBurnAtoms(opts: {
   }
   const status = resolveTempleSpecialsStatus(
     opts.specials ?? loadTempleSpecialsFromEnv(),
+    opts.globalCfg ?? loadTempleSpecialsGlobalConfig(),
     opts.nowMs,
   );
   const match = status.active.find(p => p.profileId === parent) ?? null;
   if (!match) {
     return { burnAtoms: NORMAL_FLOWER_BURN_ATOMS, special: null };
   }
-  return { burnAtoms: BigInt(match.burnAtoms), special: match };
+  return { burnAtoms: BigInt(status.burnAtoms), special: match };
 }
 
 export function isActiveSpecialOffer(opts: {
   parentBurnTxid?: string;
   specials?: TempleSpecial[];
+  globalCfg?: TempleSpecialsGlobalConfig;
   nowMs?: number;
 }): boolean {
   return resolveOfferBurnAtoms(opts).special != null;
