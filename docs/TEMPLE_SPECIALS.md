@@ -127,6 +127,37 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 4. Restart mint-api; confirm `/api/status` → `templeSpecials.active` during the window.
 5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` (e.g. `7` or `15`), verify burns, then set back to `0` for prod.
 
+## Creating public specials on-chain (Vu Lan + Cô Hồn)
+
+Specials are **not** JSON-only. Search (dana-index) and re-offers need a real
+root dedication burn. Flow:
+
+1. **Burn root altars from desk inventory** (1 atom each — no new remint):
+
+   ```bash
+   set -a && source /etc/wlotus/mint.env && set +a
+   # optional dry-run first
+   CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
+   npm run create-temple-specials
+   ```
+
+   The script scans tip fee wallets + desk for WLOTUS inventory (leftover miner
+   share after sponsored offerings), burns two roots (**Vu Lan**, **Cô Hồn**),
+   and writes `deployments/temple-specials-created.json` with the
+   `TEMPLE_SPECIALS_JSON` snippet.
+
+2. **Register** the printed JSON on mint-api (`TEMPLE_SPECIALS_JSON`) and the
+   matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build. Restart mint-api.
+
+3. Confirm `/api/status` → `templeSpecials.profiles` lists both; during the
+   lunar 15/7 window they appear under `active`.
+
+Both profiles share the same lunar event day (`2026-07-15` by default). Override
+with `EVENT_LUNAR_YMD` / `EVENT_YEAR` if needed.
+
+The first burn is always from the **temple/desk** — there is no external
+offerer yet. That is expected and correct.
+
 ## Code
 
 | Piece | Role |
