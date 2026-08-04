@@ -167,10 +167,10 @@ const en: Dict = {
     'Your phone searches for a digital WLOTUS. Keep the app open and in the foreground so the search can continue. Use that time to remember someone who has passed. You can stop the search anytime.',
   howMintTitle: '',
   howMintBody:
-    'Finding WLOTUS yields 108 digital lotuses — one full mala round. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is offered in remembrance of the departed. The other 107 go to the W Lotus developers.',
-  howWhyTitle: 'Why do 107 flowers go to the W Lotus developers?',
+    'Finding WLOTUS yields 108 digital lotuses — one full mala. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is burned as the flower offering. Most of the rest stay with the miner (or the W Lotus desk when fees are sponsored); a small share of 6 goes to the temple.',
+  howWhyTitle: 'Why do 6 flowers go to the temple?',
   howWhyBody:
-    'Issuing and offering each lotus incurs network fees. Searching on a phone also yields only a limited number of flowers. So those with a sincere heart can still receive lotuses for remembrance — and so professional mining rigs do not crowd out phone users — the remaining 107 beads of the mala go to the W Lotus developers to distribute to those with affinity who did not get a chance to find a lotus.',
+    'Issuing each lotus incurs network fees. When W Lotus sponsors those fees for mobile offerings, the desk receives the miner share, burns 1 lotus for your memorial, and keeps the rest as inventory to share with others. An independent miner who pays their own fees keeps 102 of 108 lotuses; only 6 go to the temple as a light issuer tax.',
   howEternalTitle: '',
   howEternalBody:
     'Each offering is recorded forever on the blockchain — a mark of lasting reverence.',
@@ -337,10 +337,10 @@ const vi: Dict = {
     'Điện thoại được dùng để tìm ra bông sen số WLOTUS. Bạn phải bật ứng dụng liên tục và không sử dụng ứng dụng khác để quá trình tìm kiếm bông sen số được tiếp tục. Trong lúc này, bạn có thể tưởng nhớ về người đã khuất. Bạn có thể dừng quá trình tìm kiếm này bất cứ lúc nào.',
   howMintTitle: '',
   howMintBody:
-    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. 1 bông sen sẽ được dùng để dâng lên tưởng niệm cho người đã khuất. 107 bông còn lại được chuyển đến nhà phát triển W Lotus.',
-  howWhyTitle: 'Tại sao 107 bông được chuyển đến nhà phát triển W Lotus?',
+    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. Một bông sen được đốt làm lễ dâng hoa. Phần lớn còn lại thuộc về người đào (hoặc bàn W Lotus khi phí được tài trợ); 6 bông nhỏ được chuyển đến đền thờ.',
+  howWhyTitle: 'Tại sao 6 bông được chuyển đến đền thờ?',
   howWhyBody:
-    'Mỗi lần phát hành và dâng hoa sen đều tốn phí giao dịch trên mạng. Việc tìm kiếm trên thiết bị cũng chỉ cho phép tìm được một số lượng hoa sen có hạn. Để những người hữu tâm vẫn có hoa sen tỏ lòng tưởng nhớ, và để tránh các máy chuyên nghiệp làm ảnh hưởng đến việc dùng trên điện thoại, 107 hạt còn lại của vòng tràng được gửi cho nhà phát triển W Lotus để phân phối tới những người hữu duyên không có cơ may tìm kiếm được hoa sen.',
+    'Mỗi lần phát hành hoa sen đều tốn phí mạng. Khi W Lotus tài trợ phí cho dâng hoa trên điện thoại, bàn nhận phần của người đào, đốt 1 bông cho lời tưởng niệm của bạn, và giữ phần còn lại làm kho. Người đào độc lập tự trả phí giữ 102 trong 108 bông; chỉ 6 bông là thuế phát hành nhẹ cho đền thờ.',
   howEternalTitle: '',
   howEternalBody:
     'Mỗi lần dâng sen được ghi lại mãi mãi trên chuỗi khối, đánh dấu cho lòng thành kính vĩnh hằng.',
@@ -506,10 +506,10 @@ const zh: Dict = {
     '手机用于寻找数字莲花 WLOTUS。请保持应用持续开启，且不要切换到其他应用，以便寻找过程继续。在此期间，您可以追思逝去的亲人。您可以随时停止寻找。',
   howMintTitle: '',
   howMintBody:
-    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵用于献上，纪念逝者；其余 107 朵交给 W Lotus 开发者。',
-  howWhyTitle: '为何 107 朵莲花交给 W Lotus 开发者？',
+    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵燃烧作为献花；大部分归矿工（若手续费由 W Lotus 赞助则归工作台）；少量 6 朵交给寺庙。',
+  howWhyTitle: '为何 6 朵莲花交给寺庙？',
   howWhyBody:
-    '每次发行与献上莲花都需支付网络手续费。本机寻找所能得到的莲花数量也有限。为让有心之人仍能取得莲花以表追思，并避免专业矿机挤占手机用户，念珠上其余 107 颗交给 W Lotus 开发者，分发给有缘却未能寻得莲花的人。',
+    '每次发行莲花都需支付网络手续费。当 W Lotus 为手机献花赞助手续费时，工作台收取矿工份额，燃烧 1 朵作为您的纪念献花，并保留其余作为库存。自付手续费的独立矿工保留 108 朵中的 102 朵；仅 6 朵作为轻度发行税交给寺庙。',
   howEternalTitle: '',
   howEternalBody:
     '每一次献花都会永久记在区块链上，铭刻一份永恒的敬意。',

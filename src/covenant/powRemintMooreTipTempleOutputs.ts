@@ -9,9 +9,10 @@ export {
   WLOTUS_MINER_ATOMS,
   WLOTUS_TEMPLE_ATOMS,
   WLOTUS_MINT_ATOMS,
+  WLOTUS_DESK_KEEP_AFTER_BURN,
 } from '../params/wlotusMint.js';
 
-/** Dual-push EMPP: DANA tip v4 + ALP MINT [1, 107] + 1 baton. */
+/** Dual-push EMPP: DANA tip v4 + ALP MINT [102, 6] + 1 baton. */
 export function expectedMooreTipTempleMintOpReturnScript(
   tokenId: string,
   state: MooreTipState,
