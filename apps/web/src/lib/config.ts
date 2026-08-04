@@ -89,3 +89,28 @@ export function getOrCreateInstallId(): string {
     return `wl-ephemeral-${Date.now()}`;
   }
 }
+
+/** Official Cô Hồn / Hungry Ghost root burn txid (from GitHub / env). */
+export const HUNGRY_GHOST_PROFILE_ID =
+  (import.meta.env.VITE_HUNGRY_GHOST_PROFILE_ID as string | undefined)
+    ?.trim()
+    .toLowerCase() || '';
+
+/** Solar YYYY-MM-DD for the festival / profile death date. */
+export const HUNGRY_GHOST_DEAD_DATE =
+  (import.meta.env.VITE_HUNGRY_GHOST_DEAD_DATE as string | undefined)?.trim() ||
+  '';
+
+/**
+ * Shift effective dead date earlier by N days for pre-launch testing.
+ * Prefer mint-api env for authority; this is for UI hints only.
+ */
+export const HUNGRY_GHOST_TEST_OFFSET_DAYS = Math.max(
+  0,
+  Math.floor(
+    Number(
+      (import.meta.env.VITE_HUNGRY_GHOST_TEST_OFFSET_DAYS as string | undefined)
+        ?.trim() || '0',
+    ) || 0,
+  ),
+);

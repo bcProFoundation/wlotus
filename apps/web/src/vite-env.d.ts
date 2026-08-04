@@ -27,6 +27,12 @@ interface ImportMetaEnv {
    * Use multi-worker (or cpu) for multi-core CPU only.
    */
   readonly VITE_POW_BACKEND?: string;
+  /** Cô Hồn / Hungry Ghost root dedication burn txid (64 hex). */
+  readonly VITE_HUNGRY_GHOST_PROFILE_ID?: string;
+  /** Solar YYYY-MM-DD of the festival / profile death date. */
+  readonly VITE_HUNGRY_GHOST_DEAD_DATE?: string;
+  /** Shift effective dead date earlier by N days for pre-launch testing. */
+  readonly VITE_HUNGRY_GHOST_TEST_OFFSET_DAYS?: string;
 }
 
 interface ImportMeta {
