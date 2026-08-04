@@ -18,6 +18,9 @@
  *   baseZeroBits 0, Moore +1 bit / 500 days (override MOORE_DAYS_PER_EXTRA_BIT=365..730),
  *   hard next-P2SH + tipLocktime, bits cap 128.
  *
+ * Initial fungible mint (108) goes to **temple P2SH**; mint batons stay on the
+ * genesis wallet for handoff to the PoW covenant.
+ *
  * Ticker **WLOTUS** requires TEMPLE_ADDRESS (real P2SH). Other tickers may omit it
  * and P2SH-wrap the genesis P2PKH for convenience.
  */
@@ -174,6 +177,7 @@ async function main(): Promise<void> {
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
   await wallet.sync();
   const temple = resolveTempleScriptHash(wallet, isProdTicker);
+  const templeP2sh = Script.p2sh(temple.scriptHash);
 
   console.log(
     JSON.stringify(
@@ -185,6 +189,7 @@ async function main(): Promise<void> {
         baseZeroBits: BASE_ZERO_BITS,
         mintAtoms: Number(WLOTUS_MINT_ATOMS),
         initialMintAtoms: Number(WLOTUS_MINT_ATOMS),
+        initialMintTo: temple.address,
         templeAddress: temple.address,
         secondsPerExtraBit: SECONDS_PER_EXTRA_BIT,
         genesisUnix,
@@ -214,8 +219,11 @@ async function main(): Promise<void> {
     decimals: 0,
     initialMintAtoms: WLOTUS_MINT_ATOMS,
     powBatonCount: batons,
+    // Premine to temple sink — not the genesis hot key
+    initialMintScript: templeP2sh,
   });
   console.log('Genesis', genesis.tokenId);
+  console.log('Initial mint → temple', temple.address);
 
   const contract = await createPowRemintMooreTipTempleContract({
     tokenId: genesis.tokenId,
@@ -295,6 +303,7 @@ async function main(): Promise<void> {
     tipLocktime,
     mintAtomsPerRemint: WLOTUS_MINT_ATOMS.toString(),
     initialMintAtoms: WLOTUS_MINT_ATOMS.toString(),
+    initialMintAddress: temple.address,
     mintSplit: {
       miner: WLOTUS_MINER_ATOMS.toString(),
       temple: WLOTUS_TEMPLE_ATOMS.toString(),
@@ -319,7 +328,7 @@ async function main(): Promise<void> {
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: +1 bit / 500 days (五百罗汉; override MOORE_DAYS_PER_EXTRA_BIT=365..730). Cap bits ≤ 128. Whole-byte PoW only. baseZeroBits=0.',
-      `W Lotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH. initialMintAtoms=${WLOTUS_MINT_ATOMS}. Remint tip + burn memorial use DANA LOKAD.`,
+      `W Lotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH. initialMintAtoms=${WLOTUS_MINT_ATOMS} → temple. Remint tip + burn memorial use DANA LOKAD.`,
       isProdTicker
         ? `Prod genesis ticker ${PROD_TOKEN_TICKER} — do not reuse test secrets or mnemonics.`
         : `Test/dryrun genesis ticker ${ticker} — same covenant as prod; only ticker/metadata differ.`,
