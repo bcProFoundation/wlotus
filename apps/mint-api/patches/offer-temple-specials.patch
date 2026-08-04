@@ -1,0 +1,24 @@
+Apply against apps/mint-api/src/offer.ts (from master).
+
+Summary of required wiring (see also docs/TEMPLE_SPECIALS.md):
+
+1. Import from templeSpecials:
+   loadTempleSpecialsFromEnv, resolveOfferBurnAtoms,
+   resolveTempleSpecialsStatus, NORMAL_FLOWER_BURN_ATOMS
+   and WLOTUS_MINER_ATOMS from wlotusMint.
+
+2. burnMinerAtomAfterMint: accept burnAtoms?: bigint; pass to burnOnePrayer;
+   wait until wallet has ≥ burnAtoms; return { txid, burnAtoms }.
+
+3. completeBurnOnce: at burn time call
+   resolveOfferBurnAtoms({ parentBurnTxid: pb.parentBurnTxid })
+   — outside window → 1 flower; never reject.
+   deskAtomsKept = Number(WLOTUS_MINER_ATOMS - burned.burnAtoms).
+
+4. publicStatus: add
+   templeSpecials: resolveTempleSpecialsStatus(loadTempleSpecialsFromEnv())
+
+5. OfferResult / BurnResult: deskAtomsKept: number; burnAtoms?: string.
+
+The full unified diff is in the PR conversation / artifacts/offer.ts.patch
+from the agent workspace when available.
