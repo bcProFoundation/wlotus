@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Genesis for wLotus (MooreTipTemple) — **same covenant for prod and dryrun**.
+ * Genesis for W Lotus (MooreTipTemple) — **same covenant for prod and dryrun**.
  *
  * Only the ALP **ticker** differs:
  *   # Live (default ticker WLOTUS)
@@ -14,8 +14,8 @@
  * Also accepts CLI: `--ticker dWLOTUS`
  *
  * Immutable params (identical for every ticker):
- *   mint 108 (1+107), initialMintAtoms 108, baseZeroBits 0,
- *   Moore +1 bit / 500 days (override MOORE_DAYS_PER_EXTRA_BIT=365..730),
+ *   name "W Lotus", mint 108 (102 miner + 6 temple), initialMintAtoms 108,
+ *   baseZeroBits 0, Moore +1 bit / 500 days (override MOORE_DAYS_PER_EXTRA_BIT=365..730),
  *   hard next-P2SH + tipLocktime, bits cap 128.
  *
  * Ticker **WLOTUS** requires TEMPLE_ADDRESS (real P2SH). Other tickers may omit it
@@ -319,7 +319,7 @@ async function main(): Promise<void> {
     notes: [
       'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
       'Moore D: +1 bit / 500 days (五百罗汉; override MOORE_DAYS_PER_EXTRA_BIT=365..730). Cap bits ≤ 128. Whole-byte PoW only. baseZeroBits=0.',
-      `wLotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH. initialMintAtoms=${WLOTUS_MINT_ATOMS}. Remint tip + burn memorial use DANA LOKAD.`,
+      `W Lotus: mint ${WLOTUS_MINT_ATOMS} (one mala) → ${WLOTUS_MINER_ATOMS} miner + ${WLOTUS_TEMPLE_ATOMS} temple P2SH. initialMintAtoms=${WLOTUS_MINT_ATOMS}. Remint tip + burn memorial use DANA LOKAD.`,
       isProdTicker
         ? `Prod genesis ticker ${PROD_TOKEN_TICKER} — do not reuse test secrets or mnemonics.`
         : `Test/dryrun genesis ticker ${ticker} — same covenant as prod; only ticker/metadata differ.`,
