@@ -35,6 +35,12 @@ export interface BroadcastGenesisOptions {
   decimals?: number;
   /** Document URL. */
   url?: string;
+  /**
+   * Script that receives the initial fungible mint (default: genesis wallet).
+   * W Lotus genesis uses the temple P2SH so the premine is not on GENESIS_SK.
+   * Mint batons still go to the genesis wallet for covenant handoff.
+   */
+  initialMintScript?: Script;
 }
 
 export interface BroadcastGenesisResult {
@@ -70,12 +76,12 @@ function batonOutputs(
 }
 
 /**
- * Build an ALP GENESIS Action: initial mint + N mint batons to `script`.
- * Batons are held by the genesis wallet for custodial remint dogfooding
- * until the PoW covenant is production-ready.
+ * Build an ALP GENESIS Action: initial mint + N mint batons.
+ * Fungible mint may go to `initialMintScript` (e.g. temple P2SH);
+ * batons always go to `batonScript` (genesis wallet) for handoff.
  */
 export function buildAlpGenesisAction(
-  script: Script,
+  batonScript: Script,
   authPubkeyHex: string,
   opts: BroadcastGenesisOptions = {},
 ): payment.Action {
@@ -90,18 +96,19 @@ export function buildAlpGenesisAction(
   assertMultiBaton(plan);
 
   const dustSats = opts.dustSats ?? DEFAULT_DUST_SATS;
+  const mintScript = opts.initialMintScript ?? batonScript;
   const outputs: payment.PaymentOutput[] = [{ sats: 0n }];
 
   if (plan.initialMintAtoms > 0n) {
     outputs.push({
       sats: dustSats,
-      script,
+      script: mintScript,
       tokenId: payment.GENESIS_TOKEN_ID_PLACEHOLDER,
       atoms: plan.initialMintAtoms,
     });
   }
 
-  outputs.push(...batonOutputs(script, plan.powBatonCount, dustSats));
+  outputs.push(...batonOutputs(batonScript, plan.powBatonCount, dustSats));
 
   return {
     outputs,
