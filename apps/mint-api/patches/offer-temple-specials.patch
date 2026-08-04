@@ -1,24 +1,41 @@
 Apply against apps/mint-api/src/offer.ts (from master).
 
-Summary of required wiring (see also docs/TEMPLE_SPECIALS.md):
+## Required wiring
 
-1. Import from templeSpecials:
-   loadTempleSpecialsFromEnv, resolveOfferBurnAtoms,
-   resolveTempleSpecialsStatus, NORMAL_FLOWER_BURN_ATOMS
-   and WLOTUS_MINER_ATOMS from wlotusMint.
+1. Import:
+   ```ts
+   import { WLOTUS_MINT_ATOMS, WLOTUS_MINER_ATOMS } from '../../../src/params/wlotusMint.js';
+   import {
+     loadTempleSpecialsFromEnv,
+     loadTempleSpecialsGlobalConfig,
+     resolveOfferBurnAtoms,
+     resolveTempleSpecialsStatus,
+     NORMAL_FLOWER_BURN_ATOMS,
+   } from '../../../src/params/templeSpecials.js';
+   ```
 
-2. burnMinerAtomAfterMint: accept burnAtoms?: bigint; pass to burnOnePrayer;
-   wait until wallet has ≥ burnAtoms; return { txid, burnAtoms }.
+2. `burnMinerAtomAfterMint`: accept `burnAtoms?: bigint` (default `NORMAL_FLOWER_BURN_ATOMS`);
+   wait until wallet has ≥ burnAtoms; pass to `burnOnePrayer`; return `{ txid, burnAtoms }`.
 
-3. completeBurnOnce: at burn time call
-   resolveOfferBurnAtoms({ parentBurnTxid: pb.parentBurnTxid })
-   — outside window → 1 flower; never reject.
-   deskAtomsKept = Number(WLOTUS_MINER_ATOMS - burned.burnAtoms).
+3. `completeBurnOnce`: at burn time:
+   ```ts
+   const { burnAtoms } = resolveOfferBurnAtoms({
+     parentBurnTxid: pb.parentBurnTxid,
+   });
+   ```
+   Outside window → 1 flower. Never reject.
+   `deskAtomsKept = Number(WLOTUS_MINER_ATOMS - burned.burnAtoms)`.
 
-4. publicStatus: add
-   templeSpecials: resolveTempleSpecialsStatus(loadTempleSpecialsFromEnv())
+4. `publicStatus`: add
+   ```ts
+   templeSpecials: resolveTempleSpecialsStatus()
+   ```
+   (loads global deskKeep / testOffsetDays + profiles from env).
 
-5. OfferResult / BurnResult: deskAtomsKept: number; burnAtoms?: string.
+5. `OfferResult` / `BurnResult`: `deskAtomsKept: number`; `burnAtoms?: string`.
 
-The full unified diff is in the PR conversation / artifacts/offer.ts.patch
-from the agent workspace when available.
+## Global env (not per-profile)
+
+- `TEMPLE_SPECIAL_DESK_KEEP` (default 6)
+- `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` (default 0; test env)
+- `TEMPLE_SPECIALS_JSON` (profile list only)
