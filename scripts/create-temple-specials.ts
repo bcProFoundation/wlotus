@@ -19,6 +19,9 @@
  *   - Cô Hồn  → kind "ghost", lunar 2/7 00:00 → 15/7 12:00 local
  *     (JSON: eventStart, eventEnd, eventEndHour=12)
  *
+ * On-chain note is kept short (ALP BURN + DANA ≤ 223 OP_RETURN). Long stories
+ * live in templeSpecials defaultTempleStory, not the root burn.
+ *
  * Usage (Contabo / local with mint.env):
  *   set -a && source /etc/wlotus/mint.env && set +a
  *   npm run create-temple-specials
@@ -174,8 +177,9 @@ function defaultSpecs(): SpecialSpec[] {
       name: 'Vu Lan',
       kind: 'event',
       altarName: 'Vu Lan',
-      note:
-        'Lễ Vu Lan — báo hiếu, tưởng nhớ ông bà cha mẹ. Hoa sen tưởng niệm vĩnh hằng.',
+      // Keep on-chain note tiny — ALP BURN + DANA must fit OP_RETURN ≤ 223.
+      // Long story is served from templeSpecials (defaultTempleStory), not the root.
+      note: 'Vu Lan Báo Hiếu',
       eventDate: lunarPeak,
       eventCalendar: 'lunar',
       // single civil day of lunar 15/7 (eventStart/End omitted → = eventDate)
@@ -184,8 +188,7 @@ function defaultSpecs(): SpecialSpec[] {
       name: 'Cô Hồn',
       kind: 'ghost',
       altarName: 'Cô Hồn',
-      note:
-        'Cúng Cô Hồn — cầu siêu cho hương linh không nơi nương tựa trong tháng bảy.',
+      note: 'Cúng Cô Hồn',
       eventDate: lunarPeak,
       eventCalendar: 'lunar',
       // Product: local 00:00 lunar 2/7 → 12:00 lunar 15/7
@@ -213,10 +216,15 @@ function buildAltarNote(spec: SpecialSpec): string {
     ...emptyAltarFields(),
     name: spec.altarName,
     note: spec.note,
-    // Collective festival memorials: deathDate = solar event day so re-offers work.
+    // Solar civil day of the festival peak — required so the root is re-offerable
+    // (living profiles cannot take flower re-offers). Same calendar day the
+    // special window uses after lunar→solar conversion.
     deathDate: deathDateForSpec(spec),
   };
-  return encodeAltarNote(fields);
+  // Root DANA v1 (no parent). Soft cap leaves room for ALP BURN in the same
+  // OP_RETURN (≤ 223). Empirical headroom is tighter than the 150 constant when
+  // Vietnamese multi-byte text is present — stay well under.
+  return encodeAltarNote(fields, { maxBytes: 100 });
 }
 
 function registryEntry(
