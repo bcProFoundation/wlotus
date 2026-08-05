@@ -203,6 +203,49 @@ Default lunar event day is `2026-07-15` (Rằm). Override with `EVENT_LUNAR_YMD`
 The first burn is always from the **temple/desk** — there is no external
 offerer yet. That is expected and correct.
 
+## Temple stories (soft pray)
+
+During the ~2 minute soft-pray window after remint, the offer session can show a
+**temple story** for the active special. Stories are served from the backend
+(`/api/status` → `templeSpecials.profiles[].story*`) so the pagoda can update
+copy without a full app redeploy later.
+
+Built-in defaults (until community-authored stories):
+
+| Profile | Title (vi) | Theme |
+|---------|------------|--------|
+| Vu Lan (`event`) | Vu Lan Báo Hiếu | Mục Kiền Liên cứu mẹ → báo hiếu, hoa sen |
+| Cô Hồn (`ghost`) | Xá Tội Vong Nhân | Tháng cô hồn, bố thí, từ bi |
+
+Override per profile with JSON `story: { title, body, titleEn, bodyEn }` or a plain string body.
+
+## Multi-day windows
+
+```json
+{
+  "profileId": "…",
+  "kind": "ghost",
+  "name": "Cô Hồn",
+  "eventCalendar": "lunar",
+  "eventStart": "2026-07-02",
+  "eventDate": "2026-07-15",
+  "eventEnd": "2026-07-15"
+}
+```
+
+Server activates from the global civil start of `eventStart` through the global
+civil end of `eventEnd` (after lunar→solar + testOffset). Vu Lan omits start/end
+(single day).
+
+## Post-genesis checklist
+
+1. Deploy mint-api with wired `offer.ts` (templeSpecials on status + burnAtoms).
+2. `npm run create-temple-specials` (or dry-run first) → root burns for Vu Lan + Cô Hồn.
+3. Set `TEMPLE_SPECIALS_JSON` from the script output (includes Cô Hồn `eventStart`).
+4. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` or `6`).
+5. Rebuild SPA with matching `VITE_TEMPLE_SPECIALS_JSON` if baked; otherwise status-driven.
+6. Confirm `/api/status` → stories + multi-day active flags near Rằm.
+
 ## Code
 
 | Piece | Role |
