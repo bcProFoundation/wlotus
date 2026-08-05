@@ -16,7 +16,7 @@ index 658a20a..6c52ea0 100644
  
 type Dict = Record<MessageKey, string>;
  
-@@ -320,8 +325,13 @@ const en: Dict = {
+@@ -320,8 +325,15 @@ const en: Dict = {
    searchNoResults: 'No matches found.',
    searchIndexUnavailable:
      'Could not reach the memorial index — showing matches from this device only.',
@@ -30,7 +30,7 @@ type Dict = Record<MessageKey, string>;
  const vi: Dict = {
    brand: 'W Lotus',
    brandWithLogo: 'Lotus',
-@@ -489,8 +499,13 @@ const vi: Dict = {
+@@ -489,8 +501,15 @@ const vi: Dict = {
    searchNoResults: 'Không tìm thấy kết quả.',
    searchIndexUnavailable:
      'Không kết nối được mục lục tưởng niệm — chỉ hiện kết quả trên máy này.',
@@ -44,7 +44,7 @@ type Dict = Record<MessageKey, string>;
  const zh: Dict = {
    brand: 'W Lotus',
    brandWithLogo: 'Lotus',
-@@ -652,8 +667,13 @@ const zh: Dict = {
+@@ -652,8 +671,15 @@ const zh: Dict = {
    searchLoading: '搜索中…',
    searchNoResults: '未找到匹配结果。',
    searchIndexUnavailable: '无法连接追思索引 — 仅显示本机记录。',
