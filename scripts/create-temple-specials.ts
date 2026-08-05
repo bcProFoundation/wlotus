@@ -13,6 +13,15 @@
  *   the miner share; burning 1 for a normal flower leaves ~101 inventory on that
  *   tip. This script spends 1 atom per special from that inventory (no new remint).
  *
+ * Kinds:
+ *   - Vu Lan  → kind "event" (popup: Vu Lan Báo Hiếu, button: Dâng Hoa)
+ *   - Cô Hồn  → kind "ghost" (button: Cúng)
+ *
+ * Product windows (server still single-day around eventDate until range lands):
+ *   - Cô Hồn: lunar 2/7 00:00 → 15/7 12:00 local
+ *   - Vu Lan: full civil day of lunar 15/7
+ * 2026: lunar 15/7 = solar 27 Aug; launch 00:00 UTC+14 that day = 17:00 VN 26 Aug.
+ *
  * Usage (Contabo / local with mint.env):
  *   set -a && source /etc/wlotus/mint.env && set +a
  *   npm run create-temple-specials
@@ -55,7 +64,7 @@ const DRY = /^(1|true|yes)$/i.test(
 interface SpecialSpec {
   /** JSON registry name */
   name: string;
-  kind: 'ghost' | 'hero';
+  kind: 'ghost' | 'hero' | 'event';
   /** On-chain altar name */
   altarName: string;
   /** Remembrance note (optional) */
@@ -91,7 +100,7 @@ function defaultSpecs(): SpecialSpec[] {
   return [
     {
       name: 'Vu Lan',
-      kind: 'ghost',
+      kind: 'event',
       altarName: 'Vu Lan',
       note:
         'Lễ Vu Lan — báo hiếu, tưởng nhớ ông bà cha mẹ. Hoa sen tưởng niệm vĩnh hằng.',
@@ -246,6 +255,7 @@ async function main(): Promise<void> {
         tokenId,
         specials: specs.map(s => ({
           name: s.name,
+          kind: s.kind,
           eventDate: s.eventDate,
           eventCalendar: s.eventCalendar,
           deathDateSolar: deathDateForSpec(s),

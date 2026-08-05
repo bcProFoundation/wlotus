@@ -1,5 +1,5 @@
 /**
- * Temple-managed specials — ghosts & heroes.
+ * Temple-managed specials — ghosts, heroes & events.
  *
  * Desk/temple creates dedicated profiles (root burns) and registers them in
  * TEMPLE_SPECIALS_JSON. On each profile's event date, re-offers burn more
@@ -10,7 +10,8 @@
  * Outside the event window the profile is still fully offerable — burn stays 1.
  *
  * Kinds:
- *   - ghost  — wandering spirits / Cô Hồn style; typically no birth date
+ *   - ghost  — wandering spirits / Cô Hồn style; typically no birth date; UI "Cúng"
+ *   - event  — festivals (Vu Lan Báo Hiếu); normal Dâng Hoa / Offering copy
  *   - hero   — commemorated figures; may set birthDate (event can be birth or death)
  *
  * Event calendar:
@@ -18,8 +19,10 @@
  *     via Hồ Ngọc Đức algorithm (VN timeZone 7) before the civil-day window.
  *   - solar — eventDate is already a Gregorian YYYY-MM-DD (e.g. Hồ Chí Minh).
  *
- * Window is the global civil day (UTC−12 … UTC+14) around the effective event
- * date, using **server time only**.
+ * Window (code today): global civil day (UTC−12 … UTC+14) around the effective
+ * event date, using **server time only**.
+ * Product intent: Cô Hồn multi-day lunar 2/7 00:00 → 15/7 12:00 local;
+ * Vu Lan one full civil day of lunar 15. Range fields are a follow-up.
  *
  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
  * event date earlier by N days so the window can be exercised before launch.
@@ -28,7 +31,7 @@
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
 
-export type TempleSpecialKind = 'ghost' | 'hero';
+export type TempleSpecialKind = 'ghost' | 'hero' | 'event';
 
 /** Calendar used for `eventDate`. Default lunar (Vietnamese âm lịch). */
 export type TempleEventCalendar = 'lunar' | 'solar';
@@ -47,7 +50,7 @@ export interface TempleSpecial {
   /**
    * YYYY-MM-DD of the commemorative day, in the calendar given by
    * {@link eventCalendar}.
-   * Ghosts: death / festival day. Heroes: birth or death anniversary.
+   * Ghosts: death / festival day. Events: festival day. Heroes: birth or death anniversary.
    */
   eventDate: string;
   /**
@@ -56,7 +59,7 @@ export interface TempleSpecial {
    */
   eventCalendar?: TempleEventCalendar;
   /**
-   * Optional birth date (heroes). Ghosts should leave empty — no birthday.
+   * Optional birth date (heroes). Ghosts/events should leave empty.
    * Shapes: YYYY | YYYY-MM | YYYY-MM-DD. Always solar for display.
    */
   birthDate?: string;
@@ -189,7 +192,9 @@ export function effectiveEventDate(
 
 function normalizeKind(raw: unknown): TempleSpecialKind {
   const t = String(raw ?? '').trim().toLowerCase();
-  return t === 'hero' ? 'hero' : 'ghost';
+  if (t === 'hero') return 'hero';
+  if (t === 'event') return 'event';
+  return 'ghost';
 }
 
 function normalizeEventCalendar(raw: unknown): TempleEventCalendar {
@@ -211,7 +216,7 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     raw.eventCalendar ?? raw.event_calendar,
   );
   const birthRaw = String(raw.birthDate ?? raw.birth_date ?? '').trim();
-  // Ghosts: drop accidental birth. Heroes: keep when present.
+  // Only heroes keep birthDate.
   const birthDate = kind === 'hero' && birthRaw ? birthRaw : undefined;
   const name = String(raw.name ?? '').trim() || undefined;
   return { profileId, kind, eventDate, eventCalendar, birthDate, name };
