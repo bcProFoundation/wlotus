@@ -240,12 +240,17 @@ export function AltarSetupModal(props: {
       return {
         ...props.initial,
         title: props.initial.title || '',
+        // Setup does not link relationships (extra burn / distraction).
+        relationshipType: '',
+        relatedTxid: '',
         relationships: props.initial.relationships ?? [],
       };
     }
     const base = emptyAltarFields();
     const name = (props.fallbackName || '').trim();
-    return name ? { ...base, name } : base;
+    return name
+      ? { ...base, name, relationshipType: '', relatedTxid: '' }
+      : { ...base, relationshipType: '', relatedTxid: '' };
   });
   const [review, setReview] = useState<AltarFields | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -306,7 +311,14 @@ export function AltarSetupModal(props: {
       setErrorKey(err);
       return;
     }
-    const fields = normalizeFields(draft);
+    let fields = normalizeFields(draft);
+    if (!relationshipOnly && !deathOnly) {
+      fields = {
+        ...fields,
+        relationshipType: '',
+        relatedTxid: '',
+      };
+    }
     setDraft(fields);
     setReview(fields);
     props.onSave(fields);
@@ -319,7 +331,16 @@ export function AltarSetupModal(props: {
   }
 
   function offer() {
-    const fields = review ?? normalizeFields(draft);
+    let fields = review ?? normalizeFields(draft);
+    // New profile/altar setup: never attach a relationship link (requires a
+    // separate star-fragment burn and distracts from the first dedication).
+    if (!relationshipOnly && !deathOnly) {
+      fields = {
+        ...fields,
+        relationshipType: '',
+        relatedTxid: '',
+      };
+    }
     const err = (() => {
       if (relationshipOnly) {
         const pairErr =
@@ -624,14 +645,6 @@ export function AltarSetupModal(props: {
                   />
                 </div>
 
-                <RelationshipFields
-                  draft={draft}
-                  errorKey={errorKey}
-                  relatedAltarOptions={props.relatedAltarOptions}
-                  parentDisabled={parentAtMax}
-                  setRelationshipType={setRelationshipType}
-                  setRelatedTxid={txid => setField('relatedTxid', txid)}
-                />
               </>
             )}
 
