@@ -19,10 +19,9 @@
  *     via Hồ Ngọc Đức algorithm (VN timeZone 7) before the civil-day window.
  *   - solar — eventDate is already a Gregorian YYYY-MM-DD (e.g. Hồ Chí Minh).
  *
- * Window (code today): global civil day (UTC−12 … UTC+14) around the effective
- * event date, using **server time only**.
- * Product intent: Cô Hồn multi-day lunar 2/7 00:00 → 15/7 12:00 local;
- * Vu Lan one full civil day of lunar 15. Range fields are a follow-up.
+ * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
+ * through eventEnd (default both = eventDate), server time only.
+ * Product: Cô Hồn lunar 2/7 → 15/7; Vu Lan single lunar 15. Stories on status.
  *
  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
  * event date earlier by N days so the window can be exercised before launch.
@@ -65,6 +64,27 @@ export interface TempleSpecial {
   birthDate?: string;
   /** Optional display name (UI / status). */
   name?: string;
+  /**
+   * Optional range start (same calendar as eventDate). Default = eventDate.
+   * Example Cô Hồn: eventStart "2026-07-02", eventDate/eventEnd "2026-07-15".
+   */
+  eventStart?: string;
+  /**
+   * Optional range end (same calendar as eventDate). Default = eventDate.
+   * Inclusive solar civil days after conversion.
+   */
+  eventEnd?: string;
+  /**
+   * Hour (0–23) on the end solar day when the window closes (server UTC window
+   * still uses global civil span on end day). Default end-of-civil-day.
+   * Cô Hồn uses 12 (noon local intent — server uses end civil day of eventEnd).
+   */
+  eventEndHour?: number;
+  /**
+   * Temple story shown during soft pray (~2 min). Override per locale later;
+   * plain string is treated as vi/default body.
+   */
+  story?: string | { title?: string; body: string; titleEn?: string; bodyEn?: string };
 }
 
 /** Global economics + test shift (from env / GitHub variables). */
@@ -89,12 +109,20 @@ export interface TempleSpecialPublic {
   /** Original eventDate as configured (lunar or solar). */
   eventDate: string;
   eventCalendar: TempleEventCalendar;
-  /** Solar YYYY-MM-DD used for the window (after lunar→solar + testOffset). */
+  /** Solar YYYY-MM-DD peak/primary day (after lunar→solar + testOffset). */
   effectiveEventDate: string;
+  /** Solar range start (after offset). */
+  effectiveStartDate: string;
+  /** Solar range end (after offset). */
+  effectiveEndDate: string;
   birthDate: string | null;
   active: boolean;
   windowStartUtc: string;
   windowEndUtc: string;
+  storyTitle: string | null;
+  storyBody: string | null;
+  storyTitleEn: string | null;
+  storyBodyEn: string | null;
 }
 
 export interface TempleSpecialsPublicStatus {
@@ -148,6 +176,21 @@ export function globalCivilDayWindowUtc(ymd: string): {
   const startMs = Date.UTC(p.y, p.m - 1, p.d - 1, 10, 0, 0, 0);
   const endMs = Date.UTC(p.y, p.m - 1, p.d + 1, 12, 0, 0, 0);
   return { startMs, endMs };
+}
+
+
+/**
+ * Window spanning inclusive solar civil days from startYmd through endYmd.
+ * Uses the same UTC−12…UTC+14 envelope as a single day on each edge.
+ */
+export function globalCivilRangeWindowUtc(
+  startYmd: string,
+  endYmd: string,
+): { startMs: number; endMs: number } | null {
+  const a = globalCivilDayWindowUtc(startYmd);
+  const b = globalCivilDayWindowUtc(endYmd);
+  if (!a || !b) return null;
+  return { startMs: a.startMs, endMs: b.endMs };
 }
 
 export function isWithinGlobalCivilDay(nowMs: number, ymd: string): boolean {
@@ -219,7 +262,42 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
   // Only heroes keep birthDate.
   const birthDate = kind === 'hero' && birthRaw ? birthRaw : undefined;
   const name = String(raw.name ?? '').trim() || undefined;
-  return { profileId, kind, eventDate, eventCalendar, birthDate, name };
+  const eventStartRaw = String(raw.eventStart ?? raw.event_start ?? '').trim();
+  const eventEndRaw = String(raw.eventEnd ?? raw.event_end ?? '').trim();
+  const eventStart = eventStartRaw && parseYmd(eventStartRaw) ? eventStartRaw : undefined;
+  const eventEnd = eventEndRaw && parseYmd(eventEndRaw) ? eventEndRaw : undefined;
+  const endHourRaw = raw.eventEndHour ?? raw.event_end_hour;
+  const eventEndHour =
+    endHourRaw != null && Number.isFinite(Number(endHourRaw))
+      ? Math.max(0, Math.min(23, Math.floor(Number(endHourRaw))))
+      : undefined;
+  let story: TempleSpecial['story'] | undefined;
+  if (typeof raw.story === 'string' && raw.story.trim()) {
+    story = raw.story.trim();
+  } else if (raw.story && typeof raw.story === 'object') {
+    const s = raw.story as Record<string, unknown>;
+    const body = String(s.body ?? '').trim();
+    if (body) {
+      story = {
+        title: String(s.title ?? '').trim() || undefined,
+        body,
+        titleEn: String(s.titleEn ?? s.title_en ?? '').trim() || undefined,
+        bodyEn: String(s.bodyEn ?? s.body_en ?? '').trim() || undefined,
+      };
+    }
+  }
+  return {
+    profileId,
+    kind,
+    eventDate,
+    eventCalendar,
+    birthDate,
+    name,
+    eventStart,
+    eventEnd,
+    eventEndHour,
+    story,
+  };
 }
 
 /**
@@ -283,28 +361,109 @@ export function loadTempleSpecialsFromEnv(
   return out;
 }
 
+function resolveStory(s: TempleSpecial): {
+  storyTitle: string | null;
+  storyBody: string | null;
+  storyTitleEn: string | null;
+  storyBodyEn: string | null;
+} {
+  const baked = defaultTempleStory(s);
+  if (!s.story) return baked;
+  if (typeof s.story === 'string') {
+    return {
+      storyTitle: baked.storyTitle,
+      storyBody: s.story,
+      storyTitleEn: baked.storyTitleEn,
+      storyBodyEn: baked.storyBodyEn,
+    };
+  }
+  return {
+    storyTitle: s.story.title?.trim() || baked.storyTitle,
+    storyBody: s.story.body.trim() || baked.storyBody,
+    storyTitleEn: s.story.titleEn?.trim() || baked.storyTitleEn,
+    storyBodyEn: s.story.bodyEn?.trim() || baked.storyBodyEn,
+  };
+}
+
+/** Built-in temple stories (served until community-written stories exist). */
+export function defaultTempleStory(s: TempleSpecial): {
+  storyTitle: string | null;
+  storyBody: string | null;
+  storyTitleEn: string | null;
+  storyBodyEn: string | null;
+} {
+  const name = (s.name ?? '').trim().toLowerCase();
+  const kind = s.kind;
+  if (kind === 'event' || name.includes('vu lan')) {
+    return {
+      storyTitle: 'Vu Lan Báo Hiếu',
+      storyBody:
+        'Ngày xưa, Tôn giả Mục Kiền Liên — đệ tử thần thông đệ nhất của Đức Phật — dùng thiên nhãn tìm mẹ. Ngài thấy mẹ đang chịu kiếp ngạ quỷ: cổ họng nhỏ như kim, bụng đói không no. Ngài dâng cơm, nhưng thức ăn hóa thành lửa.\n\nĐức Phật dạy: một mình không đủ. Hãy đợi Rằm tháng Bảy, ngày chư Tăng tự tứ, thiết lễ Vu Lan Bồn — nhờ sức chúng tăng mười phương, mẹ mới được siêu thoát.\n\nTừ đó, Rằm tháng Bảy là ngày Báo Hiếu: dâng hoa, tưởng nhớ ông bà cha mẹ, hồi hướng công đức. Một bông sen W Lotus bạn dâng hôm nay cũng là một lời tri ân — hoa tưởng niệm không tàn.',
+      storyTitleEn: 'Vu Lan — Filial Gratitude',
+      storyBodyEn:
+        'Long ago, Venerable Maudgalyayana — foremost in supernatural power among the Buddha’s disciples — sought his mother with the divine eye. He found her reborn as a hungry ghost: throat thin as a needle, never sated. Food he offered turned to fire.\n\nThe Buddha taught: one person alone cannot lift such karma. Wait for the full moon of the seventh lunar month, when the Sangha completes the rains retreat. Offer the Ullambana rite; with the merit of the community of monastics, her suffering can be eased.\n\nSo the fifteenth of the seventh month became a day of filial gratitude: flowers, remembrance of parents and ancestors, dedication of merit. The lotus you offer on W Lotus is one more word of thanks — a flower of remembrance that does not fade.',
+    };
+  }
+  if (kind === 'ghost' || name.includes('cô hồn') || name.includes('co hon')) {
+    return {
+      storyTitle: 'Xá Tội Vong Nhân',
+      storyBody:
+        'Tháng Bảy âm lịch, dân gian gọi là tháng cô hồn. Cửa Quỷ Môn mở: những vong hồn không nơi nương tựa — chết oan, lạc lối, không người thờ cúng — được trở về cõi dương một thời.\n\nNgười sống bày mâm chay, cháo, muối… bố thí ngoài trời, không chỉ cho tổ tiên nhà mình mà cho cả những linh hồn lang thang. Đó là lòng từ bi: dù tội nghiệp nặng đến đâu, vẫn có ngày được xá, được no một bữa, được nhớ tới.\n\nCúng cô hồn không phải sợ hãi — là sẻ chia. Một bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho mọi hương linh được siêu thoát, nguyện cho nhà nhà bình an.',
+      storyTitleEn: 'Pardon for Wandering Spirits',
+      storyBodyEn:
+        'In the seventh lunar month, folk tradition speaks of the Hungry Ghost season. The ghost gate opens: spirits without a home — the wronged, the lost, those with no one to offer incense — may walk the living world for a time.\n\nPeople set out simple vegetarian offerings outdoors — not only for their own ancestors, but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear — it is sharing. The lotus you offer today is also a wish: that every spirit finds peace, and every home finds calm.',
+    };
+  }
+  return {
+    storyTitle: null,
+    storyBody: null,
+    storyTitleEn: null,
+    storyBodyEn: null,
+  };
+}
+
 export function toPublicSpecial(
   s: TempleSpecial,
   testOffsetDays: number,
   nowMs: number,
 ): TempleSpecialPublic | null {
   const cal = s.eventCalendar ?? 'lunar';
-  const effective = effectiveEventDate(s.eventDate, testOffsetDays, cal);
-  if (!effective) return null;
-  const w = globalCivilDayWindowUtc(effective);
+  const peak = effectiveEventDate(s.eventDate, testOffsetDays, cal);
+  if (!peak) return null;
+  const startSrc = (s.eventStart ?? s.eventDate).trim();
+  const endSrc = (s.eventEnd ?? s.eventDate).trim();
+  const startSolar = effectiveEventDate(startSrc, testOffsetDays, cal);
+  const endSolar = effectiveEventDate(endSrc, testOffsetDays, cal);
+  if (!startSolar || !endSolar) return null;
+  // Ensure start <= end chronologically
+  let a = startSolar;
+  let b = endSolar;
+  if (a > b) {
+    const t = a;
+    a = b;
+    b = t;
+  }
+  const w = globalCivilRangeWindowUtc(a, b);
   if (!w) return null;
   const active = nowMs >= w.startMs && nowMs < w.endMs;
+  const story = resolveStory(s);
   return {
     profileId: s.profileId,
     kind: s.kind,
     name: s.name ?? null,
     eventDate: s.eventDate.trim(),
     eventCalendar: cal,
-    effectiveEventDate: effective,
+    effectiveEventDate: peak,
+    effectiveStartDate: a,
+    effectiveEndDate: b,
     birthDate: s.birthDate?.trim() || null,
     active,
     windowStartUtc: new Date(w.startMs).toISOString(),
     windowEndUtc: new Date(w.endMs).toISOString(),
+    storyTitle: story.storyTitle,
+    storyBody: story.storyBody,
+    storyTitleEn: story.storyTitleEn,
+    storyBodyEn: story.storyBodyEn,
   };
 }
 
