@@ -1,0 +1,46 @@
+diff --git a/src/params/templeSpecials.ts b/src/params/templeSpecials.ts
+index 69a187d..081beda 100644
+--- a/src/params/templeSpecials.ts
++++ b/src/params/templeSpecials.ts
+@@ -19,10 +19,9 @@
+  *     via Hồ Ngọc Đức algorithm (VN timeZone 7) before the civil-day window.
+  *   - solar — eventDate is already a Gregorian YYYY-MM-DD (e.g. Hồ Chí Minh).
+  *
+- * Window (code today): global civil day (UTC−12 … UTC+14) around the effective
+- * event date, using **server time only**.
+- * Product intent: Cô Hồn multi-day lunar 2/7 00:00 → 15/7 12:00 local;
+- * Vu Lan one full civil day of lunar 15. Range fields are a follow-up.
++ * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
++ * through eventEnd (default both = eventDate), server time only.
++ * Product: Cô Hồn lunar 2/7 → 15/7; Vu Lan single lunar 15. Stories on status.
+  *
+  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
+  * event date earlier by N days so the window can be exercised before launch.
+@@ -65,6 +64,27 @@ export interface TempleSpecial {
+   birthDate?: string;
+   /** Optional display name (UI / status). */
+   name?: string;
++  /**
++   * Optional range start (same calendar as eventDate). Default = eventDate.
++   * Example Cô Hồn: eventStart "2026-07-02", eventDate/eventEnd "2026-07-15".
++   */
++  eventStart?: string;
++  /**
++   * Optional range end (same calendar as eventDate). Default = eventDate.
++   * Inclusive solar civil days after conversion.
++   */
++  eventEnd?: string;
++  /**
++   * Hour (0–23) on the end solar day when the window closes (server UTC window
++   * still uses global civil span on end day). Default end-of-civil-day.
++   * Cô Hồn uses 12 (noon local intent — server uses end civil day of eventEnd).
++   */
++  eventEndHour?: number;
++  /**
++   * Temple story shown during soft pray (~2 min). Override per locale later;
++   * plain string is treated as vi/default body.
++   */
++  story?: string | { title?: string; body: string; titleEn?: string; bodyEn?: string };
+ }
+ 
+ /** Global economics + test shift (from env / GitHub variables). */
