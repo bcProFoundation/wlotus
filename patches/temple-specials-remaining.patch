@@ -1,0 +1,9 @@
+See artifacts/temple-specials-remaining.patch for the full unified diff.
+Apply with: patch -p1 < patches/temple-specials-remaining.patch
+
+Covers:
+- src/params/templeSpecials.ts (eventStart/eventEnd, stories)
+- apps/mint-api/src/offer.ts (burnAtoms + status)
+- apps/web App/messages/styles (Cúng, Vu Lan Báo Hiếu, story panel)
+- scripts/create-temple-specials.ts (event kind + range)
+- docs/TEMPLE_SPECIALS.md

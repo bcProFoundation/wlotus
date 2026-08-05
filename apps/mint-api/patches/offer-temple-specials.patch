@@ -1,0 +1,161 @@
+--- a/apps/mint-api/src/offer.ts
++++ b/apps/mint-api/src/offer.ts
+@@ -1,7 +1,8 @@
+ /**
+  * Offer API: device PoW → server fees/sign/broadcast.
+  *
+- * wLotus (temple): remint mint 108 (1 miner + 107 temple mala) → burn miner 1 with DANA.
++ * wLotus (temple): remint mint 108 (102 miner + 6 temple) → burn miner atoms with DANA
++ * (1 flower normally; more on active temple specials — ghosts/heroes).
+  * Legacy Prayer memo: remint mint 1 with DANA memorial in OP_RETURN (no burn tx).
+  *
+  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
+@@ -48,7 +49,12 @@
+   isDeathDateAmendNote,
+   isRelationshipAmendNote,
+ } from '../../../src/offering/altarFields.js';
+-import { WLOTUS_MINT_ATOMS } from '../../../src/params/wlotusMint.js';
++import { WLOTUS_MINT_ATOMS, WLOTUS_MINER_ATOMS } from '../../../src/params/wlotusMint.js';
++import {
++  resolveOfferBurnAtoms,
++  resolveTempleSpecialsStatus,
++  NORMAL_FLOWER_BURN_ATOMS,
++} from '../../../src/params/templeSpecials.js';
+ import {
+   DESK_TOPUP_RESERVE_SATS,
+   REMINT_FUEL_SATS,
+@@ -128,8 +134,13 @@
+   powAttempts: number;
+   powMs: number;
+   hashrateHps: number;
+-  /** 0 when miner atom was burned; 1 when kept (memo path or abandoned burn). */
+-  deskAtomsKept: 0 | 1;
++  /**
++   * Miner-share atoms retained by the desk after this offer path.
++   * Temple + burn complete: WLOTUS_MINER_ATOMS - burnAtoms.
++   */
++  deskAtomsKept: number;
++  /** Atoms burned on the memorial path (1 flower; more on active specials). */
++  burnAtoms?: string;
+   note: string;
+   explorerRemint: string;
+   explorerBurn: string;
+@@ -139,7 +150,8 @@
+   remintTxid: string;
+   burnTxid: string;
+   tokenId: string;
+-  deskAtomsKept: 0;
++  deskAtomsKept: number;
++  burnAtoms: string;
+   note: string;
+   explorerRemint: string;
+   explorerBurn: string;
+@@ -397,7 +409,13 @@
+   tokenId: string;
+   note: string;
+   parentBurnTxid?: string;
+-}): Promise<string> {
++  /** Atoms to burn (default 1). Active temple specials may burn more. */
++  burnAtoms?: bigint;
++}): Promise<{ txid: string; burnAtoms: bigint }> {
++  const burnAtoms = opts.burnAtoms ?? NORMAL_FLOWER_BURN_ATOMS;
++  if (burnAtoms < 1n) {
++    throw new Error(`burnAtoms must be ≥ 1 (got ${burnAtoms})`);
++  }
+   let lastErr: unknown;
+   for (let attempt = 0; attempt < 10; attempt++) {
+     await opts.wallet.sync();
+@@ -405,7 +423,7 @@
+       u =>
+         u.token?.tokenId === opts.tokenId &&
+         u.token.atoms != null &&
+-        BigInt(u.token.atoms) >= 1n,
++        BigInt(u.token.atoms) >= burnAtoms,
+     );
+     if (!has) {
+       await sleep(400 + attempt * 200);
+@@ -417,9 +435,10 @@
+         tokenId: opts.tokenId,
+         note: opts.note,
+         offeringId: OFFERING_ID_WLOTUS,
+         parentBurnTxid: opts.parentBurnTxid,
++        burnAtoms,
+       });
+-      return burned.txid;
++      return { txid: burned.txid, burnAtoms: burned.burnAtoms };
+     } catch (e) {
+       lastErr = e;
+       await sleep(400 + attempt * 200);
+@@ -1132,29 +1151,37 @@
+     throw new Error('Pending memorial burn expired; miner atom kept by desk');
+   }
+ 
++  // Resolve burn at burn time (server clock). Outside active special → 1 flower.
++  // Never reject — specials only raise the burn amount.
++  const { burnAtoms } = resolveOfferBurnAtoms({
++    parentBurnTxid: pb.parentBurnTxid,
++  });
++
+   const chronik = await createChronik('closest');
+   const tipFee = await loadTipFeeWallet(chronik, pb.tipIndex);
+-  const burnTxid = await burnMinerAtomAfterMint({
++  const burned = await burnMinerAtomAfterMint({
+     wallet: tipFee.wallet,
+     tokenId: pb.tokenId,
+     note: pb.note,
+     parentBurnTxid: pb.parentBurnTxid,
++    burnAtoms,
+   });
+   pendingBurns.delete(remintTxid);
+-  // Root dedication (no parent): remember creating installId for soft ownership.
+   if (!pb.parentBurnTxid) {
+-    rememberRootCreator(burnTxid, opts.installId);
++    rememberRootCreator(burned.txid, opts.installId);
+   }
+-  notifyDanaIndex(burnTxid);
++  notifyDanaIndex(burned.txid);
+ 
++  const deskKeep = Number(WLOTUS_MINER_ATOMS - burned.burnAtoms);
+   return {
+     remintTxid: pb.remintTxid,
+-    burnTxid,
++    burnTxid: burned.txid,
+     tokenId: pb.tokenId,
+-    deskAtomsKept: 0,
++    deskAtomsKept: deskKeep < 0 ? 0 : deskKeep,
++    burnAtoms: burned.burnAtoms.toString(),
+     note: pb.note,
+     explorerRemint: `https://explorer.e.cash/tx/${pb.remintTxid}`,
+-    explorerBurn: `https://explorer.e.cash/tx/${burnTxid}`,
++    explorerBurn: `https://explorer.e.cash/tx/${burned.txid}`,
+   };
+ }
+ 
+@@ -1306,6 +1333,11 @@
+   memorialOnBurn: boolean;
+   /** Per-tip HD fee accounts (tip i → BIP44 account i+1). */
+   tipFeeAccounts: true;
++  /**
++   * Temple-managed ghosts / heroes. Outside an active window the profile is
++   * still offerable (1 flower). During the window burn uses global deskKeep.
++   */
++  templeSpecials: ReturnType<typeof resolveTempleSpecialsStatus>;
+ } {
+   try {
+     const { dep } = loadDep();
+@@ -1336,6 +1368,7 @@
+       memorialOnMint: !temple,
+       memorialOnBurn: temple,
+       tipFeeAccounts: true,
++      templeSpecials: resolveTempleSpecialsStatus(),
+     };
+   } catch {
+     return {
+@@ -1356,6 +1389,7 @@
+       memorialOnMint: false,
+       memorialOnBurn: true,
+       tipFeeAccounts: true,
++      templeSpecials: resolveTempleSpecialsStatus(),
+     };
+   }
+ }

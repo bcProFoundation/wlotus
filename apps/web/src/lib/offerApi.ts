@@ -68,6 +68,38 @@ export interface StatusOk {
   servingTipCount?: number;
   powBatonCount?: number | null;
   raceOpen?: boolean;
+  /** Temple-managed specials (ghosts / events / heroes). */
+  templeSpecials?: {
+    enabled: boolean;
+    deskKeep?: number;
+    burnAtoms?: string;
+    testOffsetDays?: number;
+    profiles?: Array<{
+      profileId: string;
+      kind: 'ghost' | 'hero' | 'event';
+      name: string | null;
+      active: boolean;
+      eventDate?: string;
+      eventCalendar?: string;
+      effectiveEventDate?: string;
+      effectiveStartDate?: string;
+      effectiveEndDate?: string;
+      storyTitle?: string | null;
+      storyBody?: string | null;
+      storyTitleEn?: string | null;
+      storyBodyEn?: string | null;
+    }>;
+    active?: Array<{
+      profileId: string;
+      kind: 'ghost' | 'hero' | 'event';
+      name: string | null;
+      active: boolean;
+      storyTitle?: string | null;
+      storyBody?: string | null;
+      storyTitleEn?: string | null;
+      storyBodyEn?: string | null;
+    }>;
+  };
 }
 
 function apiUrl(path: string): string {
