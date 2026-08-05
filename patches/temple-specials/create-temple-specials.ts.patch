@@ -1,0 +1,48 @@
+diff --git a/scripts/create-temple-specials.ts b/scripts/create-temple-specials.ts
+index 4fe36b1..1af8a9f 100644
+--- a/scripts/create-temple-specials.ts
++++ b/scripts/create-temple-specials.ts
+@@ -115,6 +115,7 @@ function defaultSpecs(): SpecialSpec[] {
+         'Cúng Cô Hồn — cầu siêu cho hương linh không nơi nương tựa trong tháng bảy.',
+       eventDate: lunarYmd,
+       eventCalendar: 'lunar',
++      // Product window: lunar 2/7 → 15/7 (register eventStart in TEMPLE_SPECIALS_JSON)
+     },
+   ];
+ }
+@@ -321,15 +322,28 @@ async function main(): Promise<void> {
+     console.log(`  burnTxid ${txid}`);
+   }
+ 
++  const year = process.env.EVENT_YEAR?.trim() || '2026';
++  const lunarPeak =
++    process.env.EVENT_LUNAR_YMD?.trim() || `${year}-07-15`;
++  const lunarStart =
++    process.env.EVENT_LUNAR_START?.trim() || `${year}-07-02`;
+   const registry = created
+     .filter(c => /^[0-9a-f]{64}$/.test(c.profileId))
+-    .map(c => ({
+-      profileId: c.profileId,
+-      kind: c.kind,
+-      eventDate: c.eventDate,
+-      eventCalendar: c.eventCalendar,
+-      name: c.name,
+-    }));
++    .map(c => {
++      const base: Record<string, string> = {
++        profileId: c.profileId,
++        kind: c.kind,
++        eventDate: c.eventDate,
++        eventCalendar: c.eventCalendar,
++        name: c.name,
++      };
++      // Cô Hồn multi-day: 2/7 → 15/7 âm lịch
++      if (c.kind === 'ghost' && /cô hồn|co hon/i.test(c.name)) {
++        base.eventStart = lunarStart;
++        base.eventEnd = lunarPeak;
++      }
++      return base;
++    });
+ 
+   const outDir = resolve(process.cwd(), 'deployments');
+   mkdirSync(outDir, { recursive: true });
