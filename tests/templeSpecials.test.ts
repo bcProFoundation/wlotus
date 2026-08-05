@@ -146,15 +146,12 @@ describe('templeSpecials', () => {
   });
 
   it('defaults eventCalendar to lunar and converts to solar', () => {
-    // Lunar 2026-07-15 (Hungry Ghost / Vu Lan mid-month) → solar ~2026-08-28
-    // (exact conversion depends on algorithm; we assert round-trip shape)
     const solar = lunarYmdToSolarYmd('2026-07-15', 7);
     expect(solar).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
     const effective = effectiveEventDate('2026-07-15', 0, 'lunar');
     expect(effective).toBe(solar);
 
-    // Solar calendar leaves the date unchanged
     expect(effectiveEventDate('2026-09-02', 0, 'solar')).toBe('2026-09-02');
   });
 
@@ -180,11 +177,53 @@ describe('templeSpecials', () => {
   });
 
   it('lunarToSolar is inverse of solarToLunar for common dates', () => {
-    // 2024-02-10 solar was lunar 2024-01-01 (non-leap) in VN calendar
     const s = lunarToSolar(1, 1, 2024, false, 7);
     expect(s).not.toBeNull();
     expect(s!.year).toBe(2024);
     expect(s!.month).toBe(2);
     expect(s!.day).toBe(10);
+  });
+
+  it('supports multi-day eventStart/eventEnd range', () => {
+    const profile = 'd'.repeat(64);
+    const specials = [
+      {
+        profileId: profile,
+        kind: 'ghost' as const,
+        eventDate: '2026-07-15',
+        eventStart: '2026-07-02',
+        eventEnd: '2026-07-15',
+        eventCalendar: 'lunar' as const,
+        name: 'Cô Hồn',
+      },
+    ];
+    const st = resolveTempleSpecialsStatus(
+      specials,
+      { deskKeep: 0, testOffsetDays: 0 },
+      Date.parse('2026-08-20T12:00:00Z'),
+    );
+    expect(st.active.length).toBe(1);
+    expect(st.active[0]!.effectiveStartDate <= st.active[0]!.effectiveEndDate).toBe(true);
+    expect(st.active[0]!.storyBody).toBeTruthy();
+  });
+
+  it('parses event kind and serves Vu Lan story', () => {
+    const profile = 'e'.repeat(64);
+    const specials = [
+      {
+        profileId: profile,
+        kind: 'event' as const,
+        eventDate: '2026-07-15',
+        eventCalendar: 'lunar' as const,
+        name: 'Vu Lan',
+      },
+    ];
+    const st = resolveTempleSpecialsStatus(
+      specials,
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-08-27T12:00:00Z'),
+    );
+    expect(st.profiles[0]!.kind).toBe('event');
+    expect(st.profiles[0]!.storyTitle).toMatch(/Vu Lan/i);
   });
 });
