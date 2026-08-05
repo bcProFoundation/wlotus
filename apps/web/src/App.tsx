@@ -63,6 +63,13 @@ import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
 import { waitMinPray } from './lib/minPraySeconds.js';
 import {
+  findSpecialForParent,
+  specialOfferButtonKind,
+  specialSessionTitle,
+  specialStoryForLocale,
+  type TempleSpecialsStatusUi,
+} from './lib/specialsUi.js';
+import {
   isTipRaceLost,
   liveTipEpochFromStatus,
 } from './lib/tipRace.js';
@@ -247,6 +254,7 @@ export default function App() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [templeSpecials, setTempleSpecials] = useState<TempleSpecialsStatusUi | null>(null);
   const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [ticker, setTicker] = useState(PRAYER_TICKER);
@@ -280,6 +288,8 @@ export default function App() {
     extraNote?: string;
     /** Related-altar labels/titles for relationship rows during the session. */
     relatedOptions?: RelatedAltarOption[];
+    /** Parent dedication burn when this session is a re-offer / special. */
+    parentBurnTxid?: string;
   } | null>(null);
   /** Confirm before closing an active offer session (X / Cancel). */
   const [cancelLoseConfirm, setCancelLoseConfirm] = useState(false);
@@ -384,10 +394,12 @@ export default function App() {
       if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
         setBaseZeroBits(s.baseZeroBits);
       }
+      setTempleSpecials(s.templeSpecials ?? null);
       setApiOnline(true);
     } catch {
       setApiOnline(false);
       setRemaining(null);
+      setTempleSpecials(null);
     }
   }, [installId]);
 
@@ -794,6 +806,7 @@ export default function App() {
       altar: sessionAltar,
       extraNote: extraNote || undefined,
       relatedOptions: seedRelated,
+      parentBurnTxid,
     });
     if (sessionAltar) {
       void resolveRelatedOptions(sessionAltar, seedRelated).then(related => {
@@ -1594,15 +1607,26 @@ export default function App() {
     }
   }
 
+  const activeSpecialForParent = findSpecialForParent(
+    templeSpecials,
+    linkedParentBurnTxid ?? session?.parentBurnTxid,
+  );
+  const specialBtn = specialOfferButtonKind(
+    activeSpecialForParent?.active ? activeSpecialForParent : null,
+  );
   const buttonLabel =
     phase === 'challenge' || phase === 'mining'
       ? t('btnPraying')
       : phase === 'holding' || phase === 'submit' || phase === 'burn'
         ? session?.setup
           ? t('btnSettingUp')
-          : t('btnOffering')
+          : specialBtn === 'cung'
+            ? t('btnCung')
+            : t('btnOffering')
         : linkedParentBurnTxid
-          ? t('btnReoffer')
+          ? specialBtn === 'cung'
+            ? t('btnCung')
+            : t('btnReoffer')
           : altar
             ? t('btnSetup')
             : t('btnOffer');
@@ -2312,9 +2336,40 @@ export default function App() {
                 draggable={false}
                 aria-hidden="true"
               />
-              <span>{t('offerSessionTitle')}</span>
+              <span>{
+                specialSessionTitle(
+                  findSpecialForParent(templeSpecials, session?.parentBurnTxid),
+                  locale,
+                ) || t('offerSessionTitle')
+              }</span>
             </h2>
             <div className="offer-session-body">
+              {(() => {
+                const st = specialStoryForLocale(
+                  findSpecialForParent(
+                    templeSpecials,
+                    session.parentBurnTxid,
+                  ),
+                  locale,
+                );
+                if (!st) return null;
+                return (
+                  <div className="temple-story" key="temple-story">
+                    <p className="temple-story-heading">{t('specialStoryHeading')}</p>
+                    <p className="temple-story-hint">{t('specialStoryHint')}</p>
+                    {st.title ? (
+                      <h3 className="temple-story-title">{st.title}</h3>
+                    ) : null}
+                    {st.body.split('\n').map((para, i) =>
+                      para.trim() ? (
+                        <p key={i} className="temple-story-para">
+                          {para}
+                        </p>
+                      ) : null,
+                    )}
+                  </div>
+                );
+              })()}
               {session.altar ? (
                 <>
                   <p className="offer-session-label">
@@ -2415,7 +2470,15 @@ export default function App() {
                 aria-hidden="true"
               />
               <span>
-                {session.setup ? t('setupSessionTitle') : t('offerSessionTitle')}
+                {session.setup
+                  ? t('setupSessionTitle')
+                  : specialSessionTitle(
+                      findSpecialForParent(
+                        templeSpecials,
+                        session.parentBurnTxid,
+                      ),
+                      locale,
+                    ) || t('offerSessionTitle')}
               </span>
             </h2>
             <div className="offer-session-body">
