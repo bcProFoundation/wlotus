@@ -5,6 +5,11 @@
 
 Test (`test.wlotus.org`) stays on push-to-master via **Deploy web (test)**.
 
+If **prod already runs an older WLOTUS token** (different mint split, name, or
+premine destination), code deploy alone is not enough — cut a **new live genesis**
+and retarget mint-api + dana-index + `VITE_PRAYER_TOKEN_ID`. See
+[Upgrade: new live genesis](#upgrade-new-live-genesis).
+
 ---
 
 ## Architecture
@@ -140,19 +145,33 @@ sudo -u deploy npm ci
 
 # systemd — WorkingDirectory=/opt/wlotus, User=deploy (same unit as test)
 sudo cp deploy/contabo/wlotus-mint-api.service /etc/systemd/system/
+sudo cp deploy/contabo/wlotus-dana-index.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable wlotus-mint-api
-# Start after genesis + mint.env exist (below)
+sudo systemctl enable wlotus-dana-index
+# Start after genesis + mint.env / dana-index.env exist (below)
 ```
 
 ### Create live **WLOTUS** (on this prod VM)
 
 Do **not** reuse test `dWLOTUS` secrets, mnemonics, or deployment JSON. Test dryrun stays on Contabo **test** (`TICKER=dWLOTUS npm run create-wlotus-token`).
 
+**Current immutable params (new genesis only):**
+
+| Param | Value |
+|-------|------:|
+| Ticker | `WLOTUS` |
+| Name | **W Lotus** |
+| Remint | **108** = **102** miner + **6** temple |
+| Initial mint | **108** → **temple P2SH** |
+| `baseZeroBits` | **0** |
+| Moore | **+1 bit / 500 days** |
+| Batons | **28** |
+
 ```bash
 cd /opt/wlotus
 # Pull as deploy (not root). If deployments/mainnet-*.json block the merge,
-# see README.md “Update /opt/wlotus + restart dana-index”.
+# backup → stash/checkout → pull → restore live tip JSON (same pattern as test README).
 sudo -u deploy git pull origin master
 sudo -u deploy npm ci
 
@@ -164,16 +183,18 @@ npm run new-wallet -- --force   # only if starting fresh; overwrites .env
 # 2) Real temple P2SH (IFP-style multisig / cold) — required for LIVE
 export TEMPLE_ADDRESS=ecash:p…   # your prod temple
 
-# 3) Genesis ticker WLOTUS, name wLotus → deployments/mainnet-wlotus.json
+# 3) Genesis ticker WLOTUS, name "W Lotus" → deployments/mainnet-wlotus.json
 #    Same script as test dryrun — only ticker differs (default WLOTUS).
 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" BATONS=28 npm run create-wlotus-token
 # Equivalent: npm run create-prod-token
 # Test uses: TICKER=dWLOTUS … npm run create-wlotus-token
 
 # 4) Confirm on-chain record
-jq '{ticker,name,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,templeAddress,role}' \
+jq '{ticker,name,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,initialMintAddress,mintSplit,templeAddress,role}' \
   deployments/mainnet-wlotus.json
-# → ticker "WLOTUS", baseZeroBits 0, mintAtomsPerRemint "108", initialMintAtoms "108", role "production"
+# → ticker "WLOTUS", name "W Lotus", baseZeroBits 0,
+#   mintAtomsPerRemint "108", mintSplit { miner: "102", temple: "6" },
+#   initialMintAddress == templeAddress, role "production"
 
 # Optional smoke remint (uses GENESIS wallet as miner+fuel):
 TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.json) \
@@ -221,7 +242,98 @@ sudo systemctl restart wlotus-mint-api
 curl -sS https://wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms}'
 ```
 
+### dana-index (prod)
+
+```bash
+NEW_ID=$(jq -r .tokenId /opt/wlotus/deployments/mainnet-wlotus.json)
+sudo tee /etc/wlotus/dana-index.env >/dev/null <<EOF
+TOKEN_ID=${NEW_ID}
+CHRONIK_URLS=https://chronik.e.cash,https://xec.paybutton.org,https://chronik.pay2stay.com/xec
+DANA_INDEX_STORE=/opt/wlotus/data/dana-index-burns.json
+PUBLIC_SITE_ORIGIN=https://wlotus.org
+EOF
+sudo chown root:deploy /etc/wlotus/dana-index.env
+sudo chmod 640 /etc/wlotus/dana-index.env
+sudo -u deploy mkdir -p /opt/wlotus/data
+sudo systemctl enable --now wlotus-dana-index
+curl -sS http://127.0.0.1:8788/health | jq .
+```
+
 Set GitHub Environment variable `VITE_PRAYER_TOKEN_ID` to this **tokenId** before the first prod tag (see §3).
+
+---
+
+## Upgrade: new live genesis
+
+**When:** prod is already serving an **older** `WLOTUS` token id and you need
+launch economics or branding that only apply to **new genesis**, for example:
+
+- mint split **102 miner + 6 temple** (was 1 + 107)
+- ALP name **W Lotus** (was `wLotus`)
+- initial **108** atoms to **temple P2SH** (was genesis wallet)
+- any other covenant / Moore / baton change baked at create time
+
+**What stays true**
+
+- The **old** token and its memorials remain on-chain forever.
+- The **live** site, desk, and public index must move to the **new** `tokenId`.
+- Tagging a release that only updates SPA copy **does not** migrate the covenant.
+
+**Recommended order (prod VM)**
+
+1. **Announce / freeze desk** (optional): stop offers while batons move  
+   `sudo systemctl stop wlotus-mint-api`
+2. **Pull** the master that contains the new genesis script params  
+   `sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master && npm ci'`
+3. **Archive** the previous live record  
+   ```bash
+   sudo -u deploy mkdir -p /opt/wlotus/deployments/archive
+   sudo -u deploy cp -a /opt/wlotus/deployments/mainnet-wlotus.json \
+     "/opt/wlotus/deployments/archive/mainnet-wlotus-$(date +%Y%m%d%H%M%S).json"
+   ```
+4. **Create** the new live genesis (new or existing funded `GENESIS_SK_HEX`; **same** prod temple P2SH is fine)  
+   ```bash
+   cd /opt/wlotus
+   export TEMPLE_ADDRESS=ecash:p…   # prod temple
+   BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" npm run create-wlotus-token
+   NEW_ID=$(jq -r .tokenId deployments/mainnet-wlotus.json)
+   jq '{ticker,name,tokenId,mintSplit,initialMintAddress,templeAddress}' deployments/mainnet-wlotus.json
+   ```
+5. **mint-api** — confirm `MINT_REQUIRE_LIVE=1` and `MINT_DEPLOYMENT_JSON=deployments/mainnet-wlotus.json`, refuel tips, start  
+   ```bash
+   set -a && source /etc/wlotus/mint.env && set +a
+   npm run fund-tip-fee-wallets
+   sudo systemctl restart wlotus-mint-api
+   curl -sS https://wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms}'
+   # tokenId must be NEW_ID
+   ```
+6. **dana-index** — update `TOKEN_ID` and **wipe/archive the JSON store** so old-token memorials leave recent/search/OG  
+   ```bash
+   sudo tee /etc/wlotus/dana-index.env >/dev/null <<EOF
+TOKEN_ID=${NEW_ID}
+CHRONIK_URLS=https://chronik.e.cash,https://xec.paybutton.org,https://chronik.pay2stay.com/xec
+DANA_INDEX_STORE=/opt/wlotus/data/dana-index-burns.json
+PUBLIC_SITE_ORIGIN=https://wlotus.org
+EOF
+   sudo chown root:deploy /etc/wlotus/dana-index.env
+   sudo chmod 640 /etc/wlotus/dana-index.env
+   sudo -u deploy bash -lc '
+     f=/opt/wlotus/data/dana-index-burns.json
+     [ -f "$f" ] && mv "$f" "/opt/wlotus/data/dana-index-burns.old-$(date +%Y%m%d%H%M%S).json" || true
+   '
+   sudo systemctl restart wlotus-dana-index
+   curl -sS http://127.0.0.1:8788/health | jq .
+   ```
+7. **GitHub Environment `production`** — set `VITE_PRAYER_TOKEN_ID` = `NEW_ID` (keep `VITE_PRAYER_TICKER=WLOTUS`).
+8. **Release** a new `v*` tag on master so **Deploy web (prod)** bakes the new id into the SPA.
+9. Smoke: Offer once on https://wlotus.org; confirm `/api/status` and `/index-api/health` share the same `tokenId`.
+
+**Do not** point dana-index at the new token while leaving the old store file in place —
+`BurnStore` loads every row and does not filter by current `TOKEN_ID` on read.
+
+**Clients:** installed PWAs may still show local recent rows for the previous token until site data is cleared; the public index only lists the new token after step 6.
+
+Mirror of the test cutover: [README.md — Switch to a new genesis (test)](./README.md).
 
 ---
 
@@ -250,7 +362,7 @@ Keep **test** secrets (`CONTABO_HOST`, …) unchanged on the repository — they
 
 | Variable | Example |
 |----------|---------|
-| `VITE_PRAYER_TOKEN_ID` | live WLOTUS token id |
+| `VITE_PRAYER_TOKEN_ID` | **current** live WLOTUS token id (update on every new genesis) |
 | `VITE_PRAYER_TICKER` | `WLOTUS` |
 | `VITE_CHRONIK_URLS` | Chronik URLs |
 | `VITE_TIP_POLL_MS` | `2000` |
@@ -291,8 +403,9 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 ## 5. Checklist before first prod tag
 
 - [ ] Prod VM bootstrapped; DNS + TLS green; www → apex 301
-- [ ] Live genesis: `deployments/mainnet-wlotus.json` with ticker **WLOTUS**, mintAtoms **108**
+- [ ] Live genesis: `deployments/mainnet-wlotus.json` with ticker **WLOTUS**, name **W Lotus**, mintAtoms **108**, split **102/6**
 - [ ] `/api/status` returns that ticker / tokenId on prod
+- [ ] dana-index `TOKEN_ID` matches; store not mixing an older token’s burns
 - [ ] Tip fee wallets funded (`npm run fund-tip-fee-wallets`)
 - [ ] GitHub Environment `production` secrets + `VITE_PRAYER_TOKEN_ID` / `VITE_PRAYER_TICKER=WLOTUS`
 - [ ] Test site still deploys from master without touching prod
@@ -309,8 +422,10 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
 | `npm ci` EACCES on `/opt/wlotus/node_modules` | Repo owned by **root**; CI user `deploy` cannot delete packages. **Fix once as root:** `sudo chown -R deploy:deploy /opt/wlotus`. Re-run bootstrap from **latest master** so sudoers matches CI (`chown -R deploy:deploy /opt/wlotus`). Prod deploys run the workflow from the **tag** — cut a new `v*` tag after this fix lands on master. |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
+| SPA still uses **previous** token after new genesis | Update Environment `VITE_PRAYER_TOKEN_ID` + new `v*` tag / Deploy web (prod) |
+| Recent / search shows **old-token** memorials | Archive dana-index store + set `TOKEN_ID` to new id + restart (see [Upgrade: new live genesis](#upgrade-new-live-genesis)) |
 | Accidental test deploy to prod | Confirm secrets are `CONTABO_PROD_*` on Environment `production` only |
 | `dWLOTUS` on prod `/api/status` | Live genesis missing — mint-api fell back to committed dryrun JSON. Create `mainnet-wlotus.json` with `npm run create-wlotus-token`, set `MINT_REQUIRE_LIVE=1` in `/etc/wlotus/mint.env`, restart mint-api |
 | Missing temple on WLOTUS | Pass `TEMPLE_ADDRESS=ecash:p…` (required for ticker WLOTUS; no dryrun wrap) |
-| `mintAtoms: "100"` on status | Old dryrun deployment — recreate with create-wlotus-token (expect **108**) |
+| `mintAtoms: "100"` or split still 1/107 on status | Old deployment — **new genesis** required; cannot mutate live covenant |
 | iPhone (Safari/PWA) keeps showing an old build after a deploy, but Android/desktop is fine | `/sw.js` had no explicit `Cache-Control`, so WebKit can serve it from its HTTP cache instead of hitting the network on `registration.update()`, pinning the old JS/CSS bundle indefinitely | Merge the `location = /sw.js { add_header Cache-Control "no-cache"; }` (+ `manifest.webmanifest`) block from `nginx-wlotus-prod-tls.conf` into the live **443** server block, then `sudo nginx -t && sudo systemctl reload nginx`. On the phone, fully close the PWA/tab once (not just background it) to pick up the fix. |

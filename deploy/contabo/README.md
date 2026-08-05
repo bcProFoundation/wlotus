@@ -57,12 +57,12 @@ Open http://localhost:5173
 Optional env — copy `apps/web/.env.example` → `apps/web/.env`:
 
 ```
-VITE_PRAYER_TOKEN_ID=7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359
+VITE_PRAYER_TOKEN_ID=<current dryrun 64-hex from Contabo / deployments JSON>
 VITE_PRAYER_TICKER=dWLOTUS
 VITE_CHRONIK_URLS=https://chronik.e.cash,https://chronik.pay2stay.com/xec
 ```
 
-Defaults match live **dWLOTUS**. The SPA also shows `/api/status.ticker` at runtime.
+Defaults should match live **dWLOTUS** on the test desk. The SPA also shows `/api/status.ticker` at runtime.
 No VM or GitHub secrets needed for local dev.
 
 ---
@@ -172,13 +172,15 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `CONTABO_SSH_PORT` | no | `22` |
 | `CONTABO_DEPLOY_PATH` | no | `/var/www/wlotus-test` |
 | `CONTABO_SMOKE_URL` | no | `https://test.wlotus.org/` |
-| `VITE_PRAYER_TOKEN_ID` | no | dual-mint dryrun id |
-| `VITE_PRAYER_TICKER` | no | `dPRAYER` |
+| `VITE_PRAYER_TOKEN_ID` | yes* | **current** dryrun token id (must match desk after every new genesis) |
+| `VITE_PRAYER_TICKER` | no | `dWLOTUS` |
 | `VITE_CHRONIK_URLS` | no | Chronik URLs |
 | `VITE_TIP_POLL_MS` | no | Tip-epoch poll while mining (ms). Prefer an Actions **variable** (not sensitive): `1000` or `5000`. App default **2000** if unset. Secret also works. |
 | `VITE_MIN_PRAY_SECONDS` | no | Soft pray floor in **seconds** (e.g. `108`). Prefer Actions **variable**. App default **108** (~2 min mala); `0` disables. |
 | `VITE_EXPERIMENTAL_POW` | no | Set `1` for WebGPU → multi-worker Offer mining. |
 | `MINT_MNEMONIC` | no* | 12/24-word **fee wallet** — synced to `/etc/wlotus/mint.env` |
+
+\*After each **new genesis**, update `VITE_PRAYER_TOKEN_ID` (and dana-index `TOKEN_ID`) or the SPA / index keep the old token. See **Switch to a new genesis** below.
 
 \*Mint fee wallet **must** exist on the VM for `mint-api`. Prefer writing `/etc/wlotus/mint.env` once on Contabo. GitHub `MINT_MNEMONIC` is only an optional way to refresh that file on deploy — Actions alone cannot pay fees.
 
@@ -259,7 +261,7 @@ cd /opt/wlotus
 mkdir -p /tmp/wlotus-deploy-bak
 cp -a deployments/mainnet-dryrun-active.json \
       deployments/mainnet-dryrun-wlotus.json \
-      /tmp/wlotus-deploy-bak/
+      /tmp/wlotus-deploy-bak/ 2>/dev/null || true
 
 git stash push -m "vm dryrun tips" -- \
   deployments/mainnet-dryrun-active.json \
@@ -270,8 +272,10 @@ git stash push -m "vm dryrun tips" -- \
 git pull origin master
 
 # Put live tip state back — do not commit these on the server
-cp -a /tmp/wlotus-deploy-bak/mainnet-dryrun-active.json deployments/
-cp -a /tmp/wlotus-deploy-bak/mainnet-dryrun-wlotus.json deployments/
+if [ -f /tmp/wlotus-deploy-bak/mainnet-dryrun-active.json ]; then
+  cp -a /tmp/wlotus-deploy-bak/mainnet-dryrun-active.json deployments/
+  cp -a /tmp/wlotus-deploy-bak/mainnet-dryrun-wlotus.json deployments/
+fi
 git status -sb
 '
 
@@ -344,7 +348,7 @@ set -a && source /etc/wlotus/mint.env && set +a
 sudo -u deploy -H bash -lc 'cd /opt/wlotus && set -a && source /etc/wlotus/mint.env && set +a && npm run fund-tip-fee-wallets'
 ```
 
-**wLotus temple (launch):** covenant pays 107 → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
+**W Lotus temple (launch):** covenant pays **6** → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Miner receives **102**; desk fee-sponsor burns **1** and keeps **101**. Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
 ### Create `dWLOTUS` dryrun (on Contabo **test**)
 
@@ -356,8 +360,9 @@ Do this **on the test VM** (same machine as mint-api), with a funded `GENESIS_SK
 
 | Param | Value |
 |-------|------:|
-| Remint mint | **108** (1 miner + 107 temple) |
-| **Initial fungible mint** | **108** (exactly one mala) |
+| Remint mint | **108** (**102** miner + **6** temple) |
+| **Initial fungible mint** | **108** → **temple P2SH** (not genesis wallet) |
+| ALP name | **W Lotus** |
 | `baseZeroBits` | **0** |
 | Moore period | **500 days**/bit (五百罗汉) |
 | Batons | **28** (ALP max; desk may serve fewer) |
@@ -372,10 +377,7 @@ Desk / rate limits (soft, changeable):
 
 ```bash
 cd /opt/wlotus
-git fetch origin
-# After PR merge: git pull origin master
-# Or test this branch: git checkout cursor/moore-1y-bit-58ff && git pull
-npm ci
+sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master && npm ci'
 
 # Fund GENESIS_ADDRESS with ≥ ~900 XEC before BATONS=28 (handoffs).
 # Temple must be P2SH (IFP-style), e.g. test temple:
@@ -392,9 +394,12 @@ TIER=wlotus BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" \
 # and copies it to deployments/mainnet-dryrun-active.json
 
 # Verify baked params:
-jq '{ticker,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,mintSplit,powBatonCount,templeAddress}' \
+jq '{ticker,name,tokenId,baseZeroBits,secondsPerExtraBit,mintAtomsPerRemint,initialMintAtoms,initialMintAddress,mintSplit,powBatonCount,templeAddress}' \
   deployments/mainnet-dryrun-wlotus.json
-# Expect: ticker=dWLOTUS, baseZeroBits=0, mintAtomsPerRemint="108", initialMintAtoms="108",
+# Expect: ticker=dWLOTUS, name="W Lotus", baseZeroBits=0,
+#         mintAtomsPerRemint="108", initialMintAtoms="108",
+#         mintSplit.miner="102", mintSplit.temple="6",
+#         initialMintAddress == templeAddress,
 #         secondsPerExtraBit=43200000  (500*86400)
 
 # Smoke one remint (optional; uses GENESIS wallet as miner+fuel):
@@ -412,16 +417,93 @@ sudo systemctl restart wlotus-mint-api
 Until mint-api is restarted with the new deployment JSON, `/api/status` may show the old `tokenId`. After deploy:
 
 ```bash
-git pull
-npm ci
-# ensure deployments/mainnet-dryrun-wlotus.json (or active) is present
 sudo systemctl restart wlotus-mint-api
 curl -sS https://test.wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,baseZeroBits,memorialOnBurn,servingTipCount,powBatonCount,maxOffersPerDay}'
 ```
 
-**Web (test):** merge to `master` (or run **Deploy web (test)** workflow) so the Offer client picks up env (`VITE_MIN_PRAY_SECONDS`, etc.). Hard-refresh https://test.wlotus.org.
+**Web (test):** set GitHub Actions variable/secret **`VITE_PRAYER_TOKEN_ID`** to the new `tokenId`, then run **Deploy web (test)** (or push to `master`). Hard-refresh https://test.wlotus.org.
 
 Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
+
+### Switch to a new genesis (test) — required after economics / name / premine changes
+
+ALP covenants and genesis metadata are **immutable**. A running desk on an **older**
+token id (e.g. 1 miner + 107 temple, name `wLotus`, premine on genesis wallet)
+**cannot** be patched in place. Create a **new** dryrun genesis and retarget the stack.
+
+**What breaks if you only restart services**
+
+| Component | If still on old token |
+|-----------|------------------------|
+| mint-api | Serves old batons / wrong mint split |
+| SPA (`VITE_PRAYER_TOKEN_ID`) | Offers against obsolete id |
+| dana-index | Chronik watch + **store still lists old memorials** |
+
+Old burns remain valid **on-chain for the old token**; they must not appear as live
+test history after the switch.
+
+**Procedure (Contabo test)**
+
+```bash
+cd /opt/wlotus
+# 1) Pull code that includes the new covenant params
+sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master && npm ci'
+
+# 2) Archive the previous dryrun record (do not delete without a copy)
+sudo -u deploy mkdir -p deployments/archive
+sudo -u deploy bash -lc '
+  cd /opt/wlotus
+  for f in deployments/mainnet-dryrun-wlotus.json deployments/mainnet-dryrun-active.json; do
+    [ -f "$f" ] && cp -a "$f" "deployments/archive/$(basename "$f")-$(date +%Y%m%d%H%M%S).json"
+  done
+'
+
+# 3) New genesis (funded GENESIS_SK_HEX + TEMPLE_ADDRESS)
+export TEMPLE_ADDRESS=ecash:p…   # test temple P2SH
+BATONS=28 TEMPLE_ADDRESS="$TEMPLE_ADDRESS" npm run create-dryrun-wlotus
+NEW_ID=$(jq -r .tokenId deployments/mainnet-dryrun-wlotus.json)
+echo "NEW_ID=$NEW_ID"
+
+# 4) mint-api → new deployment JSON
+sudo systemctl restart wlotus-mint-api
+curl -sS http://127.0.0.1:8787/api/status | jq '{ticker,tokenId,mintAtoms}'
+# tokenId must equal NEW_ID
+
+# 5) dana-index: point TOKEN_ID at NEW_ID and **wipe the store**
+#    (store is not filtered by tokenId on read — old rows would stay in recent/search)
+sudo tee /etc/wlotus/dana-index.env >/dev/null <<EOF
+TOKEN_ID=${NEW_ID}
+CHRONIK_URLS=https://chronik.e.cash,https://xec.paybutton.org,https://chronik.pay2stay.com/xec
+DANA_INDEX_STORE=/opt/wlotus/data/dana-index-burns.json
+PUBLIC_SITE_ORIGIN=https://test.wlotus.org
+EOF
+sudo chown root:deploy /etc/wlotus/dana-index.env
+sudo chmod 640 /etc/wlotus/dana-index.env
+
+sudo -u deploy mkdir -p /opt/wlotus/data
+sudo -u deploy bash -lc '
+  f=/opt/wlotus/data/dana-index-burns.json
+  [ -f "$f" ] && mv "$f" "/opt/wlotus/data/dana-index-burns.old-$(date +%Y%m%d%H%M%S).json" || true
+'
+
+sudo systemctl restart wlotus-dana-index
+curl -sS http://127.0.0.1:8788/health | jq .
+# expect: tokenId == NEW_ID, burns near 0 until backfill finds new-token memorials
+
+# 6) Refuel tip fee wallets if needed
+set -a && source /etc/wlotus/mint.env && set +a
+npm run fund-tip-fee-wallets
+
+# 7) GitHub Actions: set variable/secret VITE_PRAYER_TOKEN_ID=${NEW_ID}
+#    then Actions → Deploy web (test) → Run workflow (branch master)
+```
+
+**Client note:** browser/PWA **localStorage** “Recent” may still list old device
+offerings. That is offline UX only; public `/index-api` will only list the new token
+after the store wipe. Users can clear site data for a clean slate.
+
+**Production** uses the same steps with `mainnet-wlotus.json`, `MINT_REQUIRE_LIVE=1`,
+and Environment `production` variables — see **[PROD.md § Upgrade: new live genesis](./PROD.md#upgrade-new-live-genesis)**.
 
 ---
 
@@ -483,6 +565,7 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | Renew TLS | `sudo certbot renew` |
 | Update clone | `sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master'` — **does not update the website**; see **Update `/opt/wlotus` + restart dana-index** above for dryrun JSON + service restart |
 | Restart dana-index | `sudo systemctl restart wlotus-dana-index` then `curl -sS http://127.0.0.1:8788/health` |
+| New genesis cutover | See **Switch to a new genesis (test)** (archive JSON, new create, wipe dana store, update `VITE_PRAYER_TOKEN_ID`) |
 
 ---
 
@@ -494,6 +577,8 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | `dubious ownership` on `/opt/wlotus` | Ran `git` as **root** | `sudo -u deploy -H bash -lc 'cd /opt/wlotus && git pull origin master'` |
 | Pull blocked by `mainnet-dryrun-*.json` | Live tip state on VM | Backup → stash/checkout → pull → **restore** backups (see update section) |
 | Share link OG is brand-only / JSON `Not found` | Old dana-index or `/<txid>` not mapped to `/og/` | `git pull` as deploy + restart dana-index; in **443** use `proxy_pass http://127.0.0.1:8788/og/$1$is_args$args;` (no rewrite) |
+| Recent history still shows **old-token** offerings after new genesis | dana-index store not wiped / `TOKEN_ID` stale | Archive `DANA_INDEX_STORE`, set `TOKEN_ID` to new id, restart dana-index (see **Switch to a new genesis**) |
+| SPA offers fail / wrong token after genesis | GitHub `VITE_PRAYER_TOKEN_ID` still old | Update Actions var + **Deploy web (test)** |
 | `nginx: rewrite is not terminated by ";"` | Unquoted `{64}` in `rewrite` | Drop rewrite; use `proxy_pass …/og/$1$is_args$args` |
 | `getaddrinfo: Name or service not known` | Bad `CONTABO_HOST` | Use `test.wlotus.org` or IP, no scheme |
 | `Permission denied (publickey)` | Key not on VM | Copy `.pub` to `/home/deploy/.ssh/authorized_keys` |
