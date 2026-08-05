@@ -1,4 +1,4 @@
-# Temple specials — ghosts & heroes
+# Temple specials — ghosts, heroes & events
 
 Desk/temple-managed profiles with optional **event windows** that raise the
 memorial burn above the normal 1-atom flower.
@@ -7,17 +7,25 @@ memorial burn above the normal 1-atom flower.
 
 | Mode | When | Burn | Desk keeps (of 102) | UI |
 |------|------|------|---------------------|----|
-| Flower | Always (default) | **1** | 101 | Dâng Hoa |
-| Special | Active window + parent = registered profile | **102 − deskKeep** | **deskKeep** (global) | Cúng (ghosts) |
+| Flower | Always (default / off-window) | **1** | 101 | Dâng Hoa |
+| Special | Active window + parent = registered profile | **102 − deskKeep** | **deskKeep** (global) | depends on `kind` |
 
 - Temple still receives **6** from the covenant on every remint.
 - **Outside the window the profile stays fully offerable** — only the burn
-  amount changes on the event day. Challenges are never rejected for being
-  “off day”.
+  amount changes. Challenges are never rejected for being “off day”.
+
+### Kinds (UI)
+
+| kind | Example | Popup title | Button |
+|------|---------|-------------|--------|
+| `ghost` | Cô Hồn | (name) | **Cúng** |
+| `event` | Vu Lan | **Vu Lan Báo Hiếu** | **Dâng Hoa** |
+| `hero` | Hồ Chí Minh | (name) | Dâng Hoa / commemorative |
+
+Vu Lan is an **event** (báo hiếu), not a ghost. Keep normal Offering / Flower
+copy; only the burn amount rises in-window.
 
 ### Global `deskKeep` (not per-profile)
-
-Atoms the desk retains after a special-event burn. One value for all specials:
 
 | deskKeep | burnAtoms | Use |
 |----------|-----------|-----|
@@ -33,35 +41,60 @@ Set via **`TEMPLE_SPECIAL_DESK_KEEP`** (mint-api) / **`VITE_TEMPLE_SPECIAL_DESK_
 effective event date **earlier** by N days so the window can be exercised on a
 test env before launch. Set **0** in production.
 
-Example: solar eventDate `2026-08-28`, offset `15` → effective day `2026-08-13`.
+---
 
-### Event calendar (lunar vs solar)
+## Event windows (product rules)
+
+| Profile | Window | Notes |
+|---------|--------|--------|
+| **Cô Hồn** | Lunar **2/7 00:00 → 15/7 12:00** (local) | Multi-day “tháng cô hồn”; ends noon rằm (gate-close custom) |
+| **Vu Lan** | **One full civil day** of lunar 15/7 | Báo hiếu focus on Rằm |
+
+- **Client** may use **local timezone** for free-window UX (year-1: no strong
+  anti-cheat need on a free special).
+- **Server** owns burn authority. Client clock cannot unlock a higher burn early.
+- Leap months are **not** supported in JSON yet (`eventLeap`). Use the non-leap
+  month, or set `eventCalendar: "solar"` with the known solar date.
+
+### 2026 solar anchors (VN calendar, Hồ Ngọc Đức UTC+7)
+
+| Lunar | Solar |
+|-------|--------|
+| 2/7/2026 | **14 Aug 2026** |
+| 15/7/2026 (Rằm) | **27 Aug 2026** |
+
+### Launch timing (2026)
+
+Token genesis + specials go live at:
+
+- **00:00 lunar 15/7 (27 Aug 2026) in the earliest timezone (UTC+14 / Pacific/Kiritimati)**
+- Equivalent to **17:00 Vietnam time on 26 Aug 2026** (evening of lunar 14)
+
+This covers a useful portion of traditional cúng cô hồn on the 14th evening in
+Vietnam while landing the public launch story on Rằm Tháng 7.
+
+### Code vs product window
+
+| Layer | Behaviour today | Intended next |
+|-------|-----------------|---------------|
+| Server burn gate | Single global civil day around `effectiveEventDate` (UTC−12 … UTC+14, ~50 h) | Optional range (`eventStart` / `eventEnd` or multi-day) so Cô Hồn can span 2/7→15/7 noon without overloading Vu Lan’s single rằm day |
+| Client free UX | Status `active` from server | Local TZ bounds for Cô Hồn (00:00 2/7 → 12:00 15/7 local) |
+
+---
+
+## Event calendar (lunar vs solar)
 
 Each profile’s `eventDate` is interpreted according to **`eventCalendar`**:
 
 | `eventCalendar` | Meaning | Example |
 |-----------------|---------|---------|
 | **`lunar`** (default) | `eventDate` is âm lịch YYYY-MM-DD; converted to solar via Hồ Ngọc Đức (VN UTC+7) before the civil-day window | Cô Hồn / Vu Lan: lunar `2026-07-15` |
-| **`solar`** | `eventDate` is already Gregorian YYYY-MM-DD | Hồ Chí Minh death anniversary: `2026-09-02` |
+| **`solar`** | `eventDate` is already Gregorian YYYY-MM-DD | Hồ Chí Minh: `2026-09-02` |
 
-Leap months are not yet supported in the JSON (`eventLeap`); use the non-leap
-month or set `eventCalendar: "solar"` with the known solar date.
+Altar `deathDate` is already **solar**. Prefer documenting solar equivalents for
+ops clarity; keep lunar conversion when the cultural date is naturally âm lịch.
 
-### Kinds
-
-| kind | Birth date | Event date |
-|------|------------|------------|
-| `ghost` | typically empty (no birthday) | death / festival day |
-| `hero` | optional / recommended | birth or death anniversary |
-
-Ghosts and heroes are **created by the desk/temple** (root dedication burn),
-then registered in `TEMPLE_SPECIALS_JSON`. On-chain altar fields stay as today;
-the special registry is server-side authority for windows + burn amount.
-
-### Window (server clock)
-
-Global civil day around the **effective solar** event date (UTC−12 … UTC+14, ~50 h).
-Client clock cannot unlock a higher burn early.
+---
 
 ## Config
 
@@ -69,6 +102,13 @@ Client clock cannot unlock a higher burn early.
 
 ```bash
 TEMPLE_SPECIALS_JSON='[
+  {
+    "profileId": "<64-hex root burn>",
+    "kind": "event",
+    "eventDate": "2026-07-15",
+    "eventCalendar": "lunar",
+    "name": "Vu Lan"
+  },
   {
     "profileId": "<64-hex root burn>",
     "kind": "ghost",
@@ -89,6 +129,8 @@ TEMPLE_SPECIALS_JSON='[
 
 - `eventCalendar` is optional; **defaults to `"lunar"`**.
 - No `deskKeep` or `testOffsetDays` inside the JSON — those are global only.
+- For Cô Hồn multi-day, until range fields land, ops may use the rằm solar day
+  as the single-day anchor (full multi-day is a follow-up).
 
 ### Global env / GitHub variables
 
@@ -117,15 +159,19 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 }
 ```
 
+---
+
 ## Ops checklist
 
-1. Create the profile on-chain (root burn) — name, death date (ghosts), optional birth (heroes).
+1. Create the profiles on-chain (root burns) — see script below.
 2. Set `TEMPLE_SPECIALS_JSON` on the VM and matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build.
-   - Use `"eventCalendar": "lunar"` (or omit) for âm lịch festivals.
-   - Use `"eventCalendar": "solar"` for fixed Gregorian anniversaries (Hồ Chí Minh, etc.).
+   - Vu Lan → `kind: "event"`
+   - Cô Hồn → `kind: "ghost"`
+   - Heroes → `kind: "hero"` + `eventCalendar: "solar"` when the ceremony is fixed Gregorian.
 3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` for full burn, or leave default `6`).
-4. Restart mint-api; confirm `/api/status` → `templeSpecials.active` during the window.
-5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` (e.g. `7` or `15`), verify burns, then set back to `0` for prod.
+4. Restart mint-api; confirm `/api/status` → `templeSpecials.profiles`.
+5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS`, verify burns, then set back to `0` for prod.
+6. **Launch (2026):** go-live target **17:00 VN on 26 Aug 2026** (00:00 lunar 15 in UTC+14).
 
 ## Creating public specials on-chain (Vu Lan + Cô Hồn)
 
@@ -149,11 +195,10 @@ root dedication burn. Flow:
 2. **Register** the printed JSON on mint-api (`TEMPLE_SPECIALS_JSON`) and the
    matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build. Restart mint-api.
 
-3. Confirm `/api/status` → `templeSpecials.profiles` lists both; during the
-   lunar 15/7 window they appear under `active`.
+3. Confirm `/api/status` → `templeSpecials.profiles` lists both.
 
-Both profiles share the same lunar event day (`2026-07-15` by default). Override
-with `EVENT_LUNAR_YMD` / `EVENT_YEAR` if needed.
+Default lunar event day is `2026-07-15` (Rằm). Override with `EVENT_LUNAR_YMD` /
+`EVENT_YEAR` if needed.
 
 The first burn is always from the **temple/desk** — there is no external
 offerer yet. That is expected and correct.
@@ -165,5 +210,6 @@ offerer yet. That is expected and correct.
 | `src/params/templeSpecials.ts` | Config, window, burn resolution, lunar/solar |
 | `src/lib/lunarCalendar.ts` | Hồ Ngọc Đức lunar ↔ solar (shared) |
 | `src/offering/burnPrayer.ts` | `burnOnePrayer({ burnAtoms })` |
+| `scripts/create-temple-specials.ts` | Root burns for Vu Lan + Cô Hồn |
 | mint-api `offer.ts` | Resolve burn at `/api/burn` time; status field |
-| web specials helpers | Cúng copy when active ghost |
+| web specials helpers | Cúng vs Dâng Hoa / Vu Lan Báo Hiếu by kind |
