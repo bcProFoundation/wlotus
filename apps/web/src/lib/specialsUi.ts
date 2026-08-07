@@ -93,3 +93,14 @@ export function specialStoryForLocale(
   if (!body?.trim()) return null;
   return { title: (title || special.name || '').trim(), body: body.trim() };
 }
+
+/**
+ * Section label above AltarDetails in offer/session UI.
+ * ghost/event → null (no "Ban thờ"); hero/default → normal altar/profile label.
+ */
+export function specialHidesAltarSectionLabel(
+  special: TempleSpecialProfileUi | null,
+): boolean {
+  if (!special) return false;
+  return special.kind === 'ghost' || special.kind === 'event';
+}
