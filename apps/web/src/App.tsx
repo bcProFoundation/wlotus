@@ -67,6 +67,8 @@ import {
   specialOfferButtonKind,
   specialSessionTitle,
   specialStoryForLocale,
+  specialHidesAltarSectionLabel,
+  rankTempleSpecials,
   type TempleSpecialsStatusUi,
 } from './lib/specialsUi.js';
 import {
@@ -255,6 +257,10 @@ export default function App() {
   const [msg, setMsg] = useState<Msg>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [templeSpecials, setTempleSpecials] = useState<TempleSpecialsStatusUi | null>(null);
+  /** profileId → offering count for home event ranking. */
+  const [specialOfferCounts, setSpecialOfferCounts] = useState<
+    Record<string, number>
+  >({});
   const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [ticker, setTicker] = useState(PRAYER_TICKER);
@@ -1395,6 +1401,54 @@ export default function App() {
   }
 
   /** Device-local Recent only — dana-index is for History / share lookup. */
+  // Offering counts for temple specials (home top-5 ranking).
+  useEffect(() => {
+    const profiles = templeSpecials?.profiles ?? [];
+    if (profiles.length === 0) {
+      setSpecialOfferCounts({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const localByRoot = new Map<string, number>();
+      for (const g of groupOffersByOriginal(offers)) {
+        localByRoot.set(
+          g.original.burnTxid.trim().toLowerCase(),
+          g.totalBurns,
+        );
+      }
+      const next: Record<string, number> = {};
+      await Promise.all(
+        profiles.map(async p => {
+          const id = p.profileId.trim().toLowerCase();
+          let n = localByRoot.get(id) ?? 0;
+          try {
+            const remote = await fetchIndexMemorial(p.profileId);
+            if (
+              typeof remote.totalBurns === 'number' &&
+              remote.totalBurns > n
+            ) {
+              n = remote.totalBurns;
+            }
+          } catch {
+            /* offline index — local only */
+          }
+          next[id] = n;
+        }),
+      );
+      if (!cancelled) setSpecialOfferCounts(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [templeSpecials, offers]);
+
+  const rankedHomeEvents = rankTempleSpecials(
+    templeSpecials?.profiles,
+    specialOfferCounts,
+    5,
+  );
+
   const recentGroups = groupOffersByOriginal(offers).filter(
     g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
@@ -1723,6 +1777,12 @@ export default function App() {
               </div>
               <AltarDetails
                 altar={altar}
+                specialKind={
+                  findSpecialForParent(
+                    templeSpecials,
+                    linkedParentBurnTxid,
+                  )?.kind ?? null
+                }
                 relatedAltarOptions={relatedAltarOptions}
               />
             </>
@@ -1753,6 +1813,42 @@ export default function App() {
             </button>
           )}
         </div>
+
+        {rankedHomeEvents.length > 0 ? (
+          <div className="home-events" aria-label={t('homeEventsTitle')}>
+            <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
+            <ul className="home-events-list">
+              {rankedHomeEvents.map((ev, idx) => (
+                <li key={ev.profileId} className="home-events-item">
+                  <button
+                    type="button"
+                    className="home-events-btn"
+                    disabled={busy || apiOnline === false}
+                    onClick={() =>
+                      void openDedicationSheet({
+                        parentBurnTxid: ev.profileId,
+                        memorialNote: ev.name || '',
+                      })
+                    }
+                  >
+                    <span className="home-events-rank">{idx + 1}</span>
+                    <span className="home-events-main">
+                      <span className="home-events-name">
+                        {ev.name || ev.profileId.slice(0, 8)}
+                      </span>
+                      {ev.sortDate ? (
+                        <span className="home-events-date">{ev.sortDate}</span>
+                      ) : null}
+                    </span>
+                    <span className="home-events-count">
+                      {t('homeEventsOfferings', { n: ev.offerCount })}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         {altar ? (
           <div className="offer-actions">
@@ -2051,12 +2147,27 @@ export default function App() {
               ×
             </button>
             <h2 id="altar-detail-title">
-              {altarHasDeathDate(dedicationSheet.altar)
-                ? t('altarDetailTitle')
-                : t('profileDetailTitle')}
+              {(() => {
+                const sp = findSpecialForParent(
+                  templeSpecials,
+                  dedicationSheet.parentBurnTxid,
+                );
+                if (sp && (sp.kind === 'event' || sp.kind === 'ghost')) {
+                  return sp.name || t('altarDetailTitle');
+                }
+                return altarHasDeathDate(dedicationSheet.altar)
+                  ? t('altarDetailTitle')
+                  : t('profileDetailTitle');
+              })()}
             </h2>
             <AltarDetails
               altar={dedicationSheet.altar}
+              specialKind={
+                findSpecialForParent(
+                  templeSpecials,
+                  dedicationSheet.parentBurnTxid,
+                )?.kind ?? null
+              }
               onViewRelated={txid => void viewRelatedAltar(txid)}
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />
@@ -2372,17 +2483,32 @@ export default function App() {
               })()}
               {session.altar ? (
                 <>
-                  <p className="offer-session-label">
-                    {session.altar && !altarHasDeathDate(session.altar)
-                      ? t('profileLabel')
-                      : t('altarLabel')}
-                  </p>
-                  <AltarDetails
-                    altar={session.altar}
-                    relatedAltarOptions={
-                      session.relatedOptions ?? relatedAltarOptions
-                    }
-                  />
+                  {(() => {
+                    const sp = findSpecialForParent(
+                      templeSpecials,
+                      session.parentBurnTxid,
+                    );
+                    const hideLabel = specialHidesAltarSectionLabel(sp);
+                    return (
+                      <>
+                        {!hideLabel ? (
+                          <p className="offer-session-label">
+                            {session.altar &&
+                            !altarHasDeathDate(session.altar)
+                              ? t('profileLabel')
+                              : t('altarLabel')}
+                          </p>
+                        ) : null}
+                        <AltarDetails
+                          altar={session.altar}
+                          specialKind={sp?.kind ?? null}
+                          relatedAltarOptions={
+                            session.relatedOptions ?? relatedAltarOptions
+                          }
+                        />
+                      </>
+                    );
+                  })()}
                 </>
               ) : (
                 <p className="offer-session-note offer-session-original">
@@ -2484,17 +2610,32 @@ export default function App() {
             <div className="offer-session-body">
               {session.altar ? (
                 <>
-                  <p className="offer-session-label">
-                    {session.altar && !altarHasDeathDate(session.altar)
-                      ? t('profileLabel')
-                      : t('altarLabel')}
-                  </p>
-                  <AltarDetails
-                    altar={session.altar}
-                    relatedAltarOptions={
-                      session.relatedOptions ?? relatedAltarOptions
-                    }
-                  />
+                  {(() => {
+                    const sp = findSpecialForParent(
+                      templeSpecials,
+                      session.parentBurnTxid,
+                    );
+                    const hideLabel = specialHidesAltarSectionLabel(sp);
+                    return (
+                      <>
+                        {!hideLabel ? (
+                          <p className="offer-session-label">
+                            {session.altar &&
+                            !altarHasDeathDate(session.altar)
+                              ? t('profileLabel')
+                              : t('altarLabel')}
+                          </p>
+                        ) : null}
+                        <AltarDetails
+                          altar={session.altar}
+                          specialKind={sp?.kind ?? null}
+                          relatedAltarOptions={
+                            session.relatedOptions ?? relatedAltarOptions
+                          }
+                        />
+                      </>
+                    );
+                  })()}
                 </>
               ) : (
                 <>
