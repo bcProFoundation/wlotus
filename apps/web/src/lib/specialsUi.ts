@@ -104,3 +104,56 @@ export function specialHidesAltarSectionLabel(
   if (!special) return false;
   return special.kind === 'ghost' || special.kind === 'event';
 }
+
+export interface RankedTempleSpecial extends TempleSpecialProfileUi {
+  /** Peak / end event day used for ranking (solar YYYY-MM-DD when known). */
+  sortDate: string;
+  /** Public or local offering count under this profile root. */
+  offerCount: number;
+}
+
+/**
+ * Top specials for the home ranking list.
+ * Sort: event date (later first), then offering count (desc) on the same day.
+ */
+export function rankTempleSpecials(
+  profiles: TempleSpecialProfileUi[] | null | undefined,
+  offerCountByProfileId: Record<string, number> | Map<string, number>,
+  limit = 5,
+): RankedTempleSpecial[] {
+  const list = profiles ?? [];
+  const getCount = (id: string): number => {
+    const key = id.toLowerCase();
+    if (offerCountByProfileId instanceof Map) {
+      return offerCountByProfileId.get(key) ?? 0;
+    }
+    return offerCountByProfileId[key] ?? 0;
+  };
+
+  const ranked: RankedTempleSpecial[] = list.map(p => {
+    const sortDate = (
+      p.effectiveEventDate ||
+      p.effectiveEndDate ||
+      p.eventDate ||
+      ''
+    ).trim();
+    return {
+      ...p,
+      sortDate,
+      offerCount: getCount(p.profileId),
+    };
+  });
+
+  ranked.sort((a, b) => {
+    if (a.sortDate !== b.sortDate) {
+      if (!a.sortDate) return 1;
+      if (!b.sortDate) return -1;
+      return b.sortDate.localeCompare(a.sortDate);
+    }
+    if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
+    if (a.active !== b.active) return a.active ? -1 : 1;
+    return (a.name || '').localeCompare(b.name || '', 'vi');
+  });
+
+  return ranked.slice(0, Math.max(0, limit));
+}
