@@ -29,9 +29,7 @@ function displayAltarDate(raw: string): string {
 export interface RelatedAltarOption {
   txid: string;
   label: string;
-  /** Related altar honorific — drives Cha / Mẹ labels. */
   title?: AltarHonorific | string;
-  /** Related birth date/year — sorts Con when present. */
   birthYear?: string;
 }
 
@@ -59,21 +57,29 @@ export function relatedMetaMap(
   return map;
 }
 
+/** Temple special kind — adjusts labels (Ngày lễ) and hides memorial note. */
+export type AltarDetailsSpecialKind = 'ghost' | 'event' | 'hero';
+
 /** Read-only altar / Ban thờ details (offer panel, session, Recent). */
 export function AltarDetails(props: {
   altar: AltarFields;
   className?: string;
-  /** Open the linked altar (relationship) when the caller supports it. */
+  /**
+   * When set for temple specials:
+   * - ghost/event: hide lời tưởng niệm; death date → Ngày lễ
+   * - hero: keep death-date wording (true memorial day)
+   */
+  specialKind?: AltarDetailsSpecialKind | null;
   onViewRelated?: (relatedTxid: string) => void;
-  /** Resolve the linked altar's display name (Recent-list / index options). */
   relatedAltarOptions?: RelatedAltarOption[];
 }) {
   const { locale, t } = useLocale();
-  const { altar } = props;
+  const { altar, specialKind } = props;
+  const isFestivalSpecial =
+    specialKind === 'ghost' || specialKind === 'event';
   const honorific = altarHonorificLabel(altar.title, locale);
   const solarDeath = displayAltarDate(altar.deathDate);
   const lunarDeathDate = formatLunarDeathDate(altar.deathDate.trim(), locale);
-  // Default to lunar for vi/zh when a full death date converts (giỗ tradition).
   const [showLunarDeath, setShowLunarDeath] = useState(() =>
     Boolean(lunarDeathDate),
   );
@@ -88,10 +94,33 @@ export function AltarDetails(props: {
       ? `${solarBirth} (${lunarBirthYear})`
       : solarBirth;
 
+  const deathLabel = canToggleDeath ? (
+    <button
+      type="button"
+      className="altar-cal-toggle"
+      onClick={() => setShowLunarDeath(v => !v)}
+    >
+      {showLunarDeath
+        ? isFestivalSpecial
+          ? t('altarEventDateLunar')
+          : t('altarDeathDateLunar')
+        : isFestivalSpecial
+          ? t('altarEventDateSolar')
+          : t('altarDeathDateSolar')}
+    </button>
+  ) : isFestivalSpecial ? (
+    t('altarEventDate')
+  ) : (
+    t('altarDeathDate')
+  );
+
+  const nameText = altar.name.trim();
+
   const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
     { key: 'honorific', label: t('altarHonorific'), value: honorific },
-    { key: 'name', label: t('altarName'), value: altar.name.trim() },
-    { key: 'note', label: t('altarNote'), value: altar.note.trim() },
+    ...(isFestivalSpecial
+      ? []
+      : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
     {
       key: 'birthPlace',
       label: t('altarBirthPlace'),
@@ -105,19 +134,7 @@ export function AltarDetails(props: {
     },
     {
       key: 'deathDate',
-      label: canToggleDeath ? (
-        <button
-          type="button"
-          className="altar-cal-toggle"
-          onClick={() => setShowLunarDeath(v => !v)}
-        >
-          {showLunarDeath
-            ? t('altarDeathDateLunar')
-            : t('altarDeathDateSolar')}
-        </button>
-      ) : (
-        t('altarDeathDate')
-      ),
+      label: deathLabel,
       value: deathValue,
     },
     {
@@ -140,6 +157,11 @@ export function AltarDetails(props: {
     <div
       className={`altar-details${props.className ? ` ${props.className}` : ''}`}
     >
+      {nameText ? (
+        <div className="altar-details-name" aria-label={t('altarName')}>
+          {nameText}
+        </div>
+      ) : null}
       {rows.map(r => (
         <div key={r.key} className="altar-details-row">
           <div className="altar-details-label">{r.label}</div>
