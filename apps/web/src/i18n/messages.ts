@@ -151,6 +151,10 @@ export type MessageKey =
   | 'searchCta'
   | 'homeEventsTitle'
   | 'homeEventsOfferings'
+  | 'homeEventsDaysUntil'
+  | 'homeEventsToday'
+  | 'homeEventsOngoing'
+  | 'homeEventsDaysPast'
   | 'searchLoading'
   | 'searchNoResults'
   | 'searchIndexUnavailable'
@@ -331,6 +335,10 @@ const en: Dict = {
   searchCta: 'Search',
   homeEventsTitle: 'Events',
   homeEventsOfferings: '{n} offerings',
+  homeEventsDaysUntil: 'in {n} days',
+  homeEventsToday: 'Today',
+  homeEventsOngoing: 'Ongoing',
+  homeEventsDaysPast: '{n} days ago',
   searchLoading: 'Searching…',
   searchNoResults: 'No matches found.',
   searchIndexUnavailable:
@@ -512,6 +520,10 @@ const vi: Dict = {
   searchCta: 'Tìm kiếm',
   homeEventsTitle: 'Sự kiện',
   homeEventsOfferings: '{n} dâng hoa',
+  homeEventsDaysUntil: 'còn {n} ngày',
+  homeEventsToday: 'Hôm nay',
+  homeEventsOngoing: 'Đang diễn ra',
+  homeEventsDaysPast: '{n} ngày trước',
   searchLoading: 'Đang tìm…',
   searchNoResults: 'Không tìm thấy kết quả.',
   searchIndexUnavailable:
@@ -688,6 +700,10 @@ const zh: Dict = {
   searchCta: '搜索',
   homeEventsTitle: '活动',
   homeEventsOfferings: '{n} 次供奉',
+  homeEventsDaysUntil: '还有 {n} 天',
+  homeEventsToday: '今天',
+  homeEventsOngoing: '进行中',
+  homeEventsDaysPast: '{n} 天前',
   searchLoading: '搜索中…',
   searchNoResults: '未找到匹配结果。',
   searchIndexUnavailable: '无法连接追思索引 — 仅显示本机记录。',
