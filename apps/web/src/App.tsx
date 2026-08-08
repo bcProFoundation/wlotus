@@ -1839,18 +1839,29 @@ export default function App() {
                         {ev.name || ev.profileId.slice(0, 8)}
                       </span>
                       {(() => {
+                        const cd = specialCountdown(ev);
+                        // Active window: only status (“happening” / today)
+                        if (cd.kind === 'ongoing') {
+                          return (
+                            <span className="home-events-date">
+                              {t('homeEventsOngoing')}
+                            </span>
+                          );
+                        }
+                        if (cd.kind === 'today') {
+                          return (
+                            <span className="home-events-date">
+                              {t('homeEventsToday')}
+                            </span>
+                          );
+                        }
                         const dateLabel = formatSpecialEventDateLabel(
                           ev,
                           locale,
                         );
-                        const cd = specialCountdown(ev);
                         let when = '';
                         if (cd.kind === 'days') {
                           when = t('homeEventsDaysUntil', { n: cd.days });
-                        } else if (cd.kind === 'today') {
-                          when = t('homeEventsToday');
-                        } else if (cd.kind === 'ongoing') {
-                          when = t('homeEventsOngoing');
                         } else if (cd.kind === 'past') {
                           when = t('homeEventsDaysPast', { n: cd.days });
                         }
