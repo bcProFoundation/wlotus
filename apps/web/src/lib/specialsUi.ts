@@ -1,3 +1,5 @@
+import { solarToLunar } from './lunarCalendar.js';
+
 /**
  * Temple specials UI helpers — kind-driven copy + story during soft pray.
  * Status comes from GET /api/status → templeSpecials.
@@ -162,39 +164,94 @@ export function rankTempleSpecials(
  * Display the event day in the calendar the special is defined on.
  * lunar → lunar YMD label; solar → solar YYYY-MM-DD (effective when known).
  */
+/**
+ * Event date label in the special's own calendar.
+ * Multi-day windows → "start–end" range (prefers start over peak/finish alone).
+ * Lunar calendar: convert effective solar bounds back to lunar day/month.
+ */
 export function formatSpecialEventDateLabel(
   special: TempleSpecialProfileUi,
   locale: string,
 ): string {
   const cal = (special.eventCalendar || 'solar').toLowerCase();
-  const lunarYmd = (special.eventDate || '').trim();
-  const solarYmd = (
+  const startSolar = (
+    special.effectiveStartDate ||
     special.effectiveEventDate ||
-    special.effectiveEndDate ||
     special.eventDate ||
     ''
   ).trim();
+  const endSolar = (
+    special.effectiveEndDate ||
+    special.effectiveEventDate ||
+    startSolar
+  ).trim();
+
+  const parseYmd = (
+    ymd: string,
+  ): { y: number; m: number; d: number } | null => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+    if (!m) return null;
+    return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) };
+  };
+
+  const formatSolar = (ymd: string): string => ymd;
+
+  const formatLunarFromSolar = (ymd: string): string | null => {
+    const p = parseYmd(ymd);
+    if (!p) return null;
+    // VN lunar tradition ≈ UTC+7; zh ≈ UTC+8
+    const tz = locale.startsWith('zh') ? 8 : 7;
+    try {
+      const lunar = solarToLunar(p.d, p.m, p.y, tz);
+      if (locale.startsWith('vi')) {
+        const leap = lunar.leap ? ' (nhuận)' : '';
+        return `${lunar.day}/${lunar.month}${leap}`;
+      }
+      if (locale.startsWith('zh')) {
+        const leap = lunar.leap ? '闰' : '';
+        return `${leap}${lunar.month}月${lunar.day}日`;
+      }
+      return `Lunar ${lunar.year}-${String(lunar.month).padStart(2, '0')}-${String(lunar.day).padStart(2, '0')}`;
+    } catch {
+      return null;
+    }
+  };
+
+  // Prefer stored lunar eventDate only for single-day when no solar range
+  const singleLunarStored = (): string | null => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((special.eventDate || '').trim());
+    if (!m) return null;
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    if (locale.startsWith('vi')) return `${d}/${mo} Âm lịch`;
+    if (locale.startsWith('zh')) return `农历${mo}月${d}日`;
+    return `Lunar ${m[1]}-${m[2]}-${m[3]}`;
+  };
 
   if (cal === 'lunar') {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(lunarYmd);
-    if (m) {
-      const y = m[1];
-      const mo = Number(m[2]);
-      const d = Number(m[3]);
-      if (locale.startsWith('vi')) return `${d}/${mo} Âm lịch`;
-      if (locale.startsWith('zh')) return `农历${mo}月${d}日`;
-      return `Lunar ${y}-${m[2]}-${m[3]}`;
+    const a = startSolar ? formatLunarFromSolar(startSolar) : null;
+    const b =
+      endSolar && endSolar !== startSolar
+        ? formatLunarFromSolar(endSolar)
+        : null;
+    if (a && b) {
+      if (locale.startsWith('vi')) return `${a}–${b} Âm lịch`;
+      if (locale.startsWith('zh')) return `农历${a}–${b}`;
+      return `${a} – ${b}`;
     }
-    // fallback: show solar with a lunar hint if we only have effective
-    if (solarYmd) {
-      if (locale.startsWith('vi')) return `${solarYmd} (Dương)`;
-      if (locale.startsWith('zh')) return `${solarYmd}（公历）`;
-      return solarYmd;
+    if (a) {
+      if (locale.startsWith('vi')) return `${a} Âm lịch`;
+      if (locale.startsWith('zh')) return `农历${a}`;
+      return a;
     }
-    return lunarYmd;
+    return singleLunarStored() || startSolar || '';
   }
 
-  return solarYmd || lunarYmd;
+  // Solar calendar
+  if (startSolar && endSolar && startSolar !== endSolar) {
+    return `${formatSolar(startSolar)} – ${formatSolar(endSolar)}`;
+  }
+  return formatSolar(startSolar || endSolar || (special.eventDate || '').trim());
 }
 
 export type SpecialCountdown =
