@@ -1957,6 +1957,10 @@ export default function App() {
                 title: t('howEternalTitle'),
                 body: t('howEternalBody'),
               },
+              {
+                title: t('howEcashTitle'),
+                body: t('howEcashBody'),
+              },
             ]
               .filter(step => step.title.trim() || step.body.trim())
               .map((step, i) => (
