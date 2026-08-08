@@ -108,20 +108,34 @@ export function specialHidesAltarSectionLabel(
 }
 
 export interface RankedTempleSpecial extends TempleSpecialProfileUi {
-  /** Peak / end event day used for ranking (solar YYYY-MM-DD when known). */
+  /**
+   * Anchor day for display/debug: start when known, else peak/end.
+   * Ranking no longer uses “later date first”.
+   */
   sortDate: string;
   /** Public or local offering count under this profile root. */
   offerCount: number;
 }
 
 /**
- * Top specials for the home ranking list.
- * Sort: event date (later first), then offering count (desc) on the same day.
+ * Top specials for the home ranking list — “what’s next / what’s now”.
+ *
+ * Order (generalized):
+ *   1. Happening now (active / in window) before upcoming before past
+ *   2. Within a tier: closer in time first
+ *        - upcoming → soonest start first
+ *        - active   → most offerings first (same day competition, e.g. 15/7)
+ *        - past     → most recently ended first
+ *   3. Tie-break: offerCount desc, then name
+ *
+ * Example (before 2/7 lunar): Cô Hồn (starts sooner) above Vu Lan.
+ * On 15/7 when both active: higher burn count on top.
  */
 export function rankTempleSpecials(
   profiles: TempleSpecialProfileUi[] | null | undefined,
   offerCountByProfileId: Record<string, number> | Map<string, number>,
   limit = 5,
+  now: Date = new Date(),
 ): RankedTempleSpecial[] {
   const list = profiles ?? [];
   const getCount = (id: string): number => {
@@ -132,13 +146,28 @@ export function rankTempleSpecials(
     return offerCountByProfileId[key] ?? 0;
   };
 
+  const todayUtc = Date.UTC(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  const parseYmd = (ymd: string): number | null => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+    if (!m) return null;
+    return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  };
+
+  type Tier = 0 | 1 | 2; // 0 active, 1 upcoming, 2 past
+
   const ranked: RankedTempleSpecial[] = list.map(p => {
-    const sortDate = (
-      p.effectiveEventDate ||
+    const start =
+      (p.effectiveStartDate || p.effectiveEventDate || p.eventDate || '').trim();
+    const end = (
       p.effectiveEndDate ||
-      p.eventDate ||
-      ''
+      p.effectiveEventDate ||
+      start
     ).trim();
+    const sortDate = start || end;
     return {
       ...p,
       sortDate,
@@ -146,14 +175,56 @@ export function rankTempleSpecials(
     };
   });
 
-  ranked.sort((a, b) => {
-    if (a.sortDate !== b.sortDate) {
-      if (!a.sortDate) return 1;
-      if (!b.sortDate) return -1;
-      return b.sortDate.localeCompare(a.sortDate);
+  const meta = (p: RankedTempleSpecial): { tier: Tier; days: number } => {
+    const start = (
+      p.effectiveStartDate ||
+      p.effectiveEventDate ||
+      p.eventDate ||
+      ''
+    ).trim();
+    const end = (
+      p.effectiveEndDate ||
+      p.effectiveEventDate ||
+      start
+    ).trim();
+    const startMs = parseYmd(start);
+    const endMs = parseYmd(end) ?? startMs;
+    if (startMs == null || endMs == null) {
+      return { tier: 2, days: Number.POSITIVE_INFINITY };
     }
-    if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
-    if (a.active !== b.active) return a.active ? -1 : 1;
+    // Prefer status.active when server already computed the window
+    if (p.active || (todayUtc >= startMs && todayUtc <= endMs)) {
+      return { tier: 0, days: 0 };
+    }
+    if (todayUtc < startMs) {
+      return {
+        tier: 1,
+        days: Math.round((startMs - todayUtc) / 86_400_000),
+      };
+    }
+    // past
+    return {
+      tier: 2,
+      days: Math.round((todayUtc - endMs) / 86_400_000),
+    };
+  };
+
+  ranked.sort((a, b) => {
+    const ma = meta(a);
+    const mb = meta(b);
+    if (ma.tier !== mb.tier) return ma.tier - mb.tier;
+    if (ma.tier === 0) {
+      // Both happening: more offerings first (Vu Lan on 15/7)
+      if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
+    } else if (ma.tier === 1) {
+      // Upcoming: sooner start first (Cô Hồn before Vu Lan)
+      if (ma.days !== mb.days) return ma.days - mb.days;
+      if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
+    } else {
+      // Past: most recent first, then offerings
+      if (ma.days !== mb.days) return ma.days - mb.days;
+      if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
+    }
     return (a.name || '').localeCompare(b.name || '', 'vi');
   });
 
