@@ -1807,8 +1807,12 @@ a {
 
 /* —— Specials offer popup: tighter date box, space before note —— */
 .offer-modal-card .altar-details {
-  margin: 0 0 1rem;
+  margin: 0 0 1.15rem;
   padding: 0.65rem 0.85rem 0.55rem;
+}
+
+.offer-modal-card .dedication-extra-note-field {
+  margin-top: 0.25rem;
 }
 
 .offer-modal-card .altar-details-row {
@@ -1830,5 +1834,5 @@ a {
 }
 
 .offer-modal-card .altar-details + .field {
-  margin-top: 0.15rem;
+  margin-top: 0.35rem;
 }
