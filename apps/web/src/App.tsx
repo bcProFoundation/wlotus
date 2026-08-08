@@ -69,6 +69,8 @@ import {
   specialStoryForLocale,
   specialHidesAltarSectionLabel,
   rankTempleSpecials,
+  formatSpecialEventDateLabel,
+  specialCountdown,
   type TempleSpecialsStatusUi,
 } from './lib/specialsUi.js';
 import {
@@ -1836,9 +1838,31 @@ export default function App() {
                       <span className="home-events-name">
                         {ev.name || ev.profileId.slice(0, 8)}
                       </span>
-                      {ev.sortDate ? (
-                        <span className="home-events-date">{ev.sortDate}</span>
-                      ) : null}
+                      {(() => {
+                        const dateLabel = formatSpecialEventDateLabel(
+                          ev,
+                          locale,
+                        );
+                        const cd = specialCountdown(ev);
+                        let when = '';
+                        if (cd.kind === 'days') {
+                          when = t('homeEventsDaysUntil', { n: cd.days });
+                        } else if (cd.kind === 'today') {
+                          when = t('homeEventsToday');
+                        } else if (cd.kind === 'ongoing') {
+                          when = t('homeEventsOngoing');
+                        } else if (cd.kind === 'past') {
+                          when = t('homeEventsDaysPast', { n: cd.days });
+                        }
+                        if (!dateLabel && !when) return null;
+                        return (
+                          <span className="home-events-date">
+                            {dateLabel}
+                            {dateLabel && when ? ' · ' : ''}
+                            {when}
+                          </span>
+                        );
+                      })()}
                     </span>
                     <span className="home-events-count">
                       {t('homeEventsOfferings', { n: ev.offerCount })}
