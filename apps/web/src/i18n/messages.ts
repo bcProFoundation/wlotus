@@ -114,6 +114,7 @@ export type MessageKey =
   | 'sessionNoteLabel'
   | 'reofferExtraNoteLabel'
   | 'reofferExtraNotePlaceholder'
+  | 'specialPrayerNoteLabel'
   | 'btnAmendAltar'
   | 'amendRelationshipCreatorOnly'
   | 'firstOfferDeathTitle'
@@ -295,6 +296,7 @@ const en: Dict = {
   sessionNoteLabel: 'In remembrance',
   reofferExtraNoteLabel: 'Words of remembrance',
   reofferExtraNotePlaceholder: 'Optional…',
+  specialPrayerNoteLabel: 'Prayer',
   btnAmendAltar: 'Add relationship',
   amendRelationshipCreatorOnly:
     'Only the creator of this altar can add relationships.',
@@ -483,6 +485,7 @@ const vi: Dict = {
   sessionNoteLabel: 'Lời tưởng niệm',
   reofferExtraNoteLabel: 'Lời tưởng niệm',
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
+  specialPrayerNoteLabel: 'Lời khấn',
   btnAmendAltar: 'Thêm mối quan hệ',
   amendRelationshipCreatorOnly:
     'Chỉ người tạo ban thờ mới có thể thêm mối quan hệ.',
@@ -669,6 +672,7 @@ const zh: Dict = {
   sessionNoteLabel: '追思寄语',
   reofferExtraNoteLabel: '追思寄语',
   reofferExtraNotePlaceholder: '可选…',
+  specialPrayerNoteLabel: '祷词',
   btnAmendAltar: '添加关系',
   amendRelationshipCreatorOnly: '仅档案创建者可添加关系。',
   firstOfferDeathTitle: '献花',
