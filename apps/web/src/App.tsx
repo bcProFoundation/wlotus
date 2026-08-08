@@ -2212,25 +2212,37 @@ export default function App() {
             />
             {altarHasDeathDate(dedicationSheet.altar) ? (
               <>
-                <div className="field">
-                  <label htmlFor="dedication-extra-note">
-                    {t('reofferExtraNoteLabel')}
-                  </label>
-                  <textarea
-                    id="dedication-extra-note"
-                    rows={2}
-                    maxLength={80}
-                    value={dedicationSheet.extraNote}
-                    onChange={e =>
-                      setDedicationSheet(d =>
-                        d
-                          ? { ...d, extraNote: e.target.value.slice(0, 80) }
-                          : d,
-                      )
-                    }
-                    placeholder={t('reofferExtraNotePlaceholder')}
-                  />
-                </div>
+                {(() => {
+                  const sp = findSpecialForParent(
+                    templeSpecials,
+                    dedicationSheet.parentBurnTxid,
+                  );
+                  // Ghosts / festival events: no free-text memorial note
+                  if (sp && (sp.kind === 'ghost' || sp.kind === 'event')) {
+                    return null;
+                  }
+                  return (
+                    <div className="field">
+                      <label htmlFor="dedication-extra-note">
+                        {t('reofferExtraNoteLabel')}
+                      </label>
+                      <textarea
+                        id="dedication-extra-note"
+                        rows={2}
+                        maxLength={80}
+                        value={dedicationSheet.extraNote}
+                        onChange={e =>
+                          setDedicationSheet(d =>
+                            d
+                              ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                              : d,
+                          )
+                        }
+                        placeholder={t('reofferExtraNotePlaceholder')}
+                      />
+                    </div>
+                  );
+                })()}
                 <p className="hint eta">
                   {t('etaEstimated', { eta: etaLabel })}
                 </p>
@@ -2248,12 +2260,33 @@ export default function App() {
                             locale,
                           ) || t('offeringFallback'),
                         altar: dedicationSheet.altar,
-                        extraNote: dedicationSheet.extraNote,
+                        extraNote: (() => {
+                          const sp = findSpecialForParent(
+                            templeSpecials,
+                            dedicationSheet.parentBurnTxid,
+                          );
+                          if (
+                            sp &&
+                            (sp.kind === 'ghost' || sp.kind === 'event')
+                          ) {
+                            return '';
+                          }
+                          return dedicationSheet.extraNote;
+                        })(),
                         relatedOptions: dedicationSheet.relatedOptions,
                       })
                     }
                   >
-                    {t('btnOffer')}
+                    {(() => {
+                      const sp = findSpecialForParent(
+                        templeSpecials,
+                        dedicationSheet.parentBurnTxid,
+                      );
+                      if (sp?.kind === 'ghost' && sp.active) {
+                        return t('btnCung');
+                      }
+                      return t('btnOffer');
+                    })()}
                   </button>
                   {dedicationSheet.isCreator ? (
                     <button
