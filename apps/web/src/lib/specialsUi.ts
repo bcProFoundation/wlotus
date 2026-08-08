@@ -157,3 +157,100 @@ export function rankTempleSpecials(
 
   return ranked.slice(0, Math.max(0, limit));
 }
+
+/**
+ * Display the event day in the calendar the special is defined on.
+ * lunar → lunar YMD label; solar → solar YYYY-MM-DD (effective when known).
+ */
+export function formatSpecialEventDateLabel(
+  special: TempleSpecialProfileUi,
+  locale: string,
+): string {
+  const cal = (special.eventCalendar || 'solar').toLowerCase();
+  const lunarYmd = (special.eventDate || '').trim();
+  const solarYmd = (
+    special.effectiveEventDate ||
+    special.effectiveEndDate ||
+    special.eventDate ||
+    ''
+  ).trim();
+
+  if (cal === 'lunar') {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(lunarYmd);
+    if (m) {
+      const y = m[1];
+      const mo = Number(m[2]);
+      const d = Number(m[3]);
+      if (locale.startsWith('vi')) return `${d}/${mo} Âm lịch`;
+      if (locale.startsWith('zh')) return `农历${mo}月${d}日`;
+      return `Lunar ${y}-${m[2]}-${m[3]}`;
+    }
+    // fallback: show solar with a lunar hint if we only have effective
+    if (solarYmd) {
+      if (locale.startsWith('vi')) return `${solarYmd} (Dương)`;
+      if (locale.startsWith('zh')) return `${solarYmd}（公历）`;
+      return solarYmd;
+    }
+    return lunarYmd;
+  }
+
+  return solarYmd || lunarYmd;
+}
+
+export type SpecialCountdown =
+  | { kind: 'days'; days: number }
+  | { kind: 'today' }
+  | { kind: 'ongoing' }
+  | { kind: 'past'; days: number }
+  | { kind: 'none' };
+
+/**
+ * Days from local today to the special window.
+ * Uses effectiveStartDate when present (range events like Cô Hồn),
+ * else effectiveEventDate / eventDate.
+ * Inside [start, end] → ongoing; on start day before end → today if single day.
+ */
+export function specialCountdown(
+  special: TempleSpecialProfileUi,
+  now: Date = new Date(),
+): SpecialCountdown {
+  const start =
+    (special.effectiveStartDate || special.effectiveEventDate || '').trim();
+  const end = (
+    special.effectiveEndDate ||
+    special.effectiveEventDate ||
+    start
+  ).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return { kind: 'none' };
+
+  const todayUtc = Date.UTC(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  const parse = (ymd: string): number | null => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+    if (!m) return null;
+    return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  };
+  const startMs = parse(start);
+  const endMs = parse(end) ?? startMs;
+  if (startMs == null || endMs == null) return { kind: 'none' };
+
+  if (todayUtc < startMs) {
+    return {
+      kind: 'days',
+      days: Math.round((startMs - todayUtc) / 86_400_000),
+    };
+  }
+  if (todayUtc > endMs) {
+    return {
+      kind: 'past',
+      days: Math.round((todayUtc - endMs) / 86_400_000),
+    };
+  }
+  // Inside window
+  if (startMs === endMs) return { kind: 'today' };
+  return { kind: 'ongoing' };
+}
+
