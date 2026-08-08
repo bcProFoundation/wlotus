@@ -161,10 +161,6 @@ export function rankTempleSpecials(
 }
 
 /**
- * Display the event day in the calendar the special is defined on.
- * lunar → lunar YMD label; solar → solar YYYY-MM-DD (effective when known).
- */
-/**
  * Event date label in the special's own calendar.
  * Multi-day windows → "start–end" range (prefers start over peak/finish alone).
  * Lunar calendar: convert effective solar bounds back to lunar day/month.
@@ -310,4 +306,3 @@ export function specialCountdown(
   if (startMs === endMs) return { kind: 'today' };
   return { kind: 'ongoing' };
 }
-
