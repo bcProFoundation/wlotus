@@ -67,43 +67,95 @@ export async function peelSizedFuel(
 }
 
 /**
- * Desk (tip-funding) → tip: create one sized fuel on tip; change stays on desk.
+ * Desk (tip-funding) → tip: **only** ~40 XEC fuel lands on tip.
+ * Change is forced onto desk.script (never tip, never BIP44 change chain).
+ *
+ * Old bug (tx c0b95968…): peel/top-up put both 40 XEC and change on the tip,
+ * draining the funding UTXO. This function asserts post-build that tip receives
+ * only the sized fuel output.
  */
 export async function sendSizedFuelFromDesk(
   desk: Wallet,
   tip: Wallet,
 ): Promise<string> {
   await desk.sync();
-  const big = pickSplitSourceUtxo(desk.utxos);
-  // Also allow exact-sized send when desk has any pure UTXO ≥ fuel
   const pure = desk.utxos.filter(u => !u.token);
   const can = pure.some(u => u.sats >= REMINT_FUEL_SATS);
-  if (!can && !big) {
+  if (!can) {
     throw new Error(
       `Desk needs ≥ ${Number(REMINT_FUEL_SATS) / 100} pure XEC to fund tip fuel`,
     );
   }
 
-  const { payment } = await import('ecash-lib');
+  const { payment, toHex } = await import('ecash-lib');
   const action: payment.Action = {
+    // Exactly one payment output: sized fuel → tip. Change via getChangeScript.
     outputs: [{ sats: REMINT_FUEL_SATS, script: tip.script }],
   };
 
+  const deskScript = desk.script;
+  const tipScriptHex = toHex(tip.script);
+  const deskScriptHex = toHex(deskScript);
+
+  if (tipScriptHex === deskScriptHex) {
+    throw new Error(
+      'Desk and tip scripts are identical — cannot route fuel vs change',
+    );
+  }
+
   const previous = desk.getChangeScript.bind(desk);
   (desk as { getChangeScript: () => Script }).getChangeScript = () =>
-    desk.script;
+    deskScript;
 
-  let resp: { success: boolean; broadcasted?: string[] };
+  let built: {
+    builtTxs?: { outputs: { sats: bigint; script?: { bytecode?: Uint8Array } }[] }[];
+    broadcast: () => Promise<{ success: boolean; broadcasted?: string[] }>;
+  };
   try {
-    resp = await desk.action(action).build().broadcast();
+    built = desk.action(action).build() as typeof built;
+    // Post-build integrity: tip may only receive the sized fuel out.
+    const tx = built.builtTxs?.[0];
+    if (tx?.outputs?.length) {
+      let tipFuelOuts = 0;
+      let tipOtherSats = 0n;
+      let deskChangeSats = 0n;
+      for (const o of tx.outputs) {
+        const scr = o.script?.bytecode
+          ? toHex(o.script.bytecode as unknown as Uint8Array)
+          : o.script
+            ? toHex(o.script as unknown as Uint8Array)
+            : '';
+        // Script objects may expose bytecode via ser — fall back to string match
+        const scriptHex = (() => {
+          try {
+            if (o.script && typeof (o.script as { ser?: () => Uint8Array }).ser === 'function') {
+              return toHex((o.script as { ser: () => Uint8Array }).ser());
+            }
+          } catch { /* ignore */ }
+          return scr;
+        })();
+        if (!scriptHex) continue;
+        if (scriptHex === tipScriptHex) {
+          if (o.sats === REMINT_FUEL_SATS) tipFuelOuts++;
+          else tipOtherSats += o.sats;
+        } else if (scriptHex === deskScriptHex) {
+          deskChangeSats += o.sats;
+        }
+      }
+      if (tipFuelOuts !== 1 || tipOtherSats > 0n) {
+        throw new Error(
+          `Desk→tip fuel integrity failed: tipFuelOuts=${tipFuelOuts} tipOtherSats=${tipOtherSats} (change must stay on desk)`,
+        );
+      }
+    }
+    const resp = await built.broadcast();
+    if (!resp.success || !resp.broadcasted?.length) {
+      throw new Error(`Desk→tip sized fuel failed: ${JSON.stringify(resp)}`);
+    }
+    await desk.sync();
+    await tip.sync();
+    return resp.broadcasted[0]!;
   } finally {
     (desk as { getChangeScript: () => Script }).getChangeScript = previous;
   }
-
-  if (!resp.success || !resp.broadcasted?.length) {
-    throw new Error(`Desk→tip sized fuel failed: ${JSON.stringify(resp)}`);
-  }
-  await desk.sync();
-  await tip.sync();
-  return resp.broadcasted[0]!;
 }
