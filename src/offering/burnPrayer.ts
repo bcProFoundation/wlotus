@@ -3,7 +3,12 @@
  * wLotus: remint mints 108 (102 miner + 6 temple) → burn miner atoms with **DANA**.
  * Legacy Prayer memo path may still embed memorial EMPP on mint without a burn tx.
  */
-import { ALP_TOKEN_TYPE_STANDARD, payment } from 'ecash-lib';
+import {
+  ALP_TOKEN_TYPE_STANDARD,
+  DEFAULT_DUST_SATS,
+  payment,
+  type Script,
+} from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
 import {
   memorialPushdata,
@@ -28,6 +33,11 @@ export {
 /**
  * Burn `burnAtoms` (default 1) with on-chain memorial (**DANA** LOKAD).
  * Temple specials may burn more than 1 during an active event window.
+ *
+ * Optional routing (tip HD wallets otherwise leak pure-XEC change to BIP44
+ * change chain …/1/i and park leftover inventory on an unusable address):
+ *   - changeScript: pure XEC change (desk / tip-funding)
+ *   - inventoryScript: leftover token atoms after the burn (temple cold storage)
  */
 export async function burnOnePrayer(opts: {
   wallet: Wallet;
@@ -38,7 +48,17 @@ export async function burnOnePrayer(opts: {
   parentBurnTxid?: string;
   /** Atoms to burn (default 1). Must be ≥ 1. */
   burnAtoms?: bigint;
-}): Promise<{ txid: string; burnAtoms: bigint }> {
+  /**
+   * Force pure-XEC change onto this script (desk / tip-funding receive).
+   * Without this, HD tip wallets drain fees to BIP44 change (…/1/i).
+   */
+  changeScript?: Script;
+  /**
+   * Leftover token atoms after burn are sent here (e.g. temple P2SH cold storage).
+   * If omitted, leftover inventory follows wallet change (not recommended on tip HD).
+   */
+  inventoryScript?: Script;
+}): Promise<{ txid: string; burnAtoms: bigint; inventoryAtoms: bigint }> {
   const note = (opts.note ?? '').trim();
   const offeringId = opts.offeringId ?? OFFERING_ID_PRAYER;
   const parentBurnTxid = opts.parentBurnTxid
@@ -48,28 +68,85 @@ export async function burnOnePrayer(opts: {
   if (burnAtoms < 1n) {
     throw new Error(`burnAtoms must be ≥ 1 (got ${burnAtoms})`);
   }
+
+  await opts.wallet.sync();
+  const tokenUtxos = opts.wallet.utxos.filter(
+    u =>
+      u.token?.tokenId === opts.tokenId &&
+      u.token.atoms != null &&
+      !u.token.isMintBaton,
+  );
+  const totalAtoms = tokenUtxos.reduce(
+    (sum, u) => sum + BigInt(u.token!.atoms),
+    0n,
+  );
+  if (totalAtoms < burnAtoms) {
+    throw new Error(
+      `Need ≥ ${burnAtoms} atoms of ${opts.tokenId.slice(0, 8)}… (have ${totalAtoms})`,
+    );
+  }
+  const inventoryAtoms = totalAtoms - burnAtoms;
+
+  const outputs: payment.PaymentOutput[] = [{ sats: 0n }];
+  const tokenActions: payment.TokenAction[] = [];
+
+  if (inventoryAtoms > 0n && opts.inventoryScript) {
+    // Explicit SEND leftover → inventory (temple); BURN the flower atoms.
+    tokenActions.push({
+      type: 'SEND',
+      tokenId: opts.tokenId,
+      tokenType: ALP_TOKEN_TYPE_STANDARD,
+    });
+    outputs.push({
+      sats: DEFAULT_DUST_SATS,
+      script: opts.inventoryScript,
+      tokenId: opts.tokenId,
+      atoms: inventoryAtoms,
+      isMintBaton: false,
+    });
+  }
+
+  tokenActions.push({
+    type: 'BURN',
+    tokenId: opts.tokenId,
+    tokenType: ALP_TOKEN_TYPE_STANDARD,
+    burnAtoms,
+  });
+  tokenActions.push({
+    type: 'DATA',
+    data: memorialPushdata(note, offeringId, parentBurnTxid),
+  });
+
   const action: payment.Action = {
-    outputs: [{ sats: 0n }],
-    tokenActions: [
-      {
-        type: 'BURN',
-        tokenId: opts.tokenId,
-        tokenType: ALP_TOKEN_TYPE_STANDARD,
-        burnAtoms,
-      },
-      {
-        type: 'DATA',
-        data: memorialPushdata(note, offeringId, parentBurnTxid),
-      },
-    ],
+    outputs,
+    tokenActions,
   };
 
-  const built = opts.wallet.action(action).build();
-  const resp = await built.broadcast();
+  const previous = opts.wallet.getChangeScript.bind(opts.wallet);
+  if (opts.changeScript) {
+    (opts.wallet as { getChangeScript: () => Script }).getChangeScript = () =>
+      opts.changeScript!;
+  }
+
+  let resp: { success: boolean; broadcasted?: string[] };
+  try {
+    const built = opts.wallet.action(action).build();
+    resp = await built.broadcast();
+  } finally {
+    if (opts.changeScript) {
+      (opts.wallet as { getChangeScript: () => Script }).getChangeScript =
+        previous;
+    }
+  }
+
   if (!resp.success || !resp.broadcasted?.length) {
     throw new Error(`Burn broadcast failed: ${JSON.stringify(resp)}`);
   }
-  return { txid: resp.broadcasted[0]!, burnAtoms };
+  return {
+    txid: resp.broadcasted[0]!,
+    burnAtoms,
+    inventoryAtoms,
+  };
 }
 
 export function explorerTx(txid: string): string {
