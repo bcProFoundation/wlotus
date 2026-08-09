@@ -15,7 +15,7 @@
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { fromHex, toHex } from 'ecash-lib';
+import { fromHex, toHex, Script } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
 import { createChronik } from '../../../src/network/createChronik.js';
 import { getMedianTimePast } from '../../../src/network/medianTimePast.js';
@@ -406,7 +406,10 @@ function notifyDanaIndex(burnTxid: string): void {
   });
 }
 
-/** After temple remint, burn the miner 1 atom from the tip fee wallet. */
+/**
+ * After temple remint, burn flower atoms from the tip fee wallet.
+ * Pure-XEC change → desk (tip-funding). Leftover miner inventory → temple.
+ */
 async function burnMinerAtomAfterMint(opts: {
   wallet: Wallet;
   tokenId: string;
@@ -414,7 +417,11 @@ async function burnMinerAtomAfterMint(opts: {
   parentBurnTxid?: string;
   /** Atoms to burn (default 1). Active temple specials may burn more. */
   burnAtoms?: bigint;
-}): Promise<{ txid: string; burnAtoms: bigint }> {
+  /** Desk / tip-funding script — pure XEC change stays spendable for next fuel. */
+  changeScript: Script;
+  /** Temple P2SH — leftover inventory cold-stored (not needed on desk for now). */
+  inventoryScript: Script;
+}): Promise<{ txid: string; burnAtoms: bigint; inventoryAtoms: bigint }> {
   const burnAtoms = opts.burnAtoms ?? NORMAL_FLOWER_BURN_ATOMS;
   if (burnAtoms < 1n) {
     throw new Error(`burnAtoms must be ≥ 1 (got ${burnAtoms})`);
@@ -440,8 +447,14 @@ async function burnMinerAtomAfterMint(opts: {
         offeringId: OFFERING_ID_WLOTUS,
         parentBurnTxid: opts.parentBurnTxid,
         burnAtoms,
+        changeScript: opts.changeScript,
+        inventoryScript: opts.inventoryScript,
       });
-      return { txid: burned.txid, burnAtoms: burned.burnAtoms };
+      return {
+        txid: burned.txid,
+        burnAtoms: burned.burnAtoms,
+        inventoryAtoms: burned.inventoryAtoms,
+      };
     } catch (e) {
       lastErr = e;
       await sleep(400 + attempt * 200);
@@ -1145,12 +1158,23 @@ async function completeBurnOnce(opts: {
 
   const chronik = await createChronik('closest');
   const tipFee = await loadTipFeeWallet(chronik, pb.tipIndex);
+  const desk = await loadMintWallet(chronik);
+  const { dep } = loadDep();
+  const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
+  if (!templeHashHex || templeHashHex.length !== 40) {
+    throw new Error('wLotus deployment missing templeScriptHashHex for inventory');
+  }
+  const inventoryScript = Script.p2sh(fromHex(templeHashHex));
   const burned = await burnMinerAtomAfterMint({
     wallet: tipFee.wallet,
     tokenId: pb.tokenId,
     note: pb.note,
     parentBurnTxid: pb.parentBurnTxid,
     burnAtoms,
+    // Pure XEC change stays on desk (tip-funding) — never BIP44 change chain.
+    changeScript: desk.wallet.script,
+    // Leftover miner inventory → temple cold storage.
+    inventoryScript,
   });
   pendingBurns.delete(remintTxid);
   if (!pb.parentBurnTxid) {
