@@ -63,7 +63,10 @@ import {
   pickSplitSourceUtxo,
   pureXecBalance,
 } from '../../../src/mint/fuelUtxo.js';
-import { peelSizedFuel } from '../../../src/mint/peelSizedFuel.js';
+import {
+  peelSizedFuel,
+  sendSizedFuelFromDesk,
+} from '../../../src/mint/peelSizedFuel.js';
 import {
   loadTipFeeWallet,
   tipFeeWalletSummary,
@@ -521,12 +524,8 @@ async function splitSizedFuel(wallet: Wallet): Promise<void> {
 
 /**
  * Refill tip fee wallet from the main desk with **one sized remint fuel**
- * coin (~40 XEC). Chunk top-ups (1000 XEC) still required a peel on the tip
- * and did not reduce total fees — they only moved treasury off the desk and
- * risked HD change-chain leakage. Bulk funding stays on
- * `npm run fund-tip-fee-wallets`.
- *
- * Override size with MINT_TIP_TOPUP_SATS (sats); default REMINT_FUEL_SATS.
+ * coin (~40 XEC). Change is forced onto the desk (tip-funding address) so
+ * treasury never moves to the tip or BIP44 change chain.
  */
 async function topUpTipFuelFromDesk(
   desk: Wallet,
@@ -542,31 +541,10 @@ async function topUpTipFuelFromDesk(
         `Run: npm run fund-tip-fee-wallets`,
     );
   }
-  const envTop = process.env.MINT_TIP_TOPUP_SATS?.trim();
-  let send =
-    envTop && /^\d+$/.test(envTop) ? BigInt(envTop) : REMINT_FUEL_SATS;
-  // Keep auto top-up at a single sized fuel coin (no chunk → peel).
-  if (send < REMINT_FUEL_SATS) send = REMINT_FUEL_SATS;
-  if (send > REMINT_FUEL_MAX_SATS) send = REMINT_FUEL_SATS;
-  if (available < send) {
-    throw new Error(
-      `Tip fee wallet ${tipWallet.address} is empty and desk has no XEC to fund it. ` +
-        `Run: npm run fund-tip-fee-wallets`,
-    );
-  }
-
-  const { payment } = await import('ecash-lib');
-  const action: payment.Action = {
-    outputs: [{ sats: send, script: tipWallet.script }],
-  };
-  const resp = await desk.action(action).build().broadcast();
-  if (!resp.success || !resp.broadcasted?.length) {
-    throw new Error(`Desk→tip fuel top-up failed: ${JSON.stringify(resp)}`);
-  }
+  const txid = await sendSizedFuelFromDesk(desk, tipWallet);
   console.log(
-    `desk→tip fuel ${resp.broadcasted[0]} ${Number(send) / 100} XEC (${send} sats) → ${tipWallet.address}`,
+    `desk→tip fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC → ${tipWallet.address} (change on desk)`,
   );
-  await tipWallet.sync();
 }
 
 /**
@@ -622,14 +600,19 @@ async function ensureTipSizedFuel(
     /* continue */
   }
 
-  if (pickSplitSourceUtxo(tipWallet.utxos)) {
-    await splitSizedFuel(tipWallet);
+  if (pickSizedFuelUtxo(tipWallet.utxos)) {
+    /* already have sized fuel */
+  } else if (pickSplitSourceUtxo(tipWallet.utxos)) {
+    // Oversized UTXO stuck on tip — keep fuel on tip, send change to desk
+    const txid = await peelSizedFuel(tipWallet, {
+      fuelScript: tipWallet.script,
+      changeScript: desk.script,
+    });
+    if (txid) {
+      console.log(`tip reclaim ${txid}: fuel on tip, change → desk`);
+    }
   } else {
     await topUpTipFuelFromDesk(desk, tipWallet);
-    // Auto top-up is already a sized fuel coin; peel only if still oversized.
-    if (!pickSizedFuelUtxo(tipWallet.utxos) && pickSplitSourceUtxo(tipWallet.utxos)) {
-      await splitSizedFuel(tipWallet);
-    }
   }
 
   return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
