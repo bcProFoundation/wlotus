@@ -66,9 +66,8 @@ describe('fuelUtxo sizing', () => {
     expect(() => tipFeeAccountNumber(-1)).toThrow(/non-negative/);
   });
 
-  it('desk→tip top-up chunk is much larger than one remint fuel', async () => {
-    const { TIP_TOPUP_SATS } = await import('../src/mint/fuelUtxo.js');
-    expect(TIP_TOPUP_SATS).toBeGreaterThanOrEqual(100_000n);
-    expect(TIP_TOPUP_SATS).toBeGreaterThan(REMINT_FUEL_SATS * 10n);
+  it('desk auto-fund sends one remint fuel, not a treasury chunk', () => {
+    expect(REMINT_FUEL_SATS).toBe(4_000n);
+    expect(isSizedFuelSats(REMINT_FUEL_SATS)).toBe(true);
   });
 });

@@ -24,14 +24,24 @@ First valid submit wins that tip; losers restart. Concurrent open challenges are
 for desk CPU. Genesis still creates **28** batons so parallelism stays available.
 
 **Fee wallets:** the main desk (`MINT_MNEMONIC`) holds treasury XEC. Each tip has its
-own HD fee account (`m/44'/1899'/(tipIndex+1)'/0/0`). The tip fee wallet receives the
-minted miner atom and must fund the burn fee.
+own HD fee account (`m/44'/1899'/(tipIndex+1)'/0/0`) — the **mint address**. It
+signs remint, receives the miner atoms, and burns the offering.
 
 **Critical:** remint has **no change output**. Fuel must be a small coin
 (~40 XEC / 4000 sats). Attaching a large UTXO burns almost all of it as miner fee.
-So the tip fee wallet should hold a **large** XEC balance and peel ~40 XEC coins
-locally. Desk→tip auto top-up sends ~1000 XEC (`TIP_TOPUP_SATS`) when the tip is
-empty — not 40 XEC per offering (that extra hop wastes a network fee).
+
+**Offering fee flow** (one extra hop is required; a large “chunk” on the mint
+does not save a transaction):
+
+1. Desk → mint: one sized ~40 XEC fuel (change stays on desk).
+2. Mint remint spends that fuel (leftover is miner fee, not change).
+3. Mint burn spends the miner-atom UTXO. Pure-XEC change stays on the **mint
+   receive** address — never swept back to the desk (that was swallowing the
+   next fuel and causing insufficient-fee failures). Leftover WLOTUS inventory
+   still goes to temple P2SH.
+
+`fund-tip-fee-wallets` pre-places several sized fuels on the mint (change on
+desk) so offerings often skip the auto top-up.
 
 ```
 POST /api/challenge  { installId, note? }  → preimage + bits
@@ -68,7 +78,7 @@ After depositing XEC to the **desk** address:
 # Preview addresses / planned sends
 FUND_DRY_RUN=1 MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
 
-# Equalize tip balances from desk surplus, peel ~40 XEC fuel coins on each tip
+# Equalize: send sized ~40 XEC fuels from desk → mint (change remains on desk)
 MINT_MNEMONIC="…" npm run fund-tip-fee-wallets
 ```
 
@@ -82,12 +92,9 @@ npm run fund-tip-fee-wallets
 
 Optional env: `MINT_DESK_RESERVE_SATS` (default 10000), `MINT_FUELS_PER_TIP` (default 3).
 
-If a tip wallet is empty at challenge time, mint-api auto top-ups **~1000 XEC**
-(`TIP_TOPUP_SATS` / `MINT_TIP_TOPUP_SATS`) from the desk, then peels a **~40 XEC**
-remint fuel coin on the tip — **change stays on the tip receive address**. Remint
-still must use the small fuel coin (no change out). Do not set
-`MINT_TIP_TOPUP_SATS` below 1000 XEC (undersized values are ignored). Prefer
-running the fund script after depositing to the desk.
+If the mint/tip wallet has no sized fuel at challenge time, mint-api sends **one
+~40 XEC** coin from the desk (`sendSizedFuelFromDesk`). Change stays on the desk.
+Do not send leftover mint XEC back to the desk during burn.
 
 ## Endpoints
 
