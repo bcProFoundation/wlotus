@@ -541,7 +541,8 @@ async function topUpTipFuelFromDesk(
   }
   const txid = await sendSizedFuelFromDesk(desk, tipWallet);
   console.log(
-    `desk→mint fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC → ${tipWallet.address} (change on desk)`,
+    `desk→mint fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC ` +
+      `${desk.address} → ${tipWallet.address} (change on desk)`,
   );
 }
 
