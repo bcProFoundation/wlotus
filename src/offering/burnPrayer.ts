@@ -34,10 +34,15 @@ export {
  * Burn `burnAtoms` (default 1) with on-chain memorial (**DANA** LOKAD).
  * Temple specials may burn more than 1 during an active event window.
  *
- * Optional routing (tip HD wallets otherwise leak pure-XEC change to BIP44
- * change chain …/1/i and park leftover inventory on an unusable address):
- *   - changeScript: pure XEC change (desk / tip-funding)
- *   - inventoryScript: leftover token atoms after the burn (temple cold storage)
+ * Pure-XEC change stays on the mint/tip **receive** script (`wallet.script`)
+ * unless `changeScript` is set. Do not route leftover XEC to the desk — that
+ * swallows the next remint fuel UTXOs. HD wallets must not use the default
+ * BIP44 change chain (…/1/i).
+ *
+ * Extra fee inputs prefer the smallest non-token UTXO so sized remint fuels
+ * (~40 XEC) are left for the next offering.
+ *
+ * `inventoryScript`: leftover token atoms after the burn (temple cold storage).
  */
 export async function burnOnePrayer(opts: {
   wallet: Wallet;
@@ -49,8 +54,8 @@ export async function burnOnePrayer(opts: {
   /** Atoms to burn (default 1). Must be ≥ 1. */
   burnAtoms?: bigint;
   /**
-   * Force pure-XEC change onto this script (desk / tip-funding receive).
-   * Without this, HD tip wallets drain fees to BIP44 change (…/1/i).
+   * Force pure-XEC change onto this script. Defaults to wallet.script
+   * (mint receive). Do not pass the desk / funding address.
    */
   changeScript?: Script;
   /**
@@ -117,26 +122,37 @@ export async function burnOnePrayer(opts: {
     data: memorialPushdata(note, offeringId, parentBurnTxid),
   });
 
+  // Token UTXOs + the smallest extra pure-XEC coin (fee). Prefer leftover
+  // dust (< remint fuel size) so sized ~40 XEC fuels stay for the next mint.
+  const extraPure = opts.wallet.utxos
+    .filter(u => !u.token)
+    .sort((a, b) => (a.sats < b.sats ? -1 : a.sats > b.sats ? 1 : 0));
+  const dustFee = extraPure.find(u => u.sats < 4_000n);
+  const feeUtxo = dustFee ?? extraPure[0];
+  const requiredUtxos = [
+    ...tokenUtxos.map(u => u.outpoint),
+    ...(feeUtxo ? [feeUtxo.outpoint] : []),
+  ];
+
   const action: payment.Action = {
     outputs,
     tokenActions,
+    requiredUtxos,
   };
 
+  // Always pin change to mint receive (or caller override) — never BIP44 …/1/i.
+  const changeScript = opts.changeScript ?? opts.wallet.script;
   const previous = opts.wallet.getChangeScript.bind(opts.wallet);
-  if (opts.changeScript) {
-    (opts.wallet as { getChangeScript: () => Script }).getChangeScript = () =>
-      opts.changeScript!;
-  }
+  (opts.wallet as { getChangeScript: () => Script }).getChangeScript = () =>
+    changeScript;
 
   let resp: { success: boolean; broadcasted?: string[] };
   try {
     const built = opts.wallet.action(action).build();
     resp = await built.broadcast();
   } finally {
-    if (opts.changeScript) {
-      (opts.wallet as { getChangeScript: () => Script }).getChangeScript =
-        previous;
-    }
+    (opts.wallet as { getChangeScript: () => Script }).getChangeScript =
+      previous;
   }
 
   if (!resp.success || !resp.broadcasted?.length) {

@@ -1,9 +1,13 @@
 /**
  * Remint fuel sizing.
  *
- * MooreTipMemo remints have no change output: any sats on the fuel UTXO above
- * the two dust outs (~1092) are burned as miner fee. Always attach a small,
- * pre-sized pure-XEC coin — never a large treasury UTXO.
+ * Remint has no change output: any sats on the fuel UTXO above the dust outs
+ * are burned as miner fee. Always attach a small, pre-sized pure-XEC coin —
+ * never a large treasury UTXO.
+ *
+ * Desk holds treasury. Each offering, desk sends one REMINT_FUEL_SATS coin to
+ * the mint/tip address (change stays on desk). Chunking a large balance onto
+ * the mint does not save a hop — remint still needs a sized coin.
  */
 export const REMINT_FUEL_SATS = 4_000n;
 /** Prefer coins in [REMINT_FUEL_SATS, REMINT_FUEL_MAX_SATS]. */
@@ -11,14 +15,7 @@ export const REMINT_FUEL_MAX_SATS = REMINT_FUEL_SATS + 1_000n;
 /** Need this much headroom above target to split (target + network fee). */
 export const REMINT_FUEL_SPLIT_MIN_SATS = REMINT_FUEL_SATS + 2_000n;
 
-/**
- * Desk → tip fee wallet refill chunk (1000 XEC).
- * Larger than one remint fuel so auto top-ups do not pay a network fee per
- * offering; the tip then peels REMINT_FUEL_SATS coins locally.
- */
-export const TIP_TOPUP_SATS = 100_000n;
-
-/** Keep at least this much pure XEC on the desk when auto-topping a tip. */
+/** Keep at least this much pure XEC on the desk when auto-funding mint fuel. */
 export const DESK_TOPUP_RESERVE_SATS = 10_000n;
 
 export interface PureUtxoLike {

@@ -128,7 +128,8 @@ async function main(): Promise<void> {
     console.log('Desk has no spendable surplus above reserve; skipping fund.');
   }
 
-  // Reclaim oversized pure XEC stuck on tip → change back to desk
+  // Optional ops: reclaim oversized pure XEC stuck on mint → desk.
+  // Not used on the offering path (that sweep was swallowing the next fuel).
   for (const t of tips) {
     await t.tip.wallet.sync();
     if (!pickSplitSourceUtxo(t.tip.wallet.utxos)) continue;

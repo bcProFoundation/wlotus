@@ -3,14 +3,12 @@
  *
  * Remint has no change out, so fuel must stay ~REMINT_FUEL_SATS.
  *
- * Treasury stays on the **desk / tip-funding** address. Only the sized fuel
- * coin is sent to the tip receive address that signs remint. Change must
- * never land on the tip (or BIP44 change chain) — otherwise the next burn
- * cannot draw from funding and leftover drifts to …/1/i.
+ * Offering path: desk sends one sized coin to the mint/tip receive address;
+ * leftover XEC stays on the desk. Do not sweep mint leftover back to desk
+ * during an offering (that swallows the next fuel).
  *
- * Usage:
- *   - Desk → tip fuel: peelSizedFuel(desk, { fuelScript: tip.script, changeScript: desk.script })
- *   - Legacy tip-local split: peelSizedFuel(tip) still works, but prefer desk→tip.
+ *   sendSizedFuelFromDesk(desk, tip) — normal offering fund
+ *   peelSizedFuel(tip, { changeScript: tip.script }) — only if desk is empty
  */
 import type { Script } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';

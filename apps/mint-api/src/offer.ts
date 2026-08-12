@@ -58,7 +58,6 @@ import {
 import {
   DESK_TOPUP_RESERVE_SATS,
   REMINT_FUEL_SATS,
-  REMINT_FUEL_MAX_SATS,
   pickSizedFuelUtxo,
   pickSplitSourceUtxo,
   pureXecBalance,
@@ -407,8 +406,9 @@ function notifyDanaIndex(burnTxid: string): void {
 }
 
 /**
- * After temple remint, burn flower atoms from the tip fee wallet.
- * Pure-XEC change → desk (tip-funding). Leftover miner inventory → temple.
+ * After temple remint, burn flower atoms from the tip fee (mint) wallet.
+ * Pure-XEC change stays on the mint receive address — never the desk.
+ * Leftover miner inventory → temple.
  */
 async function burnMinerAtomAfterMint(opts: {
   wallet: Wallet;
@@ -417,9 +417,7 @@ async function burnMinerAtomAfterMint(opts: {
   parentBurnTxid?: string;
   /** Atoms to burn (default 1). Active temple specials may burn more. */
   burnAtoms?: bigint;
-  /** Desk / tip-funding script — pure XEC change stays spendable for next fuel. */
-  changeScript: Script;
-  /** Temple P2SH — leftover inventory cold-stored (not needed on desk for now). */
+  /** Temple P2SH — leftover inventory cold-stored. */
   inventoryScript: Script;
 }): Promise<{ txid: string; burnAtoms: bigint; inventoryAtoms: bigint }> {
   const burnAtoms = opts.burnAtoms ?? NORMAL_FLOWER_BURN_ATOMS;
@@ -447,7 +445,7 @@ async function burnMinerAtomAfterMint(opts: {
         offeringId: OFFERING_ID_WLOTUS,
         parentBurnTxid: opts.parentBurnTxid,
         burnAtoms,
-        changeScript: opts.changeScript,
+        changeScript: opts.wallet.script,
         inventoryScript: opts.inventoryScript,
       });
       return {
@@ -522,23 +520,10 @@ function tipAnchorTxid(dep: DryrunDep, tipRec: BatonTip): string | null {
 type FuelCoin = { txid: string; outIdx: number; sats: string };
 
 /**
- * Peel one REMINT_FUEL_SATS coin from an oversized UTXO on `wallet`.
- * Remint has no change out — oversized fuel would burn almost entirely as fee.
- * Leftover XEC stays on the tip receive address (see peelSizedFuel).
- */
-async function splitSizedFuel(wallet: Wallet): Promise<void> {
-  const txid = await peelSizedFuel(wallet);
-  if (txid) {
-    console.log(
-      `fuel split ${txid} → ${REMINT_FUEL_SATS} sats (refused oversized fuel)`,
-    );
-  }
-}
-
-/**
- * Refill tip fee wallet from the main desk with **one sized remint fuel**
- * coin (~40 XEC). Change is forced onto the desk (tip-funding address) so
- * treasury never moves to the tip or BIP44 change chain.
+ * Refill the mint/tip fee wallet from the desk with **one sized remint fuel**
+ * (~40 XEC). Remint has no change out, so a large UTXO would be burned as fee.
+ * Desk change stays on the desk. This extra hop is required; chunking a large
+ * balance onto the tip does not save a transaction.
  */
 async function topUpTipFuelFromDesk(
   desk: Wallet,
@@ -556,7 +541,7 @@ async function topUpTipFuelFromDesk(
   }
   const txid = await sendSizedFuelFromDesk(desk, tipWallet);
   console.log(
-    `desk→tip fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC → ${tipWallet.address} (change on desk)`,
+    `desk→mint fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC → ${tipWallet.address} (change on desk)`,
   );
 }
 
@@ -613,19 +598,31 @@ async function ensureTipSizedFuel(
     /* continue */
   }
 
+  await desk.sync();
   if (pickSizedFuelUtxo(tipWallet.utxos)) {
     /* already have sized fuel */
-  } else if (pickSplitSourceUtxo(tipWallet.utxos)) {
-    // Oversized UTXO stuck on tip — keep fuel on tip, send change to desk
-    const txid = await peelSizedFuel(tipWallet, {
-      fuelScript: tipWallet.script,
-      changeScript: desk.script,
-    });
-    if (txid) {
-      console.log(`tip reclaim ${txid}: fuel on tip, change → desk`);
-    }
   } else {
-    await topUpTipFuelFromDesk(desk, tipWallet);
+    const deskPure = pureXecBalance(desk.utxos);
+    const deskAvail =
+      deskPure > DESK_TOPUP_RESERVE_SATS
+        ? deskPure - DESK_TOPUP_RESERVE_SATS
+        : 0n;
+    if (deskAvail >= REMINT_FUEL_SATS) {
+      await topUpTipFuelFromDesk(desk, tipWallet);
+    } else if (pickSplitSourceUtxo(tipWallet.utxos)) {
+      // Desk empty: peel a sized fuel on mint; leftover stays on mint receive.
+      const txid = await peelSizedFuel(tipWallet, {
+        fuelScript: tipWallet.script,
+        changeScript: tipWallet.script,
+      });
+      if (txid) {
+        console.log(
+          `mint local peel ${txid}: fuel + change stay on mint receive`,
+        );
+      }
+    } else {
+      await topUpTipFuelFromDesk(desk, tipWallet);
+    }
   }
 
   return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
@@ -1158,7 +1155,6 @@ async function completeBurnOnce(opts: {
 
   const chronik = await createChronik('closest');
   const tipFee = await loadTipFeeWallet(chronik, pb.tipIndex);
-  const desk = await loadMintWallet(chronik);
   const { dep } = loadDep();
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
   if (!templeHashHex || templeHashHex.length !== 40) {
@@ -1171,8 +1167,6 @@ async function completeBurnOnce(opts: {
     note: pb.note,
     parentBurnTxid: pb.parentBurnTxid,
     burnAtoms,
-    // Pure XEC change stays on desk (tip-funding) — never BIP44 change chain.
-    changeScript: desk.wallet.script,
     // Leftover miner inventory → temple cold storage.
     inventoryScript,
   });
