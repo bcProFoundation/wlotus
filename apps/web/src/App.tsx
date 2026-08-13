@@ -20,6 +20,7 @@ import {
   formatEstimateDurationLocale,
 } from './i18n/format.js';
 import { useLocale } from './i18n/LocaleContext.js';
+import { applyDocumentTheme, documentTheme } from './i18n/appearance.js';
 import {
   getMinPrayMs,
   getOrCreateInstallId,
@@ -225,7 +226,7 @@ function readRememberedChallenge(): StoredChallenge | null {
 }
 
 export default function App() {
-  const { locale, t } = useLocale();
+  const { locale, appearance, t } = useLocale();
   const shareInAppBrowserGate = useShareInAppBrowserGate();
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
@@ -368,19 +369,11 @@ export default function App() {
 
   const busy = phase !== 'idle';
 
-  /** EN stays dark; VI/ZH use temple browse (wood), dark during the offer ritual. */
+  /** Light cream vs dark (EN/VI black, ZH rosewood). Offering forces dark. */
   useEffect(() => {
-    const warmBrowse = locale === 'vi' || locale === 'zh';
-    const theme = warmBrowse && !busy ? 'temple' : 'dark';
-    document.documentElement.dataset.theme = theme;
+    applyDocumentTheme(documentTheme(locale, appearance, busy));
     document.documentElement.dataset.locale = locale;
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) {
-      const color =
-        theme !== 'temple' ? '#050505' : locale === 'zh' ? '#1c120c' : '#f3ebe0';
-      meta.setAttribute('content', color);
-    }
-  }, [locale, busy]);
+  }, [locale, appearance, busy]);
 
   const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({

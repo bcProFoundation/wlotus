@@ -38,8 +38,8 @@
   color-scheme: dark;
 }
 
-/* Warm temple browse UI — VI / ZH when not offering. */
-[data-theme='temple'] {
+/* Warm cream browse — the one light theme (any locale). */
+[data-theme='light'] {
   --bg0: #f3ebe0;
   --bg1: #e8d9c4;
   --ink: #2a2118;
@@ -69,21 +69,14 @@
   --msg-success-bg: rgba(47, 93, 58, 0.12);
   --msg-success-border: rgba(47, 93, 58, 0.35);
   --msg-success-ink: #1f3d28;
-  --page-texture: none;
-  --page-texture-opacity: 0;
+  --page-texture: url('/images/wood-vi.svg');
+  --page-texture-opacity: 0.28;
   --page-texture-blend: multiply;
   color-scheme: light;
 }
 
-/* Vietnamese browse — light teak / silk grain on the cream temple. */
-[data-theme='temple'][data-locale='vi'] {
-  --page-texture: url('/images/wood-vi.svg');
-  --page-texture-opacity: 0.28;
-  --page-texture-blend: multiply;
-}
-
-/* Chinese browse — aged rosewood, gold ink, dark grain. */
-[data-theme='temple'][data-locale='zh'] {
+/* Chinese dark — aged rosewood, gold ink. */
+[data-theme='wood'] {
   --bg0: #1c120c;
   --bg1: #120c08;
   --ink: #f3e6d4;
@@ -117,6 +110,11 @@
   --page-texture-blend: overlay;
   --font-display: 'Cormorant Garamond', 'Songti SC', 'STSong', 'Noto Serif CJK SC', serif;
   color-scheme: dark;
+}
+
+/* Chinese copy uses a Songti-like display face on every skin. */
+[data-locale='zh'] {
+  --font-display: 'Cormorant Garamond', 'Songti SC', 'STSong', 'Noto Serif CJK SC', serif;
 }
 
 * {
@@ -239,16 +237,16 @@ a {
   max-width: clamp(4.25rem, 14vw, 5.5rem);
 }
 
-/* Light temple uses a baked rounded PNG; hide the transparent dark glyph. */
+/* Light cream uses a baked rounded PNG; dark/wood use the transparent white W. */
 .brand-mark--on-light {
   display: none;
 }
 
-[data-theme='temple']:not([data-locale='zh']) .brand-mark--on-dark {
+[data-theme='light'] .brand-mark--on-dark {
   display: none;
 }
 
-[data-theme='temple']:not([data-locale='zh']) .brand-mark--on-light {
+[data-theme='light'] .brand-mark--on-light {
   display: block;
 }
 
@@ -369,13 +367,18 @@ a {
   top: calc(100% + 0.35rem);
   right: 0;
   z-index: 30;
-  min-width: 7.5rem;
+  min-width: 10.5rem;
   margin: 0;
   padding: 0.25rem;
-  list-style: none;
   border: 1px solid var(--line);
   border-radius: 0.35rem;
   background: var(--panel);
+}
+
+.lang-menu-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .lang-menu-item {
@@ -396,6 +399,50 @@ a {
 .lang-menu-item:hover,
 .lang-menu-item.active {
   background: var(--surface-strong);
+}
+
+.theme-toggle {
+  margin: 0.2rem 0.15rem 0.15rem;
+  padding: 0.45rem 0.3rem 0.35rem;
+  border-top: 1px solid var(--divider-soft);
+}
+
+.theme-toggle-label {
+  margin: 0 0.25rem 0.35rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.theme-toggle-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+}
+
+.theme-toggle-btn {
+  padding: 0.4rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.theme-toggle-btn:hover,
+.theme-toggle-btn:focus-visible {
+  border-color: var(--hover-line);
+  color: var(--ink);
+  outline: none;
+}
+
+.theme-toggle-btn.active {
+  border-color: var(--ink);
+  background: var(--surface-strong);
+  color: var(--ink);
 }
 
 .tagline {
