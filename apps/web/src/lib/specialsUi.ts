@@ -1,4 +1,5 @@
 import { solarToLunar } from './lunarCalendar.js';
+import { specialVisibleToViewer } from './specialCountries.js';
 
 /**
  * Temple specials UI helpers — kind-driven copy + story during soft pray.
@@ -21,6 +22,10 @@ export interface TempleSpecialProfileUi {
   storyBody?: string | null;
   storyTitleEn?: string | null;
   storyBodyEn?: string | null;
+  storyTitleZh?: string | null;
+  storyBodyZh?: string | null;
+  /** ISO country codes. Empty / omitted = Global. */
+  countries?: string[];
 }
 
 export interface TempleSpecialsStatusUi {
@@ -39,6 +44,16 @@ export function findSpecialForParent(
   if (!id || id.length !== 64) return null;
   const list = status?.profiles ?? status?.active ?? [];
   return list.find(p => p.profileId.toLowerCase() === id) ?? null;
+}
+
+/** Home events list — Global or matching viewer country / locale. */
+export function filterSpecialsForViewer(
+  profiles: TempleSpecialProfileUi[] | null | undefined,
+  opts: { countryCode?: string | null; locale?: string | null },
+): TempleSpecialProfileUi[] {
+  return (profiles ?? []).filter(p =>
+    specialVisibleToViewer(p.countries, opts),
+  );
 }
 
 /** True when this parent is currently in an active special window. */
@@ -69,9 +84,13 @@ export function specialSessionTitle(
 ): string | null {
   if (!special?.active) return null;
   if (special.kind === 'event') {
-    if (locale.startsWith('vi')) return special.storyTitle || 'Vu Lan Báo Hiếu';
-    if (locale.startsWith('zh')) return special.storyTitleEn || '盂兰盆 — 报恩';
-    return special.storyTitleEn || special.storyTitle || 'Vu Lan — Filial Gratitude';
+    if (locale.startsWith('vi')) {
+      return special.storyTitle || special.name;
+    }
+    if (locale.startsWith('zh')) {
+      return special.storyTitleZh || special.storyTitleEn || special.name;
+    }
+    return special.storyTitleEn || special.storyTitle || special.name;
   }
   if (special.kind === 'ghost') {
     return special.name || (locale.startsWith('vi') ? 'Cô Hồn' : 'Hungry Ghosts');
@@ -85,13 +104,18 @@ export function specialStoryForLocale(
   locale: string,
 ): { title: string; body: string } | null {
   if (!special) return null;
-  const useEn = locale.startsWith('en') || locale.startsWith('zh');
-  const title = useEn
-    ? special.storyTitleEn || special.storyTitle
-    : special.storyTitle || special.storyTitleEn;
-  const body = useEn
-    ? special.storyBodyEn || special.storyBody
-    : special.storyBody || special.storyBodyEn;
+  const zh = locale.startsWith('zh');
+  const en = locale.startsWith('en');
+  const title = zh
+    ? special.storyTitleZh || special.storyTitleEn || special.storyTitle
+    : en
+      ? special.storyTitleEn || special.storyTitle
+      : special.storyTitle || special.storyTitleEn;
+  const body = zh
+    ? special.storyBodyZh || special.storyBodyEn || special.storyBody
+    : en
+      ? special.storyBodyEn || special.storyBody
+      : special.storyBody || special.storyBodyEn;
   if (!body?.trim()) return null;
   return { title: (title || special.name || '').trim(), body: body.trim() };
 }

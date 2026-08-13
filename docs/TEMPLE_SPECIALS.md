@@ -118,30 +118,72 @@ TEMPLE_SPECIALS_JSON='[
     "kind": "event",
     "eventDate": "2026-07-15",
     "eventCalendar": "lunar",
-    "name": "Vu Lan"
+    "name": "Vu Lan",
+    "countries": ["VN"]
   },
   {
     "profileId": "<64-hex root burn>",
     "kind": "ghost",
     "eventDate": "2026-07-15",
     "eventCalendar": "lunar",
-    "name": "Cô Hồn"
-  },
-  {
-    "profileId": "<64-hex>",
-    "kind": "hero",
-    "eventDate": "2026-09-02",
-    "eventCalendar": "solar",
-    "birthDate": "1890-05-19",
-    "name": "Hồ Chí Minh"
+    "name": "Cô Hồn",
+    "countries": ["VN"]
   }
 ]'
 ```
 
 - `eventCalendar` is optional; **defaults to `"lunar"`**.
+- **`countries`**: ISO 3166-1 alpha-2 list for the home events list. Omit, `[]`,
+  `"*"`, or `"GLOBAL"` → **Global** (every viewer). Most specials are local.
 - No `deskKeep` or `testOffsetDays` inside the JSON — those are global only.
-- For Cô Hồn multi-day, until range fields land, ops may use the rằm solar day
-  as the single-day anchor (full multi-day is a follow-up).
+
+### Country targeting
+
+| JSON | Who sees it on Home → Events |
+|------|------------------------------|
+| omit / `[]` / `"*"` / `"GLOBAL"` | **Global** — every locale and IP |
+| `"countries": ["VN"]` | Vietnam (and `vi` locale diaspora) |
+| `"countries": ["CN","TW","HK","MO","SG"]` | Chinese-speaking regions (`zh` locale) |
+| `"countries": ["US","GB",…]` | English-speaking (`en` locale) |
+
+A special is shown if it is Global, the viewer’s **IP country** matches, or the
+**app locale** implies a listed country (`vi` → VN, `zh` → CN/TW/HK/MO/SG,
+`en` → US/GB/CA/AU/NZ/IE/ZA/PH/SG). Burns and share links are **not** gated.
+
+Live `/etc/wlotus/temple-specials.json` without `countries` stays **Global**.
+Patch existing Vu Lan / Cô Hồn without a new burn:
+
+```bash
+CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1 npm run create-temple-specials
+sudo cp deployments/temple-specials-created.json /etc/wlotus/temple-specials.json
+sudo systemctl restart wlotus-mint-api
+```
+
+Then burn only the missing catalog rows (the script skips names that already
+have a 64-hex `profileId`).
+
+### Regional catalog (2026)
+
+Memorial / ancestral offering days that fit W Lotus. Each row is its own root.
+
+| Region | Name | Kind | Window | Countries |
+|--------|------|------|--------|-----------|
+| VN | Vu Lan | event | lunar 15/7 (27 Aug 2026) | `VN` |
+| VN | Cô Hồn | ghost | lunar 2/7–15/7 (14–27 Aug) | `VN` |
+| VN | Tết Thanh Minh | event | solar 5 Apr 2026 | `VN` |
+| ZH | 盂兰盆 | event | lunar 15/7 (27 Aug 2026) | CN, TW, HK, MO, SG |
+| ZH | 中元节 | ghost | lunar 1/7–15/7 (13–27 Aug) | CN, TW, HK, MO, SG |
+| ZH | 清明节 | event | solar 5 Apr 2026 | CN, TW, HK, MO, SG |
+| EN | All Souls' Day | event | solar 2 Nov 2026 | US, GB, CA, AU, NZ, IE, ZA, PH, SG |
+| EN | Remembrance Day | hero | solar 11 Nov 2026 | same English-speaking list |
+
+Qingming / Thanh Minh is the same solar term (PRC public holiday 4–6 Apr 2026);
+the two roots keep distinct names and stories. Zhongyuan peak is the same lunar
+15/7 as Vu Lan / Ullambana; Ghost Month in Chinese sources runs 13 Aug–10 Sep
+2026 — we close the special window at rằm (same product rule as Cô Hồn).
+Remembrance Day is Veterans Day in the US.
+
+Code: `src/params/templeSpecialCatalog.ts`.
 
 ### Global env / GitHub variables
 
@@ -165,7 +207,8 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
   "burnAtoms": "96",
   "profiles": [ {
     "profileId", "kind", "eventDate", "eventCalendar",
-    "effectiveEventDate", "active", "windowStartUtc", "windowEndUtc", …
+    "effectiveEventDate", "active", "windowStartUtc", "windowEndUtc",
+    "countries", "storyTitle", "storyTitleEn", "storyTitleZh", …
   } ],
   "active": [ /* subset currently in window */ ]
 }
@@ -177,24 +220,24 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 
 1. Create the profiles on-chain (root burns) — see script below.
 2. Set `TEMPLE_SPECIALS_JSON` on the VM and matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build.
-   - Vu Lan → `kind: "event"`
-   - Cô Hồn → `kind: "ghost"`
-   - Heroes → `kind: "hero"` + `eventCalendar: "solar"` when the ceremony is fixed Gregorian.
+   - Vu Lan → `kind: "event"` + `countries: ["VN"]`
+   - Cô Hồn → `kind: "ghost"` + `countries: ["VN"]`
+   - Regional catalog → `npm run create-temple-specials` (skips existing names)
+   - Omit `countries` (or `[]`) for Global specials.
 3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` for full burn, or leave default `6`).
 4. Restart mint-api; confirm `/api/status` → `templeSpecials.profiles`.
 5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS`, verify burns, then set back to `0` for prod.
 6. **Launch (2026):** go-live target **17:00 VN on 26 Aug 2026** (00:00 lunar 15 in UTC+14).
 
-## Creating public specials on-chain (Vu Lan + Cô Hồn)
+## Creating public specials on-chain
 
 Specials are **not** JSON-only. Search (dana-index) and re-offers need a real
 root dedication burn. Flow:
 
-1. **Mint inventory if needed, then burn two roots** (Vu Lan + Cô Hồn):
+1. **Mint inventory if needed, then burn missing catalog roots**:
 
    ```bash
    set -a && source /etc/wlotus/mint.env && set +a
-   # optional dry-run first (does not remint; empty inventory is a warning)
    CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
    npm run create-temple-specials
    ```
@@ -235,12 +278,18 @@ copy without a full app redeploy later.
 
 Built-in defaults (until community-authored stories):
 
-| Profile | Title (vi) | Theme |
-|---------|------------|--------|
-| Vu Lan (`event`) | Vu Lan Báo Hiếu | Mục Kiền Liên cứu mẹ → báo hiếu, hoa sen |
-| Cô Hồn (`ghost`) | Xá Tội Vong Nhân | Tháng cô hồn, bố thí, từ bi |
+| Profile | Title | Theme |
+|---------|-------|--------|
+| Vu Lan | Vu Lan Báo Hiếu | Mục Kiền Liên cứu mẹ → báo hiếu |
+| Cô Hồn | Xá Tội Vong Nhân | Tháng cô hồn, bố thí |
+| Tết Thanh Minh | Tết Thanh Minh | Tảo mộ, tiết Thanh Minh |
+| 盂兰盆 | 盂兰盆 — 报恩 | 目连救母 |
+| 中元节 | 中元 — 普度 | 鬼月、孤魂 |
+| 清明节 | 清明 — 扫墓 | Tomb sweeping |
+| All Souls' Day | All Souls' Day | Prayers for the dead (2 Nov) |
+| Remembrance Day | Remembrance Day | 11 Nov / Veterans Day |
 
-Override per profile with JSON `story: { title, body, titleEn, bodyEn }` or a plain string body.
+Override per profile with JSON `story: { title, body, titleEn, bodyEn, titleZh, bodyZh }` or a plain string body.
 
 ## Multi-day windows
 
@@ -266,7 +315,7 @@ Prod cutover (new `WLOTUS` token + these steps in order):
 [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md) §8.
 
 1. Deploy mint-api with wired `offer.ts` (templeSpecials on status + burnAtoms).
-2. `npm run create-temple-specials` (or dry-run first) → auto-remint if the desk has no inventory, persist the new baton tip, restart mint-api, then burn Vu Lan + Cô Hồn roots.
+2. `npm run create-temple-specials` (or `CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1` to tag existing Vu Lan / Cô Hồn `countries: ["VN"]` without a new burn). Auto-remint if the desk has no inventory, then burn missing catalog roots.
 3. Set `TEMPLE_SPECIALS_JSON` from the script output (includes Cô Hồn `eventStart`).
 4. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` or `6`). Prod: `TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.
 5. Restart mint-api. SPA reads `/api/status` (no Vite bake required).
@@ -276,9 +325,11 @@ Prod cutover (new `WLOTUS` token + these steps in order):
 
 | Piece | Role |
 |-------|------|
-| `src/params/templeSpecials.ts` | Config, window, burn resolution, lunar/solar |
+| `src/params/templeSpecials.ts` | Config, window, burn resolution, lunar/solar, countries |
+| `src/params/templeSpecialCatalog.ts` | VN / ZH / EN event catalog + stories |
+| `src/params/specialCountries.ts` | ISO targeting + locale/IP visibility |
 | `src/lib/lunarCalendar.ts` | Hồ Ngọc Đức lunar ↔ solar (shared) |
 | `src/offering/burnPrayer.ts` | `burnOnePrayer({ burnAtoms })` |
-| `scripts/create-temple-specials.ts` | Root burns for Vu Lan + Cô Hồn |
+| `scripts/create-temple-specials.ts` | Root burns for the regional catalog |
 | mint-api `offer.ts` | Resolve burn at `/api/burn` time; status field |
 | web specials helpers | Cúng vs Dâng Hoa / Vu Lan Báo Hiếu by kind |

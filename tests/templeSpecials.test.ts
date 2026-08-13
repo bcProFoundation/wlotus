@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   addCalendarDays,
   burnAtomsForDeskKeep,
@@ -225,5 +224,44 @@ describe('templeSpecials', () => {
     );
     expect(st.profiles[0]!.kind).toBe('event');
     expect(st.profiles[0]!.storyTitle).toMatch(/Vu Lan/i);
+  });
+
+  it('does not give every event the Vu Lan story', () => {
+    const profile = 'f'.repeat(64);
+    const st = resolveTempleSpecialsStatus(
+      [
+        {
+          profileId: profile,
+          kind: 'event' as const,
+          eventDate: '2026-04-05',
+          eventCalendar: 'solar' as const,
+          name: 'Tết Thanh Minh',
+        },
+      ],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-04-05T12:00:00Z'),
+    );
+    expect(st.profiles[0]!.storyTitle).toMatch(/Thanh Minh/i);
+    expect(st.profiles[0]!.storyTitle).not.toMatch(/Vu Lan/i);
+  });
+
+  it('exposes countries on public status (empty = Global)', () => {
+    const profile = '1'.repeat(64);
+    const st = resolveTempleSpecialsStatus(
+      [
+        {
+          profileId: profile,
+          kind: 'event' as const,
+          eventDate: '2026-07-15',
+          eventCalendar: 'lunar' as const,
+          name: 'Vu Lan',
+          countries: ['VN'],
+        },
+      ],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-01-01T12:00:00Z'),
+    );
+    expect(st.profiles[0]!.countries).toEqual(['VN']);
+    expect(st.profiles[0]!.storyTitleZh).toBeNull();
   });
 });

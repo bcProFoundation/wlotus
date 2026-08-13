@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { interpolate, MESSAGES, type MessageKey } from './messages.js';
 import {
+  detectCountryCode,
   resolveInitialLocale,
   writeStoredLocale,
 } from './detectLocale.js';
@@ -30,6 +31,8 @@ interface LocaleCtx {
   locale: Locale;
   /** Light or dark; dark skin is black (EN) or rosewood (VI/ZH). */
   appearance: Appearance;
+  /** ISO country from IP geo (null until detected / on failure). */
+  countryCode: string | null;
   ready: boolean;
   setLocale: (locale: Locale) => void;
   setAppearance: (appearance: Appearance) => void;
@@ -50,6 +53,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const [appearanceOverride, setAppearanceOverride] = useState<Appearance | null>(
     () => readStoredAppearance(),
   );
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const appearance = effectiveAppearance(locale, appearanceOverride);
 
@@ -57,8 +61,14 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     const ac = new AbortController();
     void (async () => {
       try {
-        const resolved = await resolveInitialLocale(ac.signal);
-        if (!ac.signal.aborted) setLocaleState(resolved);
+        const [resolved, cc] = await Promise.all([
+          resolveInitialLocale(ac.signal),
+          detectCountryCode(ac.signal),
+        ]);
+        if (!ac.signal.aborted) {
+          setLocaleState(resolved);
+          if (cc) setCountryCode(cc.trim().toUpperCase());
+        }
       } finally {
         if (!ac.signal.aborted) setReady(true);
       }
@@ -92,8 +102,16 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ locale, appearance, ready, setLocale, setAppearance, t }),
-    [locale, appearance, ready, setLocale, setAppearance, t],
+    () => ({
+      locale,
+      appearance,
+      countryCode,
+      ready,
+      setLocale,
+      setAppearance,
+      t,
+    }),
+    [locale, appearance, countryCode, ready, setLocale, setAppearance, t],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

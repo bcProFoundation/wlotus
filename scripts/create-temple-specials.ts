@@ -1,7 +1,18 @@
 #!/usr/bin/env tsx
 /**
- * Create on-chain root altars for temple public specials (Vu Lan + Cô Hồn),
- * then print the TEMPLE_SPECIALS_JSON snippet to register them.
+ * Create on-chain root altars for temple public specials, then print the
+ * TEMPLE_SPECIALS_JSON snippet to register them.
+ *
+ * Catalog (see src/params/templeSpecialCatalog.ts):
+ *   VN — Vu Lan, Cô Hồn, Tết Thanh Minh
+ *   ZH — 盂兰盆, 中元节, 清明节
+ *   EN — All Souls' Day, Remembrance Day
+ *
+ * Existing live JSON is merged by name: Vu Lan / Cô Hồn keep their profileIds
+ * and gain `countries: ["VN"]`. Only missing catalog rows are burned.
+ *
+ * MERGE_ONLY (no wallet / no burn) — patch countries onto an existing file:
+ *   CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1 npm run create-temple-specials
  *
  * Why on-chain first (not JSON-only):
  *   - dana-index / search only see real DANA memorial burns
@@ -19,13 +30,11 @@
  * Dry-run encodes notes only — it does **not** remint or burn. Empty inventory
  * is a warning, not a failure. Unset CREATE_TEMPLE_SPECIALS_DRY_RUN to mint.
  *
- * Kinds / windows:
- *   - Vu Lan  → kind "event", full civil day of lunar 15/7
- *   - Cô Hồn  → kind "ghost", lunar 2/7 00:00 → 15/7 12:00 local
- *     (JSON: eventStart, eventEnd, eventEndHour=12)
+ * Kinds / windows: see templeSpecialCatalog (Vu Lan single rằm; Cô Hồn 2/7–15/7;
+ * Zhongyuan 1/7–15/7; solar Qingming / All Souls / Remembrance).
  *
  * On-chain note is kept short (ALP BURN + DANA ≤ 223 OP_RETURN). Long stories
- * live in templeSpecials defaultTempleStory, not the root burn.
+ * live in templeSpecialCatalog / defaultTempleStory, not the root burn.
  *
  * Usage (Contabo / local with mint.env):
  *   set -a && source /etc/wlotus/mint.env && set +a
@@ -39,12 +48,13 @@
  *   MINT_MNEMONIC            — desk phrase (tip HD wallets; required for remint)
  *   MINT_SERVING_TIP_COUNT   — tip accounts to scan (default 28)
  *   BATON_INDEX              — baton tip to remint (default 0)
- *   EVENT_LUNAR_YMD          — peak day, default 2026-07-15
- *   EVENT_LUNAR_START        — Cô Hồn start, default 2026-07-02
- *   EVENT_YEAR               — year for those defaults
+ *   EVENT_YEAR               — year for catalog dates (default 2026)
+ *   CREATE_TEMPLE_SPECIALS_IDS — comma list of catalog ids to include
+ *   CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1  — rewrite JSON countries, do not burn
  *   CREATE_TEMPLE_SPECIALS_NO_MINT=1     — never auto-remint
  *   CREATE_TEMPLE_SPECIALS_NO_RESTART=1  — skip mint-api restart after tip advance
  *   MINT_API_SERVICE                     — systemd unit (default wlotus-mint-api)
+ *   TEMPLE_SPECIALS_JSON_FILE            — existing registry to merge
  *
  * After auto-remint the script writes tipLocktime / powAddress / lastRemintTxid
  * into every deployments JSON with the same tokenId (so mint-api cannot keep a
@@ -89,6 +99,14 @@ import {
   mooreTipTempleMinerBanner,
 } from '../src/miner/remintMooreTipTemple.js';
 import { WLOTUS_MINER_ATOMS } from '../src/params/wlotusMint.js';
+import {
+  findCatalogEntryByName,
+  templeSpecialCatalog,
+  type TempleSpecialCatalogEntry,
+} from '../src/params/templeSpecialCatalog.js';
+import {
+  unwrapTempleSpecialsJson,
+} from '../src/params/templeSpecials.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
@@ -98,6 +116,9 @@ const DRY = /^(1|true|yes)$/i.test(
 );
 const NO_MINT = /^(1|true|yes)$/i.test(
   process.env.CREATE_TEMPLE_SPECIALS_NO_MINT?.trim() || '',
+);
+const MERGE_ONLY = /^(1|true|yes)$/i.test(
+  process.env.CREATE_TEMPLE_SPECIALS_MERGE_ONLY?.trim() || '',
 );
 const NO_RESTART = /^(1|true|yes)$/i.test(
   process.env.CREATE_TEMPLE_SPECIALS_NO_RESTART?.trim() || '',
@@ -110,6 +131,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 interface SpecialSpec {
+  id: string;
   name: string;
   kind: 'ghost' | 'hero' | 'event';
   altarName: string;
@@ -122,6 +144,8 @@ interface SpecialSpec {
   eventEnd?: string;
   /** Hour 0–23 on end civil day when window closes (Cô Hồn = 12). */
   eventEndHour?: number;
+  countries: string[];
+  birthPlace?: string;
 }
 
 interface BatonTip {
@@ -271,37 +295,82 @@ async function restartMintApi(): Promise<void> {
   }
 }
 
+function specFromCatalog(entry: TempleSpecialCatalogEntry): SpecialSpec {
+  return {
+    id: entry.id,
+    name: entry.name,
+    kind: entry.kind,
+    altarName: entry.altarName,
+    note: entry.note,
+    eventDate: entry.eventDate,
+    eventCalendar: entry.eventCalendar,
+    eventStart: entry.eventStart,
+    eventEnd: entry.eventEnd,
+    eventEndHour: entry.eventEndHour,
+    countries: [...entry.countries],
+    birthPlace: entry.birthPlace,
+  };
+}
+
+function catalogYear(): number {
+  const y = Number(process.env.EVENT_YEAR?.trim() || '2026');
+  return Number.isFinite(y) && y >= 2020 && y <= 2100 ? y : 2026;
+}
+
 function defaultSpecs(): SpecialSpec[] {
-  const year = process.env.EVENT_YEAR?.trim() || '2026';
-  const lunarPeak =
-    process.env.EVENT_LUNAR_YMD?.trim() || `${year}-07-15`; // 15/7 âm lịch
-  const lunarStart =
-    process.env.EVENT_LUNAR_START?.trim() || `${year}-07-02`; // 2/7 âm lịch
-  return [
-    {
-      name: 'Vu Lan',
-      kind: 'event',
-      altarName: 'Vu Lan',
-      // Keep on-chain note tiny — ALP BURN + DANA must fit OP_RETURN ≤ 223.
-      // Long story is served from templeSpecials (defaultTempleStory), not the root.
-      note: 'Vu Lan Báo Hiếu',
-      eventDate: lunarPeak,
-      eventCalendar: 'lunar',
-      // single civil day of lunar 15/7 (eventStart/End omitted → = eventDate)
-    },
-    {
-      name: 'Cô Hồn',
-      kind: 'ghost',
-      altarName: 'Cô Hồn',
-      note: 'Cúng Cô Hồn',
-      eventDate: lunarPeak,
-      eventCalendar: 'lunar',
-      // Product: local 00:00 lunar 2/7 → 12:00 lunar 15/7
-      eventStart: lunarStart,
-      eventEnd: lunarPeak,
-      eventEndHour: 12,
-    },
-  ];
+  const all = templeSpecialCatalog(catalogYear()).map(specFromCatalog);
+  const idsRaw = process.env.CREATE_TEMPLE_SPECIALS_IDS?.trim();
+  if (!idsRaw) return all;
+  const want = new Set(
+    idsRaw
+      .split(/[,;\s]+/)
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  return all.filter(s => want.has(s.id) || want.has(s.name.toLowerCase()));
+}
+
+function loadExistingRegistry(): Array<Record<string, unknown>> {
+  const candidates = [
+    process.env.TEMPLE_SPECIALS_JSON_FILE?.trim(),
+    '/etc/wlotus/temple-specials.json',
+    resolve(process.cwd(), 'deployments/temple-specials-created.json'),
+  ].filter((p): p is string => !!p);
+  for (const file of candidates) {
+    if (!existsSync(file)) continue;
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as unknown;
+      const inner = unwrapTempleSpecialsJson(parsed);
+      if (!Array.isArray(inner)) continue;
+      const rows = inner.filter(
+        (row): row is Record<string, unknown> =>
+          !!row && typeof row === 'object' && !Array.isArray(row),
+      );
+      if (rows.length > 0) {
+        console.log(`Merging existing specials from ${file} (${rows.length})`);
+        return rows;
+      }
+    } catch {
+      /* try next */
+    }
+  }
+  return [];
+}
+
+function existingProfileIdForSpec(
+  spec: SpecialSpec,
+  existing: Array<Record<string, unknown>>,
+): string | null {
+  for (const row of existing) {
+    const name = String(row.name ?? '').trim();
+    const id = String(row.profileId ?? row.profile_id ?? '')
+      .trim()
+      .toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(id)) continue;
+    const hit = findCatalogEntryByName(name, catalogYear());
+    if (hit && hit.id === spec.id) return id;
+  }
+  return null;
 }
 
 /** Solar YYYY-MM-DD for altar deathDate (must be set so the root is re-offerable). */
@@ -325,6 +394,7 @@ function buildAltarNote(spec: SpecialSpec): string {
     // (living profiles cannot take flower re-offers). Same calendar day the
     // special window uses after lunar→solar conversion.
     deathDate: deathDateForSpec(spec),
+    birthPlace: spec.birthPlace ?? '',
   };
   // Root DANA v1 (no parent). Soft cap leaves room for ALP BURN in the same
   // OP_RETURN (≤ 223). Empirical headroom is tighter than the 150 constant when
@@ -335,8 +405,8 @@ function buildAltarNote(spec: SpecialSpec): string {
 function registryEntry(
   profileId: string,
   spec: SpecialSpec,
-): Record<string, string | number> {
-  const base: Record<string, string | number> = {
+): Record<string, unknown> {
+  const base: Record<string, unknown> = {
     profileId,
     kind: spec.kind,
     eventDate: spec.eventDate,
@@ -346,6 +416,7 @@ function registryEntry(
   if (spec.eventStart) base.eventStart = spec.eventStart;
   if (spec.eventEnd) base.eventEnd = spec.eventEnd;
   if (spec.eventEndHour != null) base.eventEndHour = spec.eventEndHour;
+  if (spec.countries.length > 0) base.countries = spec.countries;
   return base;
 }
 
@@ -732,19 +803,39 @@ async function waitForInventory(
 }
 
 async function main(): Promise<void> {
-  const tokenId = loadTokenId();
   const specs = defaultSpecs();
-  const needAtoms = BigInt(specs.length); // 1 flower per root
+  const existing = loadExistingRegistry();
+  const reused: Array<{ spec: SpecialSpec; profileId: string }> = [];
+  const toBurn: SpecialSpec[] = [];
+  for (const spec of specs) {
+    const id = existingProfileIdForSpec(spec, existing);
+    if (id) reused.push({ spec, profileId: id });
+    else toBurn.push(spec);
+  }
+
+  const tokenId = (() => {
+    try {
+      return loadTokenId();
+    } catch (e) {
+      if (MERGE_ONLY) return '';
+      throw e;
+    }
+  })();
 
   console.log(
     JSON.stringify(
       {
         dryRun: DRY,
-        autoMintIfShort: !NO_MINT,
+        mergeOnly: MERGE_ONLY,
+        autoMintIfShort: !NO_MINT && !MERGE_ONLY,
         tokenId,
+        reuse: reused.map(r => ({ name: r.spec.name, profileId: r.profileId })),
+        burn: toBurn.map(s => s.name),
         specials: specs.map(s => ({
+          id: s.id,
           name: s.name,
           kind: s.kind,
+          countries: s.countries,
           eventDate: s.eventDate,
           eventCalendar: s.eventCalendar,
           eventStart: s.eventStart ?? null,
@@ -758,15 +849,6 @@ async function main(): Promise<void> {
     ),
   );
 
-  const chronik = await createChronik('closest');
-  const holder = await ensureInventory(chronik, tokenId, needAtoms);
-  console.log(`Using inventory from ${holder.label} (${holder.atoms} atoms)`);
-  if (DRY && holder.atoms < needAtoms) {
-    console.log(
-      'Dry-run will not remint or burn. Re-run without CREATE_TEMPLE_SPECIALS_DRY_RUN=1.',
-    );
-  }
-
   const created: Array<{
     name: string;
     kind: string;
@@ -778,9 +860,58 @@ async function main(): Promise<void> {
     profileId: string;
     explorer: string;
     notePreview: string;
-  }> = [];
+    reused?: boolean;
+  }> = reused.map(r => ({
+    name: r.spec.name,
+    kind: r.spec.kind,
+    eventDate: r.spec.eventDate,
+    eventCalendar: r.spec.eventCalendar,
+    eventStart: r.spec.eventStart,
+    eventEnd: r.spec.eventEnd,
+    eventEndHour: r.spec.eventEndHour,
+    profileId: r.profileId,
+    explorer: `https://explorer.e.cash/tx/${r.profileId}`,
+    notePreview: '',
+    reused: true,
+  }));
 
-  for (const spec of specs) {
+  if (MERGE_ONLY) {
+    const missing = toBurn.map(s => s.name);
+    if (missing.length > 0) {
+      console.warn(
+        `MERGE_ONLY: still need on-chain roots for: ${missing.join(', ')}`,
+      );
+    }
+    writeRegistryPayload({
+      tokenId,
+      inventoryFrom: 'merge-only',
+      created,
+      specs,
+    });
+    return;
+  }
+
+  const needAtoms = BigInt(toBurn.length);
+  const chronik = await createChronik('closest');
+  const holder =
+    toBurn.length === 0
+      ? {
+          label: 'none-needed',
+          atoms: 0n,
+          wallet: null as unknown as TokenHolder['wallet'],
+          tipIndex: null,
+        }
+      : await ensureInventory(chronik, tokenId, needAtoms);
+  if (toBurn.length > 0) {
+    console.log(`Using inventory from ${holder.label} (${holder.atoms} atoms)`);
+  }
+  if (DRY && toBurn.length > 0 && holder.atoms < needAtoms) {
+    console.log(
+      'Dry-run will not remint or burn. Re-run without CREATE_TEMPLE_SPECIALS_DRY_RUN=1.',
+    );
+  }
+
+  for (const spec of toBurn) {
     const note = buildAltarNote(spec);
     console.log(
       `\n→ ${spec.name}: noteBytes=${new TextEncoder().encode(note).length}` +
@@ -812,7 +943,6 @@ async function main(): Promise<void> {
       tokenId,
       note,
       offeringId: OFFERING_ID_WLOTUS,
-      // root dedication — no parent
       burnAtoms: 1n,
     });
 
@@ -831,20 +961,33 @@ async function main(): Promise<void> {
     console.log(`  burnTxid ${txid}`);
   }
 
-  const registry = created.map(c => {
-    const spec = specs.find(s => s.name === c.name)!;
-    return registryEntry(
-      /^[0-9a-f]{64}$/.test(c.profileId) ? c.profileId : c.profileId,
-      spec,
-    );
+  writeRegistryPayload({
+    tokenId,
+    inventoryFrom: holder.label,
+    created,
+    specs,
   });
-  // Only emit settable JSON for real profileIds
-  const liveRegistry = created
-    .filter(c => /^[0-9a-f]{64}$/.test(c.profileId))
-    .map(c => {
-      const spec = specs.find(s => s.name === c.name)!;
-      return registryEntry(c.profileId, spec);
-    });
+}
+
+function writeRegistryPayload(opts: {
+  tokenId: string;
+  inventoryFrom: string;
+  created: Array<{
+    name: string;
+    profileId: string;
+  }>;
+  specs: SpecialSpec[];
+}): void {
+  const registry = opts.specs
+    .map(spec => {
+      const row = opts.created.find(c => c.name === spec.name);
+      if (!row) return null;
+      return registryEntry(row.profileId, spec);
+    })
+    .filter((row): row is Record<string, unknown> => row != null);
+  const liveRegistry = registry.filter(row =>
+    /^[0-9a-f]{64}$/.test(String(row.profileId ?? '')),
+  );
 
   const outDir = resolve(process.cwd(), 'deployments');
   mkdirSync(outDir, { recursive: true });
@@ -852,16 +995,17 @@ async function main(): Promise<void> {
   const payload = {
     createdAt: new Date().toISOString(),
     dryRun: DRY,
-    tokenId,
-    inventoryFrom: holder.label,
-    created,
+    mergeOnly: MERGE_ONLY,
+    tokenId: opts.tokenId,
+    inventoryFrom: opts.inventoryFrom,
+    created: opts.created,
     TEMPLE_SPECIALS_JSON: liveRegistry.length > 0 ? liveRegistry : registry,
   };
   writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`);
 
   console.log('\n=== Result ===');
   console.log(JSON.stringify(payload, null, 2));
-  if (!DRY && liveRegistry.length > 0) {
+  if (!DRY && !MERGE_ONLY && liveRegistry.length > 0) {
     console.log('\nRegister on mint-api (file, not a quoted mint.env line):\n');
     console.log(
       `sudo cp ${outPath} /etc/wlotus/temple-specials.json\n` +
@@ -870,6 +1014,10 @@ async function main(): Promise<void> {
         `curl -sS --fail-with-body http://127.0.0.1:8787/health`,
     );
     console.log(`\nWrote ${outPath}`);
+  } else if (MERGE_ONLY) {
+    console.log(
+      `\nMERGE_ONLY wrote ${outPath}. Copy over the live file, then restart mint-api.`,
+    );
   } else if (DRY) {
     console.log(
       '\nDry-run only — re-run without CREATE_TEMPLE_SPECIALS_DRY_RUN=1 to broadcast.',

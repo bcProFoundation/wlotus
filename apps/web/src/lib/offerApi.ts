@@ -88,6 +88,9 @@ export interface StatusOk {
       storyBody?: string | null;
       storyTitleEn?: string | null;
       storyBodyEn?: string | null;
+      storyTitleZh?: string | null;
+      storyBodyZh?: string | null;
+      countries?: string[];
     }>;
     active?: Array<{
       profileId: string;
@@ -98,6 +101,9 @@ export interface StatusOk {
       storyBody?: string | null;
       storyTitleEn?: string | null;
       storyBodyEn?: string | null;
+      storyTitleZh?: string | null;
+      storyBodyZh?: string | null;
+      countries?: string[];
     }>;
   };
 }

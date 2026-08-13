@@ -22,6 +22,7 @@
  * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
  * through eventEnd (default both = eventDate), server time only.
  * Product: Cô Hồn lunar 2/7 → 15/7; Vu Lan single lunar 15. Stories on status.
+ * Country targeting: JSON `countries` (ISO); empty = Global. Home list only.
  *
  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
  * event date earlier by N days so the window can be exercised before launch.
@@ -30,6 +31,8 @@
 import { readFileSync } from 'node:fs';
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
+import { normalizeSpecialCountries } from './specialCountries.js';
+import { findCatalogEntryByName } from './templeSpecialCatalog.js';
 
 export type TempleSpecialKind = 'ghost' | 'hero' | 'event';
 
@@ -85,7 +88,21 @@ export interface TempleSpecial {
    * Temple story shown during soft pray (~2 min). Override per locale later;
    * plain string is treated as vi/default body.
    */
-  story?: string | { title?: string; body: string; titleEn?: string; bodyEn?: string };
+  story?:
+    | string
+    | {
+        title?: string;
+        body: string;
+        titleEn?: string;
+        bodyEn?: string;
+        titleZh?: string;
+        bodyZh?: string;
+      };
+  /**
+   * ISO 3166-1 alpha-2 countries this special is local to.
+   * Empty / omitted = Global (every viewer). Multi-country: `["VN","CN"]`.
+   */
+  countries?: string[];
 }
 
 /** Global economics + test shift (from env / GitHub variables). */
@@ -124,6 +141,13 @@ export interface TempleSpecialPublic {
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
+  /**
+   * ISO country codes. Empty = Global.
+   * Home events list filters on this; burns / share links do not.
+   */
+  countries: string[];
 }
 
 export interface TempleSpecialsPublicStatus {
@@ -272,6 +296,9 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     endHourRaw != null && Number.isFinite(Number(endHourRaw))
       ? Math.max(0, Math.min(23, Math.floor(Number(endHourRaw))))
       : undefined;
+  const countries = normalizeSpecialCountries(
+    raw.countries ?? raw.country ?? raw.birthPlace ?? raw.birth_place,
+  );
   let story: TempleSpecial['story'] | undefined;
   if (typeof raw.story === 'string' && raw.story.trim()) {
     story = raw.story.trim();
@@ -284,6 +311,8 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
         body,
         titleEn: String(s.titleEn ?? s.title_en ?? '').trim() || undefined,
         bodyEn: String(s.bodyEn ?? s.body_en ?? '').trim() || undefined,
+        titleZh: String(s.titleZh ?? s.title_zh ?? '').trim() || undefined,
+        bodyZh: String(s.bodyZh ?? s.body_zh ?? '').trim() || undefined,
       };
     }
   }
@@ -298,6 +327,7 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     eventEnd,
     eventEndHour,
     story,
+    countries: countries.length > 0 ? countries : undefined,
   };
 }
 
@@ -394,64 +424,67 @@ export function unwrapTempleSpecialsJson(parsed: unknown): unknown {
   return parsed;
 }
 
+function emptyStory(): {
+  storyTitle: string | null;
+  storyBody: string | null;
+  storyTitleEn: string | null;
+  storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
+} {
+  return {
+    storyTitle: null,
+    storyBody: null,
+    storyTitleEn: null,
+    storyBodyEn: null,
+    storyTitleZh: null,
+    storyBodyZh: null,
+  };
+}
+
 function resolveStory(s: TempleSpecial): {
   storyTitle: string | null;
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
 } {
   const baked = defaultTempleStory(s);
   if (!s.story) return baked;
   if (typeof s.story === 'string') {
-    return {
-      storyTitle: baked.storyTitle,
-      storyBody: s.story,
-      storyTitleEn: baked.storyTitleEn,
-      storyBodyEn: baked.storyBodyEn,
-    };
+    return { ...baked, storyBody: s.story };
   }
   return {
     storyTitle: s.story.title?.trim() || baked.storyTitle,
     storyBody: s.story.body.trim() || baked.storyBody,
     storyTitleEn: s.story.titleEn?.trim() || baked.storyTitleEn,
     storyBodyEn: s.story.bodyEn?.trim() || baked.storyBodyEn,
+    storyTitleZh: s.story.titleZh?.trim() || baked.storyTitleZh,
+    storyBodyZh: s.story.bodyZh?.trim() || baked.storyBodyZh,
   };
 }
 
-/** Built-in temple stories (served until community-written stories exist). */
+/** Built-in temple stories from the regional catalog (matched by name). */
 export function defaultTempleStory(s: TempleSpecial): {
   storyTitle: string | null;
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
 } {
-  const name = (s.name ?? '').trim().toLowerCase();
-  const kind = s.kind;
-  if (kind === 'event' || name.includes('vu lan')) {
-    return {
-      storyTitle: 'Vu Lan Báo Hiếu',
-      storyBody:
-        'Ngày xưa, Tôn giả Mục Kiền Liên — đệ tử thần thông đệ nhất của Đức Phật — dùng thiên nhãn tìm mẹ. Ngài thấy mẹ đang chịu kiếp ngạ quỷ: cổ họng nhỏ như kim, bụng đói không no. Ngài dâng cơm, nhưng thức ăn hóa thành lửa.\n\nĐức Phật dạy: một mình không đủ. Hãy đợi Rằm tháng Bảy, ngày chư Tăng tự tứ, thiết lễ Vu Lan Bồn — nhờ sức chúng tăng mười phương, mẹ mới được siêu thoát.\n\nTừ đó, Rằm tháng Bảy là ngày Báo Hiếu: dâng hoa, tưởng nhớ ông bà cha mẹ, hồi hướng công đức. Một bông sen W Lotus bạn dâng hôm nay cũng là một lời tri ân — hoa tưởng niệm không tàn.',
-      storyTitleEn: 'Vu Lan — Filial Gratitude',
-      storyBodyEn:
-        'Long ago, Venerable Maudgalyayana — foremost in supernatural power among the Buddha’s disciples — sought his mother with the divine eye. He found her reborn as a hungry ghost: throat thin as a needle, never sated. Food he offered turned to fire.\n\nThe Buddha taught: one person alone cannot lift such karma. Wait for the full moon of the seventh lunar month, when the Sangha completes the rains retreat. Offer the Ullambana rite; with the merit of the community of monastics, her suffering can be eased.\n\nSo the fifteenth of the seventh month became a day of filial gratitude: flowers, remembrance of parents and ancestors, dedication of merit. The lotus you offer on W Lotus is one more word of thanks — a flower of remembrance that does not fade.',
-    };
-  }
-  if (kind === 'ghost' || name.includes('cô hồn') || name.includes('co hon')) {
-    return {
-      storyTitle: 'Xá Tội Vong Nhân',
-      storyBody:
-        'Tháng Bảy âm lịch, dân gian gọi là tháng cô hồn. Cửa Quỷ Môn mở: những vong hồn không nơi nương tựa — chết oan, lạc lối, không người thờ cúng — được trở về cõi dương một thời.\n\nNgười sống bày mâm chay, cháo, muối… bố thí ngoài trời, không chỉ cho tổ tiên nhà mình mà cho cả những linh hồn lang thang. Đó là lòng từ bi: dù tội nghiệp nặng đến đâu, vẫn có ngày được xá, được no một bữa, được nhớ tới.\n\nCúng cô hồn không phải sợ hãi — là sẻ chia. Một bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho mọi hương linh được siêu thoát, nguyện cho nhà nhà bình an.',
-      storyTitleEn: 'Pardon for Wandering Spirits',
-      storyBodyEn:
-        'In the seventh lunar month, folk tradition speaks of the Hungry Ghost season. The ghost gate opens: spirits without a home — the wronged, the lost, those with no one to offer incense — may walk the living world for a time.\n\nPeople set out simple vegetarian offerings outdoors — not only for their own ancestors, but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear — it is sharing. The lotus you offer today is also a wish: that every spirit finds peace, and every home finds calm.',
-    };
-  }
+  const year = Number((s.eventDate ?? '').slice(0, 4)) || 2026;
+  const entry = findCatalogEntryByName(s.name, year);
+  if (!entry) return emptyStory();
+  const st = entry.story;
   return {
-    storyTitle: null,
-    storyBody: null,
-    storyTitleEn: null,
-    storyBodyEn: null,
+    storyTitle: st.title?.trim() || entry.name,
+    storyBody: st.body,
+    storyTitleEn: st.titleEn?.trim() || null,
+    storyBodyEn: st.bodyEn?.trim() || null,
+    storyTitleZh: st.titleZh?.trim() || null,
+    storyBodyZh: st.bodyZh?.trim() || null,
   };
 }
 
@@ -497,6 +530,9 @@ export function toPublicSpecial(
     storyBody: story.storyBody,
     storyTitleEn: story.storyTitleEn,
     storyBodyEn: story.storyBodyEn,
+    storyTitleZh: story.storyTitleZh,
+    storyBodyZh: story.storyBodyZh,
+    countries: s.countries ?? [],
   };
 }
 
