@@ -17,7 +17,7 @@ Canonical home: **https://github.com/bcProFoundation/wlotus**
 | Param | Value |
 |-------|-------|
 | Mint / remint | **108** atoms (one mala) |
-| Split | **1** miner + **107** temple P2SH |
+| Split | **102** miner + **6** temple P2SH |
 | Base bits | **0** (whole-byte only; `bits % 8 == 0`) |
 | Moore | **+1 bit / 500 days** (override 365–730) |
 | Sunset | remint fails when bits would exceed **128** |
@@ -39,7 +39,7 @@ See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-wlotus.json
 
 ## Economics
 
-[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — anti-farm = **1/107 + XEC fees**; presence = soft pray timer + base-0 Moore ramp; token hashrate does not secure the ledger (eCash does).
+[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — light temple tax **6/108** + XEC fees; presence = soft pray timer + base-0 Moore ramp; token hashrate does not secure the ledger (eCash does). Live prod on the **old** 1/107 token must recut genesis — [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md).
 
 ## Vision
 
@@ -66,9 +66,8 @@ Mobile-first Offer / burn UI. No browser wallet yet — remint via mint-api.
 
 ## Next
 
-1. Live **WLOTUS** genesis on prod (`create-wlotus-token` + `MINT_REQUIRE_LIVE=1`)
-2. Enable **dana-index** on Contabo (`/index-api/`) after merge — mirror of on-chain DANA history
-3. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
-4. Postage / fee sponsorship polish
-5. **GLOTUS** genesis when economic layer ships
-6. Fractional-bit PoW if/when eCash raises the 201-op limit
+1. **Prod cutover** to 102/6 live genesis — [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md)
+2. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
+3. Postage / fee sponsorship polish
+4. **GLOTUS** genesis when economic layer ships
+5. Fractional-bit PoW if/when eCash raises the 201-op limit

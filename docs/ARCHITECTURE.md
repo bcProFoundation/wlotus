@@ -11,7 +11,7 @@ GENESIS (ALP)
   └─ creates N PoW mint batons → each locked to remint covenant P2SH
         │
         ├─ miner solves PoW on baton i
-        │     outputs: ALP MINT 108 → 1 miner + 107 temple
+        │     outputs: ALP MINT 108 → 102 miner + 6 temple
         │              baton → next covenant state (same rules)
         │
         └─ devotee acquires WLOTUS → alpBurn
@@ -47,14 +47,14 @@ At genesis (wLotus base **0**, PoW instant; cycle ≈ broadcast+tip sync): \(T_{
 
 Desk extras: `MINT_MAX_OPEN_CHALLENGES` (default **32**), `MINT_MAX_OFFERS_PER_DAY` (**20**/installId), in-process chain lock on one mint-api until scaled.
 
-Atoms minted/min ≈ \(108 \times R\) (1 miner + 107 temple). Moore period does **not** change short-term capacity — only long-term PoW wall time.
+Atoms minted/min ≈ \(108 \times R\) (102 miner + 6 temple). Moore period does **not** change short-term capacity — only long-term PoW wall time.
 
 ## Covenant responsibilities
 
 For each remint spend, Script must enforce:
 
 1. PoW: `hash256(preimage || nonce)` meets required zero bits (Moore calendar)
-2. Mint atoms = **108** with **1** miner + **107** temple outputs
+2. Mint atoms = **108** with **102** miner + **6** temple outputs
 3. Outputs include valid ALP MINT section for this `tokenId`
 4. Exactly one mint baton returned to the covenant (hard next-P2SH)
 5. `locktime ≥ tipLocktime`; bits ≤ **128**
