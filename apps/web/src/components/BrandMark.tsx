@@ -1,7 +1,8 @@
 /**
  * White W glyph. Dark UI (EN / offering / ZH rosewood) shows it with no plate.
- * Light Vietnamese temple wraps it in a rounded black square (CSS).
- * `badge` is the same mark at favicon size for history / re-offer rows.
+ * Light Vietnamese temple uses a baked rounded black square (white W in the PNG)
+ * so the mark cannot collapse to an empty black tile.
+ * `badge` is the same pair at favicon size for history / re-offer rows.
  */
 export function BrandMark(props: {
   className?: string;
@@ -12,22 +13,36 @@ export function BrandMark(props: {
 }) {
   const w = props.width ?? 56;
   const h = props.height ?? 56;
-  const img = (
-    <img
-      className="brand-mark"
-      src="/images/W-white.png"
-      alt=""
-      width={w}
-      height={h}
-      draggable={false}
-    />
+  const lightSrc = props.badge
+    ? '/images/wlotus-icon-32.png'
+    : '/images/wlotus-icon-192.png';
+
+  const imgs = (
+    <>
+      <img
+        className="brand-mark brand-mark--on-dark"
+        src="/images/W-white.png"
+        alt=""
+        width={w}
+        height={h}
+        draggable={false}
+      />
+      <img
+        className="brand-mark brand-mark--on-light"
+        src={lightSrc}
+        alt=""
+        width={w}
+        height={h}
+        draggable={false}
+      />
+    </>
   );
 
   if (props.badge) {
     const cls = ['brand-mark-badge', props.className].filter(Boolean).join(' ');
     return (
       <span className={cls} aria-hidden="true">
-        {img}
+        {imgs}
       </span>
     );
   }
@@ -35,7 +50,7 @@ export function BrandMark(props: {
   const wrapClass = ['brand-mark-wrap', props.className].filter(Boolean).join(' ');
   return (
     <span className={wrapClass} style={{ height: h }} aria-hidden="true">
-      {img}
+      {imgs}
     </span>
   );
 }
