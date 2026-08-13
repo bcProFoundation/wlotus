@@ -81,6 +81,7 @@ import {
   resolveLiveMintBaton,
   matchCovenantToBaton,
 } from '../../../src/mint/followMintBaton.js';
+import { createDailyCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
 import {
   isKnownRootCreator,
   rememberRootCreator,
