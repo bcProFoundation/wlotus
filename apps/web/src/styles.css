@@ -75,7 +75,7 @@
   color-scheme: light;
 }
 
-/* Chinese dark — aged rosewood, gold ink. */
+/* Vietnamese / Chinese dark — aged rosewood, gold ink. */
 [data-theme='wood'] {
   --bg0: #1c120c;
   --bg1: #120c08;
@@ -108,7 +108,6 @@
   --page-texture: url('/images/wood-zh.svg');
   --page-texture-opacity: 0.5;
   --page-texture-blend: overlay;
-  --font-display: 'Cormorant Garamond', 'Songti SC', 'STSong', 'Noto Serif CJK SC', serif;
   color-scheme: dark;
 }
 

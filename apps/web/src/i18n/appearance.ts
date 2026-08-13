@@ -8,7 +8,7 @@ export type DocumentTheme = 'light' | 'dark' | 'wood';
 
 export const APPEARANCE_STORAGE_KEY = 'wlotus.appearance';
 
-/** VN → light cream; EN / CN → dark (black / rosewood). */
+/** VN → light cream; EN / CN → dark. VI/ZH dark skin is rosewood; EN dark is black. */
 export function defaultAppearance(locale: Locale): Appearance {
   return locale === 'vi' ? 'light' : 'dark';
 }
@@ -31,6 +31,14 @@ export function writeStoredAppearance(appearance: Appearance): void {
   }
 }
 
+export function clearStoredAppearance(): void {
+  try {
+    localStorage.removeItem(APPEARANCE_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function effectiveAppearance(
   locale: Locale,
   stored: Appearance | null,
@@ -40,7 +48,7 @@ export function effectiveAppearance(
 
 /**
  * Map appearance + locale to a document theme.
- * One light skin (cream). Dark: EN/VI black, ZH rosewood.
+ * One light skin (cream). Dark: EN black, VI/ZH rosewood.
  * `ritualDark` forces dark during the offering session.
  */
 export function documentTheme(
@@ -50,7 +58,7 @@ export function documentTheme(
 ): DocumentTheme {
   const mode = ritualDark ? 'dark' : appearance;
   if (mode === 'light') return 'light';
-  return locale === 'zh' ? 'wood' : 'dark';
+  return locale === 'en' ? 'dark' : 'wood';
 }
 
 export function themeColorFor(theme: DocumentTheme): string {

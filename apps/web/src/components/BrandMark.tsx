@@ -1,8 +1,8 @@
 /**
- * White W glyph. Dark UI (EN / offering / ZH rosewood) shows it with no plate.
+ * White W glyph. Dark UI (EN black, VI/ZH rosewood, offering) shows it with no plate.
  * Light cream uses a baked rounded black square (white W in the PNG)
  * so the mark cannot collapse to an empty black tile.
- * Dark (EN/VI black, ZH rosewood) shows the transparent white glyph.
+ * Dark (EN black, VI/ZH rosewood) shows the transparent white glyph.
  * `badge` is the compact square for history / re-offer rows.
  * Light in-app marks use the padded 192 asset (same as the header), not the
  * tight 16/32 browser favicons.
