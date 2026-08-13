@@ -317,25 +317,10 @@ launch economics or branding that only apply to **new genesis**, for example:
    # tokenId must be NEW_ID
    ```
 6. **dana-index** — update `TOKEN_ID` and **wipe/archive the JSON store** so old-token memorials leave recent/search/OG  
-   ```bash
-   sudo tee /etc/wlotus/dana-index.env >/dev/null <<EOF
-TOKEN_ID=${NEW_ID}
-CHRONIK_URLS=https://chronik.e.cash,https://xec.paybutton.org,https://chronik.pay2stay.com/xec
-DANA_INDEX_STORE=/opt/wlotus/data/dana-index-burns.json
-PUBLIC_SITE_ORIGIN=https://wlotus.org
-EOF
-   sudo chown root:deploy /etc/wlotus/dana-index.env
-   sudo chmod 640 /etc/wlotus/dana-index.env
-   sudo -u deploy bash -lc '
-     f=/opt/wlotus/data/dana-index-burns.json
-     [ -f "$f" ] && mv "$f" "/opt/wlotus/data/dana-index-burns.old-$(date +%Y%m%d%H%M%S).json" || true
-   '
-   sudo systemctl restart wlotus-dana-index
-   curl -sS http://127.0.0.1:8788/health | jq .
-   ```
-7. **GitHub Environment `production`** — set `VITE_PRAYER_TOKEN_ID` = `NEW_ID` (keep `VITE_PRAYER_TICKER=WLOTUS`).
-8. **Release** a new `v*` tag on master so **Deploy web (prod)** bakes the new id into the SPA.
-9. Smoke: Offer once on https://wlotus.org; confirm `/api/status` and `/index-api/health` share the same `tokenId`.
+7. **Temple specials** — `npm run create-temple-specials`, put `TEMPLE_SPECIALS_JSON` in `/etc/wlotus/mint.env`, restart mint-api (see [PROD_CUTOVER_102_6.md §8](./PROD_CUTOVER_102_6.md#8-create-temple-specials-vu-lan--cô-hồn))
+8. **GitHub Environment `production`** — set `VITE_PRAYER_TOKEN_ID` = `NEW_ID` (keep `VITE_PRAYER_TICKER=WLOTUS`).
+9. **Release** a new `v*` tag on master so **Deploy web (prod)** bakes the new id into the SPA.
+10. Smoke: Offer once on https://wlotus.org; confirm `/api/status` and `/index-api/health` share the same `tokenId`, and `templeSpecials.profiles` lists Vu Lan + Cô Hồn.
 
 **Do not** point dana-index at the new token while leaving the old store file in place —
 `BurnStore` loads every row and does not filter by current `TOKEN_ID` on read.
@@ -414,6 +399,7 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 - [ ] Prod VM bootstrapped; DNS + TLS green; www → apex 301
 - [ ] Live genesis: `deployments/mainnet-wlotus.json` with ticker **WLOTUS**, name **W Lotus**, mintAtoms **108**, split **102/6**
 - [ ] `/api/status` returns that ticker / tokenId on prod
+- [ ] `/api/status` → `templeSpecials.profiles` lists Vu Lan + Cô Hồn (`TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`)
 - [ ] dana-index `TOKEN_ID` matches; store not mixing an older token’s burns
 - [ ] Tip fee wallets funded (`npm run fund-tip-fee-wallets`)
 - [ ] GitHub Environment `production` secrets + `VITE_PRAYER_TOKEN_ID` / `VITE_PRAYER_TICKER=WLOTUS`

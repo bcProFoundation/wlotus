@@ -50,7 +50,10 @@ Tagging current `master` also ships everything merged after 31 Jul, including:
   XEC stays on mint receive (do not sweep back to desk during an offering)
 - **Offer UI** — Dâng Hoa session, elapsed time, related altars, search,
   living-profile / relationship work, PWA title **W Lotus**
-- **Temple specials** — extra burn on registered event profiles
+- **Temple specials** — Vu Lan + Cô Hồn are **not** created by tagging.
+  After the new genesis, burn two root altars (`npm run create-temple-specials`)
+  and register `TEMPLE_SPECIALS_JSON` on mint-api (step 8). See
+  [TEMPLE_SPECIALS.md](../../docs/TEMPLE_SPECIALS.md).
 - **Ops** — `MINT_REQUIRE_LIVE=1`, www→apex redirect, `/sw.js` `Cache-Control: no-cache`
 
 Test (`test.wlotus.org`) already tracks `master` on every push. Prod does **not**
@@ -72,6 +75,9 @@ until you push a `v*` tag.
   Leave the secret unset; the mnemonic stays on the VM.
 - Run `npm run new-wallet -- --force` unless the genesis wallet is truly empty
   and you intend to replace `GENESIS_SK_HEX`.
+- Skip `create-temple-specials` if you want Vu Lan / Cô Hồn on this token —
+  genesis does not create those roots. JSON without on-chain burns will not
+  show in search or accept re-offers.
 
 ---
 
@@ -256,7 +262,76 @@ curl -sS http://127.0.0.1:8788/health | jq .
 # tokenId == NEW_ID; burns near 0 until new memorials exist
 ```
 
-### 8. GitHub Environment `production`
+Do this **before** creating specials so the two root burns are indexed on the
+new token.
+
+### 8. Create temple specials (Vu Lan + Cô Hồn)
+
+Specials are **not** JSON-only and are **not** created by genesis. Search and
+re-offers need real root dedication burns; `TEMPLE_SPECIALS_JSON` only
+*registers* those txids so mint-api raises the burn in-window.
+
+After a new genesis the premine sits on temple P2SH — the desk has **no**
+WLOTUS inventory yet. `create-temple-specials` will **auto-remint once**
+(102 miner atoms onto the tip) unless you set `CREATE_TEMPLE_SPECIALS_NO_MINT=1`.
+That spends baton 0; do it while the public SPA still points at the **old**
+tokenId (before the tag) so nobody else is racing that tip.
+
+```bash
+cd /opt/wlotus
+set -a && source /etc/wlotus/mint.env && set +a
+set -a && source .env && set +a   # mnemonic from mint.env is what matters
+
+# Plan only (no broadcast)
+CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
+
+# Broadcast two root burns: Vu Lan (event, lunar 15/7) + Cô Hồn (ghost, 2/7→15/7)
+npm run create-temple-specials
+```
+
+The script writes `deployments/temple-specials-created.json` and prints a
+`TEMPLE_SPECIALS_JSON='[...]'` line. Put that on mint-api. **Prod must keep
+`TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.** `TEMPLE_SPECIAL_DESK_KEEP` defaults to
+**6** (burn 96 of the miner 102); set `0` for a full miner-share burn.
+
+```bash
+cd /opt/wlotus
+# Strip any previous specials lines, then append from the script output
+sudo sed -i \
+  -e '/^TEMPLE_SPECIALS_JSON=/d' \
+  -e '/^TEMPLE_SPECIAL_DESK_KEEP=/d' \
+  -e '/^TEMPLE_SPECIAL_TEST_OFFSET_DAYS=/d' \
+  /etc/wlotus/mint.env
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+p = json.loads(Path("deployments/temple-specials-created.json").read_text())
+arr = json.dumps(p["TEMPLE_SPECIALS_JSON"], separators=(",", ":"))
+Path("/tmp/temple-specials.env").write_text(
+    "TEMPLE_SPECIALS_JSON='" + arr + "'\n"
+    "TEMPLE_SPECIAL_DESK_KEEP=6\n"
+    "TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0\n"
+)
+print(arr[:120], "…")
+PY
+sudo tee -a /etc/wlotus/mint.env </tmp/temple-specials.env >/dev/null
+sudo chmod 600 /etc/wlotus/mint.env
+rm -f /tmp/temple-specials.env
+
+sudo systemctl restart wlotus-mint-api
+curl -sS https://wlotus.org/api/status | jq '{tokenId, templeSpecials: .templeSpecials}'
+```
+
+Expect `templeSpecials.enabled == true`, `testOffsetDays == 0`, and **two**
+profiles (`Vu Lan`, `Cô Hồn`) with 64-hex `profileId`s. The SPA reads this
+from `/api/status` (no `VITE_TEMPLE_SPECIALS_JSON` bake required).
+
+Optional later: add a `hero` (e.g. Hồ Chí Minh, `eventCalendar: "solar"`) by
+burning another root and appending to the JSON — not part of the default
+script. Full reference: [TEMPLE_SPECIALS.md](../../docs/TEMPLE_SPECIALS.md).
+
+### 9. GitHub Environment `production`
 
 Repo → **Settings → Environments → production → Variables**:
 
@@ -268,7 +343,7 @@ Repo → **Settings → Environments → production → Variables**:
 | `VITE_EXPERIMENTAL_POW` | `1` if you want WebGPU on prod (test already uses this; prod workflow must pass it — see note below) |
 
 Do this **before** pushing the tag. The SPA bakes `VITE_PRAYER_TOKEN_ID` at
-build time.
+build time. Specials UI comes from `/api/status`, not a Vite variable.
 
 **Prod workflow note:** `.github/workflows/deploy-web-prod.yml` currently
 forwards `VITE_PRAYER_TOKEN_ID`, `VITE_PRAYER_TICKER`, `VITE_CHRONIK_URLS`,
@@ -276,10 +351,11 @@ forwards `VITE_PRAYER_TOKEN_ID`, `VITE_PRAYER_TICKER`, `VITE_CHRONIK_URLS`,
 `VITE_EXPERIMENTAL_POW`. Leave that unset unless you add it to the workflow
 in the same release.
 
-### 9. Tag `master` → Deploy web (prod)
+### 10. Tag `master` → Deploy web (prod)
 
-Only after steps 4–8. The job rsyncs the SPA **and** force-checkouts this tag
-under `/opt/wlotus` (untracked `mainnet-wlotus.json` stays).
+Only after steps 4–9. The job rsyncs the SPA **and** force-checkouts this tag
+under `/opt/wlotus` (untracked `mainnet-wlotus.json` and
+`temple-specials-created.json` stay).
 
 ```bash
 git checkout master
@@ -300,12 +376,15 @@ If mint-api comes up on `dWLOTUS`, the tag checkout did not see
 `mainnet-wlotus.json` or `mint.env` lost `MINT_REQUIRE_LIVE` (mnemonic sync).
 Restore `mint.env` from step 5 and `sudo systemctl restart wlotus-mint-api`.
 
-### 10. Smoke + nginx (iPhone cache)
+### 11. Smoke + nginx (iPhone cache)
 
 1. Offer once on https://wlotus.org (hard-refresh / fully close the PWA on iPhone).
 2. Confirm the remint explorer shows **102** to the mint/tip address and **6**
    to temple P2SH, then the memorial burn of **1**.
-3. If iPhones stay on the old bundle, merge `/sw.js` + `manifest.webmanifest`
+3. `curl -sS https://wlotus.org/api/status | jq .templeSpecials.profiles`
+   — Vu Lan + Cô Hồn present. In-window re-offers to those roots burn **96**
+   (deskKeep 6) instead of 1.
+4. If iPhones stay on the old bundle, merge `/sw.js` + `manifest.webmanifest`
    `Cache-Control: no-cache` from `nginx-wlotus-prod-tls.conf` into the live
    443 server block, then `sudo nginx -t && sudo systemctl reload nginx`.
 

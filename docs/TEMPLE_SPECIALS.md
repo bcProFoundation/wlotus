@@ -239,11 +239,14 @@ civil end of `eventEnd` (after lunar→solar + testOffset). Vu Lan omits start/e
 
 ## Post-genesis checklist
 
+Prod cutover (new `WLOTUS` token + these steps in order):
+[PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md) §8.
+
 1. Deploy mint-api with wired `offer.ts` (templeSpecials on status + burnAtoms).
 2. `npm run create-temple-specials` (or dry-run first) → root burns for Vu Lan + Cô Hồn.
 3. Set `TEMPLE_SPECIALS_JSON` from the script output (includes Cô Hồn `eventStart`).
-4. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` or `6`).
-5. Rebuild SPA with matching `VITE_TEMPLE_SPECIALS_JSON` if baked; otherwise status-driven.
+4. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` or `6`). Prod: `TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.
+5. Restart mint-api. SPA reads `/api/status` (no Vite bake required).
 6. Confirm `/api/status` → stories + multi-day active flags near Rằm.
 
 ## Code
