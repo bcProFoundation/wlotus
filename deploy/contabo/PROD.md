@@ -5,6 +5,11 @@
 
 Test (`test.wlotus.org`) stays on push-to-master via **Deploy web (test)**.
 
+**Next prod ship (from last tag `v26.7.12`):** live WLOTUS is still the **old**
+covenant (**1** miner + **107** temple). Current `master` remints **102 + 6**.
+That is a **new genesis**, not a code-only tag. Follow
+**[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)** (ordered VM + GitHub steps).
+
 If **prod already runs an older WLOTUS token** (different mint split, name, or
 premine destination), code deploy alone is not enough — cut a **new live genesis**
 and retarget mint-api + dana-index + `VITE_PRAYER_TOKEN_ID`. See
@@ -264,6 +269,10 @@ Set GitHub Environment variable `VITE_PRAYER_TOKEN_ID` to this **tokenId** befor
 ---
 
 ## Upgrade: new live genesis
+
+**Current cutover (1/107 → 102/6, from tag `v26.7.12`):** use the copy-paste
+runbook **[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)** instead of this
+generic list.
 
 **When:** prod is already serving an **older** `WLOTUS` token id and you need
 launch economics or branding that only apply to **new genesis**, for example:

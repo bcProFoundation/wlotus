@@ -28,7 +28,7 @@ This repository holds the **covenant, remint miner, mint-api, and offerings app*
 
 Docs: [VISION](./docs/VISION.md) · [ECONOMICS](./docs/ECONOMICS_WLOTUS_GLOTUS.md) · [SPEC](./docs/SPEC.md) · [STATUS](./docs/STATUS.md) · [CLOCK](./docs/CLOCK.md) · [MOBILE](./docs/MOBILE.md)
 
-Deploy: [test Contabo](./deploy/contabo/README.md) · [prod Contabo](./deploy/contabo/PROD.md)
+Deploy: [test Contabo](./deploy/contabo/README.md) · [prod Contabo](./deploy/contabo/PROD.md) · [prod cutover 102/6](./deploy/contabo/PROD_CUTOVER_102_6.md)
 
 ```
 apps/web/           # Offerings SPA (PWA)

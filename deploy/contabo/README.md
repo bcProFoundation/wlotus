@@ -533,7 +533,8 @@ Workflow: **Deploy web (prod)** — `.github/workflows/deploy-web-prod.yml`
 | **Automatic** | Push a **`v*` tag** whose commit is on **`master`** |
 | **Manual** | Actions → Deploy web (prod) → set `ref` to the tag |
 
-Full guide: **[PROD.md](./PROD.md)** (separate VM, Environment `production`, `CONTABO_PROD_*` secrets).
+Full guide: **[PROD.md](./PROD.md)** (separate VM, Environment `production`, `CONTABO_PROD_*` secrets).  
+**Current ship:** recut live WLOTUS from 1/107 → 102/6 — **[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)**.
 
 ```bash
 git checkout master && git pull

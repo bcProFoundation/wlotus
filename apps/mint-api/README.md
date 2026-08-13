@@ -2,7 +2,7 @@
 
 Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 
-**wLotus (live):** remint mints **108** (one mala: 1 → tip fee wallet, 107 → temple P2SH).
+**wLotus (live):** remint mints **108** (one mala: **102** → miner / tip fee wallet, **6** → temple P2SH).
 Memorial burn of the miner 1 (`DANA`) is **deferred** until after the client soft pray
 window (`POST /api/burn`). Remint runs on submit so tip races are not delayed. Cancel
 during the soft wait abandons the burn — desk keeps the miner atom.
@@ -124,9 +124,9 @@ Do not send leftover mint XEC back to the desk during burn.
   restrictive of the two.
   - **Why IP-only is proportionate here, not a real security boundary:**
     each offer costs the desk on the order of a few XEC in sponsored network
-    fees (fee-only — the minted miner atom itself carries no separable value
-    at the current zero-difficulty Moore-clock epoch; 107/108 of the mint
-    goes straight to the temple address, not to whoever offered). At XEC's
+    fees (fee-only — on the official path the devotee does not withdraw the
+    miner share; the desk burns 1 for the flower and keeps inventory, and
+    temple still receives 6). At XEC's
     typical price (order of $0.00001–0.0001), maxing out one identity's daily
     cap drains cents at most — far less than the cost of real IP-rotation
     infrastructure (residential proxies, VPN churn) an attacker would need to
