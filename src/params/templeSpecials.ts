@@ -27,6 +27,7 @@
  * event date earlier by N days so the window can be exercised before launch.
  */
 
+import { readFileSync } from 'node:fs';
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
 
@@ -331,6 +332,9 @@ export function loadTempleSpecialsGlobalConfig(
 
 /**
  * Load profile list from TEMPLE_SPECIALS_JSON (no legacy HUNGRY_GHOST_*).
+ * Prefer TEMPLE_SPECIALS_JSON_FILE (a JSON array, or the
+ * temple-specials-created.json wrapper). Inline TEMPLE_SPECIALS_JSON in
+ * mint.env is easy to break with quotes — use a file on the VM.
  * deskKeep / testOffsetDays are **not** read from the JSON — use global env.
  */
 export function loadTempleSpecialsFromEnv(
@@ -339,14 +343,11 @@ export function loadTempleSpecialsFromEnv(
   const out: TempleSpecial[] = [];
   const seen = new Set<string>();
 
-  const jsonRaw =
-    env.TEMPLE_SPECIALS_JSON?.trim() ||
-    env.VITE_TEMPLE_SPECIALS_JSON?.trim() ||
-    '';
+  const jsonRaw = readTempleSpecialsRaw(env);
   if (!jsonRaw) return out;
 
   try {
-    const parsed = JSON.parse(jsonRaw) as unknown;
+    const parsed = unwrapTempleSpecialsJson(JSON.parse(jsonRaw) as unknown);
     if (!Array.isArray(parsed)) return out;
     for (const item of parsed) {
       if (!item || typeof item !== 'object') continue;
@@ -359,6 +360,38 @@ export function loadTempleSpecialsFromEnv(
     /* ignore bad JSON */
   }
   return out;
+}
+
+function readTempleSpecialsRaw(
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>,
+): string {
+  const file = env.TEMPLE_SPECIALS_JSON_FILE?.trim();
+  if (file) {
+    try {
+      const fromFile = readFileSync(file, 'utf8').trim();
+      if (fromFile) return fromFile;
+    } catch {
+      /* fall through to inline JSON */
+    }
+  }
+  return (
+    env.TEMPLE_SPECIALS_JSON?.trim() ||
+    env.VITE_TEMPLE_SPECIALS_JSON?.trim() ||
+    ''
+  );
+}
+
+/** Array, or `{ TEMPLE_SPECIALS_JSON: [...] }` from create-temple-specials. */
+export function unwrapTempleSpecialsJson(parsed: unknown): unknown {
+  if (
+    parsed &&
+    typeof parsed === 'object' &&
+    !Array.isArray(parsed) &&
+    'TEMPLE_SPECIALS_JSON' in parsed
+  ) {
+    return (parsed as { TEMPLE_SPECIALS_JSON: unknown }).TEMPLE_SPECIALS_JSON;
+  }
+  return parsed;
 }
 
 function resolveStory(s: TempleSpecial): {

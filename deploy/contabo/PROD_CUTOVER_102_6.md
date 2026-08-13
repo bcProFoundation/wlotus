@@ -232,7 +232,8 @@ set -a && source /etc/wlotus/mint.env && set +a
 sudo -u deploy -H bash -lc 'cd /opt/wlotus && set -a && source /etc/wlotus/mint.env && set +a && npm run fund-tip-fee-wallets'
 
 sudo systemctl start wlotus-mint-api
-curl -sS https://wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,servingTipCount}'
+sleep 2
+curl -sS --fail-with-body http://127.0.0.1:8787/api/status | jq '{ticker,tokenId,mintAtoms,servingTipCount}'
 ```
 
 `tokenId` must equal `NEW_ID`. If you see `dWLOTUS`, live JSON was not loaded —
@@ -290,38 +291,46 @@ CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
 npm run create-temple-specials
 ```
 
-The script writes `deployments/temple-specials-created.json` and prints a
-`TEMPLE_SPECIALS_JSON='[...]'` line. Put that on mint-api. **Prod must keep
+The script writes `deployments/temple-specials-created.json`. Register that
+**file** on mint-api (do not paste the array into `mint.env` — quotes break
+dotenv and the unit never binds `:8787`). **Prod must keep
 `TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.** `TEMPLE_SPECIAL_DESK_KEEP` defaults to
 **6** (burn 96 of the miner 102); set `0` for a full miner-share burn.
 
 ```bash
 cd /opt/wlotus
-# Strip any previous specials lines, then append from the script output
+sudo cp deployments/temple-specials-created.json /etc/wlotus/temple-specials.json
+sudo chmod 644 /etc/wlotus/temple-specials.json
+
 sudo sed -i \
   -e '/^TEMPLE_SPECIALS_JSON=/d' \
+  -e '/^TEMPLE_SPECIALS_JSON_FILE=/d' \
   -e '/^TEMPLE_SPECIAL_DESK_KEEP=/d' \
   -e '/^TEMPLE_SPECIAL_TEST_OFFSET_DAYS=/d' \
   /etc/wlotus/mint.env
 
-python3 - <<'PY'
-import json
-from pathlib import Path
-p = json.loads(Path("deployments/temple-specials-created.json").read_text())
-arr = json.dumps(p["TEMPLE_SPECIALS_JSON"], separators=(",", ":"))
-Path("/tmp/temple-specials.env").write_text(
-    "TEMPLE_SPECIALS_JSON='" + arr + "'\n"
-    "TEMPLE_SPECIAL_DESK_KEEP=6\n"
-    "TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0\n"
-)
-print(arr[:120], "…")
-PY
-sudo tee -a /etc/wlotus/mint.env </tmp/temple-specials.env >/dev/null
+sudo tee -a /etc/wlotus/mint.env >/dev/null <<'EOF'
+TEMPLE_SPECIALS_JSON_FILE=/etc/wlotus/temple-specials.json
+TEMPLE_SPECIAL_DESK_KEEP=6
+TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0
+EOF
 sudo chmod 600 /etc/wlotus/mint.env
-rm -f /tmp/temple-specials.env
 
 sudo systemctl restart wlotus-mint-api
-curl -sS https://wlotus.org/api/status | jq '{tokenId, templeSpecials: .templeSpecials}'
+sleep 2
+sudo systemctl is-active wlotus-mint-api
+# Hit the process, not nginx — a down desk returns HTML 502 and jq dies
+# with "Invalid numeric literal at line 1, column 7".
+curl -sS --fail-with-body http://127.0.0.1:8787/health
+curl -sS --fail-with-body http://127.0.0.1:8787/api/status \
+  | jq '{tokenId, ticker, templeSpecials: .templeSpecials}'
+```
+
+If that health curl fails:
+
+```bash
+sudo systemctl status wlotus-mint-api --no-pager
+sudo journalctl -u wlotus-mint-api -n 80 --no-pager
 ```
 
 Expect `templeSpecials.enabled == true`, `testOffsetDays == 0`, and **two**
@@ -401,6 +410,42 @@ Restore `mint.env` from step 5 and `sudo systemctl restart wlotus-mint-api`.
   coins (`fund-tip-fee-wallets`).
 - **Next deploys:** ordinary `v*` tags on `master` are enough **until** you
   change the covenant again (split, Moore, batons, temple hash).
+
+---
+
+## `jq: parse error: Invalid numeric literal`
+
+That is **nginx HTML**, not mint-api JSON. Prod `https://wlotus.org/api/status`
+proxies to `127.0.0.1:8787`. When the unit is stopped (cutover step 1) or
+failed to start, nginx returns:
+
+```
+<html>
+<head><title>502 Bad Gateway</title></head>
+```
+
+`jq` then errors at line 1 column 7. Confirm on the VM:
+
+```bash
+curl -sS -D - -o /tmp/status.body --max-time 5 https://wlotus.org/api/status | head
+head -c 200 /tmp/status.body; echo
+curl -sS --max-time 5 http://127.0.0.1:8787/health || true
+sudo systemctl status wlotus-mint-api --no-pager
+sudo journalctl -u wlotus-mint-api -n 80 --no-pager
+```
+
+Bring the desk back (as `deploy` so `node_modules` stays writable):
+
+```bash
+sudo -u deploy -H bash -lc 'cd /opt/wlotus && git log -1 --oneline && npm ci'
+sudo systemctl restart wlotus-mint-api
+sleep 2
+curl -sS --fail-with-body http://127.0.0.1:8787/health
+curl -sS --fail-with-body http://127.0.0.1:8787/api/status | jq '{ticker,tokenId}'
+```
+
+`systemctl try-restart` does **nothing** if the unit is inactive — use
+`restart` after a freeze.
 
 ---
 

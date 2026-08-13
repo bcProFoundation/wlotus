@@ -1,0 +1,44 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  loadTempleSpecialsFromEnv,
+  unwrapTempleSpecialsJson,
+} from '../src/params/templeSpecials.js';
+
+const PROFILE = 'ab'.repeat(32);
+
+describe('temple specials JSON file', () => {
+  it('unwraps create-temple-specials wrapper objects', () => {
+    const inner = [{ profileId: PROFILE, kind: 'event', eventDate: '2026-07-15' }];
+    expect(unwrapTempleSpecialsJson({ TEMPLE_SPECIALS_JSON: inner })).toEqual(
+      inner,
+    );
+    expect(unwrapTempleSpecialsJson(inner)).toEqual(inner);
+  });
+
+  it('loads TEMPLE_SPECIALS_JSON_FILE including the created.json wrapper', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'wlotus-specials-'));
+    const file = join(dir, 'temple-specials.json');
+    writeFileSync(
+      file,
+      JSON.stringify({
+        TEMPLE_SPECIALS_JSON: [
+          {
+            profileId: PROFILE,
+            kind: 'ghost',
+            eventDate: '2026-07-15',
+            eventCalendar: 'lunar',
+            name: 'Cô Hồn',
+          },
+        ],
+      }),
+    );
+    const loaded = loadTempleSpecialsFromEnv({
+      TEMPLE_SPECIALS_JSON_FILE: file,
+    });
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0]!.kind).toBe('ghost');
+    expect(loaded[0]!.name).toBe('Cô Hồn');
+  });
+});

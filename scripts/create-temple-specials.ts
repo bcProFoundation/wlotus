@@ -228,21 +228,45 @@ function persistTipAdvance(tokenId: string, updated: WlotusDep): string[] {
   return written;
 }
 
-function restartMintApi(): void {
+async function restartMintApi(): Promise<void> {
   if (NO_RESTART) {
     console.log('Skipping mint-api restart (CREATE_TEMPLE_SPECIALS_NO_RESTART=1)');
     return;
   }
+  const port = process.env.MINT_API_PORT?.trim() || '8787';
+  const health = `http://127.0.0.1:${port}/health`;
   try {
-    execFileSync(
-      'sudo',
-      ['-n', 'systemctl', 'try-restart', MINT_API_SERVICE],
-      { stdio: 'inherit' },
-    );
+    // `restart` (not try-restart): cutover freezes the unit with `stop`.
+    // try-restart is a no-op when inactive, so the next curl hits nginx 502 HTML
+    // and jq dies with "Invalid numeric literal".
+    execFileSync('sudo', ['-n', 'systemctl', 'restart', MINT_API_SERVICE], {
+      stdio: 'inherit',
+    });
     console.log(`Restarted ${MINT_API_SERVICE} so it reloads the new baton tip`);
   } catch {
     console.warn(
       `WARN: could not restart ${MINT_API_SERVICE}. Restart it yourself so mint-api does not remint a spent P2SH.`,
+    );
+    return;
+  }
+  let healthy = false;
+  for (let i = 0; i < 20; i++) {
+    try {
+      execFileSync('curl', ['-sf', '--max-time', '2', health], {
+        stdio: 'ignore',
+      });
+      healthy = true;
+      break;
+    } catch {
+      await sleep(500);
+    }
+  }
+  if (!healthy) {
+    console.warn(
+      `WARN: ${MINT_API_SERVICE} did not answer ${health}. ` +
+        `jq on https://wlotus.org/api/status will parse nginx 502 HTML. ` +
+        `Check: sudo systemctl status ${MINT_API_SERVICE} --no-pager; ` +
+        `sudo journalctl -u ${MINT_API_SERVICE} -n 80 --no-pager`,
     );
   }
 }
@@ -581,7 +605,7 @@ async function remintForInventory(
     batonTips: nextTips,
   };
   persistTipAdvance(tokenId, updated);
-  restartMintApi();
+  await restartMintApi();
 
   return {
     tipIndex: tipRec.index,
@@ -838,8 +862,13 @@ async function main(): Promise<void> {
   console.log('\n=== Result ===');
   console.log(JSON.stringify(payload, null, 2));
   if (!DRY && liveRegistry.length > 0) {
-    console.log('\nSet on mint-api / Contabo and matching VITE_* for SPA:\n');
-    console.log(`TEMPLE_SPECIALS_JSON='${JSON.stringify(liveRegistry)}'`);
+    console.log('\nRegister on mint-api (file, not a quoted mint.env line):\n');
+    console.log(
+      `sudo cp ${outPath} /etc/wlotus/temple-specials.json\n` +
+        `echo 'TEMPLE_SPECIALS_JSON_FILE=/etc/wlotus/temple-specials.json' | sudo tee -a /etc/wlotus/mint.env\n` +
+        `sudo systemctl restart wlotus-mint-api\n` +
+        `curl -sS --fail-with-body http://127.0.0.1:8787/health`,
+    );
     console.log(`\nWrote ${outPath}`);
   } else if (DRY) {
     console.log(
