@@ -5,6 +5,9 @@
  * (1 flower normally; more on active temple specials — ghosts/heroes).
  * Legacy Prayer memo: remint mint 1 with DANA memorial in OP_RETURN (no burn tx).
  *
+ * Challenge lookup follows the mint baton on Chronik (`spentBy` from
+ * lastRemintTxid / handoff). JSON powAddress is a cache — open miners move the tip.
+ *
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  *                        → remint immediately; temple path returns burnPending
@@ -74,7 +77,10 @@ import {
   loadMintWallet,
   mintWalletSummary,
 } from '../../../src/mint/loadMintWallet.js';
-import { createDailyCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
+import {
+  resolveLiveMintBaton,
+  matchCovenantToBaton,
+} from '../../../src/mint/followMintBaton.js';
 import {
   isKnownRootCreator,
   rememberRootCreator,
@@ -517,6 +523,66 @@ function tipAnchorTxid(dep: DryrunDep, tipRec: BatonTip): string | null {
   return tipRec.lastRemintTxid ?? dep.handoffTxids?.[tipRec.index] ?? null;
 }
 
+function withP2shHex<
+  T extends { address: string; p2shScript: { bytecode: Uint8Array } },
+>(c: T, tipLocktime: number) {
+  return {
+    ...c,
+    address: c.address,
+    p2shScriptHex: toHex(c.p2shScript.bytecode),
+    tipLocktime,
+  };
+}
+
+/** Persist a tip discovered on-chain (open miner moved the baton). */
+function persistFollowedTip(
+  depPath: string,
+  dep: DryrunDep,
+  tips: BatonTip[],
+  tipIndex: number,
+  next: {
+    tipLocktime: number;
+    powAddress: string;
+    lastRemintTxid: string;
+    redeemScriptHex: string;
+    codeHashHex: string;
+  },
+): void {
+  const nextTips = tips.map(t =>
+    t.index === tipIndex
+      ? {
+          ...t,
+          tipLocktime: next.tipLocktime,
+          powAddress: next.powAddress,
+          lastRemintTxid: next.lastRemintTxid,
+        }
+      : t,
+  );
+  const updated = {
+    ...dep,
+    tipLocktime: nextTips[0]?.tipLocktime ?? next.tipLocktime,
+    powAddress: nextTips[0]?.powAddress ?? next.powAddress,
+    redeemScriptHex: next.redeemScriptHex,
+    codeHashHex: next.codeHashHex,
+    batonTips: nextTips,
+    updatedAt: new Date().toISOString(),
+  };
+  writeFileSync(depPath, `${JSON.stringify(updated, null, 2)}\n`);
+  const active = resolve(process.cwd(), 'deployments/mainnet-dryrun-active.json');
+  if (existsSync(active)) {
+    writeFileSync(active, `${JSON.stringify(updated, null, 2)}\n`);
+  }
+  for (const rel of [
+    'deployments/mainnet-wlotus.json',
+    'deployments/mainnet-dryrun-wlotus.json',
+  ]) {
+    const sibling = resolve(process.cwd(), rel);
+    if (existsSync(sibling) && depPath !== sibling && isTempleDep(dep)) {
+      writeFileSync(sibling, `${JSON.stringify(updated, null, 2)}\n`);
+    }
+  }
+}
+
 type FuelCoin = { txid: string; outIdx: number; sats: string };
 
 /**
@@ -658,7 +724,7 @@ async function createChallengeOnce(opts: {
     );
   }
 
-  const { dep } = loadDep();
+  const { path: depPath, dep } = loadDep();
   const temple = isTempleDep(dep);
   const mintAtoms = BigInt(dep.mintAtomsPerRemint);
   if (temple) {
@@ -723,57 +789,85 @@ async function createChallengeOnce(opts: {
     throw new Error('wLotus deployment missing templeScriptHashHex');
   }
 
+  const chronik = await createChronik('closest');
+  const startTxid =
+    tipAnchorTxid(dep, tipRec) ?? dep.handoffTxids?.[tipRec.index] ?? dep.tokenId;
+  const live = await resolveLiveMintBaton(chronik, dep.tokenId, startTxid);
+  const locktimeGuesses = [
+    tipRec.tipLocktime,
+    dep.tipLocktime ?? 0,
+    dep.genesisUnix,
+  ];
   const contract = temple
-    ? await createPowRemintMooreTipTempleContract({
-        tokenId: dep.tokenId,
-        mintAtoms,
-        templeScriptHash: fromHex(templeHashHex!),
-        genesisUnix: dep.genesisUnix,
-        baseZeroBits: dep.baseZeroBits,
-        secondsPerExtraBit: dep.secondsPerExtraBit,
-        tipLocktime: tipRec.tipLocktime,
+    ? await matchCovenantToBaton(live, locktimeGuesses, async tipLocktime => {
+        const c = await createPowRemintMooreTipTempleContract({
+          tokenId: dep.tokenId,
+          mintAtoms,
+          templeScriptHash: fromHex(templeHashHex!),
+          genesisUnix: dep.genesisUnix,
+          baseZeroBits: dep.baseZeroBits,
+          secondsPerExtraBit: dep.secondsPerExtraBit,
+          tipLocktime,
+        });
+        return withP2shHex(c, tipLocktime);
       })
-    : await createPowRemintMooreTipMemoContract({
-        tokenId: dep.tokenId,
-        mintAtoms,
-        genesisUnix: dep.genesisUnix,
-        baseZeroBits: dep.baseZeroBits,
-        secondsPerExtraBit: dep.secondsPerExtraBit,
-        tipLocktime: tipRec.tipLocktime,
+    : await matchCovenantToBaton(live, locktimeGuesses, async tipLocktime => {
+        const c = await createPowRemintMooreTipMemoContract({
+          tokenId: dep.tokenId,
+          mintAtoms,
+          genesisUnix: dep.genesisUnix,
+          baseZeroBits: dep.baseZeroBits,
+          secondsPerExtraBit: dep.secondsPerExtraBit,
+          tipLocktime,
+        });
+        return withP2shHex(c, tipLocktime);
       });
 
-  const chronik = await createChronik('closest');
+  if (
+    live.hops > 0 ||
+    (tipRec.lastRemintTxid &&
+      tipRec.lastRemintTxid.toLowerCase() !== live.creatingTxid) ||
+    (tipRec.powAddress && tipRec.powAddress !== contract.address)
+  ) {
+    console.log(
+      JSON.stringify({
+        followedOnChainTip: true,
+        hops: live.hops,
+        from: startTxid,
+        baton: `${live.txid}:${live.outIdx}`,
+        address: contract.address,
+        tipLocktime: contract.tipLocktime,
+      }),
+    );
+    try {
+      persistFollowedTip(depPath, dep, tips, tipRec.index, {
+        tipLocktime: contract.tipLocktime,
+        powAddress: contract.address,
+        lastRemintTxid: live.creatingTxid,
+        redeemScriptHex: contract.redeemHex,
+        codeHashHex: toHex(contract.codeHash),
+      });
+    } catch (e) {
+      console.warn(
+        'Could not persist followed on-chain tip',
+        e instanceof Error ? e.message : e,
+      );
+    }
+    tipRec.tipLocktime = contract.tipLocktime;
+    tipRec.powAddress = contract.address;
+    tipRec.lastRemintTxid = live.creatingTxid;
+  }
+
   const desk = await loadMintWallet(chronik);
   const tipFee = await loadTipFeeWallet(chronik, tipRec.index);
   console.log('mint desk', JSON.stringify(mintWalletSummary(desk)));
   console.log('tip fee', JSON.stringify(tipFeeWalletSummary(tipRec.index, tipFee)));
 
-  const scriptHex = toHex(contract.scriptHash);
-  const scriptUtxos = await chronik.script('p2sh', scriptHex).utxos();
-  const list = Array.isArray(scriptUtxos)
-    ? scriptUtxos
-    : ((scriptUtxos as { utxos?: unknown[] }).utxos ?? []);
-  const batonUtxos = (
-    list as {
-      token?: { tokenId?: string; isMintBaton?: boolean };
-      outpoint: { txid: string; outIdx: number };
-      sats: number | bigint;
-    }[]
-  ).filter(u => u.token?.tokenId === dep.tokenId && u.token?.isMintBaton);
-  if (batonUtxos.length === 0) {
-    throw new Error(`No PoW batons at ${contract.address}`);
-  }
-
-  const anchor = tipAnchorTxid(dep, tipRec);
-  const preferred = anchor
-    ? batonUtxos.find(u => u.outpoint.txid === anchor)
-    : undefined;
-  const b = preferred ?? batonUtxos[tipRec.index] ?? batonUtxos[0]!;
   const baton = {
-    outpoint: { txid: b.outpoint.txid, outIdx: b.outpoint.outIdx },
-    sats: BigInt(b.sats),
-    txid: b.outpoint.txid,
-    vout: b.outpoint.outIdx,
+    outpoint: { txid: live.txid, outIdx: live.outIdx },
+    sats: live.sats,
+    txid: live.txid,
+    vout: live.outIdx,
   };
 
   const fuelCoin = await ensureTipSizedFuel(

@@ -194,6 +194,10 @@ root dedication burn. Flow:
    until Chronik shows the miner UTXO, then burns two roots. Disable auto-remint
    with `CREATE_TEMPLE_SPECIALS_NO_MINT=1`.
 
+   Auto-remint does **not** query the JSON `powAddress`. It follows the mint
+   baton on Chronik (`spentBy` from `lastRemintTxid` / handoff) so an open-miner
+   remint that moved the tip is still found.
+
    Writes `deployments/temple-specials-created.json` with the
    `TEMPLE_SPECIALS_JSON` snippet.
 

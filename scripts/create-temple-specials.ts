@@ -49,6 +49,8 @@
  * After auto-remint the script writes tipLocktime / powAddress / lastRemintTxid
  * into every deployments JSON with the same tokenId (so mint-api cannot keep a
  * spent P2SH), then restarts mint-api so the process reloads the tip.
+ * Finding the baton walks Chronik spentBy from lastRemintTxid / handoff — JSON
+ * powAddress is not trusted (open miners move the tip).
  */
 import { resolve } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -78,6 +80,10 @@ import {
 } from '../src/offering/altarFields.js';
 import { lunarYmdToSolarYmd } from '../src/lib/lunarCalendar.js';
 import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
+import {
+  resolveLiveMintBaton,
+  matchCovenantToBaton,
+} from '../src/mint/followMintBaton.js';
 import {
   buildMinedMooreTipTempleRemintTx,
   mooreTipTempleMinerBanner,
@@ -457,59 +463,53 @@ async function remintForInventory(
     );
   }
 
-  const contract = await createPowRemintMooreTipTempleContract({
-    tokenId,
-    mintAtoms,
-    templeScriptHash: fromHex(templeHashHex),
-    genesisUnix: dep.genesisUnix,
-    baseZeroBits: dep.baseZeroBits,
-    secondsPerExtraBit: dep.secondsPerExtraBit,
-    tipLocktime: tipRec.tipLocktime,
-  });
+  // Open miners remint without this script; JSON powAddress can be a spent P2SH.
+  const startTxid =
+    tipRec.lastRemintTxid ?? dep.handoffTxids?.[tipRec.index] ?? tokenId;
+  const live = await resolveLiveMintBaton(chronik, tokenId, startTxid);
+  const contract = await matchCovenantToBaton(
+    live,
+    [tipRec.tipLocktime, dep.tipLocktime ?? 0, dep.genesisUnix],
+    async tipLocktime => {
+      const c = await createPowRemintMooreTipTempleContract({
+        tokenId,
+        mintAtoms,
+        templeScriptHash: fromHex(templeHashHex),
+        genesisUnix: dep.genesisUnix,
+        baseZeroBits: dep.baseZeroBits,
+        secondsPerExtraBit: dep.secondsPerExtraBit,
+        tipLocktime,
+      });
+      return {
+        ...c,
+        address: c.address,
+        p2shScriptHex: toHex(c.p2shScript.bytecode),
+        tipLocktime,
+      };
+    },
+  );
   console.log(mooreTipTempleMinerBanner(contract));
-  if (tipRec.powAddress && tipRec.powAddress !== contract.address) {
-    throw new Error(
-      `Address mismatch: tip=${tipRec.powAddress} computed=${contract.address}. ` +
-        'Deployment tipLocktime/powAddress may be stale — update from mint-api status or last remint.',
+  if (live.hops > 0 || (tipRec.powAddress && tipRec.powAddress !== contract.address)) {
+    console.log(
+      `  followed on-chain tip hops=${live.hops} ${live.txid}:${live.outIdx} ${contract.address}`,
     );
   }
 
-  const scriptHex = toHex(contract.scriptHash);
-  const scriptUtxos = await chronik.script('p2sh', scriptHex).utxos();
-  const list = Array.isArray(scriptUtxos)
-    ? scriptUtxos
-    : ((scriptUtxos as { utxos?: unknown[] }).utxos ?? []);
-  const batonUtxos = (
-    list as {
-      token?: { tokenId?: string; isMintBaton?: boolean };
-      outpoint: { txid: string; outIdx: number };
-      sats: number | bigint;
-    }[]
-  ).filter(u => u.token?.tokenId === tokenId && u.token?.isMintBaton);
-  if (batonUtxos.length === 0) {
-    throw new Error(`No PoW batons at ${contract.address}`);
-  }
-  const preferredAnchor =
-    tipRec.lastRemintTxid ?? dep.handoffTxids?.[tipRec.index] ?? null;
-  const preferred = preferredAnchor
-    ? batonUtxos.find(u => u.outpoint.txid === preferredAnchor)
-    : undefined;
-  const b = preferred ?? batonUtxos[tipRec.index] ?? batonUtxos[0]!;
   const baton = {
-    outpoint: { txid: b.outpoint.txid, outIdx: b.outpoint.outIdx },
-    sats: BigInt(b.sats),
-    txid: b.outpoint.txid,
-    vout: b.outpoint.outIdx,
+    outpoint: { txid: live.txid, outIdx: live.outIdx },
+    sats: live.sats,
+    txid: live.txid,
+    vout: live.outIdx,
   };
 
   const { mtp, tipHeight, tipUnix } = await getMedianTimePast(chronik);
   const locktime = Number(
     process.env.MOORE_TIP_LOCKTIME?.trim() ||
-      Math.max(tipRec.tipLocktime, mtp - 1),
+      Math.max(contract.tipLocktime, mtp - 1),
   );
-  if (locktime < tipRec.tipLocktime) {
+  if (locktime < contract.tipLocktime) {
     throw new Error(
-      `locktime ${locktime} < tipLocktime ${tipRec.tipLocktime} (rewind)`,
+      `locktime ${locktime} < tipLocktime ${contract.tipLocktime} (rewind)`,
     );
   }
   if (locktime >= mtp) {
@@ -527,7 +527,7 @@ async function remintForInventory(
         baton: `${baton.txid}:${baton.vout}`,
         locktime,
         mtp,
-        tipLocktime: tipRec.tipLocktime,
+        tipLocktime: contract.tipLocktime,
         baseZeroBits: dep.baseZeroBits,
       },
       null,

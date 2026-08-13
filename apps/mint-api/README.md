@@ -23,6 +23,11 @@ tips (default **1** at launch — bound fee burn; raise toward **28** if demand 
 First valid submit wins that tip; losers restart. Concurrent open challenges are capped
 for desk CPU. Genesis still creates **28** batons so parallelism stays available.
 
+**Live tip:** JSON `powAddress` is a cache. Open miners remint without this API and
+move the baton to a new P2SH. `POST /api/challenge` walks Chronik `spentBy` from
+`lastRemintTxid` / the genesis handoff until the mint baton is unspent, rebuilds
+the covenant from that tx locktime, and persists the followed tip.
+
 **Fee wallets:** the main desk (`MINT_MNEMONIC`) holds treasury XEC. Each tip has its
 own HD fee account (`m/44'/1899'/(tipIndex+1)'/0/0`) — the **mint address**. It
 signs remint, receives the miner atoms, and burns the offering.
