@@ -5,7 +5,9 @@ Source: apps/web/public/images/W-bold.png (white glyph, already transparent).
 
 Outputs:
   W-white.png                  cropped white glyph, transparent background
-  wlotus-icon-{16,32,192,512}  rounded black square, transparent corners (any)
+  wlotus-icon-{16,32}          browser favicons — W close to the rounded edge
+  wlotus-icon-{192,512}        PWA any-purpose rounded black square
+  wlotus-icon-180.png          full-bleed black (iOS apple-touch; OS applies mask)
   wlotus-icon-180.png          full-bleed black (iOS apple-touch; OS applies mask)
   apple-touch-icon.png         same as 180
   wlotus-icon-maskable-512.png full-bleed black, glyph in the 80% safe zone
@@ -27,8 +29,10 @@ SOURCE = IMAGES / "W-bold.png"
 # iOS-like rounded square (~22% of edge). Corners are transparent so browser
 # chrome does not paint a sharp black box.
 RADIUS_RATIO = 0.22
-# Padding inside the rounded plate so petal tips clear the corner arcs.
+# Padding inside PWA / apple-touch plates so petal tips clear the corner arcs.
 ANY_PAD_RATIO = 0.16
+# Browser tab favicons (16/32/ico) — W sits close to the rounded edge.
+FAVICON_PAD_RATIO = 0.05
 # Maskable: key graphics inside the center 80% circle (Web App Manifest).
 # 22% inset keeps the landscape W inside that circle with room for OS masks.
 MASKABLE_PAD_RATIO = 0.22
@@ -76,10 +80,12 @@ def rounded_plate(size: int, radius_ratio: float, supersample: int = 4) -> Image
     return img.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def compose_any_icon(glyph: Image.Image, size: int) -> Image.Image:
+def compose_any_icon(
+    glyph: Image.Image, size: int, pad_ratio: float = ANY_PAD_RATIO
+) -> Image.Image:
     """White W on a rounded black square; corners stay transparent."""
     plate = rounded_plate(size, RADIUS_RATIO)
-    inner = max(1, int(size * (1 - 2 * ANY_PAD_RATIO)))
+    inner = max(1, int(size * (1 - 2 * pad_ratio)))
     paste_centered(plate, fit_glyph(glyph, inner))
     return plate
 
@@ -102,7 +108,12 @@ def main() -> None:
     glyph = extract_white_glyph(Image.open(SOURCE))
     save_png(glyph, IMAGES / "W-white.png")
 
-    for size in (16, 32, 192, 512):
+    for size in (16, 32):
+        save_png(
+            compose_any_icon(glyph, size, FAVICON_PAD_RATIO),
+            IMAGES / f"wlotus-icon-{size}.png",
+        )
+    for size in (192, 512):
         save_png(compose_any_icon(glyph, size), IMAGES / f"wlotus-icon-{size}.png")
 
     apple = compose_full_bleed(glyph, 180, ANY_PAD_RATIO)
@@ -114,7 +125,7 @@ def main() -> None:
         IMAGES / "wlotus-icon-maskable-512.png",
     )
 
-    ico = compose_any_icon(glyph, 48)
+    ico = compose_any_icon(glyph, 48, FAVICON_PAD_RATIO)
     ico_path = IMAGES / "favicon.ico"
     ico.save(ico_path, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
     print(f"wrote {ico_path.relative_to(ROOT)}")
