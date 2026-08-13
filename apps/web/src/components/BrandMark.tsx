@@ -3,7 +3,9 @@
  * Light cream uses a baked rounded black square (white W in the PNG)
  * so the mark cannot collapse to an empty black tile.
  * Dark (EN/VI black, ZH rosewood) shows the transparent white glyph.
- * `badge` is the same pair at favicon size for history / re-offer rows.
+ * `badge` is the compact square for history / re-offer rows.
+ * Light in-app marks use the padded 192 asset (same as the header), not the
+ * tight 16/32 browser favicons.
  */
 export function BrandMark(props: {
   className?: string;
@@ -14,9 +16,6 @@ export function BrandMark(props: {
 }) {
   const w = props.width ?? 56;
   const h = props.height ?? 56;
-  const lightSrc = props.badge
-    ? '/images/wlotus-icon-32.png'
-    : '/images/wlotus-icon-192.png';
 
   const imgs = (
     <>
@@ -30,7 +29,7 @@ export function BrandMark(props: {
       />
       <img
         className="brand-mark brand-mark--on-light"
-        src={lightSrc}
+        src="/images/wlotus-icon-192.png"
         alt=""
         width={w}
         height={h}
