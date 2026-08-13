@@ -10,7 +10,7 @@ Canonical family for **WLOTUS** / **dWLOTUS**.
 |-------|------|
 | **Moore D** | `bits = base + floor((locktime − genesis) / secondsPerExtraBit)` — calendar clock. Cap **bits ≤ 128**. Default **+1 bit / 500 days** (五百罗汉). Whole-byte only (`bits % 8 == 0`) for the 201-op budget. |
 | **tipLocktime** | `locktime ≥ tip` — blocks past-cheat rewind on that baton |
-| **Hard next-P2SH** | `prefixHash`/`codeHash`; miner supplies `nextRedeem`; baton → `P2SH(hash160(nextRedeem))` |
+| **Hard next-P2SH** | `prefixHash`/`codeHash`; miner supplies `nextRedeem`; baton → `P2SH(hash160(nextRedeem))`. mint-api follows Chronik `spentBy` to the live UTXO — JSON `powAddress` is a cache (open miners move the tip). |
 | **N batons** | Parallel remint lanes (genesis **28**) |
 | **Temple split** | Mint **108** → **1** miner + **107** temple P2SH |
 

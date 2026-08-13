@@ -11,8 +11,13 @@
  * Funding (same test + prod path):
  *   1. Prefer existing desk/tip inventory (1 atom per root).
  *   2. If short, auto-remint once via MooreTipTemple (tip fee wallet = miner)
- *      so ~102 miner atoms land on the tip, then burn the roots.
+ *      so ~102 miner atoms land on the tip, persist the new baton tip into
+ *      every matching deployments/*wlotus*.json, restart mint-api, wait until
+ *      Chronik shows the miner UTXO, then burn the roots.
  *   Disable auto-remint with CREATE_TEMPLE_SPECIALS_NO_MINT=1.
+ *
+ * Dry-run encodes notes only — it does **not** remint or burn. Empty inventory
+ * is a warning, not a failure. Unset CREATE_TEMPLE_SPECIALS_DRY_RUN to mint.
  *
  * Kinds / windows:
  *   - Vu Lan  → kind "event", full civil day of lunar 15/7
@@ -37,10 +42,19 @@
  *   EVENT_LUNAR_YMD          — peak day, default 2026-07-15
  *   EVENT_LUNAR_START        — Cô Hồn start, default 2026-07-02
  *   EVENT_YEAR               — year for those defaults
- *   CREATE_TEMPLE_SPECIALS_NO_MINT=1  — never auto-remint
+ *   CREATE_TEMPLE_SPECIALS_NO_MINT=1     — never auto-remint
+ *   CREATE_TEMPLE_SPECIALS_NO_RESTART=1  — skip mint-api restart after tip advance
+ *   MINT_API_SERVICE                     — systemd unit (default wlotus-mint-api)
+ *
+ * After auto-remint the script writes tipLocktime / powAddress / lastRemintTxid
+ * into every deployments JSON with the same tokenId (so mint-api cannot keep a
+ * spent P2SH), then restarts mint-api so the process reloads the tip.
+ * Finding the baton walks Chronik spentBy from lastRemintTxid / handoff — JSON
+ * powAddress is not trusted (open miners move the tip).
  */
 import { resolve } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { config as loadEnv } from 'dotenv';
 import type { Wallet } from 'ecash-wallet';
 import { fromHex, toHex } from 'ecash-lib';
@@ -49,10 +63,12 @@ import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { loadTipFeeWallet } from '../src/mint/loadTipFeeWallet.js';
 import { loadMintWallet } from '../src/mint/loadMintWallet.js';
 import {
-  REMINT_FUEL_SATS,
   pickSizedFuelUtxo,
 } from '../src/mint/fuelUtxo.js';
-import { peelSizedFuel } from '../src/mint/peelSizedFuel.js';
+import {
+  peelSizedFuel,
+  sendSizedFuelFromDesk,
+} from '../src/mint/peelSizedFuel.js';
 import {
   burnOnePrayer,
   OFFERING_ID_WLOTUS,
@@ -64,6 +80,10 @@ import {
 } from '../src/offering/altarFields.js';
 import { lunarYmdToSolarYmd } from '../src/lib/lunarCalendar.js';
 import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
+import {
+  resolveLiveMintBaton,
+  matchCovenantToBaton,
+} from '../src/mint/followMintBaton.js';
 import {
   buildMinedMooreTipTempleRemintTx,
   mooreTipTempleMinerBanner,
@@ -79,6 +99,15 @@ const DRY = /^(1|true|yes)$/i.test(
 const NO_MINT = /^(1|true|yes)$/i.test(
   process.env.CREATE_TEMPLE_SPECIALS_NO_MINT?.trim() || '',
 );
+const NO_RESTART = /^(1|true|yes)$/i.test(
+  process.env.CREATE_TEMPLE_SPECIALS_NO_RESTART?.trim() || '',
+);
+const MINT_API_SERVICE =
+  process.env.MINT_API_SERVICE?.trim() || 'wlotus-mint-api';
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
 
 interface SpecialSpec {
   name: string;
@@ -117,6 +146,7 @@ interface WlotusDep {
   batonTips?: BatonTip[];
   redeemScriptHex?: string;
   codeHashHex?: string;
+  handoffTxids?: string[];
 }
 
 function loadTokenId(): string {
@@ -139,31 +169,82 @@ function loadTokenId(): string {
   );
 }
 
-function loadDepForToken(tokenId: string): { path: string; dep: WlotusDep } {
-  const candidates = [
+function deploymentCandidates(): string[] {
+  const explicit = process.env.MINT_DEPLOYMENT_JSON?.trim();
+  const requireLive = /^(1|true|yes)$/i.test(
+    process.env.MINT_REQUIRE_LIVE?.trim() || '',
+  );
+  if (explicit) return [explicit];
+  if (requireLive) return ['deployments/mainnet-wlotus.json'];
+  return [
     'deployments/mainnet-wlotus.json',
     'deployments/mainnet-dryrun-wlotus.json',
     'deployments/mainnet-dryrun-active.json',
-    'deployments/mainnet-dryrun-prayer.json',
   ];
-  let fallback: { path: string; dep: WlotusDep } | null = null;
-  for (const rel of candidates) {
+}
+
+function loadDepForToken(tokenId: string): { path: string; dep: WlotusDep } {
+  const want = tokenId.toLowerCase();
+  for (const rel of deploymentCandidates()) {
     const path = resolve(process.cwd(), rel);
     if (!existsSync(path)) continue;
     const dep = JSON.parse(readFileSync(path, 'utf8')) as WlotusDep;
-    if (!dep.tokenId) continue;
-    if (dep.tokenId.toLowerCase() === tokenId) return { path, dep };
-    if (!fallback) fallback = { path, dep };
-  }
-  if (fallback) {
-    console.warn(
-      `WARN: no deployment with tokenId=${tokenId}; using ${fallback.path} (tokenId=${fallback.dep.tokenId}). Set matching TOKEN_ID or update deployments.`,
-    );
-    return fallback;
+    if (dep.tokenId?.toLowerCase() === want) return { path, dep };
   }
   throw new Error(
-    'Missing WLotus deployment JSON (mainnet-wlotus or dryrun-wlotus)',
+    `No deployment JSON with tokenId=${tokenId}. Set MINT_DEPLOYMENT_JSON or TOKEN_ID to the live genesis file.`,
   );
+}
+
+/** Write the advanced baton tip into every JSON that already holds this tokenId. */
+function persistTipAdvance(tokenId: string, updated: WlotusDep): string[] {
+  const want = tokenId.toLowerCase();
+  const rels = [
+    ...deploymentCandidates(),
+    'deployments/mainnet-wlotus.json',
+    'deployments/mainnet-dryrun-wlotus.json',
+    'deployments/mainnet-dryrun-active.json',
+  ];
+  const written: string[] = [];
+  const seen = new Set<string>();
+  for (const rel of rels) {
+    const path = resolve(process.cwd(), rel);
+    if (seen.has(path) || !existsSync(path)) continue;
+    seen.add(path);
+    const cur = JSON.parse(readFileSync(path, 'utf8')) as WlotusDep;
+    if (cur.tokenId?.toLowerCase() !== want) continue;
+    writeFileSync(
+      path,
+      `${JSON.stringify({ ...cur, ...updated, updatedAt: new Date().toISOString() }, null, 2)}\n`,
+    );
+    written.push(rel);
+    console.log(`  persisted baton tip → ${rel}`);
+  }
+  if (written.length === 0) {
+    throw new Error(
+      `Remint succeeded but no deployments JSON with tokenId=${tokenId} to persist the new tip`,
+    );
+  }
+  return written;
+}
+
+function restartMintApi(): void {
+  if (NO_RESTART) {
+    console.log('Skipping mint-api restart (CREATE_TEMPLE_SPECIALS_NO_RESTART=1)');
+    return;
+  }
+  try {
+    execFileSync(
+      'sudo',
+      ['-n', 'systemctl', 'try-restart', MINT_API_SERVICE],
+      { stdio: 'inherit' },
+    );
+    console.log(`Restarted ${MINT_API_SERVICE} so it reloads the new baton tip`);
+  } catch {
+    console.warn(
+      `WARN: could not restart ${MINT_API_SERVICE}. Restart it yourself so mint-api does not remint a spent P2SH.`,
+    );
+  }
 }
 
 function defaultSpecs(): SpecialSpec[] {
@@ -372,43 +453,7 @@ async function remintForInventory(
     `Auto-remint on tip-${tipRec.index} (${tipFee.address}) to fund inventory…`,
   );
 
-  // Ensure sized fuel on tip (peel from tip treasury; fall back to desk top-up).
-  await tipFee.wallet.sync();
-  if (!pickSizedFuelUtxo(tipFee.wallet.utxos)) {
-    try {
-      const peeled = await peelSizedFuel(tipFee.wallet);
-      if (peeled) console.log(`  tip fuel peel ${peeled}`);
-    } catch (e) {
-      // Top-up from desk if tip has no XEC.
-      const desk = await loadMintWallet(chronik);
-      await desk.wallet.sync();
-      const deskXec = desk.wallet.utxos
-        .filter(u => !u.token)
-        .reduce((s, u) => s + u.sats, 0n);
-      if (deskXec < REMINT_FUEL_SATS + 5_000n) {
-        throw new Error(
-          `Tip-${tipRec.index} has no sized fuel and desk XEC is low (${deskXec} sats). ` +
-            `Fund tip or desk with pure XEC, then retry. (${e instanceof Error ? e.message : e})`,
-        );
-      }
-      const { payment } = await import('ecash-lib');
-      const topup = REMINT_FUEL_SATS + 10_000n;
-      console.log(`  desk → tip-${tipRec.index} top-up ${topup} sats`);
-      const resp = await desk.wallet
-        .action({
-          outputs: [{ sats: topup, script: tipFee.wallet.script }],
-        } as payment.Action)
-        .build()
-        .broadcast();
-      if (!resp.success || !resp.broadcasted?.length) {
-        throw new Error(`Desk→tip top-up failed: ${JSON.stringify(resp)}`);
-      }
-      console.log(`  top-up tx ${resp.broadcasted[0]}`);
-      await tipFee.wallet.sync();
-      const peeled = await peelSizedFuel(tipFee.wallet);
-      if (peeled) console.log(`  tip fuel peel ${peeled}`);
-    }
-  }
+  await ensureTipSizedFuel(chronik, tipFee.wallet, tipRec.index);
 
   await tipFee.wallet.sync();
   const fuelUtxo = pickSizedFuelUtxo(tipFee.wallet.utxos);
@@ -418,57 +463,53 @@ async function remintForInventory(
     );
   }
 
-  const contract = await createPowRemintMooreTipTempleContract({
-    tokenId,
-    mintAtoms,
-    templeScriptHash: fromHex(templeHashHex),
-    genesisUnix: dep.genesisUnix,
-    baseZeroBits: dep.baseZeroBits,
-    secondsPerExtraBit: dep.secondsPerExtraBit,
-    tipLocktime: tipRec.tipLocktime,
-  });
+  // Open miners remint without this script; JSON powAddress can be a spent P2SH.
+  const startTxid =
+    tipRec.lastRemintTxid ?? dep.handoffTxids?.[tipRec.index] ?? tokenId;
+  const live = await resolveLiveMintBaton(chronik, tokenId, startTxid);
+  const contract = await matchCovenantToBaton(
+    live,
+    [tipRec.tipLocktime, dep.tipLocktime ?? 0, dep.genesisUnix],
+    async tipLocktime => {
+      const c = await createPowRemintMooreTipTempleContract({
+        tokenId,
+        mintAtoms,
+        templeScriptHash: fromHex(templeHashHex),
+        genesisUnix: dep.genesisUnix,
+        baseZeroBits: dep.baseZeroBits,
+        secondsPerExtraBit: dep.secondsPerExtraBit,
+        tipLocktime,
+      });
+      return {
+        ...c,
+        address: c.address,
+        p2shScriptHex: toHex(c.p2shScript.bytecode),
+        tipLocktime,
+      };
+    },
+  );
   console.log(mooreTipTempleMinerBanner(contract));
-  if (tipRec.powAddress && tipRec.powAddress !== contract.address) {
-    throw new Error(
-      `Address mismatch: tip=${tipRec.powAddress} computed=${contract.address}. ` +
-        'Deployment tipLocktime/powAddress may be stale — update from mint-api status or last remint.',
+  if (live.hops > 0 || (tipRec.powAddress && tipRec.powAddress !== contract.address)) {
+    console.log(
+      `  followed on-chain tip hops=${live.hops} ${live.txid}:${live.outIdx} ${contract.address}`,
     );
   }
 
-  const scriptHex = toHex(contract.scriptHash);
-  const scriptUtxos = await chronik.script('p2sh', scriptHex).utxos();
-  const list = Array.isArray(scriptUtxos)
-    ? scriptUtxos
-    : ((scriptUtxos as { utxos?: unknown[] }).utxos ?? []);
-  const batonUtxos = (
-    list as {
-      token?: { tokenId?: string; isMintBaton?: boolean };
-      outpoint: { txid: string; outIdx: number };
-      sats: number | bigint;
-    }[]
-  ).filter(u => u.token?.tokenId === tokenId && u.token?.isMintBaton);
-  if (batonUtxos.length === 0) {
-    throw new Error(`No PoW batons at ${contract.address}`);
-  }
-  const preferred = tipRec.lastRemintTxid
-    ? batonUtxos.find(u => u.outpoint.txid === tipRec.lastRemintTxid)
-    : undefined;
-  const b = preferred ?? batonUtxos[0]!;
   const baton = {
-    outpoint: { txid: b.outpoint.txid, outIdx: b.outpoint.outIdx },
-    sats: BigInt(b.sats),
-    txid: b.outpoint.txid,
-    vout: b.outpoint.outIdx,
+    outpoint: { txid: live.txid, outIdx: live.outIdx },
+    sats: live.sats,
+    txid: live.txid,
+    vout: live.outIdx,
   };
 
   const { mtp, tipHeight, tipUnix } = await getMedianTimePast(chronik);
   const locktime = Number(
     process.env.MOORE_TIP_LOCKTIME?.trim() ||
-      Math.max(tipRec.tipLocktime, mtp - 1),
+      Math.max(contract.tipLocktime, mtp - 1),
   );
-  if (locktime < tipRec.tipLocktime) {
+  if (locktime < contract.tipLocktime) {
     throw new Error(
-      `locktime ${locktime} < tipLocktime ${tipRec.tipLocktime} (rewind)`,
+      `locktime ${locktime} < tipLocktime ${contract.tipLocktime} (rewind)`,
     );
   }
   if (locktime >= mtp) {
@@ -486,7 +527,7 @@ async function remintForInventory(
         baton: `${baton.txid}:${baton.vout}`,
         locktime,
         mtp,
-        tipLocktime: tipRec.tipLocktime,
+        tipLocktime: contract.tipLocktime,
         baseZeroBits: dep.baseZeroBits,
       },
       null,
@@ -515,7 +556,9 @@ async function remintForInventory(
     `  remint OK ${remintTxid} (bits=${built.tip.bits} attempts=${built.powAttempts})`,
   );
 
-  // Persist tip advance so the next remint (API or script) stays in sync.
+  // Persist tip advance on every JSON with this tokenId, then restart mint-api.
+  // Old bug: only one file was written, mint-api kept the spent P2SH in memory,
+  // and the next remint/burn looked at the old baton.
   const nextTips = tips.map(t =>
     t.index === tipRec.index
       ? {
@@ -526,30 +569,53 @@ async function remintForInventory(
         }
       : t,
   );
-  const updated = {
+  const updated: WlotusDep = {
     ...dep,
-    tipLocktime: nextTips[0]?.tipLocktime ?? built.tip.locktime,
-    powAddress: nextTips[0]?.powAddress ?? built.nextContract.address,
+    tipLocktime: nextTips.find(t => t.index === tipRec.index)?.tipLocktime ??
+      built.tip.locktime,
+    powAddress:
+      nextTips.find(t => t.index === tipRec.index)?.powAddress ??
+      built.nextContract.address,
     redeemScriptHex: built.nextContract.redeemHex,
     codeHashHex: toHex(built.nextContract.codeHash),
     batonTips: nextTips,
-    updatedAt: new Date().toISOString(),
   };
-  writeFileSync(depPath, `${JSON.stringify(updated, null, 2)}\n`);
-  const active = resolve(process.cwd(), 'deployments/mainnet-dryrun-active.json');
-  if (existsSync(active)) {
-    writeFileSync(active, `${JSON.stringify(updated, null, 2)}\n`);
-  }
-
-  // Brief wait + sync so tip inventory is visible.
-  await new Promise(r => setTimeout(r, 2_000));
-  await tipFee.wallet.sync();
+  persistTipAdvance(tokenId, updated);
+  restartMintApi();
 
   return {
     tipIndex: tipRec.index,
     remintTxid,
     atomsMinted: WLOTUS_MINER_ATOMS.toString(),
   };
+}
+
+/** Desk → tip ~40 XEC fuel; peel on tip only if the desk cannot fund. */
+async function ensureTipSizedFuel(
+  chronik: Awaited<ReturnType<typeof createChronik>>,
+  tipWallet: Wallet,
+  tipIndex: number,
+): Promise<void> {
+  await tipWallet.sync();
+  if (pickSizedFuelUtxo(tipWallet.utxos)) return;
+
+  try {
+    const desk = await loadMintWallet(chronik);
+    const txid = await sendSizedFuelFromDesk(desk.wallet, tipWallet);
+    console.log(`  desk→tip-${tipIndex} sized fuel ${txid}`);
+    return;
+  } catch (e) {
+    console.log(
+      `  desk→tip fuel failed (${e instanceof Error ? e.message : e}); trying local peel`,
+    );
+  }
+
+  await tipWallet.sync();
+  const peeled = await peelSizedFuel(tipWallet, {
+    fuelScript: tipWallet.script,
+    changeScript: tipWallet.script,
+  });
+  if (peeled) console.log(`  tip fuel peel ${peeled}`);
 }
 
 async function ensureInventory(
@@ -578,9 +644,21 @@ async function ensureInventory(
   if (pick) return pick;
 
   if (DRY) {
-    throw new Error(
-      `Need ≥ ${needAtoms} inventory atoms (found ${total}). Dry-run skips auto-remint; fund tips or re-run without DRY after a real remint.`,
+    console.log(
+      `Dry-run: need ≥ ${needAtoms} inventory atoms (found ${total}). ` +
+        `Live run will auto-remint ~${WLOTUS_MINER_ATOMS} miner atoms onto the tip. ` +
+        `Unset CREATE_TEMPLE_SPECIALS_DRY_RUN to mint + burn.`,
     );
+    const tip = await loadTipFeeWallet(
+      chronik,
+      Math.max(0, Math.floor(Number(process.env.BATON_INDEX?.trim() || '0') || 0)),
+    );
+    return {
+      label: 'auto-remint-on-live',
+      tipIndex: 0,
+      wallet: tip.wallet,
+      atoms: 0n,
+    };
   }
   if (NO_MINT) {
     throw new Error(
@@ -597,30 +675,36 @@ async function ensureInventory(
     `Remint ${minted.remintTxid} → tip-${minted.tipIndex} (+~${minted.atomsMinted} miner atoms)`,
   );
 
-  holders = await scanInventory(chronik, tokenId);
-  total = holders.reduce((s, h) => s + h.atoms, 0n);
-  console.log(
-    JSON.stringify(
-      {
-        inventoryScanAfterRemint: holders.map(h => ({
-          label: h.label,
-          atoms: h.atoms.toString(),
-        })),
-        totalAtoms: total.toString(),
-        needAtoms: needAtoms.toString(),
-      },
-      null,
-      2,
-    ),
-  );
-  pick = holders.find(h => h.atoms >= needAtoms);
-  if (!pick) {
-    throw new Error(
-      `After remint still need ≥ ${needAtoms} atoms (found ${total}). ` +
-        'Check tip wallet sync / TOKEN_ID / baton tip index.',
-    );
-  }
+  pick = await waitForInventory(chronik, tokenId, needAtoms);
   return pick;
+}
+
+async function waitForInventory(
+  chronik: Awaited<ReturnType<typeof createChronik>>,
+  tokenId: string,
+  needAtoms: bigint,
+  attempts = 20,
+): Promise<TokenHolder> {
+  let lastTotal = 0n;
+  for (let i = 1; i <= attempts; i++) {
+    const holders = await scanInventory(chronik, tokenId);
+    const total = holders.reduce((s, h) => s + h.atoms, 0n);
+    lastTotal = total;
+    const pick = holders.find(h => h.atoms >= needAtoms);
+    console.log(
+      JSON.stringify({
+        inventoryWait: i,
+        totalAtoms: total.toString(),
+        holders: holders.map(h => ({ label: h.label, atoms: h.atoms.toString() })),
+      }),
+    );
+    if (pick) return pick;
+    await sleep(1_500);
+  }
+  throw new Error(
+    `After remint still need ≥ ${needAtoms} atoms (found ${lastTotal} after ${attempts} syncs). ` +
+      'Check TOKEN_ID, Chronik, and that the remint miner output landed on the tip fee wallet.',
+  );
 }
 
 async function main(): Promise<void> {
@@ -632,7 +716,7 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         dryRun: DRY,
-        autoMintIfShort: !NO_MINT && !DRY,
+        autoMintIfShort: !NO_MINT,
         tokenId,
         specials: specs.map(s => ({
           name: s.name,
@@ -653,6 +737,11 @@ async function main(): Promise<void> {
   const chronik = await createChronik('closest');
   const holder = await ensureInventory(chronik, tokenId, needAtoms);
   console.log(`Using inventory from ${holder.label} (${holder.atoms} atoms)`);
+  if (DRY && holder.atoms < needAtoms) {
+    console.log(
+      'Dry-run will not remint or burn. Re-run without CREATE_TEMPLE_SPECIALS_DRY_RUN=1.',
+    );
+  }
 
   const created: Array<{
     name: string;

@@ -282,10 +282,11 @@ cd /opt/wlotus
 set -a && source /etc/wlotus/mint.env && set +a
 set -a && source .env && set +a   # mnemonic from mint.env is what matters
 
-# Plan only (no broadcast)
+# Plan only (no remint, no burns). Empty inventory is OK — a warning, not an error.
 CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
 
-# Broadcast two root burns: Vu Lan (event, lunar 15/7) + Cô Hồn (ghost, 2/7→15/7)
+# Live: auto-remint ~102 miner atoms onto the tip if inventory is 0, persist the
+# new baton tip into deployments JSON, restart mint-api, then burn two roots.
 npm run create-temple-specials
 ```
 

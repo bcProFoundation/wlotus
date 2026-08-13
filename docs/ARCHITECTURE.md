@@ -61,6 +61,21 @@ For each remint spend, Script must enforce:
 
 ALP validity is still indexer-enforced (Chronik); the covenant must emit **byte-exact** MINT pushdata.
 
+## Live tip (open mining)
+
+Hard next-P2SH means each remint **moves** the baton to a new address. Deployment JSON (`powAddress`, `lastRemintTxid`, `tipLocktime`) is only a cache. Open miners remint without mint-api, so that cache can point at a spent P2SH.
+
+On `POST /api/challenge` (and temple-specials auto-remint) the desk:
+
+1. Starts from `lastRemintTxid`, else `handoffTxids[tipIndex]`, else genesis `tokenId`
+2. Walks Chronik `spentBy` until the mint-baton UTXO is unspent
+3. Rebuilds the covenant from that tx’s locktime (a remint) or genesis `tipLocktime` (still on the original P2SH)
+4. Persists the followed tip so the next request is a cache hit
+
+Fallback if the walk fails: `chronik.tokenId(id).utxos()` for any live mint baton.
+
+Implementation: `src/mint/followMintBaton.ts`.
+
 ## Components
 
 | Path | Role |
