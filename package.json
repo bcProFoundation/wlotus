@@ -39,7 +39,8 @@
     "wait-create-mwlotus": "tsx scripts/wait-create-mwlotus.ts",
     "fund-tip-fee-wallets": "tsx scripts/fund-tip-fee-wallets.ts",
     "sweep-temple-to-cold": "tsx scripts/sweep-temple-to-cold.ts",
-    "create-temple-specials": "tsx scripts/create-temple-specials.ts"
+    "create-temple-specials": "tsx scripts/create-temple-specials.ts",
+    "build-icons": "python3 scripts/build-wlotus-icons.py"
   },
   "engines": {
     "node": ">=20"
