@@ -39,15 +39,19 @@
               if (tag.indexOf('en') === 0) { locale = 'en'; break; }
             }
           }
-          if (locale === 'vi' || locale === 'zh') {
-            document.documentElement.setAttribute('data-theme', 'temple');
-            document.documentElement.setAttribute('data-locale', locale);
-            var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) {
-              meta.setAttribute('content', locale === 'zh' ? '#1c120c' : '#f3ebe0');
-            }
-          } else {
-            document.documentElement.setAttribute('data-locale', 'en');
+          var appearance = (localStorage.getItem('wlotus.appearance') || '').toLowerCase();
+          if (appearance !== 'light' && appearance !== 'dark') {
+            appearance = locale === 'vi' ? 'light' : 'dark';
+          }
+          var theme = appearance === 'light' ? 'light' : (locale === 'zh' ? 'wood' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.setAttribute('data-locale', locale);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute(
+              'content',
+              theme === 'light' ? '#f3ebe0' : theme === 'wood' ? '#1c120c' : '#050505'
+            );
           }
         } catch (e) { /* keep dark */ }
       })();

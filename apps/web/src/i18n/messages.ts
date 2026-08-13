@@ -165,7 +165,10 @@ export type MessageKey =
   | 'cungSessionTitle'
   | 'vuLanSessionTitle'
   | 'specialStoryHeading'
-  | 'specialStoryHint';
+  | 'specialStoryHint'
+  | 'themeAppearance'
+  | 'themeLight'
+  | 'themeDark';
 
 type Dict = Record<MessageKey, string>;
 
@@ -355,6 +358,9 @@ const en: Dict = {
   vuLanSessionTitle: 'Vu Lan — Filial Gratitude',
   specialStoryHeading: 'Temple story',
   specialStoryHint: 'While the lotus is found, you may read this remembrance.',
+  themeAppearance: 'Appearance',
+  themeLight: 'Light',
+  themeDark: 'Dark',
 };
 
 
@@ -544,6 +550,9 @@ const vi: Dict = {
   vuLanSessionTitle: 'Vu Lan Báo Hiếu',
   specialStoryHeading: 'Câu chuyện từ chùa',
   specialStoryHint: 'Trong lúc tìm hoa sen, bạn có thể đọc lời tưởng niệm này.',
+  themeAppearance: 'Giao diện',
+  themeLight: 'Sáng',
+  themeDark: 'Tối',
 };
 
 
@@ -728,6 +737,9 @@ const zh: Dict = {
   vuLanSessionTitle: '盂兰盆 — 报恩',
   specialStoryHeading: '寺院故事',
   specialStoryHint: '寻找莲花时，可以阅读这段追思。',
+  themeAppearance: '外观',
+  themeLight: '浅色',
+  themeDark: '深色',
 };
 
 

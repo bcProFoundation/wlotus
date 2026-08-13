@@ -1,14 +1,15 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLocale, useLocaleOptions } from '../i18n/LocaleContext.js';
 
-/** Text language control to the right of the brand title. */
+/** Language + light/dark control to the right of the brand title. */
 export function LangSwitch() {
-  const { locale, setLocale } = useLocale();
+  const { locale, setLocale, appearance, setAppearance, t } = useLocale();
   const options = useLocaleOptions();
   const current = options.find(o => o.locale === locale) ?? options[0]!;
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  const themeGroupId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +33,7 @@ export function LangSwitch() {
         type="button"
         className="lang-switch-btn"
         aria-label={`Language: ${current.nameEn}`}
-        aria-haspopup="listbox"
+        aria-haspopup="true"
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen(v => !v)}
@@ -40,27 +41,68 @@ export function LangSwitch() {
         <span className="lang-code">{current.label}</span>
       </button>
       {open ? (
-        <ul className="lang-menu" id={menuId} role="listbox">
-          {options.map(opt => (
-            <li key={opt.locale} role="option" aria-selected={opt.locale === locale}>
+        <div className="lang-menu" id={menuId} role="menu">
+          <ul className="lang-menu-list" role="listbox" aria-label="Language">
+            {options.map(opt => (
+              <li
+                key={opt.locale}
+                role="option"
+                aria-selected={opt.locale === locale}
+              >
+                <button
+                  type="button"
+                  className={
+                    opt.locale === locale
+                      ? 'lang-menu-item active'
+                      : 'lang-menu-item'
+                  }
+                  onClick={() => {
+                    setLocale(opt.locale);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="lang-code">{opt.label}</span>
+                  <span className="lang-name">{opt.nameEn}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div
+            className="theme-toggle"
+            role="group"
+            aria-labelledby={themeGroupId}
+          >
+            <p className="theme-toggle-label" id={themeGroupId}>
+              {t('themeAppearance')}
+            </p>
+            <div className="theme-toggle-btns">
               <button
                 type="button"
                 className={
-                  opt.locale === locale
-                    ? 'lang-menu-item active'
-                    : 'lang-menu-item'
+                  appearance === 'light'
+                    ? 'theme-toggle-btn active'
+                    : 'theme-toggle-btn'
                 }
-                onClick={() => {
-                  setLocale(opt.locale);
-                  setOpen(false);
-                }}
+                aria-pressed={appearance === 'light'}
+                onClick={() => setAppearance('light')}
               >
-                <span className="lang-code">{opt.label}</span>
-                <span className="lang-name">{opt.nameEn}</span>
+                {t('themeLight')}
               </button>
-            </li>
-          ))}
-        </ul>
+              <button
+                type="button"
+                className={
+                  appearance === 'dark'
+                    ? 'theme-toggle-btn active'
+                    : 'theme-toggle-btn'
+                }
+                aria-pressed={appearance === 'dark'}
+                onClick={() => setAppearance('dark')}
+              >
+                {t('themeDark')}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

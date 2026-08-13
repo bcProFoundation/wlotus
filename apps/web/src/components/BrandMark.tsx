@@ -1,7 +1,8 @@
 /**
  * White W glyph. Dark UI (EN / offering / ZH rosewood) shows it with no plate.
- * Light Vietnamese temple uses a baked rounded black square (white W in the PNG)
+ * Light cream uses a baked rounded black square (white W in the PNG)
  * so the mark cannot collapse to an empty black tile.
+ * Dark (EN/VI black, ZH rosewood) shows the transparent white glyph.
  * `badge` is the same pair at favicon size for history / re-offer rows.
  */
 export function BrandMark(props: {

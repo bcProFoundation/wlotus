@@ -12,6 +12,12 @@ import {
   resolveInitialLocale,
   writeStoredLocale,
 } from './detectLocale.js';
+import {
+  effectiveAppearance,
+  readStoredAppearance,
+  writeStoredAppearance,
+  type Appearance,
+} from './appearance.js';
 import { LOCALE_OPTIONS, type Locale } from './types.js';
 
 type TFunc = (
@@ -21,8 +27,11 @@ type TFunc = (
 
 interface LocaleCtx {
   locale: Locale;
+  /** Light or dark; dark skin is black (EN/VI) or rosewood (ZH). */
+  appearance: Appearance;
   ready: boolean;
   setLocale: (locale: Locale) => void;
+  setAppearance: (appearance: Appearance) => void;
   t: TFunc;
 }
 
@@ -37,7 +46,11 @@ function bootLocale(): Locale {
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(bootLocale);
+  const [appearanceOverride, setAppearanceOverride] = useState<Appearance | null>(
+    () => readStoredAppearance(),
+  );
   const [ready, setReady] = useState(false);
+  const appearance = effectiveAppearance(locale, appearanceOverride);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -64,14 +77,19 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     writeStoredLocale(next);
   }, []);
 
+  const setAppearance = useCallback((next: Appearance) => {
+    writeStoredAppearance(next);
+    setAppearanceOverride(next);
+  }, []);
+
   const t = useCallback<TFunc>(
     (key, vars) => interpolate(MESSAGES[locale][key], vars),
     [locale],
   );
 
   const value = useMemo(
-    () => ({ locale, ready, setLocale, t }),
-    [locale, ready, setLocale, t],
+    () => ({ locale, appearance, ready, setLocale, setAppearance, t }),
+    [locale, appearance, ready, setLocale, setAppearance, t],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
