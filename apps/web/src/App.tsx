@@ -2495,15 +2495,7 @@ export default function App() {
               ×
             </button>
             <h2 id="offer-session-title" className="offer-session-title">
-              <img
-                className="offer-session-title-mark"
-                src="/images/W-bold.png"
-                alt=""
-                width={28}
-                height={28}
-                draggable={false}
-                aria-hidden="true"
-              />
+              <BrandMark badge className="offer-session-title-mark" width={28} height={28} />
               <span>{
                 specialSessionTitle(
                   findSpecialForParent(templeSpecials, session?.parentBurnTxid),
@@ -2643,15 +2635,7 @@ export default function App() {
               ×
             </button>
             <h2 id="offer-session-title" className="offer-session-title">
-              <img
-                className="offer-session-title-mark"
-                src="/images/W-bold.png"
-                alt=""
-                width={28}
-                height={28}
-                draggable={false}
-                aria-hidden="true"
-              />
+              <BrandMark badge className="offer-session-title-mark" width={28} height={28} />
               <span>
                 {session.setup
                   ? t('setupSessionTitle')

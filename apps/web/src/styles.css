@@ -218,7 +218,9 @@ a {
 .brand-mark-wrap {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .brand-mark {
@@ -238,33 +240,43 @@ a {
   max-width: clamp(4.25rem, 14vw, 5.5rem);
 }
 
-.brand-mark--on-light {
-  display: none;
+/* Light Vietnamese temple: white W on a rounded black square. Dark UI and
+   ZH rosewood skip the plate so the glyph sits on the page. */
+[data-theme='temple']:not([data-locale='zh']) .brand-mark-wrap {
+  background: #000;
+  border-radius: 22%;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  padding: 14%;
 }
 
-[data-theme='temple'] .brand-mark--on-dark {
-  display: none;
+[data-theme='temple']:not([data-locale='zh']) .brand-main .brand-mark {
+  width: 100%;
+  height: 100%;
+  max-width: none;
 }
 
-[data-theme='temple'] .brand-mark--on-light {
-  display: block;
-}
-
-[data-theme='temple'][data-locale='zh'] .brand-mark--on-dark {
-  display: block;
-}
-
-[data-theme='temple'][data-locale='zh'] .brand-mark--on-light {
-  display: none;
-}
-
-/* Prebuilt favicon asset — white bold W already sized on black rounded square. */
 .brand-mark-badge {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   width: 1.75rem;
   height: 1.75rem;
+  box-sizing: border-box;
+}
+
+.brand-mark-badge .brand-mark {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+}
+
+[data-theme='temple']:not([data-locale='zh']) .brand-mark-badge {
+  background: #000;
+  border-radius: 22%;
+  overflow: hidden;
+  padding: 14%;
 }
 
 .brand-letter {
@@ -1585,7 +1597,6 @@ a {
   flex-shrink: 0;
   width: 1.75rem;
   height: 1.75rem;
-  object-fit: contain;
 }
 
 .offer-session-label {
