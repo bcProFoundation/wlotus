@@ -71,6 +71,7 @@ import {
   rankTempleSpecials,
   formatSpecialEventDateLabel,
   specialCountdown,
+  filterSpecialsForViewer,
   type TempleSpecialsStatusUi,
 } from './lib/specialsUi.js';
 import {
@@ -225,7 +226,7 @@ function readRememberedChallenge(): StoredChallenge | null {
 }
 
 export default function App() {
-  const { locale, t } = useLocale();
+  const { locale, countryCode, t } = useLocale();
   const shareInAppBrowserGate = useShareInAppBrowserGate();
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
@@ -1446,7 +1447,10 @@ export default function App() {
   }, [templeSpecials, offers]);
 
   const rankedHomeEvents = rankTempleSpecials(
-    templeSpecials?.profiles,
+    filterSpecialsForViewer(templeSpecials?.profiles, {
+      countryCode,
+      locale,
+    }),
     specialOfferCounts,
     5,
   );

@@ -1,4 +1,5 @@
 import { solarToLunar } from './lunarCalendar.js';
+import { specialVisibleToViewer } from './specialCountries.js';
 
 /**
  * Temple specials UI helpers — kind-driven copy + story during soft pray.
@@ -21,6 +22,8 @@ export interface TempleSpecialProfileUi {
   storyBody?: string | null;
   storyTitleEn?: string | null;
   storyBodyEn?: string | null;
+  /** ISO country codes. Empty / omitted = Global. */
+  countries?: string[];
 }
 
 export interface TempleSpecialsStatusUi {
@@ -39,6 +42,16 @@ export function findSpecialForParent(
   if (!id || id.length !== 64) return null;
   const list = status?.profiles ?? status?.active ?? [];
   return list.find(p => p.profileId.toLowerCase() === id) ?? null;
+}
+
+/** Home events list — Global or matching viewer country / locale. */
+export function filterSpecialsForViewer(
+  profiles: TempleSpecialProfileUi[] | null | undefined,
+  opts: { countryCode?: string | null; locale?: string | null },
+): TempleSpecialProfileUi[] {
+  return (profiles ?? []).filter(p =>
+    specialVisibleToViewer(p.countries, opts),
+  );
 }
 
 /** True when this parent is currently in an active special window. */

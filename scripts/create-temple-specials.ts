@@ -122,6 +122,10 @@ interface SpecialSpec {
   eventEnd?: string;
   /** Hour 0–23 on end civil day when window closes (Cô Hồn = 12). */
   eventEndHour?: number;
+  /** ISO countries for home-list targeting. Empty = Global. */
+  countries?: string[];
+  /** On-chain altar birthPlace (quê quán). Empty → treated as Global off-chain. */
+  birthPlace?: string;
 }
 
 interface BatonTip {
@@ -287,6 +291,8 @@ function defaultSpecs(): SpecialSpec[] {
       note: 'Vu Lan Báo Hiếu',
       eventDate: lunarPeak,
       eventCalendar: 'lunar',
+      countries: ['VN'],
+      birthPlace: 'Việt Nam',
       // single civil day of lunar 15/7 (eventStart/End omitted → = eventDate)
     },
     {
@@ -300,6 +306,8 @@ function defaultSpecs(): SpecialSpec[] {
       eventStart: lunarStart,
       eventEnd: lunarPeak,
       eventEndHour: 12,
+      countries: ['VN'],
+      birthPlace: 'Việt Nam',
     },
   ];
 }
@@ -325,6 +333,7 @@ function buildAltarNote(spec: SpecialSpec): string {
     // (living profiles cannot take flower re-offers). Same calendar day the
     // special window uses after lunar→solar conversion.
     deathDate: deathDateForSpec(spec),
+    birthPlace: spec.birthPlace ?? '',
   };
   // Root DANA v1 (no parent). Soft cap leaves room for ALP BURN in the same
   // OP_RETURN (≤ 223). Empirical headroom is tighter than the 150 constant when
@@ -335,8 +344,8 @@ function buildAltarNote(spec: SpecialSpec): string {
 function registryEntry(
   profileId: string,
   spec: SpecialSpec,
-): Record<string, string | number> {
-  const base: Record<string, string | number> = {
+): Record<string, unknown> {
+  const base: Record<string, unknown> = {
     profileId,
     kind: spec.kind,
     eventDate: spec.eventDate,
@@ -346,6 +355,9 @@ function registryEntry(
   if (spec.eventStart) base.eventStart = spec.eventStart;
   if (spec.eventEnd) base.eventEnd = spec.eventEnd;
   if (spec.eventEndHour != null) base.eventEndHour = spec.eventEndHour;
+  if (spec.countries && spec.countries.length > 0) {
+    base.countries = spec.countries;
+  }
   return base;
 }
 

@@ -118,14 +118,16 @@ TEMPLE_SPECIALS_JSON='[
     "kind": "event",
     "eventDate": "2026-07-15",
     "eventCalendar": "lunar",
-    "name": "Vu Lan"
+    "name": "Vu Lan",
+    "countries": ["VN"]
   },
   {
     "profileId": "<64-hex root burn>",
     "kind": "ghost",
     "eventDate": "2026-07-15",
     "eventCalendar": "lunar",
-    "name": "Cô Hồn"
+    "name": "Cô Hồn",
+    "countries": ["VN"]
   },
   {
     "profileId": "<64-hex>",
@@ -133,12 +135,16 @@ TEMPLE_SPECIALS_JSON='[
     "eventDate": "2026-09-02",
     "eventCalendar": "solar",
     "birthDate": "1890-05-19",
-    "name": "Hồ Chí Minh"
+    "name": "Hồ Chí Minh",
+    "countries": ["VN"]
   }
 ]'
 ```
 
 - `eventCalendar` is optional; **defaults to `"lunar"`**.
+- **`countries`**: ISO 3166-1 alpha-2 list for the home events list. Omit, `[]`,
+  `"*"`, or `"GLOBAL"` → **Global** (every viewer). Most specials are local
+  (`["VN"]`). Multi-country: `["VN","CN"]`.
 - No `deskKeep` or `testOffsetDays` inside the JSON — those are global only.
 - For Cô Hồn multi-day, until range fields land, ops may use the rằm solar day
   as the single-day anchor (full multi-day is a follow-up).
@@ -165,7 +171,8 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
   "burnAtoms": "96",
   "profiles": [ {
     "profileId", "kind", "eventDate", "eventCalendar",
-    "effectiveEventDate", "active", "windowStartUtc", "windowEndUtc", …
+    "effectiveEventDate", "active", "windowStartUtc", "windowEndUtc",
+    "countries", …
   } ],
   "active": [ /* subset currently in window */ ]
 }
@@ -173,13 +180,84 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 
 ---
 
+## Country targeting
+
+Specials are **localized**. Vu Lan and Cô Hồn are Vietnamese; a later Qingming
+or Ullambana profile might be Chinese, Cambodian, or shared. The home Events
+list only shows specials that match the viewer. **Burns and share links are
+not gated** — anyone with the profile txid can still offer.
+
+### Off-chain registry (source of truth)
+
+| JSON | Meaning |
+|------|---------|
+| omit / `[]` / `"*"` / `"GLOBAL"` | **Global** — every locale and IP |
+| `"countries": ["VN"]` | Vietnam (and `vi` locale diaspora) |
+| `"countries": ["VN","CN"]` | Multi-country |
+| `"country": "VN"` | Singular alias |
+
+`GET /api/status` → `profiles[].countries` is always an array (`[]` = Global).
+
+The SPA matches if **any** of:
+
+1. The special is Global.
+2. The viewer's IP country (ipwho.is / ipapi.co) is in the list.
+3. The viewer's **app locale** implies a country in the list (`vi` → VN;
+   `zh` → CN, TW, HK, MO, SG). So a Vietnamese speaker in the US still sees Vu Lan.
+
+English + US IP does **not** see `["VN"]` specials.
+
+### On-chain `birthPlace` (altar card only)
+
+Altar profiles already pack **quê quán** as DANA note field #4 (`birthPlace`).
+New specials created by `create-temple-specials` set `birthPlace: "Việt Nam"`
+on the root burn so the Ban thờ card matches other altars.
+
+**Do not use on-chain birthPlace as the targeting key:**
+
+| Constraint | Why it fails as a country index |
+|------------|----------------------------------|
+| Existing Vu Lan / Cô Hồn roots | Already burned with empty birthPlace; rewriting needs a new root |
+| Free text | `"Mỹ Thành, Phù Mỹ, Bình Định"` is not `VN` |
+| One slot | Cannot express multi-country |
+| Drop order | `birthPlace` is dropped when the 100-byte temple note is over budget |
+| dana-index | Stores raw note; no country parse or search |
+
+Empty on-chain birthPlace **does not** force Global if the JSON has `countries`.
+Empty JSON `countries` **does** mean Global (even if the altar later shows a
+hometown).
+
+### Multi-country — needs and feasibility
+
+**Needs (likely):**
+
+- Overlapping festivals: Hungry Ghost / Vu Lan in VN + CN + TW + SG.
+- Shared heroes or regional memorial days (VN + KH, etc.).
+- Global one-offs (world peace day) with `countries: []`.
+- Diaspora: locale match covers overseas Vietnamese/Chinese without listing
+  every ISO code.
+
+**Feasible today:** JSON string array of ISO codes. Cheap to parse, no chain
+migration, ops can add a country without a new burn.
+
+**Not worth it yet:**
+
+- Per-country event windows (lunar 15/7 is already VN-anchored).
+- On-chain list encoding (OP_RETURN budget).
+- Sub-national targeting (province) — use altar `birthPlace` text on the card,
+  not the events filter.
+
+**Live JSON:** existing `/etc/wlotus/temple-specials.json` entries without
+`countries` stay Global until ops adds `"countries": ["VN"]` to Vu Lan / Cô Hồn.
+
 ## Ops checklist
 
 1. Create the profiles on-chain (root burns) — see script below.
 2. Set `TEMPLE_SPECIALS_JSON` on the VM and matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build.
-   - Vu Lan → `kind: "event"`
-   - Cô Hồn → `kind: "ghost"`
+   - Vu Lan → `kind: "event"` + `countries: ["VN"]`
+   - Cô Hồn → `kind: "ghost"` + `countries: ["VN"]`
    - Heroes → `kind: "hero"` + `eventCalendar: "solar"` when the ceremony is fixed Gregorian.
+   - Omit `countries` (or `[]`) for Global specials.
 3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` for full burn, or leave default `6`).
 4. Restart mint-api; confirm `/api/status` → `templeSpecials.profiles`.
 5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS`, verify burns, then set back to `0` for prod.
@@ -276,7 +354,8 @@ Prod cutover (new `WLOTUS` token + these steps in order):
 
 | Piece | Role |
 |-------|------|
-| `src/params/templeSpecials.ts` | Config, window, burn resolution, lunar/solar |
+| `src/params/templeSpecials.ts` | Config, window, burn resolution, lunar/solar, countries |
+| `src/params/specialCountries.ts` | ISO normalize + viewer visibility |
 | `src/lib/lunarCalendar.ts` | Hồ Ngọc Đức lunar ↔ solar (shared) |
 | `src/offering/burnPrayer.ts` | `burnOnePrayer({ burnAtoms })` |
 | `scripts/create-temple-specials.ts` | Root burns for Vu Lan + Cô Hồn |

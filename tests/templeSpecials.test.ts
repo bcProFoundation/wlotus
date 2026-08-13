@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   addCalendarDays,
   burnAtomsForDeskKeep,
@@ -113,6 +112,38 @@ describe('templeSpecials', () => {
     expect(fromJson[0]!.kind).toBe('hero');
     expect(fromJson[0]!.birthDate).toBe('1925-09-02');
     expect(fromJson[0]!.eventCalendar).toBe('solar');
+
+    const localized = loadTempleSpecialsFromEnv({
+      TEMPLE_SPECIALS_JSON: JSON.stringify([
+        {
+          profileId: profile,
+          kind: 'event',
+          eventDate: '2026-07-15',
+          name: 'Vu Lan',
+          countries: ['VN'],
+        },
+      ]),
+    });
+    expect(localized[0]!.countries).toEqual(['VN']);
+
+    const global = loadTempleSpecialsFromEnv({
+      TEMPLE_SPECIALS_JSON: JSON.stringify([
+        {
+          profileId: profile,
+          kind: 'event',
+          eventDate: '2026-07-15',
+          name: 'Global lotus',
+        },
+      ]),
+    });
+    expect(global[0]!.countries).toBeUndefined();
+
+    const st = resolveTempleSpecialsStatus(
+      localized,
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-01-01T12:00:00Z'),
+    );
+    expect(st.profiles[0]!.countries).toEqual(['VN']);
 
     // Legacy env must be ignored
     const fromLegacy = loadTempleSpecialsFromEnv({

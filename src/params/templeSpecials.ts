@@ -22,6 +22,7 @@
  * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
  * through eventEnd (default both = eventDate), server time only.
  * Product: Cô Hồn lunar 2/7 → 15/7; Vu Lan single lunar 15. Stories on status.
+ * Country targeting: JSON `countries` (ISO); empty = Global. Home list only.
  *
  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
  * event date earlier by N days so the window can be exercised before launch.
@@ -30,6 +31,7 @@
 import { readFileSync } from 'node:fs';
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
+import { normalizeSpecialCountries } from './specialCountries.js';
 
 export type TempleSpecialKind = 'ghost' | 'hero' | 'event';
 
@@ -86,6 +88,11 @@ export interface TempleSpecial {
    * plain string is treated as vi/default body.
    */
   story?: string | { title?: string; body: string; titleEn?: string; bodyEn?: string };
+  /**
+   * ISO 3166-1 alpha-2 countries this special is local to.
+   * Empty / omitted = Global (every viewer). Multi-country: `["VN","CN"]`.
+   */
+  countries?: string[];
 }
 
 /** Global economics + test shift (from env / GitHub variables). */
@@ -124,6 +131,11 @@ export interface TempleSpecialPublic {
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  /**
+   * ISO country codes. Empty = Global.
+   * Home events list filters on this; burns / share links do not.
+   */
+  countries: string[];
 }
 
 export interface TempleSpecialsPublicStatus {
@@ -272,6 +284,9 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     endHourRaw != null && Number.isFinite(Number(endHourRaw))
       ? Math.max(0, Math.min(23, Math.floor(Number(endHourRaw))))
       : undefined;
+  const countries = normalizeSpecialCountries(
+    raw.countries ?? raw.country ?? raw.birthPlace ?? raw.birth_place,
+  );
   let story: TempleSpecial['story'] | undefined;
   if (typeof raw.story === 'string' && raw.story.trim()) {
     story = raw.story.trim();
@@ -298,6 +313,7 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     eventEnd,
     eventEndHour,
     story,
+    countries: countries.length > 0 ? countries : undefined,
   };
 }
 
@@ -497,6 +513,7 @@ export function toPublicSpecial(
     storyBody: story.storyBody,
     storyTitleEn: story.storyTitleEn,
     storyBodyEn: story.storyBodyEn,
+    countries: s.countries ?? [],
   };
 }
 
