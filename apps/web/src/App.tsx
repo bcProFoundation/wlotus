@@ -369,7 +369,7 @@ export default function App() {
 
   const busy = phase !== 'idle';
 
-  /** Light cream vs dark (EN/VI black, ZH rosewood). Offering forces dark. */
+  /** Light cream vs dark (EN black, VI/ZH rosewood). Offering forces dark. */
   useEffect(() => {
     applyDocumentTheme(documentTheme(locale, appearance, busy));
     document.documentElement.dataset.locale = locale;

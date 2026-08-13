@@ -43,7 +43,7 @@
           if (appearance !== 'light' && appearance !== 'dark') {
             appearance = locale === 'vi' ? 'light' : 'dark';
           }
-          var theme = appearance === 'light' ? 'light' : (locale === 'zh' ? 'wood' : 'dark');
+          var theme = appearance === 'light' ? 'light' : (locale === 'en' ? 'dark' : 'wood');
           document.documentElement.setAttribute('data-theme', theme);
           document.documentElement.setAttribute('data-locale', locale);
           var meta = document.querySelector('meta[name="theme-color"]');

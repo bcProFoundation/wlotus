@@ -13,6 +13,7 @@ import {
   writeStoredLocale,
 } from './detectLocale.js';
 import {
+  clearStoredAppearance,
   effectiveAppearance,
   readStoredAppearance,
   writeStoredAppearance,
@@ -27,7 +28,7 @@ type TFunc = (
 
 interface LocaleCtx {
   locale: Locale;
-  /** Light or dark; dark skin is black (EN/VI) or rosewood (ZH). */
+  /** Light or dark; dark skin is black (EN) or rosewood (VI/ZH). */
   appearance: Appearance;
   ready: boolean;
   setLocale: (locale: Locale) => void;
@@ -75,6 +76,9 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
     writeStoredLocale(next);
+    // Language changes rarely; reset to that locale's default (VN light, EN/CN dark).
+    clearStoredAppearance();
+    setAppearanceOverride(null);
   }, []);
 
   const setAppearance = useCallback((next: Appearance) => {

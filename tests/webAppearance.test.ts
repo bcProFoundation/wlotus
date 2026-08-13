@@ -27,14 +27,14 @@ describe('document theme', () => {
     expect(documentTheme('zh', 'light')).toBe('light');
   });
 
-  it('EN/VI dark is black; CN dark is rosewood', () => {
+  it('EN dark is black; VI and CN dark are rosewood', () => {
     expect(documentTheme('en', 'dark')).toBe('dark');
-    expect(documentTheme('vi', 'dark')).toBe('dark');
+    expect(documentTheme('vi', 'dark')).toBe('wood');
     expect(documentTheme('zh', 'dark')).toBe('wood');
   });
 
   it('offering ritual forces dark (black or wood)', () => {
-    expect(documentTheme('vi', 'light', true)).toBe('dark');
+    expect(documentTheme('vi', 'light', true)).toBe('wood');
     expect(documentTheme('zh', 'light', true)).toBe('wood');
     expect(documentTheme('en', 'light', true)).toBe('dark');
   });
