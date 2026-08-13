@@ -1,5 +1,6 @@
 /**
- * Theme-aware bold W mark: white on dark UI, black on temple (light) UI.
+ * Theme-aware bold W mark: white on dark UI (and ZH rosewood),
+ * black on the light Vietnamese temple UI.
  * Pass `badge` to use the favicon asset (white W on black rounded square).
  */
 export function BrandMark(props: {

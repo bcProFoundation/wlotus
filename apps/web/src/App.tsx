@@ -368,17 +368,17 @@ export default function App() {
 
   const busy = phase !== 'idle';
 
-  /** EN stays dark; VI/ZH use warm temple browse, dark during the offer ritual. */
+  /** EN stays dark; VI/ZH use temple browse (wood), dark during the offer ritual. */
   useEffect(() => {
     const warmBrowse = locale === 'vi' || locale === 'zh';
     const theme = warmBrowse && !busy ? 'temple' : 'dark';
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.locale = locale;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      meta.setAttribute(
-        'content',
-        theme === 'temple' ? '#f3ebe0' : '#050505',
-      );
+      const color =
+        theme !== 'temple' ? '#050505' : locale === 'zh' ? '#1c120c' : '#f3ebe0';
+      meta.setAttribute('content', color);
     }
   }, [locale, busy]);
 
