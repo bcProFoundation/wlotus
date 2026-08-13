@@ -178,18 +178,23 @@ There is **no** legacy `HUNGRY_GHOST_*` config.
 Specials are **not** JSON-only. Search (dana-index) and re-offers need a real
 root dedication burn. Flow:
 
-1. **Burn root altars from desk inventory** (1 atom each — no new remint):
+1. **Mint inventory if needed, then burn two roots** (Vu Lan + Cô Hồn):
 
    ```bash
    set -a && source /etc/wlotus/mint.env && set +a
-   # optional dry-run first
+   # optional dry-run first (does not remint; empty inventory is a warning)
    CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
    npm run create-temple-specials
    ```
 
-   The script scans tip fee wallets + desk for WLOTUS inventory (leftover miner
-   share after sponsored offerings), burns two roots (**Vu Lan**, **Cô Hồn**),
-   and writes `deployments/temple-specials-created.json` with the
+   After a fresh genesis the premine sits on temple P2SH, so the desk has **0**
+   atoms. The live run **auto-remints once** (~102 miner atoms onto the tip),
+   writes the new baton tip (`lastRemintTxid` / `powAddress` / `tipLocktime`)
+   into every matching `deployments/*wlotus*.json`, restarts mint-api, waits
+   until Chronik shows the miner UTXO, then burns two roots. Disable auto-remint
+   with `CREATE_TEMPLE_SPECIALS_NO_MINT=1`.
+
+   Writes `deployments/temple-specials-created.json` with the
    `TEMPLE_SPECIALS_JSON` snippet.
 
 2. **Register** the printed JSON on mint-api (`TEMPLE_SPECIALS_JSON`) and the
@@ -200,8 +205,8 @@ root dedication burn. Flow:
 Default lunar event day is `2026-07-15` (Rằm). Override with `EVENT_LUNAR_YMD` /
 `EVENT_YEAR` if needed.
 
-The first burn is always from the **temple/desk** — there is no external
-offerer yet. That is expected and correct.
+The first roots are always from the **temple/desk** (auto-remint + burn) — there
+is no external offerer yet. That is expected and correct.
 
 ## Temple stories (soft pray)
 
@@ -243,7 +248,7 @@ Prod cutover (new `WLOTUS` token + these steps in order):
 [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md) §8.
 
 1. Deploy mint-api with wired `offer.ts` (templeSpecials on status + burnAtoms).
-2. `npm run create-temple-specials` (or dry-run first) → root burns for Vu Lan + Cô Hồn.
+2. `npm run create-temple-specials` (or dry-run first) → auto-remint if the desk has no inventory, persist the new baton tip, restart mint-api, then burn Vu Lan + Cô Hồn roots.
 3. Set `TEMPLE_SPECIALS_JSON` from the script output (includes Cô Hồn `eventStart`).
 4. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` or `6`). Prod: `TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.
 5. Restart mint-api. SPA reads `/api/status` (no Vite bake required).
