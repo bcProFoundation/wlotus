@@ -218,7 +218,8 @@ MINT_REQUIRE_LIVE=1
 MINT_DEPLOYMENT_JSON=deployments/mainnet-wlotus.json
 MINT_SERVING_TIP_COUNT=1
 EOF
-sudo chmod 600 /etc/wlotus/mint.env
+sudo chmod 640 /etc/wlotus/mint.env
+sudo chown root:deploy /etc/wlotus/mint.env
 ```
 
 ### 6. Refuel tip wallets + start mint-api
@@ -314,7 +315,8 @@ TEMPLE_SPECIALS_JSON_FILE=/etc/wlotus/temple-specials.json
 TEMPLE_SPECIAL_DESK_KEEP=6
 TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0
 EOF
-sudo chmod 600 /etc/wlotus/mint.env
+sudo chmod 640 /etc/wlotus/mint.env
+sudo chown root:deploy /etc/wlotus/mint.env
 
 sudo systemctl restart wlotus-mint-api
 sleep 2
@@ -432,6 +434,17 @@ head -c 200 /tmp/status.body; echo
 curl -sS --max-time 5 http://127.0.0.1:8787/health || true
 sudo systemctl status wlotus-mint-api --no-pager
 sudo journalctl -u wlotus-mint-api -n 80 --no-pager
+```
+
+`curl: (7) Failed to connect to 127.0.0.1 port 8787` means the unit is
+**still stopped** (cutover step 1 freeze) or ExecStart is crashing. Curl
+alone cannot start it.
+
+```bash
+sudo bash /opt/wlotus/deploy/contabo/mint-api-doctor.sh
+sudo systemctl start wlotus-mint-api
+sleep 2
+curl -sS --fail-with-body http://127.0.0.1:8787/health
 ```
 
 Bring the desk back (as `deploy` so `node_modules` stays writable):
