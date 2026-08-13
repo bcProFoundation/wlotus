@@ -98,7 +98,18 @@ ops clarity; keep lunar conversion when the cultural date is naturally âm lịc
 
 ## Config
 
-### Profiles — `TEMPLE_SPECIALS_JSON`
+### Profiles — `TEMPLE_SPECIALS_JSON_FILE` (preferred) / `TEMPLE_SPECIALS_JSON`
+
+On the VM, copy `deployments/temple-specials-created.json` to
+`/etc/wlotus/temple-specials.json` and set:
+
+```bash
+TEMPLE_SPECIALS_JSON_FILE=/etc/wlotus/temple-specials.json
+```
+
+The file may be a JSON array or the wrapper object `{ "TEMPLE_SPECIALS_JSON": [ … ] }`.
+Inline `TEMPLE_SPECIALS_JSON='[...]'` in `mint.env` still works but is easy to
+break with quotes (dotenv fails → mint-api never binds → nginx 502 HTML).
 
 ```bash
 TEMPLE_SPECIALS_JSON='[
@@ -136,7 +147,8 @@ TEMPLE_SPECIALS_JSON='[
 
 | mint-api / Contabo | GitHub Actions (SPA) | Meaning |
 |--------------------|----------------------|---------|
-| `TEMPLE_SPECIALS_JSON` | `VITE_TEMPLE_SPECIALS_JSON` | Profile list (JSON array) |
+| `TEMPLE_SPECIALS_JSON_FILE` | — | Path to array or `temple-specials-created.json` (preferred) |
+| `TEMPLE_SPECIALS_JSON` | `VITE_TEMPLE_SPECIALS_JSON` | Inline profile list (easy to break `mint.env`) |
 | `TEMPLE_SPECIAL_DESK_KEEP` | `VITE_TEMPLE_SPECIAL_DESK_KEEP` | Desk retain on specials (default **6**) |
 | `TEMPLE_SPECIAL_TEST_OFFSET_DAYS` | `VITE_TEMPLE_SPECIAL_TEST_OFFSET_DAYS` | Shift all event dates earlier (test only; default **0**) |
 
@@ -201,8 +213,10 @@ root dedication burn. Flow:
    Writes `deployments/temple-specials-created.json` with the
    `TEMPLE_SPECIALS_JSON` snippet.
 
-2. **Register** the printed JSON on mint-api (`TEMPLE_SPECIALS_JSON`) and the
-   matching `VITE_TEMPLE_SPECIALS_JSON` for the SPA build. Restart mint-api.
+2. **Register** that file on mint-api (`TEMPLE_SPECIALS_JSON_FILE=/etc/wlotus/temple-specials.json`).
+   Do not paste the array into `mint.env`. Restart mint-api. Confirm
+   `http://127.0.0.1:8787/health` before curling `https://wlotus.org/api/status`
+   (nginx 502 HTML makes jq say `Invalid numeric literal`).
 
 3. Confirm `/api/status` → `templeSpecials.profiles` lists both.
 
