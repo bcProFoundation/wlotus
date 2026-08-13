@@ -32,6 +32,9 @@
   --msg-success-ink: #f2f7eb;
   --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
+  --page-texture: none;
+  --page-texture-opacity: 0;
+  --page-texture-blend: multiply;
   color-scheme: dark;
 }
 
@@ -66,7 +69,54 @@
   --msg-success-bg: rgba(47, 93, 58, 0.12);
   --msg-success-border: rgba(47, 93, 58, 0.35);
   --msg-success-ink: #1f3d28;
+  --page-texture: none;
+  --page-texture-opacity: 0;
+  --page-texture-blend: multiply;
   color-scheme: light;
+}
+
+/* Vietnamese browse — light teak / silk grain on the cream temple. */
+[data-theme='temple'][data-locale='vi'] {
+  --page-texture: url('/images/wood-vi.svg');
+  --page-texture-opacity: 0.28;
+  --page-texture-blend: multiply;
+}
+
+/* Chinese browse — aged rosewood, gold ink, dark grain. */
+[data-theme='temple'][data-locale='zh'] {
+  --bg0: #1c120c;
+  --bg1: #120c08;
+  --ink: #f3e6d4;
+  --muted: #c4a882;
+  --accent: #d4a84b;
+  --accent-2: #e8c9a0;
+  --danger: #e07a6a;
+  --card: rgba(243, 230, 212, 0.04);
+  --line: rgba(212, 168, 75, 0.28);
+  --panel: #1a100c;
+  --surface: rgba(212, 168, 75, 0.08);
+  --surface-strong: rgba(212, 168, 75, 0.14);
+  --surface-inset: rgba(0, 0, 0, 0.28);
+  --hover-line: rgba(212, 168, 75, 0.5);
+  --divider-soft: rgba(212, 168, 75, 0.14);
+  --btn-primary-bg: #d4a84b;
+  --btn-primary-ink: #1a100c;
+  --btn-primary-hover: #e0bb6a;
+  --brand-ink: #f3e6d4;
+  --brand-mark-filter: brightness(0) invert(1);
+  --body-glow: rgba(212, 168, 75, 0.12);
+  --modal-scrim: rgba(8, 4, 2, 0.72);
+  --modal-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+  --msg-ok-bg: rgba(212, 168, 75, 0.1);
+  --msg-ok-border: rgba(212, 168, 75, 0.35);
+  --msg-success-bg: rgba(214, 232, 196, 0.14);
+  --msg-success-border: rgba(214, 232, 196, 0.45);
+  --msg-success-ink: #f2f7eb;
+  --page-texture: url('/images/wood-zh.svg');
+  --page-texture-opacity: 0.5;
+  --page-texture-blend: overlay;
+  --font-display: 'Cormorant Garamond', 'Songti SC', 'STSong', 'Noto Serif CJK SC', serif;
+  color-scheme: dark;
 }
 
 * {
@@ -79,6 +129,11 @@ body,
   min-height: 100%;
 }
 
+#root {
+  position: relative;
+  z-index: 1;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -88,6 +143,18 @@ body {
     radial-gradient(900px 500px at 50% -20%, var(--body-glow) 0%, transparent 55%),
     linear-gradient(180deg, var(--bg0), var(--bg1));
   transition: background-color 0.25s ease, color 0.2s ease;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--page-texture-opacity, 0);
+  background-image: var(--page-texture, none);
+  background-size: 256px 256px;
+  mix-blend-mode: var(--page-texture-blend, multiply);
 }
 
 .ptr-indicator {
@@ -181,6 +248,14 @@ a {
 
 [data-theme='temple'] .brand-mark--on-light {
   display: block;
+}
+
+[data-theme='temple'][data-locale='zh'] .brand-mark--on-dark {
+  display: block;
+}
+
+[data-theme='temple'][data-locale='zh'] .brand-mark--on-light {
+  display: none;
 }
 
 /* Prebuilt favicon asset — white bold W already sized on black rounded square. */

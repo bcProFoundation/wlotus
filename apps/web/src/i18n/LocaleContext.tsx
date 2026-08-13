@@ -28,8 +28,15 @@ interface LocaleCtx {
 
 const Ctx = createContext<LocaleCtx | null>(null);
 
+function bootLocale(): Locale {
+  if (typeof document === 'undefined') return 'en';
+  const fromDom = document.documentElement.dataset.locale;
+  if (fromDom === 'en' || fromDom === 'vi' || fromDom === 'zh') return fromDom;
+  return 'en';
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>(bootLocale);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -48,6 +55,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang =
       locale === 'zh' ? 'zh-Hans' : locale === 'vi' ? 'vi' : 'en';
+    document.documentElement.dataset.locale = locale;
     document.title = MESSAGES[locale].brand;
   }, [locale]);
 

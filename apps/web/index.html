@@ -41,8 +41,13 @@
           }
           if (locale === 'vi' || locale === 'zh') {
             document.documentElement.setAttribute('data-theme', 'temple');
+            document.documentElement.setAttribute('data-locale', locale);
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', '#f3ebe0');
+            if (meta) {
+              meta.setAttribute('content', locale === 'zh' ? '#1c120c' : '#f3ebe0');
+            }
+          } else {
+            document.documentElement.setAttribute('data-locale', 'en');
           }
         } catch (e) { /* keep dark */ }
       })();
