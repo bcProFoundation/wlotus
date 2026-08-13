@@ -218,7 +218,8 @@ MINT_SERVING_TIP_COUNT=1
 MINT_REQUIRE_LIVE=1
 MINT_DEPLOYMENT_JSON=deployments/mainnet-wlotus.json
 EOF
-sudo chmod 600 /etc/wlotus/mint.env
+sudo chmod 640 /etc/wlotus/mint.env
+sudo chown root:deploy /etc/wlotus/mint.env
 
 set -a && source /etc/wlotus/mint.env && set +a
 # Fund the desk address, then split fuel into tip accounts:

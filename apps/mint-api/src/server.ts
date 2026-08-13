@@ -33,7 +33,16 @@ import {
 
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
-loadEnv({ path: '/etc/wlotus/mint.env', override: true });
+{
+  const mintEnv = loadEnv({ path: '/etc/wlotus/mint.env', override: true });
+  if (mintEnv.error) {
+    console.error(
+      'mint-api: failed to load /etc/wlotus/mint.env:',
+      mintEnv.error.message,
+      '\nFix: sudo chown root:deploy /etc/wlotus/mint.env && sudo chmod 640 /etc/wlotus/mint.env',
+    );
+  }
+}
 
 const PORT = Number(process.env.MINT_API_PORT?.trim() || 8787);
 const STARTED_AT = new Date().toISOString();
@@ -340,4 +349,8 @@ server.listen(PORT, () => {
   console.log(
     `wlotus mint-api listening on :${PORT} startedAt=${STARTED_AT} deployedAt=${h.deployedAt} raceOpen=${feats.raceOpen}`,
   );
+});
+server.on('error', err => {
+  console.error(`mint-api listen :${PORT} failed:`, err);
+  process.exit(1);
 });
