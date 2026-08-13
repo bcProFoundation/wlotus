@@ -348,6 +348,10 @@ set -a && source /etc/wlotus/mint.env && set +a
 sudo -u deploy -H bash -lc 'cd /opt/wlotus && set -a && source /etc/wlotus/mint.env && set +a && npm run fund-tip-fee-wallets'
 ```
 
+`MINT_MNEMONIC` currently derives **both** the desk treasury and the per-tip
+mint keys. Keep it that way. Splitting those secrets later:
+[apps/mint-api/README.md § Custody](../../apps/mint-api/README.md#custody-one-mnemonic-today-split-keys-later).
+
 **W Lotus temple (launch):** covenant pays **6** → **P2SH** (`TEMPLE_ADDRESS` multisig / cold, IFP-style). Miner receives **102**; desk fee-sponsor burns **1** and keeps **101**. Temple spends are rare ops with redeem + keys — not a daily P2PKH sweep.
 
 ### Create `dWLOTUS` dryrun (on Contabo **test**)

@@ -4,6 +4,10 @@
  * Per-tip remint fuel uses HD accounts from the same mnemonic — see
  * `loadTipFeeWallet` (tip i → BIP44 account i+1).
  *
+ * Custody: desk and tip keys share `MINT_MNEMONIC` on purpose (auto-peel).
+ * Address roles are already split; splitting the secrets is a later
+ * improvement — see apps/mint-api/README.md § Custody.
+ *
  * Priority:
  *   1. MINT_MNEMONIC (12/24-word BIP39-style phrase)
  *   2. MINT_SK_HEX
