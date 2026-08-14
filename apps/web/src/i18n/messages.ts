@@ -171,7 +171,15 @@ export type MessageKey =
   | 'specialStoryHint'
   | 'themeAppearance'
   | 'themeLight'
-  | 'themeDark';
+  | 'themeDark'
+  | 'tabHome'
+  | 'tabCalendar'
+  | 'calendarHint'
+  | 'calendarPrevMonth'
+  | 'calendarNextMonth'
+  | 'calendarToday'
+  | 'calendarEmptyDay'
+  | 'calendarMemorialsHeading';
 
 type Dict = Record<MessageKey, string>;
 
@@ -369,6 +377,15 @@ const en: Dict = {
   themeAppearance: 'Appearance',
   themeLight: 'Light',
   themeDark: 'Dark',
+  tabHome: 'Home',
+  tabCalendar: 'Calendar',
+  calendarHint:
+    'Come back on festival days and death anniversaries — a reason to offer again.',
+  calendarPrevMonth: 'Previous month',
+  calendarNextMonth: 'Next month',
+  calendarToday: 'Today',
+  calendarEmptyDay: 'No observances on this day.',
+  calendarMemorialsHeading: 'Memorial days',
 };
 
 
@@ -566,6 +583,15 @@ const vi: Dict = {
   themeAppearance: 'Giao diện',
   themeLight: 'Sáng',
   themeDark: 'Tối',
+  tabHome: 'Trang chủ',
+  tabCalendar: 'Lịch',
+  calendarHint:
+    'Quay lại vào ngày lễ và ngày giỗ — một lý do để dâng hoa lần nữa.',
+  calendarPrevMonth: 'Tháng trước',
+  calendarNextMonth: 'Tháng sau',
+  calendarToday: 'Hôm nay',
+  calendarEmptyDay: 'Ngày này không có lễ hay giỗ.',
+  calendarMemorialsHeading: 'Ngày giỗ',
 };
 
 
@@ -757,6 +783,14 @@ const zh: Dict = {
   themeAppearance: '外观',
   themeLight: '浅色',
   themeDark: '深色',
+  tabHome: '首页',
+  tabCalendar: '日历',
+  calendarHint: '节日与忌日再来献花。',
+  calendarPrevMonth: '上个月',
+  calendarNextMonth: '下个月',
+  calendarToday: '今天',
+  calendarEmptyDay: '这一天没有节日或忌日。',
+  calendarMemorialsHeading: '忌日',
 };
 
 

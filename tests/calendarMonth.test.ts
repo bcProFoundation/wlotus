@@ -1,0 +1,79 @@
+import {
+  addMonths,
+  buildSolarMonthGrid,
+  lunarCellLabel,
+  memorialOnYmd,
+  specialCoversYmd,
+  tabFromHash,
+  ymdKey,
+} from '../apps/web/src/lib/calendarMonth.js';
+import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
+import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
+
+function stubSpecial(
+  start: string,
+  end = start,
+): TempleSpecialProfileUi {
+  return {
+    profileId: '',
+    kind: 'event',
+    name: 'Test',
+    active: false,
+    eventDate: start,
+    effectiveStartDate: start,
+    effectiveEndDate: end,
+  };
+}
+
+describe('calendarMonth', () => {
+  it('builds a 42-day Monday-start grid', () => {
+    const days = buildSolarMonthGrid(2026, 8, 'vi', new Date(2026, 7, 14));
+    expect(days).toHaveLength(42);
+    expect(days[0]!.ymd <= '2026-08-01').toBe(true);
+    const mondays = [0, 7, 14, 21, 28, 35].map(i => days[i]!);
+    for (const d of mondays) {
+      expect(new Date(d.solarY, d.solarM - 1, d.solarD).getDay()).toBe(1);
+    }
+    const today = days.find(d => d.ymd === '2026-08-14');
+    expect(today?.isToday).toBe(true);
+    expect(today?.inMonth).toBe(true);
+  });
+
+  it('labels lunar new-month cells and plain days', () => {
+    const tet = solarToLunar(17, 2, 2026, 7);
+    expect(tet.day).toBe(1);
+    expect(lunarCellLabel(tet, 'vi')).toBe('T1');
+    expect(lunarCellLabel(tet, 'zh')).toBe('正月');
+    expect(lunarCellLabel({ ...tet, day: 15 }, 'vi')).toBe('15');
+  });
+
+  it('covers multi-day specials on each solar day', () => {
+    const ghost = stubSpecial('2026-08-14', '2026-08-27');
+    expect(specialCoversYmd(ghost, '2026-08-14')).toBe(true);
+    expect(specialCoversYmd(ghost, '2026-08-20')).toBe(true);
+    expect(specialCoversYmd(ghost, '2026-08-27')).toBe(true);
+    expect(specialCoversYmd(ghost, '2026-08-13')).toBe(false);
+    expect(specialCoversYmd(ghost, '2026-08-28')).toBe(false);
+  });
+
+  it('places a solar death date on its lunar giỗ in a later year', () => {
+    // Hồ Chí Minh died 2 Sep 1969 = lunar 21/7 Kỷ Dậu.
+    const death = { name: 'HCM', deathYmd: '1969-09-02', parentTxid: 'aa' };
+    const days = buildSolarMonthGrid(2026, 9, 'vi', new Date(2026, 8, 1));
+    const hits = days.filter(d => memorialOnYmd(death, d, 'vi'));
+    expect(hits.length).toBeGreaterThanOrEqual(1);
+    for (const hit of hits) {
+      expect(hit.lunar.day).toBe(21);
+      expect(hit.lunar.month).toBe(7);
+    }
+  });
+
+  it('adds months and parses tab hash', () => {
+    expect(addMonths(2026, 1, -1)).toEqual({ year: 2025, month: 12 });
+    expect(addMonths(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
+    expect(tabFromHash('#/calendar')).toBe('calendar');
+    expect(tabFromHash('#calendar')).toBe('calendar');
+    expect(tabFromHash('')).toBe('home');
+    expect(ymdKey(2026, 8, 4)).toBe('2026-08-04');
+  });
+});
