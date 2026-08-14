@@ -534,7 +534,7 @@ Workflow: **Deploy web (prod)** — `.github/workflows/deploy-web-prod.yml`
 | **Manual** | Actions → Deploy web (prod) → set `ref` to the tag |
 
 Full guide: **[PROD.md](./PROD.md)** (separate VM, Environment `production`, `CONTABO_PROD_*` secrets).  
-**Current ship:** recut live WLOTUS from 1/107 → 102/6 — **[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)**.
+**Live covenant:** **102/6** on both test and prod (prod tag `v26.8.0`). Historical recut: **[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)**. Snapshot: [docs/STATUS.md](../../docs/STATUS.md).
 
 ```bash
 git checkout master && git pull

@@ -1,28 +1,26 @@
-# Repository status
+# Status
 
-Canonical home: **https://github.com/bcProFoundation/wlotus**
+Canonical home: **https://github.com/bcProFoundation/wlotus**  
+Docs map: [README.md](./README.md).
 
-## Tokens
+Both desks run **`WlotusPowRemintMooreTipTemple`** — mint **108** = **102** miner + **6** temple. Confirm with `/api/status` if a checkout disagrees. Params: [SPEC.md](./SPEC.md). Why 102/6: [ECONOMICS.md](./ECONOMICS.md).
 
-| Token | Ticker | Role | Status |
-|-------|--------|------|--------|
-| **wLotus** | `WLOTUS` | Memorial + dana (ceremonial) | Prod: https://wlotus.org |
-| **wLotus dryrun** | `dWLOTUS` | Same covenant; test desk | https://test.wlotus.org |
-| **Golden Lotus** | `GLOTUS` | Economic / event burns | Design — [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) |
+## Live tokens
 
-## Covenant (production)
+| Env | Ticker | Site | `tokenId` | Since |
+|-----|--------|------|-----------|-------|
+| **Prod** | `WLOTUS` | https://wlotus.org | `154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091` | 2026-08-13 · tag [`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0) |
+| **Test** | `dWLOTUS` | https://test.wlotus.org | `ffc15eb40711fbf069370a4f90ca44ce7913968a6d5940df9890343066f119ec` | 2026-08-14 |
+| **GLOTUS** | `GLOTUS` | — | not minted | Design — [ECONOMICS.md](./ECONOMICS.md) |
 
-`WlotusPowRemintMooreTipTemple` — Moore calendar D + tipLocktime + hard next-P2SH + temple split.
+ALP stores the test ticker uppercase (`DWLOTUS`); docs write `dWLOTUS`. On-chain name is **W Lotus** on both.
 
-| Param | Value |
-|-------|-------|
-| Mint / remint | **108** atoms (one mala) |
-| Split | **102** miner + **6** temple P2SH |
-| Base bits | **0** (whole-byte only; `bits % 8 == 0`) |
-| Moore | **+1 bit / 500 days** (override 365–730) |
-| Sunset | remint fails when bits would exceed **128** |
-| Batons | **28** at genesis (ALP max; immutable) |
-| Desk launch tips | **1** (`MINT_SERVING_TIP_COUNT`; raise toward 28 if needed) |
+Git copies under `deployments/` can lag the VMs (tip JSON is not committed). If `mintSplit.temple` is `"107"`, that file is the retired genesis — ignore it.
+
+| Env | VM JSON | Actions bake |
+|-----|---------|--------------|
+| Test | `deployments/mainnet-dryrun-wlotus.json` (+ `mainnet-dryrun-active.json`) | `VITE_PRAYER_TOKEN_ID` = live dryrun id |
+| Prod | `deployments/mainnet-wlotus.json` | Environment `production` → same var |
 
 ```bash
 TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
@@ -30,44 +28,15 @@ TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token   # prod WLOTUS
 BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 ```
 
-See [CLOCK.md](./CLOCK.md). Deployments: `deployments/mainnet-dryrun-wlotus.json`, `deployments/mainnet-wlotus.json` (after live genesis).
+Chronik: `https://chronik.e.cash` · `https://xec.paybutton.org` · `https://chronik.pay2stay.com/xec`
 
-### Not for production
+Local: `npm run mint-api` + `npm run web`. Hosting: [test](../deploy/contabo/README.md) · [prod](../deploy/contabo/PROD.md). The 1/107 → 102/6 recut is **done** ([runbook](../deploy/contabo/PROD_CUTOVER_102_6.md)).
 
-- **Ergon** (`WlotusPowRemintErgon`) — dogfood only
-- **Legacy Moore** (`WlotusPowRemintMoore`) — soft batonHash, +8 cap
-
-## Economics
-
-[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md) — light temple tax **6/108** + XEC fees; presence = soft pray timer + base-0 Moore ramp; token hashrate does not secure the ledger (eCash does). Live prod on the **old** 1/107 token must recut genesis — [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md).
-
-## Vision
-
-Burn wLotus = white lotus **in memorial of the dead** + **dana** for everybody. [VISION.md](./VISION.md).
-
-Altar / memorial wire policy (star fragments, separator fields, minter amend ≤10, no WLotus off-chain): [ALTAR.md](./ALTAR.md).
-
-## Offerings app (`apps/web`)
-
-Mobile-first Offer / burn UI. No browser wallet yet — remint via mint-api.
-
-| | |
-|--|--|
-| **Test** | https://test.wlotus.org (`dWLOTUS`) |
-| **Prod** | https://wlotus.org (`WLOTUS`) |
-| **Local** | `npm run mint-api` + `npm run web` |
-
-## Hosting
-
-| Env | Guide |
-|-----|-------|
-| Test Contabo | [deploy/contabo/README.md](../deploy/contabo/README.md) |
-| Prod Contabo | [deploy/contabo/PROD.md](../deploy/contabo/PROD.md) |
+Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`.
 
 ## Next
 
-1. **Prod cutover** to 102/6 live genesis — [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md)
-2. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
-3. Postage / fee sponsorship polish
-4. **GLOTUS** genesis when economic layer ships
-5. Fractional-bit PoW if/when eCash raises the 201-op limit
+1. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
+2. Postage / fee sponsorship polish
+3. **GLOTUS** genesis when the economic layer ships
+4. Fractional-bit PoW if/when eCash raises the 201-op limit

@@ -3,7 +3,7 @@
  *
  * Flower / Candle = economic MoE.
  * Prayer / Incense = non-economic ritual chrome.
- * See pricing.ts / docs/ECONOMICS.md.
+ * See pricing.ts / docs/ECONOMICS.md (launch 102/6; Flower/Candle ladder is historical).
  */
 
 export const PRAYER_TICKER = 'PRAYER';
