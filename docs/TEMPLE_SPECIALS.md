@@ -152,13 +152,16 @@ TEMPLE_SPECIALS_JSON='[
 | JSON | Who sees it on Home → Events |
 |------|------------------------------|
 | omit / `[]` / `"*"` / `"GLOBAL"` | **Global** — every locale and IP |
-| `"countries": ["VN"]` | Vietnam (and `vi` locale diaspora) |
-| `"countries": ["CN","TW","HK","MO","SG"]` | Chinese-speaking regions (`zh` locale) |
-| `"countries": ["US","GB",…]` | English-speaking (`en` locale) |
+| `"countries": ["VN"]` | Vietnam (`vi`) |
+| `"countries": ["CN","TW","HK","MO","SG"]` | Chinese-speaking (`zh`) |
+| `"countries": ["US","GB",…]` | English-speaking (`en`) |
 
-A special is shown if it is Global, the viewer’s **IP country** matches, or the
-**app locale** implies a listed country (`vi` → VN, `zh` → CN/TW/HK/MO/SG,
-`en` → US/GB/CA/AU/NZ/IE/ZA/PH/SG). Burns and share links are **not** gated.
+Home Events shows **Global** plus specials for the **selected language**.
+`vi` → VN, `zh` → CN/TW/HK/MO/SG, `en` → English-speaking list. IP does **not**
+keep the old country’s calendar after a language change (VN + English no longer
+shows Vu Lan). If IP sits *inside* that language region, the list narrows to
+that country (US English sees Memorial Day, not ANZAC). Burns and share links
+are **not** gated.
 
 Live Vu Lan / Cô Hồn JSON without `countries` stays **Global**. Patch countries
 without a new burn:

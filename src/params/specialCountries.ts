@@ -14,7 +14,8 @@
  *
  * Visibility (home events list only — share links and burns stay open):
  *   Global → everyone
- *   Else → viewer's IP country OR locale-implied countries (diaspora).
+ *   Else → selected language's region, then that country if IP is in-region.
+ *   Picking English must not keep Vietnamese events (no IP ∪ locale union).
  */
 
 /** Tokens that mean "show everywhere". */
@@ -163,6 +164,11 @@ export function countriesFromLocale(
 /**
  * Whether a special should appear on the home events list for this viewer.
  * Share links / re-offers are not gated.
+ *
+ * Language is the region lens. Do not union IP with locale — that made
+ * Vietnamese events stay on the list after the user picked English.
+ * If IP is inside the language region, keep only that country's specials
+ * (US English sees Memorial Day, not ANZAC).
  */
 export function specialVisibleToViewer(
   countries: string[] | null | undefined,
@@ -170,10 +176,17 @@ export function specialVisibleToViewer(
 ): boolean {
   const list = countries ?? [];
   if (list.length === 0) return true;
-  const viewer = new Set<string>();
+
+  const region = countriesFromLocale(opts.locale);
   const ip = canonicalizeCountryCode(opts.countryCode);
-  if (ip && ip !== '*') viewer.add(ip);
-  for (const c of countriesFromLocale(opts.locale)) viewer.add(c);
-  if (viewer.size === 0) return false;
-  return list.some(c => viewer.has(c));
+  const ipCode = ip && ip !== '*' ? ip : null;
+
+  if (region.length > 0) {
+    if (!list.some(c => region.includes(c))) return false;
+    if (ipCode && region.includes(ipCode)) return list.includes(ipCode);
+    return true;
+  }
+
+  if (ipCode) return list.includes(ipCode);
+  return false;
 }

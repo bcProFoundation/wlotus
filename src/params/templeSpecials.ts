@@ -23,7 +23,8 @@
  * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
  * through eventEnd (default both = eventDate), server time only.
  * Product: Cô Hồn lunar 2/7 → 15/7; Vu Lan single lunar 15. Stories on status.
- * Country targeting: JSON `countries` (ISO); empty = Global. Home list only.
+ * Country targeting: JSON `countries` (ISO); empty = Global. Home list
+ * follows the selected language (then IP country if it is in that region).
  *
  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
  * event date earlier by N days so the window can be exercised before launch.
