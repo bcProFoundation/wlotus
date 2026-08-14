@@ -58,6 +58,7 @@ describe('templeSpecials', () => {
     const profile = 'b'.repeat(64);
     const specials = [
       {
+        id: 'co-hon',
         profileId: profile,
         kind: 'ghost' as const,
         eventDate: '2026-08-28',
@@ -94,31 +95,51 @@ describe('templeSpecials', () => {
     expect(on.special?.kind).toBe('ghost');
   });
 
-  it('loads TEMPLE_SPECIALS_JSON only (no legacy HUNGRY_GHOST_*)', () => {
+  it('loads the built-in catalog without requiring a temple burn', () => {
+    const loaded = loadTempleSpecialsFromEnv({
+      TEMPLE_SPECIAL_CLAIMS_FILE: '/tmp/wlotus-no-claims.json',
+    });
+    expect(loaded.length).toBeGreaterThanOrEqual(19);
+    const vuLan = loaded.find(s => s.id === 'vu-lan');
+    expect(vuLan?.profileId).toBe('');
+    expect(vuLan?.kind).toBe('event');
+
+    const fromLegacy = loadTempleSpecialsFromEnv({
+      HUNGRY_GHOST_PROFILE_ID: 'ab'.repeat(32),
+      HUNGRY_GHOST_DEAD_DATE: '2026-08-28',
+      TEMPLE_SPECIAL_CLAIMS_FILE: '/tmp/wlotus-no-claims.json',
+    });
+    expect(fromLegacy.find(s => s.id === 'vu-lan')?.profileId).toBe('');
+  });
+
+  it('overlays JSON profileId onto catalog rows and can add extra specials', () => {
     const profile = ('ab' + 'cd'.repeat(31)).toLowerCase();
     const fromJson = loadTempleSpecialsFromEnv({
+      TEMPLE_SPECIAL_CLAIMS_FILE: '/tmp/wlotus-no-claims.json',
       TEMPLE_SPECIALS_JSON: JSON.stringify([
         {
+          id: 'vu-lan',
           profileId: profile,
+          kind: 'event',
+          eventDate: '2026-07-15',
+          eventCalendar: 'lunar',
+          name: 'Vu Lan',
+        },
+        {
+          profileId: 'ef'.repeat(32),
           kind: 'hero',
           eventDate: '2026-09-02',
           eventCalendar: 'solar',
           birthDate: '1925-09-02',
-          name: 'Hero',
+          name: 'Custom Hero',
         },
       ]),
     });
-    expect(fromJson).toHaveLength(1);
-    expect(fromJson[0]!.kind).toBe('hero');
-    expect(fromJson[0]!.birthDate).toBe('1925-09-02');
-    expect(fromJson[0]!.eventCalendar).toBe('solar');
-
-    // Legacy env must be ignored
-    const fromLegacy = loadTempleSpecialsFromEnv({
-      HUNGRY_GHOST_PROFILE_ID: profile,
-      HUNGRY_GHOST_DEAD_DATE: '2026-08-28',
-    });
-    expect(fromLegacy).toHaveLength(0);
+    expect(fromJson.find(s => s.id === 'vu-lan')?.profileId).toBe(profile);
+    const extra = fromJson.find(s => s.name === 'Custom Hero');
+    expect(extra?.kind).toBe('hero');
+    expect(extra?.birthDate).toBe('1925-09-02');
+    expect(extra?.eventCalendar).toBe('solar');
   });
 
   it('applies global testOffsetDays to all profiles', () => {
@@ -263,5 +284,26 @@ describe('templeSpecials', () => {
     );
     expect(st.profiles[0]!.countries).toEqual(['VN']);
     expect(st.profiles[0]!.storyTitleZh).toBeNull();
+  });
+
+  it('does not raise burn for unbound specials (empty profileId)', () => {
+    const specials = [
+      {
+        id: 'vu-lan',
+        profileId: '',
+        kind: 'event' as const,
+        eventDate: '2026-07-15',
+        eventCalendar: 'lunar' as const,
+        name: 'Vu Lan',
+      },
+    ];
+    const on = resolveOfferBurnAtoms({
+      parentBurnTxid: 'a'.repeat(64),
+      specials,
+      globalCfg: { deskKeep: 0, testOffsetDays: 0 },
+      nowMs: Date.parse('2026-08-27T12:00:00Z'),
+    });
+    expect(on.burnAtoms).toBe(1n);
+    expect(on.special).toBeNull();
   });
 });

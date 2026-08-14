@@ -9,6 +9,7 @@ import { specialVisibleToViewer } from './specialCountries.js';
 export type TempleSpecialKindUi = 'ghost' | 'hero' | 'event';
 
 export interface TempleSpecialProfileUi {
+  id?: string;
   profileId: string;
   kind: TempleSpecialKindUi;
   name: string | null;
@@ -18,6 +19,8 @@ export interface TempleSpecialProfileUi {
   effectiveEventDate?: string;
   effectiveStartDate?: string;
   effectiveEndDate?: string;
+  birthDate?: string | null;
+  birthPlace?: string | null;
   storyTitle?: string | null;
   storyBody?: string | null;
   storyTitleEn?: string | null;
@@ -46,7 +49,9 @@ export function findSpecialForParent(
   return list.find(p => p.profileId.toLowerCase() === id) ?? null;
 }
 
-/** Home events list — Global or matching viewer country / locale. */
+export function isBoundSpecialRoot(profileId: string | null | undefined): boolean {
+  return /^[0-9a-f]{64}$/i.test((profileId ?? '').trim());
+}
 export function filterSpecialsForViewer(
   profiles: TempleSpecialProfileUi[] | null | undefined,
   opts: { countryCode?: string | null; locale?: string | null },

@@ -36,9 +36,12 @@ describe('temple specials JSON file', () => {
     );
     const loaded = loadTempleSpecialsFromEnv({
       TEMPLE_SPECIALS_JSON_FILE: file,
+      TEMPLE_SPECIAL_CLAIMS_FILE: '/tmp/wlotus-no-claims.json',
     });
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0]!.kind).toBe('ghost');
-    expect(loaded[0]!.name).toBe('Cô Hồn');
+    const coHon = loaded.find(s => s.id === 'co-hon');
+    expect(coHon?.kind).toBe('ghost');
+    expect(coHon?.name).toBe('Cô Hồn');
+    expect(coHon?.profileId).toBe(PROFILE);
+    expect(loaded.length).toBeGreaterThan(1);
   });
 });

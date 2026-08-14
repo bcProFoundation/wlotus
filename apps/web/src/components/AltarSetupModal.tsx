@@ -200,6 +200,8 @@ export function AltarSetupModal(props: {
   fallbackName?: string;
   /** setup = new profile; relationship / death = star-fragment amend. */
   variant?: ModalVariant;
+  /** Overrides the default altar/profile hint (first-burn specials). */
+  setupHint?: string;
   etaLabel: string;
   offerDisabled?: boolean;
   relatedAltarOptions: RelatedAltarOption[];
@@ -379,9 +381,11 @@ export function AltarSetupModal(props: {
     ? t('altarRelationshipHint')
     : deathOnly
       ? t('firstOfferDeathHint')
-      : altarHasDeathDate(draft)
-        ? t('altarHint')
-        : t('profileHint');
+      : props.setupHint
+        ? props.setupHint
+        : altarHasDeathDate(draft)
+          ? t('altarHint')
+          : t('profileHint');
   const primaryCta =
     relationshipOnly || deathOnly ? t('btnOffer') : t('btnSetup');
   const reviewTitle = relationshipOnly

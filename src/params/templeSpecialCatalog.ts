@@ -2,23 +2,29 @@
  * Regional temple-special catalog (2026 launch year).
  *
  * Home Events filters by JSON `countries` (see specialCountries.ts).
- * Each entry is a distinct on-chain root + off-chain registry row.
+ * Each entry is an off-chain catalog row. The first visitor's offering
+ * becomes the on-chain root.
  *
  * Research (memorial / ancestral offering days that fit W Lotus):
- *   VN  — Vu Lan (filial Ullambana), Cô Hồn (hungry-ghost month),
- *         Tết Thanh Minh (grave visiting; same solar term as Qingming).
- *   ZH  — 盂兰盆 (Ullambana), 中元节 (Ghost Festival / Zhongyuan),
- *         清明节 (Tomb-Sweeping). Chinese-speaking: CN, TW, HK, MO, SG.
- *   EN  — All Souls' Day (2 Nov, prayers for the dead),
- *         Remembrance Day (11 Nov; Veterans Day in the US).
+ *   VN  — Vu Lan, Cô Hồn, Tết Thanh Minh, Giỗ Tổ Hùng Vương,
+ *         Thương binh liệt sĩ, Trần Hưng Đạo, Hồ Chí Minh, Hai Bà Trưng.
+ *   ZH  — 盂兰盆, 中元节, 清明节, 寒衣节, 重阳节, 冬至, 孔子, 关羽, 妈祖.
+ *         Chinese-speaking: CN, TW, HK, MO, SG.
+ *   EN  — All Hallows' Eve, All Saints', All Souls', Remembrance,
+ *         Memorial Day (US), ANZAC Day (AU/NZ).
+ *
+ * Catalog rows are unbound until a visitor's first offering claims the root.
+ * Temple does not pre-burn.
  *
  * 2026 solar anchors:
  *   Lunar 1/7  → 13 Aug (ghost-month open, Chinese calendar)
  *   Lunar 2/7  → 14 Aug (VN Cô Hồn start, Hồ Ngọc Đức UTC+7)
  *   Lunar 15/7 → 27 Aug (Vu Lan / Ullambana / Zhongyuan peak)
  *   Qingming / Thanh Minh → 5 Apr 2026 (solar term; PRC holiday 4–6 Apr)
+ *   US Memorial Day → 25 May 2026 (last Monday)
  *   All Souls' → 2 Nov 2026
  *   Remembrance / Veterans → 11 Nov 2026
+ *   冬至 → 22 Dec 2026
  */
 import type { TempleEventCalendar, TempleSpecialKind } from './templeSpecials.js';
 import {
@@ -52,6 +58,8 @@ export interface TempleSpecialCatalogEntry {
   countries: string[];
   /** On-chain altar birthPlace (quê quán label). */
   birthPlace: string;
+  /** Optional solar birth date for heroes. */
+  birthDate?: string;
   altarName: string;
   /** Short OP_RETURN note. */
   note: string;
@@ -69,7 +77,26 @@ export function qingmingSolarYmd(year: number): string {
   return QINGMING_SOLAR[year] ?? `${year}-04-05`;
 }
 
-function foldName(raw: string): string {
+/** US Memorial Day — last Monday in May. */
+export function memorialDaySolarYmd(year: number): string {
+  const d = new Date(Date.UTC(year, 4, 31));
+  while (d.getUTCDay() !== 1) d.setUTCDate(d.getUTCDate() - 1);
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  return `${year}-05-${dd}`;
+}
+
+/** Winter solstice (冬至) — ancestral offerings; Dec 21 or 22. */
+const DONGZHI_SOLAR: Record<number, string> = {
+  2026: '2026-12-22',
+  2027: '2027-12-22',
+  2028: '2028-12-21',
+};
+
+export function dongzhiSolarYmd(year: number): string {
+  return DONGZHI_SOLAR[year] ?? `${year}-12-22`;
+}
+
+export function foldSpecialName(raw: string): string {
   return raw
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
@@ -264,6 +291,325 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
           'At the eleventh hour of the eleventh day of the eleventh month, many English-speaking countries fall silent for those who died in war. In the United States the same date is Veterans Day; across the Commonwealth it is Remembrance Day.\n\nA poppy, a name on a wall, a minute of quiet. The point is not victory — it is not forgetting people who did not come home.\n\nA lotus on W Lotus can stand with that silence: one more flower for the dead, kept on the chain.',
       },
     },
+    {
+      id: 'hung-kings',
+      name: 'Giỗ Tổ Hùng Vương',
+      aliases: ['hung kings', 'gio to hung vuong', 'vua hung'],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-03-10`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Hùng Vương',
+      note: 'Giỗ Tổ Hùng Vương',
+      story: {
+        title: 'Giỗ Tổ Hùng Vương',
+        body:
+          'Mùng mười tháng Ba âm lịch, người Việt nhớ các Vua Hùng — tổ của giống nòi. Không phải giỗ một người, mà giỗ nguồn cội: đất Phong Châu, trăm trứng, núi Nghĩa Lĩnh.\n\nDâng hoa hôm nay là nhớ tổ tiên chung, trước khi nhớ ông bà nhà mình.',
+        titleEn: 'Hung Kings’ Anniversary',
+        bodyEn:
+          'On the tenth of the third lunar month, Vietnamese people remember the Hùng Kings — the ancestral founders. It is not one person’s death day, but a day for the shared origin of the people.\n\nThe lotus you offer is for those first ancestors, before the ancestors of your own house.',
+      },
+    },
+    {
+      id: 'war-martyrs',
+      name: 'Thương binh liệt sĩ',
+      aliases: ['ngay thuong binh liet si', '27/7', 'war invalids and martyrs'],
+      kind: 'hero',
+      eventCalendar: 'solar',
+      eventDate: `${y}-07-27`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Liệt sĩ',
+      note: 'Thương binh liệt sĩ',
+      story: {
+        title: 'Ngày Thương binh liệt sĩ',
+        body:
+          '27 tháng 7, cả nước thắp hương cho người ngã xuống vì chiến tranh — liệt sĩ không tên và người còn sống mang thương tích.\n\nMột bông sen không hỏi phe phái. Chỉ nhớ: có người không về, và gia đình họ vẫn thắp đèn.',
+        titleEn: 'War Invalids and Martyrs Day',
+        bodyEn:
+          'On 27 July, Vietnam remembers those who fell in war — named and unnamed — and those who came home wounded.\n\nA lotus does not ask which side. It only remembers that someone did not return, and a family still lights a lamp.',
+      },
+    },
+    {
+      id: 'tran-hung-dao',
+      name: 'Trần Hưng Đạo',
+      aliases: ['hung dao vuong', 'tran quoc tuan', 'duc thanh tran'],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-08-20`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Trần Hưng Đạo',
+      note: 'Giỗ Trần Hưng Đạo',
+      story: {
+        title: 'Đức Thánh Trần',
+        body:
+          'Ngày 20 tháng Tám âm lịch là giỗ Hưng Đạo Vương Trần Quốc Tuấn. Dân gian thờ Ngài như Đức Thánh Trần — vị anh hùng thành thần, người ta cầu bình an hơn là kể chiến công.\n\nDâng sen là nhớ một người đã thành chỗ dựa thiêng cho nhiều nhà.',
+        titleEn: 'Trần Hưng Đạo',
+        bodyEn:
+          'The twentieth of the eighth lunar month is the memorial of Prince Trần Hưng Đạo. Folk tradition honours him as Đức Thánh Trần — a hero who became a guardian, asked for peace more than for victory.\n\nA lotus here is for a name that many households still keep as a refuge.',
+      },
+    },
+    {
+      id: 'ho-chi-minh',
+      name: 'Hồ Chí Minh',
+      aliases: ['bac ho', 'ngay sinh chu tich ho chi minh'],
+      kind: 'hero',
+      eventCalendar: 'solar',
+      eventDate: `${y}-05-19`,
+      birthDate: '1890-05-19',
+      countries: vn,
+      birthPlace: 'Kim Liên, Nam Đàn, Nghệ An',
+      altarName: 'Hồ Chí Minh',
+      note: 'Hồ Chí Minh',
+      story: {
+        title: 'Hồ Chí Minh',
+        body:
+          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nSen W Lotus giữ lời tưởng niệm đó trên chuỗi khối.',
+        titleEn: 'Hồ Chí Minh',
+        bodyEn:
+          '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nThe lotus on W Lotus keeps that remembrance on the chain.',
+      },
+    },
+    {
+      id: 'hai-ba-trung',
+      name: 'Hai Bà Trưng',
+      aliases: ['trung sisters', 'ba trung', 'trung trac', 'trung nhi'],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-02-06`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Hai Bà Trưng',
+      note: 'Giỗ Hai Bà Trưng',
+      story: {
+        title: 'Hai Bà Trưng',
+        body:
+          'Mùng sáu tháng Hai âm lịch, nhiều nơi giỗ Hai Bà Trưng — Trưng Trắc và Trưng Nhị. Không chỉ kể trận, mà nhớ hai người phụ nữ thành chỗ dựa thiêng cho nhiều nhà.\n\nSen dâng hôm nay là một nén hương cho tên còn được giữ.',
+        titleEn: 'The Trưng Sisters',
+        bodyEn:
+          'On the sixth of the second lunar month, many places remember the Trưng sisters — Trưng Trắc and Trưng Nhị. Not only a battle story: two women who became a refuge in folk memory.\n\nA lotus here is incense for names still kept.',
+      },
+    },
+    {
+      id: 'hanyi',
+      name: '寒衣节',
+      aliases: ['han yi', 'cold clothes festival', '十月一', '祭祖送寒衣'],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-10-01`,
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '寒衣节',
+      note: '寒衣节',
+      story: {
+        title: '寒衣节',
+        titleZh: '寒衣节',
+        body:
+          '农历十月初一，入冬。生者给亡者送寒衣——烧纸衣、纸钱，怕路上冷。\n\n一朵莲花也可以是一件寒衣：让被记得的人，冬天里不孤。',
+        bodyZh:
+          '农历十月初一，入冬。生者给亡者送寒衣——烧纸衣、纸钱，怕路上冷。\n\n一朵莲花也可以是一件寒衣：让被记得的人，冬天里不孤。',
+        titleEn: 'Cold Clothes Festival',
+        bodyEn:
+          'On the first of the tenth lunar month, winter begins. The living send warm clothes to the dead — paper garments, paper money — so the road is less cold.\n\nA lotus can be that garment: so those who are remembered are not alone in winter.',
+      },
+    },
+    {
+      id: 'chongyang',
+      name: '重阳节',
+      aliases: ['chong yang', 'double ninth', '登高', '敬老'],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-09-09`,
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '重阳节',
+      note: '重阳节',
+      story: {
+        title: '重阳节',
+        titleZh: '重阳节',
+        body:
+          '九月九，登高、敬老。有的地方也在这一天扫墓，把秋天的花带给先人。\n\n莲花是给还在的老人，也是给已经走远的老人。',
+        bodyZh:
+          '九月九，登高、敬老。有的地方也在这一天扫墓，把秋天的花带给先人。\n\n莲花是给还在的老人，也是给已经走远的老人。',
+        titleEn: 'Double Ninth Festival',
+        bodyEn:
+          'On the ninth of the ninth lunar month people climb high and honour elders. In some regions they also visit graves and bring autumn flowers.\n\nA lotus is for the old who are still here, and for the old who have already gone ahead.',
+      },
+    },
+    {
+      id: 'dongzhi',
+      name: '冬至',
+      aliases: ['dong zhi', 'winter solstice', '冬至节'],
+      kind: 'event',
+      eventCalendar: 'solar',
+      eventDate: dongzhiSolarYmd(year),
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '冬至',
+      note: '冬至',
+      story: {
+        title: '冬至',
+        titleZh: '冬至',
+        body:
+          '一年最长的夜。不少人家在这一天祭祖、吃汤圆，把还活着的人和已经走的人算进同一桌。\n\n莲花是给这一桌空着的位子。',
+        bodyZh:
+          '一年最长的夜。不少人家在这一天祭祖、吃汤圆，把还活着的人和已经走的人算进同一桌。\n\n莲花是给这一桌空着的位子。',
+        titleEn: 'Winter Solstice',
+        bodyEn:
+          'The longest night of the year. Many households honour ancestors, share tangyuan, and count the living and the dead at one table.\n\nA lotus is for the empty place at that table.',
+      },
+    },
+    {
+      id: 'confucius',
+      name: '孔子',
+      aliases: ['kongzi', 'teacher day', '孔子诞辰', '孔圣诞'],
+      kind: 'hero',
+      eventCalendar: 'solar',
+      eventDate: `${y}-09-28`,
+      countries: zh,
+      birthPlace: '曲阜',
+      altarName: '孔子',
+      note: '孔子诞辰',
+      story: {
+        title: '孔子诞辰',
+        titleZh: '孔子诞辰',
+        body:
+          '九月二十八，祭祀至圣先师。不是帝王的忌日，是老师的生日：有教无类，慎终追远。\n\n一朵莲花，献给把“祭”教给后人的人。',
+        bodyZh:
+          '九月二十八，祭祀至圣先师。不是帝王的忌日，是老师的生日：有教无类，慎终追远。\n\n一朵莲花，献给把“祭”教给后人的人。',
+        titleEn: 'Confucius’s Birthday',
+        bodyEn:
+          '28 September honours Confucius, the teacher — not an emperor’s death day, but a birthday: education without class, and remembrance of ancestors.\n\nA lotus for the person who taught later generations how to honour the dead.',
+      },
+    },
+    {
+      id: 'guan-yu',
+      name: '关羽',
+      aliases: ['guanyu', 'guan gong', '关公', '关帝'],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-06-24`,
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '关羽',
+      note: '关公诞',
+      story: {
+        title: '关公诞',
+        titleZh: '关公诞',
+        body:
+          '六月廿四，祭祀关羽。英雄成神：人家求的是信义与平安，不只是战场。\n\n一朵莲花，献给仍被称作“关公”的名字。',
+        bodyZh:
+          '六月廿四，祭祀关羽。英雄成神：人家求的是信义与平安，不只是战场。\n\n一朵莲花，献给仍被称作“关公”的名字。',
+        titleEn: 'Guan Yu',
+        bodyEn:
+          'The twenty-fourth of the sixth lunar month honours Guan Yu. A hero who became a guardian: households ask for trust and peace, not only victory.\n\nA lotus for the name still called Lord Guan.',
+      },
+    },
+    {
+      id: 'mazu',
+      name: '妈祖',
+      aliases: ['ma zu', 'tin hau', '天后', '天上圣母'],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-03-23`,
+      countries: zh,
+      birthPlace: '湄洲',
+      altarName: '妈祖',
+      note: '妈祖诞',
+      story: {
+        title: '妈祖诞',
+        titleZh: '妈祖诞',
+        body:
+          '三月廿三，祭祀妈祖。沿海人家记得她护佑出海的人——有的回来，有的没有。\n\n莲花给还在海上的名字，也给没有回来的名字。',
+        bodyZh:
+          '三月廿三，祭祀妈祖。沿海人家记得她护佑出海的人——有的回来，有的没有。\n\n莲花给还在海上的名字，也给没有回来的名字。',
+        titleEn: 'Mazu',
+        bodyEn:
+          'The twenty-third of the third lunar month honours Mazu. Coastal households remember her as a guardian of those at sea — some who returned, and some who did not.\n\nA lotus for names still on the water, and names that did not come home.',
+      },
+    },
+    {
+      id: 'halloween',
+      name: "All Hallows' Eve",
+      aliases: ['halloween', 'samhain', 'all hallows eve'],
+      kind: 'ghost',
+      eventCalendar: 'solar',
+      eventDate: `${y}-10-31`,
+      countries: en,
+      birthPlace: '',
+      altarName: "All Hallows' Eve",
+      note: "All Hallows' Eve",
+      story: {
+        title: "All Hallows' Eve",
+        titleEn: "All Hallows' Eve",
+        body:
+          'The night before All Saints, old Europe said the veil between living and dead grew thin. Lanterns, names, a place at the table for those who had gone.\n\nA lotus here is not a costume. It is a light left on for wandering souls, the night before the saints are named.',
+        bodyEn:
+          'The night before All Saints, old Europe said the veil between living and dead grew thin. Lanterns, names, a place at the table for those who had gone.\n\nA lotus here is not a costume. It is a light left on for wandering souls, the night before the saints are named.',
+      },
+    },
+    {
+      id: 'all-saints',
+      name: "All Saints' Day",
+      aliases: ['all saints', 'all saints day', 'hallowmas'],
+      kind: 'event',
+      eventCalendar: 'solar',
+      eventDate: `${y}-11-01`,
+      countries: en,
+      birthPlace: '',
+      altarName: "All Saints' Day",
+      note: "All Saints' Day",
+      story: {
+        title: "All Saints' Day",
+        titleEn: "All Saints' Day",
+        body:
+          '1 November remembers all the holy dead — famous and forgotten. Graves are visited, candles lit, flowers laid, the day before All Souls.\n\nA lotus is for every name the calendar cannot list.',
+        bodyEn:
+          '1 November remembers all the holy dead — famous and forgotten. Graves are visited, candles lit, flowers laid, the day before All Souls.\n\nA lotus is for every name the calendar cannot list.',
+      },
+    },
+    {
+      id: 'memorial-day',
+      name: 'Memorial Day',
+      aliases: ['us memorial day', 'decoration day'],
+      kind: 'hero',
+      eventCalendar: 'solar',
+      eventDate: memorialDaySolarYmd(year),
+      countries: ['US'],
+      birthPlace: '',
+      altarName: 'Memorial Day',
+      note: 'Memorial Day',
+      story: {
+        title: 'Memorial Day',
+        titleEn: 'Memorial Day',
+        body:
+          'The last Monday in May, the United States remembers those who died in military service. Flags, graves, a weekend that began as Decoration Day — flowers on stones.\n\nA lotus can be that decoration: not a parade, a name kept.',
+        bodyEn:
+          'The last Monday in May, the United States remembers those who died in military service. Flags, graves, a weekend that began as Decoration Day — flowers on stones.\n\nA lotus can be that decoration: not a parade, a name kept.',
+      },
+    },
+    {
+      id: 'anzac',
+      name: 'ANZAC Day',
+      aliases: ['anzac', 'april 25'],
+      kind: 'hero',
+      eventCalendar: 'solar',
+      eventDate: `${y}-04-25`,
+      countries: ['AU', 'NZ'],
+      birthPlace: '',
+      altarName: 'ANZAC Day',
+      note: 'ANZAC Day',
+      story: {
+        title: 'ANZAC Day',
+        titleEn: 'ANZAC Day',
+        body:
+          '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nA lotus at dawn is that silence kept on the chain.',
+        bodyEn:
+          '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nA lotus at dawn is that silence kept on the chain.',
+      },
+    },
   ];
 }
 
@@ -271,10 +617,23 @@ export function findCatalogEntryByName(
   name: string | null | undefined,
   year = 2026,
 ): TempleSpecialCatalogEntry | undefined {
-  const key = foldName(name ?? '');
+  const key = foldSpecialName(name ?? '');
   if (!key) return undefined;
   return templeSpecialCatalog(year).find(e => {
-    if (foldName(e.id) === key || foldName(e.name) === key) return true;
-    return (e.aliases ?? []).some(a => foldName(a) === key);
+    if (foldSpecialName(e.id) === key || foldSpecialName(e.name) === key) {
+      return true;
+    }
+    return (e.aliases ?? []).some(a => foldSpecialName(a) === key);
   });
+}
+
+export function findCatalogEntryById(
+  id: string | null | undefined,
+  year = 2026,
+): TempleSpecialCatalogEntry | undefined {
+  const key = String(id ?? '')
+    .trim()
+    .toLowerCase();
+  if (!key) return undefined;
+  return templeSpecialCatalog(year).find(e => e.id === key);
 }

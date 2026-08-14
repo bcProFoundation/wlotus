@@ -1,8 +1,9 @@
 /**
  * Temple-managed specials — ghosts, heroes & events.
  *
- * Desk/temple creates dedicated profiles (root burns) and registers them in
- * TEMPLE_SPECIALS_JSON. On each profile's event date, re-offers burn more
+ * Desk/temple registers specials in a catalog (and optional JSON). They do
+ * **not** need a temple root burn. The first visitor's offering becomes the
+ * on-chain root (`profileId`); later re-offers in the event window burn more
  * than the usual 1-atom flower:
  *   burnAtoms = WLOTUS_MINER_ATOMS - deskKeep
  * where deskKeep is a **global** env (TEMPLE_SPECIAL_DESK_KEEP), not per-profile.
@@ -32,7 +33,8 @@ import { readFileSync } from 'node:fs';
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
 import { normalizeSpecialCountries } from './specialCountries.js';
-import { findCatalogEntryByName } from './templeSpecialCatalog.js';
+import { findCatalogEntryById, findCatalogEntryByName, templeSpecialCatalog } from './templeSpecialCatalog.js';
+import { loadSpecialClaims } from './templeSpecialClaims.js';
 
 export type TempleSpecialKind = 'ghost' | 'hero' | 'event';
 
@@ -47,7 +49,11 @@ export const NORMAL_FLOWER_BURN_ATOMS = 1n;
 
 /** One registered temple profile (no burn economics — those are global). */
 export interface TempleSpecial {
-  /** Root dedication burn txid (64 hex). */
+  /** Catalog slug (vu-lan, qingming, …). */
+  id: string;
+  /**
+   * Root dedication burn txid (64 hex). Empty until the first visitor burns.
+   */
   profileId: string;
   kind: TempleSpecialKind;
   /**
@@ -68,6 +74,8 @@ export interface TempleSpecial {
   birthDate?: string;
   /** Optional display name (UI / status). */
   name?: string;
+  /** On-chain quê quán label for the first-burn altar. */
+  birthPlace?: string;
   /**
    * Optional range start (same calendar as eventDate). Default = eventDate.
    * Example Cô Hồn: eventStart "2026-07-02", eventDate/eventEnd "2026-07-15".
@@ -121,6 +129,8 @@ export interface TempleSpecialsGlobalConfig {
 }
 
 export interface TempleSpecialPublic {
+  id: string;
+  /** 64-hex root txid, or empty if nobody has offered yet. */
   profileId: string;
   kind: TempleSpecialKind;
   name: string | null;
@@ -134,6 +144,7 @@ export interface TempleSpecialPublic {
   /** Solar range end (after offset). */
   effectiveEndDate: string;
   birthDate: string | null;
+  birthPlace: string | null;
   active: boolean;
   windowStartUtc: string;
   windowEndUtc: string;
@@ -270,35 +281,95 @@ function normalizeEventCalendar(raw: unknown): TempleEventCalendar {
   return t === 'solar' ? 'solar' : 'lunar';
 }
 
+function slugFromName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48);
+}
+
+export function catalogToSpecial(
+  e: import('./templeSpecialCatalog.js').TempleSpecialCatalogEntry,
+): TempleSpecial {
+  return {
+    id: e.id,
+    profileId: '',
+    kind: e.kind,
+    eventDate: e.eventDate,
+    eventCalendar: e.eventCalendar,
+    birthDate: e.birthDate,
+    name: e.name,
+    birthPlace: e.birthPlace || undefined,
+    eventStart: e.eventStart,
+    eventEnd: e.eventEnd,
+    eventEndHour: e.eventEndHour,
+    countries: e.countries.length > 0 ? [...e.countries] : undefined,
+  };
+}
+
+function catalogYearFromEnv(
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>,
+): number {
+  const y = Number(env.EVENT_YEAR?.trim() || '2026');
+  return Number.isFinite(y) && y >= 2020 && y <= 2100 ? y : 2026;
+}
+
 function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
   const profileId = String(raw.profileId ?? raw.profile_id ?? '')
     .trim()
     .toLowerCase();
-  if (!TXID_RE.test(profileId)) return null;
+  const bound = TXID_RE.test(profileId) ? profileId : '';
+  const name = String(raw.name ?? '').trim() || undefined;
+  const yearHint = Number(String(raw.eventDate ?? '').slice(0, 4)) || 2026;
+  const catalog =
+    findCatalogEntryById(String(raw.id ?? raw.specialId ?? ''), yearHint) ||
+    findCatalogEntryByName(name, yearHint);
+  const id = (
+    String(raw.id ?? raw.specialId ?? '').trim() ||
+    catalog?.id ||
+    (name ? slugFromName(name) : '')
+  ).toLowerCase();
   const eventDate = String(
-    raw.eventDate ?? raw.event_date ?? '',
+    raw.eventDate ?? raw.event_date ?? catalog?.eventDate ?? '',
   ).trim();
   if (!parseYmd(eventDate)) return null;
-  const kind = normalizeKind(raw.kind);
+  if (!id && !bound) return null;
+  const kind = normalizeKind(raw.kind ?? catalog?.kind);
   const eventCalendar = normalizeEventCalendar(
-    raw.eventCalendar ?? raw.event_calendar,
+    raw.eventCalendar ?? raw.event_calendar ?? catalog?.eventCalendar,
   );
-  const birthRaw = String(raw.birthDate ?? raw.birth_date ?? '').trim();
-  // Only heroes keep birthDate.
+  const birthRaw = String(
+    raw.birthDate ?? raw.birth_date ?? catalog?.birthDate ?? '',
+  ).trim();
   const birthDate = kind === 'hero' && birthRaw ? birthRaw : undefined;
-  const name = String(raw.name ?? '').trim() || undefined;
-  const eventStartRaw = String(raw.eventStart ?? raw.event_start ?? '').trim();
-  const eventEndRaw = String(raw.eventEnd ?? raw.event_end ?? '').trim();
-  const eventStart = eventStartRaw && parseYmd(eventStartRaw) ? eventStartRaw : undefined;
+  const eventStartRaw = String(
+    raw.eventStart ?? raw.event_start ?? catalog?.eventStart ?? '',
+  ).trim();
+  const eventEndRaw = String(
+    raw.eventEnd ?? raw.event_end ?? catalog?.eventEnd ?? '',
+  ).trim();
+  const eventStart =
+    eventStartRaw && parseYmd(eventStartRaw) ? eventStartRaw : undefined;
   const eventEnd = eventEndRaw && parseYmd(eventEndRaw) ? eventEndRaw : undefined;
-  const endHourRaw = raw.eventEndHour ?? raw.event_end_hour;
+  const endHourRaw = raw.eventEndHour ?? raw.event_end_hour ?? catalog?.eventEndHour;
   const eventEndHour =
     endHourRaw != null && Number.isFinite(Number(endHourRaw))
       ? Math.max(0, Math.min(23, Math.floor(Number(endHourRaw))))
       : undefined;
   const countries = normalizeSpecialCountries(
-    raw.countries ?? raw.country ?? raw.birthPlace ?? raw.birth_place,
+    raw.countries ??
+      raw.country ??
+      raw.birthPlace ??
+      raw.birth_place ??
+      catalog?.countries,
   );
+  const birthPlace =
+    String(raw.birthPlace ?? raw.birth_place ?? catalog?.birthPlace ?? '').trim() ||
+    undefined;
   let story: TempleSpecial['story'] | undefined;
   if (typeof raw.story === 'string' && raw.story.trim()) {
     story = raw.story.trim();
@@ -317,12 +388,14 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     }
   }
   return {
-    profileId,
+    id: id || bound.slice(0, 12),
+    profileId: bound,
     kind,
     eventDate,
     eventCalendar,
     birthDate,
-    name,
+    name: name || catalog?.name,
+    birthPlace,
     eventStart,
     eventEnd,
     eventEndHour,
@@ -361,35 +434,54 @@ export function loadTempleSpecialsGlobalConfig(
 }
 
 /**
- * Load profile list from TEMPLE_SPECIALS_JSON (no legacy HUNGRY_GHOST_*).
- * Prefer TEMPLE_SPECIALS_JSON_FILE (a JSON array, or the
- * temple-specials-created.json wrapper). Inline TEMPLE_SPECIALS_JSON in
- * mint.env is easy to break with quotes — use a file on the VM.
- * deskKeep / testOffsetDays are **not** read from the JSON — use global env.
+ * Catalog (always) + optional JSON overlay + first-burn claims.
+ * Unbound specials have empty profileId until someone offers the first flower.
  */
 export function loadTempleSpecialsFromEnv(
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
 ): TempleSpecial[] {
-  const out: TempleSpecial[] = [];
-  const seen = new Set<string>();
+  const year = catalogYearFromEnv(env);
+  const byId = new Map<string, TempleSpecial>();
+  for (const entry of templeSpecialCatalog(year)) {
+    byId.set(entry.id, catalogToSpecial(entry));
+  }
 
   const jsonRaw = readTempleSpecialsRaw(env);
-  if (!jsonRaw) return out;
-
-  try {
-    const parsed = unwrapTempleSpecialsJson(JSON.parse(jsonRaw) as unknown);
-    if (!Array.isArray(parsed)) return out;
-    for (const item of parsed) {
-      if (!item || typeof item !== 'object') continue;
-      const s = normalizeSpecial(item as Record<string, unknown>);
-      if (!s || seen.has(s.profileId)) continue;
-      seen.add(s.profileId);
-      out.push(s);
+  if (jsonRaw) {
+    try {
+      const parsed = unwrapTempleSpecialsJson(JSON.parse(jsonRaw) as unknown);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (!item || typeof item !== 'object') continue;
+          const s = normalizeSpecial(item as Record<string, unknown>);
+          if (!s) continue;
+          const prev = byId.get(s.id);
+          if (prev) {
+            byId.set(s.id, {
+              ...prev,
+              ...s,
+              id: prev.id,
+              profileId: s.profileId || prev.profileId,
+              countries: s.countries ?? prev.countries,
+            });
+          } else {
+            byId.set(s.id, s);
+          }
+        }
+      }
+    } catch {
+      /* ignore bad JSON */
     }
-  } catch {
-    /* ignore bad JSON */
   }
-  return out;
+
+  const claims = loadSpecialClaims(env);
+  for (const [id, txid] of Object.entries(claims)) {
+    const cur = byId.get(id);
+    if (!cur) continue;
+    if (!cur.profileId) cur.profileId = txid;
+  }
+
+  return [...byId.values()];
 }
 
 function readTempleSpecialsRaw(
@@ -475,7 +567,8 @@ export function defaultTempleStory(s: TempleSpecial): {
   storyBodyZh: string | null;
 } {
   const year = Number((s.eventDate ?? '').slice(0, 4)) || 2026;
-  const entry = findCatalogEntryByName(s.name, year);
+  const entry =
+    findCatalogEntryById(s.id, year) || findCatalogEntryByName(s.name, year);
   if (!entry) return emptyStory();
   const st = entry.story;
   return {
@@ -514,6 +607,7 @@ export function toPublicSpecial(
   const active = nowMs >= w.startMs && nowMs < w.endMs;
   const story = resolveStory(s);
   return {
+    id: s.id,
     profileId: s.profileId,
     kind: s.kind,
     name: s.name ?? null,
@@ -523,6 +617,7 @@ export function toPublicSpecial(
     effectiveStartDate: a,
     effectiveEndDate: b,
     birthDate: s.birthDate?.trim() || null,
+    birthPlace: s.birthPlace?.trim() || null,
     active,
     windowStartUtc: new Date(w.startMs).toISOString(),
     windowEndUtc: new Date(w.endMs).toISOString(),
@@ -582,7 +677,8 @@ export function resolveOfferBurnAtoms(opts: {
     opts.globalCfg ?? loadTempleSpecialsGlobalConfig(),
     opts.nowMs,
   );
-  const match = status.active.find(p => p.profileId === parent) ?? null;
+  const match =
+    status.active.find(p => p.profileId && p.profileId === parent) ?? null;
   if (!match) {
     return { burnAtoms: NORMAL_FLOWER_BURN_ATOMS, special: null };
   }

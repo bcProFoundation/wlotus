@@ -1,5 +1,6 @@
 import {
   findCatalogEntryByName,
+  memorialDaySolarYmd,
   qingmingSolarYmd,
   templeSpecialCatalog,
 } from '../src/params/templeSpecialCatalog.js';
@@ -11,25 +12,39 @@ import {
 } from '../src/params/specialCountries.js';
 
 describe('temple special catalog', () => {
-  it('has VN, Chinese, and English-speaking events', () => {
+  it('has VN, Chinese, and English-speaking events, heroes, and ghosts', () => {
     const cat = templeSpecialCatalog(2026);
     const byId = Object.fromEntries(cat.map(e => [e.id, e]));
     expect(byId['vu-lan']!.countries).toEqual([...VIETNAM_COUNTRIES]);
     expect(byId['co-hon']!.kind).toBe('ghost');
     expect(byId['thanh-minh']!.eventDate).toBe('2026-04-05');
+    expect(byId['hung-kings']!.eventDate).toBe('2026-03-10');
+    expect(byId['hai-ba-trung']!.kind).toBe('hero');
     expect(byId['yulanpen']!.countries).toEqual([...CHINESE_SPEAKING_COUNTRIES]);
     expect(byId['zhongyuan']!.eventStart).toBe('2026-07-01');
     expect(byId['qingming']!.eventCalendar).toBe('solar');
+    expect(byId['hanyi']!.eventDate).toBe('2026-10-01');
+    expect(byId['dongzhi']!.eventDate).toBe('2026-12-22');
+    expect(byId['guan-yu']!.kind).toBe('hero');
+    expect(byId['mazu']!.eventDate).toBe('2026-03-23');
+    expect(byId['halloween']!.kind).toBe('ghost');
     expect(byId['all-souls']!.eventDate).toBe('2026-11-02');
     expect(byId['remembrance']!.eventDate).toBe('2026-11-11');
     expect(byId['all-souls']!.countries).toEqual([...ENGLISH_SPEAKING_COUNTRIES]);
+    expect(byId['memorial-day']!.eventDate).toBe('2026-05-25');
+    expect(byId['memorial-day']!.countries).toEqual(['US']);
+    expect(byId['anzac']!.countries).toEqual(['AU', 'NZ']);
+    expect(cat.length).toBeGreaterThanOrEqual(19);
   });
 
-  it('matches live Vu Lan / Cô Hồn names', () => {
+  it('matches live Vu Lan / Cô Hồn names and extra aliases', () => {
     expect(findCatalogEntryByName('Vu Lan')?.id).toBe('vu-lan');
     expect(findCatalogEntryByName('Cô Hồn')?.id).toBe('co-hon');
     expect(findCatalogEntryByName('盂兰盆')?.id).toBe('yulanpen');
     expect(findCatalogEntryByName("All Souls' Day")?.id).toBe('all-souls');
+    expect(findCatalogEntryByName('Halloween')?.id).toBe('halloween');
+    expect(findCatalogEntryByName('Giỗ Tổ Hùng Vương')?.id).toBe('hung-kings');
+    expect(findCatalogEntryByName('关公')?.id).toBe('guan-yu');
   });
 
   it('2026 lunar 15/7 is 27 Aug (VN UTC+7)', () => {
@@ -37,5 +52,6 @@ describe('temple special catalog', () => {
     expect(lunarYmdToSolarYmd('2026-07-02', 7)).toBe('2026-08-14');
     expect(lunarYmdToSolarYmd('2026-07-01', 7)).toBe('2026-08-13');
     expect(qingmingSolarYmd(2026)).toBe('2026-04-05');
+    expect(memorialDaySolarYmd(2026)).toBe('2026-05-25');
   });
 });

@@ -8,6 +8,7 @@
  *   POST /api/challenge  { installId, note?, parentBurnTxid? }
  *   POST /api/submit     { installId, challengeId, nonceHex, powMs?, powAttempts? }
  *   POST /api/burn       { installId, remintTxid } — temple memorial after soft pray
+ *   POST /api/specials/claim { installId, specialId, profileId } — first root wins
  *   GET  /api/status?installId=
  *   GET  /api/root-creator?txid=&installId= → { isCreator, known }
  *   GET  /health         → ok + deploy stamps (file mtime / git sha)
@@ -30,6 +31,8 @@ import {
   memorialNoteMaxBytes,
   truncateUtf8Bytes,
 } from '../../../src/offering/altarFields.js';
+import { findCatalogEntryById } from '../../../src/params/templeSpecialCatalog.js';
+import { claimSpecialRoot } from '../../../src/params/templeSpecialClaims.js';
 
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
@@ -299,6 +302,46 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/specials/claim') {
+      const body = await readJson(req);
+      const installId = requireInstallId(body.installId);
+      const specialId = String(body.specialId || body.id || '').trim();
+      const profileId = String(body.profileId || body.txid || '')
+        .trim()
+        .toLowerCase();
+      if (!specialId) {
+        json(res, 400, { error: 'specialId required' });
+        return;
+      }
+      if (!findCatalogEntryById(specialId)) {
+        json(res, 404, { error: 'unknown special' });
+        return;
+      }
+      const creator = checkRootCreator({
+        rootBurnTxid: profileId,
+        installId,
+      });
+      if (!creator.isCreator) {
+        json(res, 403, { error: 'claimant must be the root offerer' });
+        return;
+      }
+      const claimed = claimSpecialRoot(specialId, profileId);
+      if (!claimed.ok) {
+        const status = claimed.error === 'already claimed' ? 409 : 400;
+        json(res, status, {
+          error: claimed.error,
+          profileId: claimed.profileId,
+        });
+        return;
+      }
+      json(res, 200, {
+        ok: true,
+        profileId: claimed.profileId,
+        created: claimed.created,
+      });
+      return;
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/cancel') {
       const body = await readJson(req);
       const installId = requireInstallId(body.installId);
@@ -334,7 +377,7 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|edit relationships|txid required/i.test(
+      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|edit relationships|txid required|already claimed|unknown special|claimant must/i.test(
         msg,
       )
         ? 400

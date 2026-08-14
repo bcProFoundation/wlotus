@@ -1,66 +1,40 @@
 #!/usr/bin/env tsx
 /**
- * Create on-chain root altars for temple public specials, then print the
- * TEMPLE_SPECIALS_JSON snippet to register them.
+ * Optional overlay / temple-root helper for public specials.
  *
- * Catalog (see src/params/templeSpecialCatalog.ts):
- *   VN — Vu Lan, Cô Hồn, Tết Thanh Minh
- *   ZH — 盂兰盆, 中元节, 清明节
- *   EN — All Souls' Day, Remembrance Day
+ * Default: **no burns**. The catalog lives in
+ * `src/params/templeSpecialCatalog.ts`. Visitors find unbound specials in
+ * Search and Home Events; the first offering becomes the on-chain root
+ * (`POST /api/specials/claim`). Temple does not need to pre-burn — there
+ * will be many specials.
  *
- * Existing live JSON is merged by name: Vu Lan / Cô Hồn keep their profileIds
- * and gain `countries: ["VN"]`. Only missing catalog rows are burned.
+ * This script still helps ops:
+ *   - Merge live Vu Lan / Cô Hồn `profileId`s + `countries` into JSON
+ *   - Optionally burn temple roots if `CREATE_TEMPLE_SPECIALS_BURN=1`
  *
- * MERGE_ONLY (no wallet / no burn) — patch countries onto an existing file:
- *   CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1 npm run create-temple-specials
+ * Catalog (see templeSpecialCatalog.ts): VN / ZH / EN heroes, events, ghosts.
  *
- * Why on-chain first (not JSON-only):
- *   - dana-index / search only see real DANA memorial burns
- *   - re-offers need a real parentBurnTxid (root)
- *   - temple specials only raise the burn amount for a registered profileId
- *
- * Funding (same test + prod path):
- *   1. Prefer existing desk/tip inventory (1 atom per root).
- *   2. If short, auto-remint once via MooreTipTemple (tip fee wallet = miner)
- *      so ~102 miner atoms land on the tip, persist the new baton tip into
- *      every matching deployments/*wlotus*.json, restart mint-api, wait until
- *      Chronik shows the miner UTXO, then burn the roots.
- *   Disable auto-remint with CREATE_TEMPLE_SPECIALS_NO_MINT=1.
- *
- * Dry-run encodes notes only — it does **not** remint or burn. Empty inventory
- * is a warning, not a failure. Unset CREATE_TEMPLE_SPECIALS_DRY_RUN to mint.
- *
- * Kinds / windows: see templeSpecialCatalog (Vu Lan single rằm; Cô Hồn 2/7–15/7;
- * Zhongyuan 1/7–15/7; solar Qingming / All Souls / Remembrance).
- *
- * On-chain note is kept short (ALP BURN + DANA ≤ 223 OP_RETURN). Long stories
- * live in templeSpecialCatalog / defaultTempleStory, not the root burn.
- *
- * Usage (Contabo / local with mint.env):
- *   set -a && source /etc/wlotus/mint.env && set +a
+ * Default (JSON overlay only, no wallet):
  *   npm run create-temple-specials
  *
- * Dry-run (encode + plan, no broadcast):
- *   CREATE_TEMPLE_SPECIALS_DRY_RUN=1 npm run create-temple-specials
+ * Optional temple burns (legacy / ops choice):
+ *   CREATE_TEMPLE_SPECIALS_BURN=1 npm run create-temple-specials
+ *
+ * Dry-run encodes notes only — it does **not** remint or burn.
+ *
+ * Funding (burn mode only):
+ *   1. Prefer existing desk/tip inventory (1 atom per root).
+ *   2. If short, auto-remint once via MooreTipTemple.
+ *   Disable auto-remint with CREATE_TEMPLE_SPECIALS_NO_MINT=1.
  *
  * Optional env:
- *   TOKEN_ID                 — else from deployments/*-wlotus.json matching id
- *   MINT_MNEMONIC            — desk phrase (tip HD wallets; required for remint)
- *   MINT_SERVING_TIP_COUNT   — tip accounts to scan (default 28)
- *   BATON_INDEX              — baton tip to remint (default 0)
  *   EVENT_YEAR               — year for catalog dates (default 2026)
  *   CREATE_TEMPLE_SPECIALS_IDS — comma list of catalog ids to include
- *   CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1  — rewrite JSON countries, do not burn
+ *   CREATE_TEMPLE_SPECIALS_BURN=1        — desk-burn missing catalog roots
+ *   CREATE_TEMPLE_SPECIALS_MERGE_ONLY=1  — alias of default (no burn)
  *   CREATE_TEMPLE_SPECIALS_NO_MINT=1     — never auto-remint
  *   CREATE_TEMPLE_SPECIALS_NO_RESTART=1  — skip mint-api restart after tip advance
- *   MINT_API_SERVICE                     — systemd unit (default wlotus-mint-api)
  *   TEMPLE_SPECIALS_JSON_FILE            — existing registry to merge
- *
- * After auto-remint the script writes tipLocktime / powAddress / lastRemintTxid
- * into every deployments JSON with the same tokenId (so mint-api cannot keep a
- * spent P2SH), then restarts mint-api so the process reloads the tip.
- * Finding the baton walks Chronik spentBy from lastRemintTxid / handoff — JSON
- * powAddress is not trusted (open miners move the tip).
  */
 import { resolve } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -117,9 +91,14 @@ const DRY = /^(1|true|yes)$/i.test(
 const NO_MINT = /^(1|true|yes)$/i.test(
   process.env.CREATE_TEMPLE_SPECIALS_NO_MINT?.trim() || '',
 );
-const MERGE_ONLY = /^(1|true|yes)$/i.test(
-  process.env.CREATE_TEMPLE_SPECIALS_MERGE_ONLY?.trim() || '',
+const BURN = /^(1|true|yes)$/i.test(
+  process.env.CREATE_TEMPLE_SPECIALS_BURN?.trim() || '',
 );
+const MERGE_ONLY =
+  !BURN ||
+  /^(1|true|yes)$/i.test(
+    process.env.CREATE_TEMPLE_SPECIALS_MERGE_ONLY?.trim() || '',
+  );
 const NO_RESTART = /^(1|true|yes)$/i.test(
   process.env.CREATE_TEMPLE_SPECIALS_NO_RESTART?.trim() || '',
 );
@@ -363,10 +342,14 @@ function existingProfileIdForSpec(
 ): string | null {
   for (const row of existing) {
     const name = String(row.name ?? '').trim();
+    const rowId = String(row.id ?? row.specialId ?? '')
+      .trim()
+      .toLowerCase();
     const id = String(row.profileId ?? row.profile_id ?? '')
       .trim()
       .toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(id)) continue;
+    if (rowId && rowId === spec.id) return id;
     const hit = findCatalogEntryByName(name, catalogYear());
     if (hit && hit.id === spec.id) return id;
   }
@@ -407,16 +390,18 @@ function registryEntry(
   spec: SpecialSpec,
 ): Record<string, unknown> {
   const base: Record<string, unknown> = {
-    profileId,
+    id: spec.id,
     kind: spec.kind,
     eventDate: spec.eventDate,
     eventCalendar: spec.eventCalendar,
     name: spec.name,
   };
+  if (/^[0-9a-f]{64}$/.test(profileId)) base.profileId = profileId;
   if (spec.eventStart) base.eventStart = spec.eventStart;
   if (spec.eventEnd) base.eventEnd = spec.eventEnd;
   if (spec.eventEndHour != null) base.eventEndHour = spec.eventEndHour;
   if (spec.countries.length > 0) base.countries = spec.countries;
+  if (spec.birthPlace) base.birthPlace = spec.birthPlace;
   return base;
 }
 
@@ -827,6 +812,7 @@ async function main(): Promise<void> {
       {
         dryRun: DRY,
         mergeOnly: MERGE_ONLY,
+        burnMode: BURN && !MERGE_ONLY,
         autoMintIfShort: !NO_MINT && !MERGE_ONLY,
         tokenId,
         reuse: reused.map(r => ({ name: r.spec.name, profileId: r.profileId })),
@@ -876,15 +862,9 @@ async function main(): Promise<void> {
   }));
 
   if (MERGE_ONLY) {
-    const missing = toBurn.map(s => s.name);
-    if (missing.length > 0) {
-      console.warn(
-        `MERGE_ONLY: still need on-chain roots for: ${missing.join(', ')}`,
-      );
-    }
     writeRegistryPayload({
       tokenId,
-      inventoryFrom: 'merge-only',
+      inventoryFrom: 'catalog-no-burn',
       created,
       specs,
     });
@@ -978,13 +958,12 @@ function writeRegistryPayload(opts: {
   }>;
   specs: SpecialSpec[];
 }): void {
-  const registry = opts.specs
-    .map(spec => {
-      const row = opts.created.find(c => c.name === spec.name);
-      if (!row) return null;
-      return registryEntry(row.profileId, spec);
-    })
-    .filter((row): row is Record<string, unknown> => row != null);
+  const registry = opts.specs.map(spec => {
+    const row = opts.created.find(c => c.name === spec.name);
+    const pid =
+      row && /^[0-9a-f]{64}$/.test(row.profileId) ? row.profileId : '';
+    return registryEntry(pid, spec);
+  });
   const liveRegistry = registry.filter(row =>
     /^[0-9a-f]{64}$/.test(String(row.profileId ?? '')),
   );
@@ -1016,7 +995,9 @@ function writeRegistryPayload(opts: {
     console.log(`\nWrote ${outPath}`);
   } else if (MERGE_ONLY) {
     console.log(
-      `\nMERGE_ONLY wrote ${outPath}. Copy over the live file, then restart mint-api.`,
+      `\nNo temple burns (default). Catalog is built-in; first visitors claim roots.\n` +
+        `Optional overlay: sudo cp ${outPath} /etc/wlotus/temple-specials.json\n` +
+        `To desk-burn missing roots instead: CREATE_TEMPLE_SPECIALS_BURN=1 npm run create-temple-specials`,
     );
   } else if (DRY) {
     console.log(
