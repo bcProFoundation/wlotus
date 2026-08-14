@@ -193,6 +193,10 @@ a {
   padding: 1.5rem 1.25rem 4rem;
 }
 
+.app--has-tabs {
+  padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
+}
+
 .hero {
   margin-bottom: 2rem;
 }
@@ -1955,4 +1959,326 @@ a {
 
 .offer-modal-card .altar-details + .field {
   margin-top: 0.35rem;
+}
+
+/* Floating liquid-glass Home / Calendar */
+.glass-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 1.1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+}
+
+.glass-nav-shell {
+  --glass-fill: color-mix(in srgb, #1a1a1a 42%, transparent);
+  --glass-rim: color-mix(in srgb, #ffffff 28%, transparent);
+  --glass-shine: color-mix(in srgb, #ffffff 38%, transparent);
+  --glass-blob: color-mix(in srgb, #ffffff 22%, transparent);
+  --glass-ink: color-mix(in srgb, var(--ink) 72%, transparent);
+  --glass-ink-active: var(--brand-ink);
+  --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.16);
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(22rem, 100%);
+  padding: 0.28rem;
+  border-radius: 999px;
+  isolation: isolate;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #ffffff 18%, transparent) 0%,
+      transparent 42%
+    ),
+    var(--glass-fill);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-shine),
+    inset 0 -0.5px 0 color-mix(in srgb, #000 22%, transparent);
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+}
+
+.glass-nav-blob {
+  position: absolute;
+  top: 0.28rem;
+  bottom: 0.28rem;
+  left: 0.28rem;
+  width: calc(50% - 0.28rem);
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, #ffffff 55%, transparent) 0%,
+      var(--glass-blob) 38%,
+      color-mix(in srgb, #ffffff 8%, transparent) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000 12%, transparent),
+    0 4px 14px color-mix(in srgb, #000 18%, transparent);
+  transform: translateX(0);
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+}
+
+.glass-nav-shell--calendar .glass-nav-blob {
+  transform: translateX(100%);
+}
+
+.glass-nav-btn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.55rem;
+  padding: 0.4rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--glass-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.glass-nav-btn.is-active {
+  color: var(--glass-ink-active);
+}
+
+.glass-nav-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-nav-blob {
+    transition: none;
+  }
+}
+
+[data-theme='light'] .glass-nav-shell {
+  --glass-fill: color-mix(in srgb, #fff8ef 48%, transparent);
+  --glass-rim: color-mix(in srgb, #5c4030 18%, transparent);
+  --glass-shine: color-mix(in srgb, #ffffff 72%, transparent);
+  --glass-blob: color-mix(in srgb, #ffffff 62%, transparent);
+  --glass-ink: color-mix(in srgb, #5c4030 70%, transparent);
+  --glass-ink-active: #2a2118;
+  --glass-shadow: 0 10px 26px rgba(42, 33, 24, 0.16),
+    0 2px 8px rgba(42, 33, 24, 0.08);
+}
+
+[data-theme='wood'] .glass-nav-shell {
+  --glass-fill: color-mix(in srgb, #2a1810 46%, transparent);
+  --glass-rim: color-mix(in srgb, #e8c98a 22%, transparent);
+  --glass-shine: color-mix(in srgb, #f3e2b8 28%, transparent);
+  --glass-blob: color-mix(in srgb, #e8c98a 18%, transparent);
+  --glass-ink: color-mix(in srgb, #e8d9c4 68%, transparent);
+  --glass-ink-active: #f6edd8;
+  --glass-shadow: 0 10px 28px rgba(8, 4, 2, 0.38),
+    0 2px 8px rgba(8, 4, 2, 0.22);
+}
+
+/* Lunar calendar */
+.calendar-panel {
+  padding-bottom: 1.25rem;
+}
+
+.calendar-today {
+  margin-bottom: 1.15rem;
+}
+
+.calendar-today-kicker {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.calendar-today-solar {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.calendar-today-lunar {
+  margin: 0.2rem 0 0;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.calendar-hint {
+  margin-top: 0.55rem;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.calendar-month-title {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.calendar-today-btn {
+  flex-shrink: 0;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.2rem;
+}
+
+.calendar-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 3.15rem;
+  padding: 0.28rem 0.1rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.calendar-cell.is-outside {
+  opacity: 0.38;
+}
+
+.calendar-cell.is-today {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+.calendar-cell.is-selected {
+  border-color: var(--hover-line);
+  background: var(--surface-strong);
+}
+
+.calendar-cell-solar {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.calendar-cell-lunar {
+  font-size: 0.62rem;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.calendar-dots {
+  position: absolute;
+  bottom: 0.2rem;
+  display: flex;
+  gap: 0.18rem;
+}
+
+.calendar-dot {
+  display: block;
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+}
+
+.calendar-dot--special {
+  background: var(--accent);
+}
+
+.calendar-dot--memorial {
+  background: var(--accent-2);
+  opacity: 0.75;
+}
+
+.calendar-day-panel {
+  margin-top: 1.1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--divider-soft);
+}
+
+.calendar-day-heading {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.calendar-day-lunar {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.calendar-day-sub {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.calendar-day-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.calendar-day-item {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--divider-soft);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-day-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.calendar-day-item-name {
+  font-weight: 600;
+}
+
+.calendar-day-item-kind {
+  font-size: 0.78rem;
+  color: var(--muted);
+  flex-shrink: 0;
 }

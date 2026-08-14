@@ -12,8 +12,10 @@ import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
 } from './components/OpenInBrowserGate.js';
+import { LunarCalendar } from './components/LunarCalendar.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
+import { TabBar } from './components/TabBar.js';
 import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
@@ -64,6 +66,7 @@ import {
 import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
 import { waitMinPray } from './lib/minPraySeconds.js';
+import { tabFromHash, type AppTab } from './lib/calendarMonth.js';
 import {
   findSpecialForParent,
   specialOfferButtonKind,
@@ -347,6 +350,9 @@ export default function App() {
     displayNote: string;
   } | null>(null);
   /** Search by name — icon to the left of the language switch. */
+  const [tab, setTab] = useState<AppTab>(() =>
+    typeof window === 'undefined' ? 'home' : tabFromHash(window.location.hash),
+  );
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultRow[]>([]);
@@ -380,6 +386,29 @@ export default function App() {
     applyDocumentTheme(documentTheme(locale, appearance, busy));
     document.documentElement.dataset.locale = locale;
   }, [locale, appearance, busy]);
+
+  useEffect(() => {
+    const sync = () => setTab(tabFromHash(window.location.hash));
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  const selectTab = useCallback((next: AppTab) => {
+    setTab(next);
+    if (next === 'calendar') {
+      if (tabFromHash(window.location.hash) !== 'calendar') {
+        window.location.hash = '/calendar';
+      }
+      return;
+    }
+    if (tabFromHash(window.location.hash) === 'calendar') {
+      history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
+  }, []);
 
   const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
@@ -1505,6 +1534,27 @@ export default function App() {
     g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
 
+  const calendarSpecials = filterSpecialsForViewer(templeSpecials?.profiles, {
+    countryCode,
+    locale,
+  });
+  const calendarMemorials = recentGroups.flatMap(g => {
+    const a = altarFromOfferGroup(g);
+    const deathYmd = (a.deathDate || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(deathYmd)) return [];
+    const name =
+      memorialDisplayName(g.note, locale) ||
+      a.name ||
+      t('offeringFallback');
+    return [
+      {
+        name,
+        deathYmd,
+        parentTxid: g.original.burnTxid,
+      },
+    ];
+  });
+
   // Soft-ownership prefetch for living profiles in Recent (creator sees Dâng hoa).
   useEffect(() => {
     let cancelled = false;
@@ -1777,8 +1827,10 @@ export default function App() {
     );
   }
 
+  const showTabs = !(busy && session);
+
   return (
-    <div className="app">
+    <div className={`app${showTabs ? ' app--has-tabs' : ''}`}>
       <header className="hero">
         <div className="brand-row">
           <div className="brand-main">
@@ -1815,6 +1867,8 @@ export default function App() {
         <p className="tagline">{t('tagline')}</p>
       </header>
 
+      {tab === 'home' ? (
+      <>
       <section className="panel offer-panel">
         <h2>{t('offerTitle')}</h2>
         <p className="hint">
@@ -2222,6 +2276,25 @@ export default function App() {
           </ul>
         </section>
       ) : null}
+      </>
+      ) : (
+        <LunarCalendar
+          specials={calendarSpecials}
+          memorials={calendarMemorials}
+          disabled={busy || apiOnline === false}
+          onOpenSpecial={sp => {
+            selectTab('home');
+            openHomeEvent(sp);
+          }}
+          onOpenMemorial={txid => {
+            selectTab('home');
+            void openDedicationSheet({
+              parentBurnTxid: txid,
+              memorialNote: '',
+            });
+          }}
+        />
+      )}
 
       {altarOpen ? (
         <AltarSetupModal
@@ -2838,6 +2911,7 @@ export default function App() {
           </>
         ) : null}
       </footer>
+      {showTabs ? <TabBar tab={tab} onTab={selectTab} /> : null}
     </div>
   );
 }
