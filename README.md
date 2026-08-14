@@ -2,7 +2,7 @@
 
 **W Lotus** (ticker **WLOTUS**) — burnable white lotus on eCash: offered **in memory of the dead**, and as **dana** to the living (real wealth sacrificed, not paper sold).
 
-Companion economic token: **Golden Lotus** (ticker **GLOTUS**) — permissionless remint, premine, event burns. See [docs/ECONOMICS_WLOTUS_GLOTUS.md](./docs/ECONOMICS_WLOTUS_GLOTUS.md).
+Companion economic token: **Golden Lotus** (ticker **GLOTUS**) — permissionless remint, premine, event burns. See [docs/ECONOMICS.md](./docs/ECONOMICS.md).
 
 This repository holds the **covenant, remint miner, mint-api, and offerings app**.
 
@@ -22,13 +22,13 @@ This repository holds the **covenant, remint miner, mint-api, and offerings app*
 
 | Environment | URL / notes |
 |-------------|-------------|
-| **Test** | https://test.wlotus.org — ticker **dWLOTUS** |
-| **Prod** | https://wlotus.org — live **WLOTUS** (tag releases) |
+| **Test** | https://test.wlotus.org — ticker **dWLOTUS** — **102/6** |
+| **Prod** | https://wlotus.org — live **WLOTUS** (tag [`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0)+) — **102/6** |
 | **Local** | `npm run mint-api` + `npm run web` |
 
-Docs: [VISION](./docs/VISION.md) · [ECONOMICS](./docs/ECONOMICS_WLOTUS_GLOTUS.md) · [SPEC](./docs/SPEC.md) · [STATUS](./docs/STATUS.md) · [CLOCK](./docs/CLOCK.md) · [MOBILE](./docs/MOBILE.md)
+Docs: [map](./docs/README.md) · [STATUS](./docs/STATUS.md) · [VISION](./docs/VISION.md) · [ECONOMICS](./docs/ECONOMICS.md) · [SPEC](./docs/SPEC.md) · [CLOCK](./docs/CLOCK.md) · [MOBILE](./docs/MOBILE.md)
 
-Deploy: [test Contabo](./deploy/contabo/README.md) · [prod Contabo](./deploy/contabo/PROD.md) · [prod cutover 102/6](./deploy/contabo/PROD_CUTOVER_102_6.md)
+Deploy: [test](./deploy/contabo/README.md) · [prod](./deploy/contabo/PROD.md) · [102/6 cutover (done)](./deploy/contabo/PROD_CUTOVER_102_6.md)
 
 ```
 apps/web/           # Offerings SPA (PWA)

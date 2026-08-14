@@ -15,8 +15,8 @@ Re-offers send `parentBurnTxid` (**original** dedication burn) and encode
 Legacy Prayer memo path (mint 1 + DANA memorial on remint, no burn) still works if the
 loaded deployment is `tier=prayer`.
 
-**After pulling this change:** recreate genesis (`TICKER=dWLOTUS … npm run create-wlotus-token`) —
-old tip covenants will not match the new redeem.
+**Genesis is immutable.** A new split or redeem requires a new token id. Prod and
+test already run **102/6** — see [docs/STATUS.md](../../docs/STATUS.md).
 
 **Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
 tips (default **1** at launch — bound fee burn; raise toward **28** if demand warrants).

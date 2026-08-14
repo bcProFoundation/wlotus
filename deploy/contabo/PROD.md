@@ -5,10 +5,10 @@
 
 Test (`test.wlotus.org`) stays on push-to-master via **Deploy web (test)**.
 
-**Next prod ship (from last tag `v26.7.12`):** live WLOTUS is still the **old**
-covenant (**1** miner + **107** temple). Current `master` remints **102 + 6**.
-That is a **new genesis**, not a code-only tag. Follow
-**[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)** (ordered VM + GitHub steps).
+**Live (since tag [`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0), 2026-08-13):**
+prod serves the **102 miner + 6 temple** covenant. Token id and `/api/status`
+snapshot: [docs/STATUS.md](../../docs/STATUS.md). The 1/107 → 102/6 recut
+runbook is historical: **[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)**.
 
 If **prod already runs an older WLOTUS token** (different mint split, name, or
 premine destination), code deploy alone is not enough — cut a **new live genesis**
@@ -271,9 +271,9 @@ Set GitHub Environment variable `VITE_PRAYER_TOKEN_ID` to this **tokenId** befor
 
 ## Upgrade: new live genesis
 
-**Current cutover (1/107 → 102/6, from tag `v26.7.12`):** use the copy-paste
-runbook **[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)** instead of this
-generic list.
+The **1/107 → 102/6** recut is **done** (`v26.8.0`). Use
+**[PROD_CUTOVER_102_6.md](./PROD_CUTOVER_102_6.md)** only as a historical
+checklist if you must recut **again**.
 
 **When:** prod is already serving an **older** `WLOTUS` token id and you need
 launch economics or branding that only apply to **new genesis**, for example:

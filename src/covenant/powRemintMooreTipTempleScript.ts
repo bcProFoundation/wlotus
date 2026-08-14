@@ -26,7 +26,7 @@ export interface PowRemintMooreTipTempleParams extends MooreTipParams {
   tokenId: string;
   /** 20-byte script hash — IFP-style P2SH temple sink (multisig / cold). */
   templeScriptHash: Uint8Array;
-  /** Always WLOTUS_MINT_ATOMS for this covenant (1 miner + 6 temple). */
+  /** Always WLOTUS_MINT_ATOMS for this covenant (102 miner + 6 temple). */
   mintAtoms: bigint;
 }
 

@@ -1,8 +1,6 @@
 # WLOTUS consensus parameters
 
-Canonical economics: [ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md).  
-Clock: [CLOCK.md](./CLOCK.md).  
-Altar / memorial on-chain policy: [ALTAR.md](./ALTAR.md).
+Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar: [ALTAR.md](./ALTAR.md). Live desks: [STATUS.md](./STATUS.md).
 
 ## Identity
 
@@ -20,7 +18,7 @@ Altar / memorial on-chain policy: [ALTAR.md](./ALTAR.md).
 | Param | Value | Notes |
 |-------|-------|-------|
 | Tokens / remint | **108** | One mala |
-| Split | **1** miner + **107** temple P2SH | Covenant-enforced |
+| Split | **102** miner + **6** temple P2SH | Covenant-enforced (desk burns **1**, keeps **101**) |
 | PoW predicate | `hash256(preimage ‖ nonce)` | BIP143 preimage + nonce |
 | `baseZeroBits` | **0** | Whole-byte only (`bits % 8 == 0`) |
 | Moore | **+1 bit / 500 days** | Override `MOORE_DAYS_PER_EXTRA_BIT` 365–730 |
@@ -72,7 +70,7 @@ k = floor(elapsed_days since genesis)
 | PoW / Moore | Own schedule (may use higher base bits) |
 | Role | Event burns / later commerce |
 
-Details TBD at GLOTUS launch; see economics doc § Golden Lotus.
+Details TBD at GLOTUS launch; see [ECONOMICS.md](./ECONOMICS.md).
 
 ## Explicit non-goals
 

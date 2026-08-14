@@ -1,7 +1,7 @@
 # Research notes
 
 Feasibility write-ups that informed the **wLotus / WLOTUS + GLOTUS** design.  
-Canonical product decision: [../PROPOSAL.md](../PROPOSAL.md) · Economics: [../ECONOMICS_WLOTUS_GLOTUS.md](../ECONOMICS_WLOTUS_GLOTUS.md).
+Canonical product decision: [../PROPOSAL.md](../PROPOSAL.md) · Economics: [../ECONOMICS.md](../ECONOMICS.md).
 
 Upstream discussion: [bcProFoundation/eminer#1](https://github.com/bcProFoundation/eminer/pull/1).
 

@@ -14,9 +14,9 @@ Target hardware: **phone GPU (WebGPU)** and **phone multi-core CPU** — not des
 
 **Farming / security (do not confuse with this research):**
 
-- Anti-farm = **1/107 + XEC fees** (temple-sponsored Offer wins vs commercial miners even if energy ≈ 0).
+- Anti-farm = **6/108 temple tax + XEC fees + soft pray** (the older 1/107 split is retired).
 - Ritual length on the official client = **soft timer** (`VITE_MIN_PRAY_SECONDS`) after remint, before memorial burn — attention, not joules.
-- Token hashrate ≠ ledger security (eCash secures transfers). See [ECONOMICS_WLOTUS_GLOTUS.md](../ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
+- Token hashrate ≠ ledger security (eCash secures transfers). See [ECONOMICS.md](../ECONOMICS.md).
 
 ---
 

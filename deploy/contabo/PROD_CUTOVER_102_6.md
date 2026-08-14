@@ -1,8 +1,8 @@
 # Prod cutover: last release → 102/6 WLOTUS
 
-**This is the runbook for the next production deploy.**  
-Last live tag: **`v26.7.12`** (2026-07-31). That desk still serves the **old**
-covenant: mint **108** = **1** miner + **107** temple.
+**Status: completed (2026-08).** Prod tag **[`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0)**. Both https://wlotus.org and https://test.wlotus.org serve **102 miner + 6 temple**. Live ids: [docs/STATUS.md](../../docs/STATUS.md). **Do not treat this file as the next deploy.**
+
+The remainder is the historical runbook from tag **`v26.7.12`** (2026-07-31), when prod still served mint **108** = **1** miner + **107** temple.
 
 The split is baked into the ALP remint Script. **Code deploy cannot change it.**
 You must create a **new live `WLOTUS` genesis**, then retarget mint-api,
@@ -481,5 +481,5 @@ Current `master` will not remint the old batons. Rollback means a tag from
 
 - [PROD.md](./PROD.md) — VM, GitHub Environment, tag mechanics
 - [README.md](./README.md) — test genesis switch (same idea, `dWLOTUS`)
-- [docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md) — why 102/6
+- [docs/ECONOMICS.md](../../docs/ECONOMICS.md) — why 102/6
 - [apps/mint-api/README.md](../../apps/mint-api/README.md) — fee wallets / custody

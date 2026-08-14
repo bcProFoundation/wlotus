@@ -249,12 +249,16 @@ must be the recorded root offerer; 409 if already claimed by another txid.
 1. Deploy mint-api. Catalog is built-in — **do not** desk-burn the full list.
 2. Optional JSON overlay for already-live Vu Lan / Cô Hồn `profileId`s + `countries`.
    `npm run create-temple-specials` writes overlay JSON and does **not** burn.
+   Set `TEMPLE_SPECIALS_JSON_FILE` if needed.
 3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` for full burn, or leave default `6`).
-4. Restart mint-api; confirm `/api/status` → `templeSpecials.profiles` (many
-   unbound rows with empty `profileId`).
+   Prod: `TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.
+4. Restart mint-api. SPA reads `/api/status` (no Vite bake). Confirm many
+   profiles, most with empty `profileId`, plus stories.
 5. **Test env:** set `TEMPLE_SPECIAL_TEST_OFFSET_DAYS`, verify first-burn +
-   re-offer, then set back to `0` for prod.
-6. **Launch (2026):** go-live target **17:00 VN on 26 Aug 2026** (00:00 lunar 15 in UTC+14).
+   re-offer, then set back to `0`.
+6. **Launch (2026):** **17:00 VN on 26 Aug 2026** (00:00 lunar 15 in UTC+14).
+
+The 102/6 recut is **done** — [PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md) is historical.
 
 ## Optional temple burns
 
@@ -312,19 +316,6 @@ Override per profile with JSON `story: { title, body, titleEn, bodyEn, titleZh, 
 Server activates from the global civil start of `eventStart` through the global
 civil end of `eventEnd` (after lunar→solar + testOffset). Vu Lan omits start/end
 (single day).
-
-## Post-genesis checklist
-
-Prod cutover (new `WLOTUS` token + these steps in order):
-[PROD_CUTOVER_102_6.md](../deploy/contabo/PROD_CUTOVER_102_6.md) §8.
-
-1. Deploy mint-api with wired `offer.ts` (templeSpecials on status + burnAtoms).
-   Catalog is built-in; first visitors claim roots — **do not** desk-burn the list.
-2. Optional: `npm run create-temple-specials` to overlay live Vu Lan / Cô Hồn
-   `profileId`s + `countries` (no burn). Set `TEMPLE_SPECIALS_JSON_FILE` if needed.
-3. Set `TEMPLE_SPECIAL_DESK_KEEP` (e.g. `0` or `6`). Prod: `TEMPLE_SPECIAL_TEST_OFFSET_DAYS=0`.
-4. Restart mint-api. SPA reads `/api/status` (no Vite bake required).
-5. Confirm `/api/status` → many profiles, most with empty `profileId`, plus stories.
 
 ## Code
 

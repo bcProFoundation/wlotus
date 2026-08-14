@@ -2,7 +2,7 @@
 
 Product meaning (memorial + dana): **[VISION.md](./VISION.md)**.  
 Altar / on-chain memorial policy: **[ALTAR.md](./ALTAR.md)** (star fragments, separator fields, no WLotus off-chain).  
-Economics: **[ECONOMICS_WLOTUS_GLOTUS.md](./ECONOMICS_WLOTUS_GLOTUS.md)**.
+Economics: **[ECONOMICS.md](./ECONOMICS.md)**. Live tokens: **[STATUS.md](./STATUS.md)**.
 
 ## Flow
 
@@ -89,5 +89,5 @@ Implementation: `src/mint/followMintBaton.ts`.
 
 ## Networks
 
-Target: **mainnet** for dryrun (`dWLOTUS`) and prod (`WLOTUS`).  
-Do not ship live **WLOTUS** genesis until temple P2SH, mint.env, and nginx are healthy — [deploy/contabo/PROD.md](../deploy/contabo/PROD.md).
+Target: **mainnet** for dryrun (`dWLOTUS`) and prod (`WLOTUS`) — both live on **102/6**.  
+Ops: [deploy/contabo/PROD.md](../deploy/contabo/PROD.md) · [deploy/contabo/README.md](../deploy/contabo/README.md).

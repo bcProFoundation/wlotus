@@ -2,7 +2,7 @@
 
 Minimal mobile-first UI for **WLOTUS** / **dWLOTUS**. No browser wallet yet — remint via mint-api.
 
-Flow: device PoW → mint API remint (**108** → **1** miner + **107** temple) → soft pray hold → **burn 1** (memorial + dana).
+Flow: device PoW → mint API remint (**108** → **102** miner + **6** temple) → soft pray hold → **burn 1** (memorial + dana). Desk keeps **101**.
 
 ## Local
 
@@ -22,10 +22,9 @@ Open http://localhost:5173 — Vite proxies `/api` → `:8787`.
 
 ### Why soft pray wait (product intent)
 
-Anti-farming is **on-chain economics** (wLotus **1/107** mala + XEC fees): temple-sponsored
-Offer beats commercial fee-paying miners even when electricity ≈ 0. Token hashrate does
-**not** secure WLOTUS — eCash does. See
-[docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md) § *Product intent*.
+Anti-farming is **on-chain economics** (wLotus **6/108** temple tax + XEC fees) plus
+the official Offer **soft pray**. Token hashrate does **not** secure WLOTUS — eCash
+does. See [docs/ECONOMICS.md](../../docs/ECONOMICS.md).
 
 What the soft timer adds is **attention**: PoW is a presence gate. Remint
 broadcasts **as soon as** a nonce is found (tip race). The UI then shows
@@ -61,4 +60,4 @@ TICKER=dWLOTUS TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
 TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token   # prod WLOTUS
 ```
 
-See [docs/VISION.md](../../docs/VISION.md) and [docs/ECONOMICS_WLOTUS_GLOTUS.md](../../docs/ECONOMICS_WLOTUS_GLOTUS.md).
+See [docs/VISION.md](../../docs/VISION.md) and [docs/ECONOMICS.md](../../docs/ECONOMICS.md).
