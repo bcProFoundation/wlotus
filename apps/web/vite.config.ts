@@ -74,6 +74,9 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         navigationPreload: false,
+        // Main JS is ~2.1 MB (ecash-lib). Default 2 MiB would fail the build
+        // and drop the app shell from the SW precache.
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
         navigateFallback: '/index.html',
         runtimeCaching: [
