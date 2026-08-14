@@ -76,6 +76,7 @@ export interface StatusOk {
     testOffsetDays?: number;
     profiles?: Array<{
       profileId: string;
+      id?: string;
       kind: 'ghost' | 'hero' | 'event';
       name: string | null;
       active: boolean;
@@ -84,20 +85,30 @@ export interface StatusOk {
       effectiveEventDate?: string;
       effectiveStartDate?: string;
       effectiveEndDate?: string;
+      birthDate?: string | null;
+      birthPlace?: string | null;
       storyTitle?: string | null;
       storyBody?: string | null;
       storyTitleEn?: string | null;
       storyBodyEn?: string | null;
+      storyTitleZh?: string | null;
+      storyBodyZh?: string | null;
+      countries?: string[];
     }>;
     active?: Array<{
       profileId: string;
+      id?: string;
       kind: 'ghost' | 'hero' | 'event';
       name: string | null;
       active: boolean;
+      birthPlace?: string | null;
       storyTitle?: string | null;
       storyBody?: string | null;
       storyTitleEn?: string | null;
       storyBodyEn?: string | null;
+      storyTitleZh?: string | null;
+      storyBodyZh?: string | null;
+      countries?: string[];
     }>;
   };
 }
@@ -262,6 +273,36 @@ export async function cancelOfferChallenge(opts: {
     throw new Error(body.error || `Cancel failed (${res.status})`);
   }
   return body;
+}
+
+export async function claimTempleSpecial(opts: {
+  installId: string;
+  specialId: string;
+  profileId: string;
+}): Promise<{ ok: true; profileId: string; created: boolean }> {
+  const res = await fetch(apiUrl('/api/specials/claim'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      installId: opts.installId,
+      specialId: opts.specialId,
+      profileId: opts.profileId,
+    }),
+  });
+  const body = await readApiJson<{
+    ok?: boolean;
+    profileId?: string;
+    created?: boolean;
+    error?: string;
+  }>(res);
+  if (!res.ok || !body.ok || !body.profileId) {
+    throw new Error(body.error || `Claim failed (${res.status})`);
+  }
+  return {
+    ok: true,
+    profileId: body.profileId,
+    created: body.created === true,
+  };
 }
 
 export function shortTx(txid: string): string {

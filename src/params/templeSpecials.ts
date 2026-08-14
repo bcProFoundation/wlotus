@@ -1,8 +1,9 @@
 /**
  * Temple-managed specials — ghosts, heroes & events.
  *
- * Desk/temple creates dedicated profiles (root burns) and registers them in
- * TEMPLE_SPECIALS_JSON. On each profile's event date, re-offers burn more
+ * Desk/temple registers specials in a catalog (and optional JSON). They do
+ * **not** need a temple root burn. The first visitor's offering becomes the
+ * on-chain root (`profileId`); later re-offers in the event window burn more
  * than the usual 1-atom flower:
  *   burnAtoms = WLOTUS_MINER_ATOMS - deskKeep
  * where deskKeep is a **global** env (TEMPLE_SPECIAL_DESK_KEEP), not per-profile.
@@ -22,6 +23,7 @@
  * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
  * through eventEnd (default both = eventDate), server time only.
  * Product: Cô Hồn lunar 2/7 → 15/7; Vu Lan single lunar 15. Stories on status.
+ * Country targeting: JSON `countries` (ISO); empty = Global. Home list only.
  *
  * Test env: TEMPLE_SPECIAL_TEST_OFFSET_DAYS shifts every profile's effective
  * event date earlier by N days so the window can be exercised before launch.
@@ -30,6 +32,9 @@
 import { readFileSync } from 'node:fs';
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import { lunarYmdToSolarYmd } from '../lib/lunarCalendar.js';
+import { normalizeSpecialCountries } from './specialCountries.js';
+import { findCatalogEntryById, findCatalogEntryByName, templeSpecialCatalog } from './templeSpecialCatalog.js';
+import { loadSpecialClaims } from './templeSpecialClaims.js';
 
 export type TempleSpecialKind = 'ghost' | 'hero' | 'event';
 
@@ -44,7 +49,11 @@ export const NORMAL_FLOWER_BURN_ATOMS = 1n;
 
 /** One registered temple profile (no burn economics — those are global). */
 export interface TempleSpecial {
-  /** Root dedication burn txid (64 hex). */
+  /** Catalog slug (vu-lan, qingming, …). */
+  id: string;
+  /**
+   * Root dedication burn txid (64 hex). Empty until the first visitor burns.
+   */
   profileId: string;
   kind: TempleSpecialKind;
   /**
@@ -65,6 +74,8 @@ export interface TempleSpecial {
   birthDate?: string;
   /** Optional display name (UI / status). */
   name?: string;
+  /** On-chain quê quán label for the first-burn altar. */
+  birthPlace?: string;
   /**
    * Optional range start (same calendar as eventDate). Default = eventDate.
    * Example Cô Hồn: eventStart "2026-07-02", eventDate/eventEnd "2026-07-15".
@@ -85,7 +96,21 @@ export interface TempleSpecial {
    * Temple story shown during soft pray (~2 min). Override per locale later;
    * plain string is treated as vi/default body.
    */
-  story?: string | { title?: string; body: string; titleEn?: string; bodyEn?: string };
+  story?:
+    | string
+    | {
+        title?: string;
+        body: string;
+        titleEn?: string;
+        bodyEn?: string;
+        titleZh?: string;
+        bodyZh?: string;
+      };
+  /**
+   * ISO 3166-1 alpha-2 countries this special is local to.
+   * Empty / omitted = Global (every viewer). Multi-country: `["VN","CN"]`.
+   */
+  countries?: string[];
 }
 
 /** Global economics + test shift (from env / GitHub variables). */
@@ -104,6 +129,8 @@ export interface TempleSpecialsGlobalConfig {
 }
 
 export interface TempleSpecialPublic {
+  id: string;
+  /** 64-hex root txid, or empty if nobody has offered yet. */
   profileId: string;
   kind: TempleSpecialKind;
   name: string | null;
@@ -117,6 +144,7 @@ export interface TempleSpecialPublic {
   /** Solar range end (after offset). */
   effectiveEndDate: string;
   birthDate: string | null;
+  birthPlace: string | null;
   active: boolean;
   windowStartUtc: string;
   windowEndUtc: string;
@@ -124,6 +152,13 @@ export interface TempleSpecialPublic {
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
+  /**
+   * ISO country codes. Empty = Global.
+   * Home events list filters on this; burns / share links do not.
+   */
+  countries: string[];
 }
 
 export interface TempleSpecialsPublicStatus {
@@ -246,32 +281,95 @@ function normalizeEventCalendar(raw: unknown): TempleEventCalendar {
   return t === 'solar' ? 'solar' : 'lunar';
 }
 
+function slugFromName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48);
+}
+
+export function catalogToSpecial(
+  e: import('./templeSpecialCatalog.js').TempleSpecialCatalogEntry,
+): TempleSpecial {
+  return {
+    id: e.id,
+    profileId: '',
+    kind: e.kind,
+    eventDate: e.eventDate,
+    eventCalendar: e.eventCalendar,
+    birthDate: e.birthDate,
+    name: e.name,
+    birthPlace: e.birthPlace || undefined,
+    eventStart: e.eventStart,
+    eventEnd: e.eventEnd,
+    eventEndHour: e.eventEndHour,
+    countries: e.countries.length > 0 ? [...e.countries] : undefined,
+  };
+}
+
+function catalogYearFromEnv(
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>,
+): number {
+  const y = Number(env.EVENT_YEAR?.trim() || '2026');
+  return Number.isFinite(y) && y >= 2020 && y <= 2100 ? y : 2026;
+}
+
 function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
   const profileId = String(raw.profileId ?? raw.profile_id ?? '')
     .trim()
     .toLowerCase();
-  if (!TXID_RE.test(profileId)) return null;
+  const bound = TXID_RE.test(profileId) ? profileId : '';
+  const name = String(raw.name ?? '').trim() || undefined;
+  const yearHint = Number(String(raw.eventDate ?? '').slice(0, 4)) || 2026;
+  const catalog =
+    findCatalogEntryById(String(raw.id ?? raw.specialId ?? ''), yearHint) ||
+    findCatalogEntryByName(name, yearHint);
+  const id = (
+    String(raw.id ?? raw.specialId ?? '').trim() ||
+    catalog?.id ||
+    (name ? slugFromName(name) : '')
+  ).toLowerCase();
   const eventDate = String(
-    raw.eventDate ?? raw.event_date ?? '',
+    raw.eventDate ?? raw.event_date ?? catalog?.eventDate ?? '',
   ).trim();
   if (!parseYmd(eventDate)) return null;
-  const kind = normalizeKind(raw.kind);
+  if (!id && !bound) return null;
+  const kind = normalizeKind(raw.kind ?? catalog?.kind);
   const eventCalendar = normalizeEventCalendar(
-    raw.eventCalendar ?? raw.event_calendar,
+    raw.eventCalendar ?? raw.event_calendar ?? catalog?.eventCalendar,
   );
-  const birthRaw = String(raw.birthDate ?? raw.birth_date ?? '').trim();
-  // Only heroes keep birthDate.
+  const birthRaw = String(
+    raw.birthDate ?? raw.birth_date ?? catalog?.birthDate ?? '',
+  ).trim();
   const birthDate = kind === 'hero' && birthRaw ? birthRaw : undefined;
-  const name = String(raw.name ?? '').trim() || undefined;
-  const eventStartRaw = String(raw.eventStart ?? raw.event_start ?? '').trim();
-  const eventEndRaw = String(raw.eventEnd ?? raw.event_end ?? '').trim();
-  const eventStart = eventStartRaw && parseYmd(eventStartRaw) ? eventStartRaw : undefined;
+  const eventStartRaw = String(
+    raw.eventStart ?? raw.event_start ?? catalog?.eventStart ?? '',
+  ).trim();
+  const eventEndRaw = String(
+    raw.eventEnd ?? raw.event_end ?? catalog?.eventEnd ?? '',
+  ).trim();
+  const eventStart =
+    eventStartRaw && parseYmd(eventStartRaw) ? eventStartRaw : undefined;
   const eventEnd = eventEndRaw && parseYmd(eventEndRaw) ? eventEndRaw : undefined;
-  const endHourRaw = raw.eventEndHour ?? raw.event_end_hour;
+  const endHourRaw = raw.eventEndHour ?? raw.event_end_hour ?? catalog?.eventEndHour;
   const eventEndHour =
     endHourRaw != null && Number.isFinite(Number(endHourRaw))
       ? Math.max(0, Math.min(23, Math.floor(Number(endHourRaw))))
       : undefined;
+  const countries = normalizeSpecialCountries(
+    raw.countries ??
+      raw.country ??
+      raw.birthPlace ??
+      raw.birth_place ??
+      catalog?.countries,
+  );
+  const birthPlace =
+    String(raw.birthPlace ?? raw.birth_place ?? catalog?.birthPlace ?? '').trim() ||
+    undefined;
   let story: TempleSpecial['story'] | undefined;
   if (typeof raw.story === 'string' && raw.story.trim()) {
     story = raw.story.trim();
@@ -284,20 +382,25 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
         body,
         titleEn: String(s.titleEn ?? s.title_en ?? '').trim() || undefined,
         bodyEn: String(s.bodyEn ?? s.body_en ?? '').trim() || undefined,
+        titleZh: String(s.titleZh ?? s.title_zh ?? '').trim() || undefined,
+        bodyZh: String(s.bodyZh ?? s.body_zh ?? '').trim() || undefined,
       };
     }
   }
   return {
-    profileId,
+    id: id || bound.slice(0, 12),
+    profileId: bound,
     kind,
     eventDate,
     eventCalendar,
     birthDate,
-    name,
+    name: name || catalog?.name,
+    birthPlace,
     eventStart,
     eventEnd,
     eventEndHour,
     story,
+    countries: countries.length > 0 ? countries : undefined,
   };
 }
 
@@ -331,35 +434,54 @@ export function loadTempleSpecialsGlobalConfig(
 }
 
 /**
- * Load profile list from TEMPLE_SPECIALS_JSON (no legacy HUNGRY_GHOST_*).
- * Prefer TEMPLE_SPECIALS_JSON_FILE (a JSON array, or the
- * temple-specials-created.json wrapper). Inline TEMPLE_SPECIALS_JSON in
- * mint.env is easy to break with quotes — use a file on the VM.
- * deskKeep / testOffsetDays are **not** read from the JSON — use global env.
+ * Catalog (always) + optional JSON overlay + first-burn claims.
+ * Unbound specials have empty profileId until someone offers the first flower.
  */
 export function loadTempleSpecialsFromEnv(
   env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
 ): TempleSpecial[] {
-  const out: TempleSpecial[] = [];
-  const seen = new Set<string>();
+  const year = catalogYearFromEnv(env);
+  const byId = new Map<string, TempleSpecial>();
+  for (const entry of templeSpecialCatalog(year)) {
+    byId.set(entry.id, catalogToSpecial(entry));
+  }
 
   const jsonRaw = readTempleSpecialsRaw(env);
-  if (!jsonRaw) return out;
-
-  try {
-    const parsed = unwrapTempleSpecialsJson(JSON.parse(jsonRaw) as unknown);
-    if (!Array.isArray(parsed)) return out;
-    for (const item of parsed) {
-      if (!item || typeof item !== 'object') continue;
-      const s = normalizeSpecial(item as Record<string, unknown>);
-      if (!s || seen.has(s.profileId)) continue;
-      seen.add(s.profileId);
-      out.push(s);
+  if (jsonRaw) {
+    try {
+      const parsed = unwrapTempleSpecialsJson(JSON.parse(jsonRaw) as unknown);
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (!item || typeof item !== 'object') continue;
+          const s = normalizeSpecial(item as Record<string, unknown>);
+          if (!s) continue;
+          const prev = byId.get(s.id);
+          if (prev) {
+            byId.set(s.id, {
+              ...prev,
+              ...s,
+              id: prev.id,
+              profileId: s.profileId || prev.profileId,
+              countries: s.countries ?? prev.countries,
+            });
+          } else {
+            byId.set(s.id, s);
+          }
+        }
+      }
+    } catch {
+      /* ignore bad JSON */
     }
-  } catch {
-    /* ignore bad JSON */
   }
-  return out;
+
+  const claims = loadSpecialClaims(env);
+  for (const [id, txid] of Object.entries(claims)) {
+    const cur = byId.get(id);
+    if (!cur) continue;
+    if (!cur.profileId) cur.profileId = txid;
+  }
+
+  return [...byId.values()];
 }
 
 function readTempleSpecialsRaw(
@@ -394,64 +516,68 @@ export function unwrapTempleSpecialsJson(parsed: unknown): unknown {
   return parsed;
 }
 
+function emptyStory(): {
+  storyTitle: string | null;
+  storyBody: string | null;
+  storyTitleEn: string | null;
+  storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
+} {
+  return {
+    storyTitle: null,
+    storyBody: null,
+    storyTitleEn: null,
+    storyBodyEn: null,
+    storyTitleZh: null,
+    storyBodyZh: null,
+  };
+}
+
 function resolveStory(s: TempleSpecial): {
   storyTitle: string | null;
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
 } {
   const baked = defaultTempleStory(s);
   if (!s.story) return baked;
   if (typeof s.story === 'string') {
-    return {
-      storyTitle: baked.storyTitle,
-      storyBody: s.story,
-      storyTitleEn: baked.storyTitleEn,
-      storyBodyEn: baked.storyBodyEn,
-    };
+    return { ...baked, storyBody: s.story };
   }
   return {
     storyTitle: s.story.title?.trim() || baked.storyTitle,
     storyBody: s.story.body.trim() || baked.storyBody,
     storyTitleEn: s.story.titleEn?.trim() || baked.storyTitleEn,
     storyBodyEn: s.story.bodyEn?.trim() || baked.storyBodyEn,
+    storyTitleZh: s.story.titleZh?.trim() || baked.storyTitleZh,
+    storyBodyZh: s.story.bodyZh?.trim() || baked.storyBodyZh,
   };
 }
 
-/** Built-in temple stories (served until community-written stories exist). */
+/** Built-in temple stories from the regional catalog (matched by name). */
 export function defaultTempleStory(s: TempleSpecial): {
   storyTitle: string | null;
   storyBody: string | null;
   storyTitleEn: string | null;
   storyBodyEn: string | null;
+  storyTitleZh: string | null;
+  storyBodyZh: string | null;
 } {
-  const name = (s.name ?? '').trim().toLowerCase();
-  const kind = s.kind;
-  if (kind === 'event' || name.includes('vu lan')) {
-    return {
-      storyTitle: 'Vu Lan Báo Hiếu',
-      storyBody:
-        'Ngày xưa, Tôn giả Mục Kiền Liên — đệ tử thần thông đệ nhất của Đức Phật — dùng thiên nhãn tìm mẹ. Ngài thấy mẹ đang chịu kiếp ngạ quỷ: cổ họng nhỏ như kim, bụng đói không no. Ngài dâng cơm, nhưng thức ăn hóa thành lửa.\n\nĐức Phật dạy: một mình không đủ. Hãy đợi Rằm tháng Bảy, ngày chư Tăng tự tứ, thiết lễ Vu Lan Bồn — nhờ sức chúng tăng mười phương, mẹ mới được siêu thoát.\n\nTừ đó, Rằm tháng Bảy là ngày Báo Hiếu: dâng hoa, tưởng nhớ ông bà cha mẹ, hồi hướng công đức. Một bông sen W Lotus bạn dâng hôm nay cũng là một lời tri ân — hoa tưởng niệm không tàn.',
-      storyTitleEn: 'Vu Lan — Filial Gratitude',
-      storyBodyEn:
-        'Long ago, Venerable Maudgalyayana — foremost in supernatural power among the Buddha’s disciples — sought his mother with the divine eye. He found her reborn as a hungry ghost: throat thin as a needle, never sated. Food he offered turned to fire.\n\nThe Buddha taught: one person alone cannot lift such karma. Wait for the full moon of the seventh lunar month, when the Sangha completes the rains retreat. Offer the Ullambana rite; with the merit of the community of monastics, her suffering can be eased.\n\nSo the fifteenth of the seventh month became a day of filial gratitude: flowers, remembrance of parents and ancestors, dedication of merit. The lotus you offer on W Lotus is one more word of thanks — a flower of remembrance that does not fade.',
-    };
-  }
-  if (kind === 'ghost' || name.includes('cô hồn') || name.includes('co hon')) {
-    return {
-      storyTitle: 'Xá Tội Vong Nhân',
-      storyBody:
-        'Tháng Bảy âm lịch, dân gian gọi là tháng cô hồn. Cửa Quỷ Môn mở: những vong hồn không nơi nương tựa — chết oan, lạc lối, không người thờ cúng — được trở về cõi dương một thời.\n\nNgười sống bày mâm chay, cháo, muối… bố thí ngoài trời, không chỉ cho tổ tiên nhà mình mà cho cả những linh hồn lang thang. Đó là lòng từ bi: dù tội nghiệp nặng đến đâu, vẫn có ngày được xá, được no một bữa, được nhớ tới.\n\nCúng cô hồn không phải sợ hãi — là sẻ chia. Một bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho mọi hương linh được siêu thoát, nguyện cho nhà nhà bình an.',
-      storyTitleEn: 'Pardon for Wandering Spirits',
-      storyBodyEn:
-        'In the seventh lunar month, folk tradition speaks of the Hungry Ghost season. The ghost gate opens: spirits without a home — the wronged, the lost, those with no one to offer incense — may walk the living world for a time.\n\nPeople set out simple vegetarian offerings outdoors — not only for their own ancestors, but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear — it is sharing. The lotus you offer today is also a wish: that every spirit finds peace, and every home finds calm.',
-    };
-  }
+  const year = Number((s.eventDate ?? '').slice(0, 4)) || 2026;
+  const entry =
+    findCatalogEntryById(s.id, year) || findCatalogEntryByName(s.name, year);
+  if (!entry) return emptyStory();
+  const st = entry.story;
   return {
-    storyTitle: null,
-    storyBody: null,
-    storyTitleEn: null,
-    storyBodyEn: null,
+    storyTitle: st.title?.trim() || entry.name,
+    storyBody: st.body,
+    storyTitleEn: st.titleEn?.trim() || null,
+    storyBodyEn: st.bodyEn?.trim() || null,
+    storyTitleZh: st.titleZh?.trim() || null,
+    storyBodyZh: st.bodyZh?.trim() || null,
   };
 }
 
@@ -481,6 +607,7 @@ export function toPublicSpecial(
   const active = nowMs >= w.startMs && nowMs < w.endMs;
   const story = resolveStory(s);
   return {
+    id: s.id,
     profileId: s.profileId,
     kind: s.kind,
     name: s.name ?? null,
@@ -490,6 +617,7 @@ export function toPublicSpecial(
     effectiveStartDate: a,
     effectiveEndDate: b,
     birthDate: s.birthDate?.trim() || null,
+    birthPlace: s.birthPlace?.trim() || null,
     active,
     windowStartUtc: new Date(w.startMs).toISOString(),
     windowEndUtc: new Date(w.endMs).toISOString(),
@@ -497,6 +625,9 @@ export function toPublicSpecial(
     storyBody: story.storyBody,
     storyTitleEn: story.storyTitleEn,
     storyBodyEn: story.storyBodyEn,
+    storyTitleZh: story.storyTitleZh,
+    storyBodyZh: story.storyBodyZh,
+    countries: s.countries ?? [],
   };
 }
 
@@ -546,7 +677,8 @@ export function resolveOfferBurnAtoms(opts: {
     opts.globalCfg ?? loadTempleSpecialsGlobalConfig(),
     opts.nowMs,
   );
-  const match = status.active.find(p => p.profileId === parent) ?? null;
+  const match =
+    status.active.find(p => p.profileId && p.profileId === parent) ?? null;
   if (!match) {
     return { burnAtoms: NORMAL_FLOWER_BURN_ATOMS, special: null };
   }

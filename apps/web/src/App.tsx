@@ -49,6 +49,7 @@ import {
 import {
   cancelOfferChallenge,
   completeOfferBurn,
+  claimTempleSpecial,
   fetchChallenge,
   fetchRootCreator,
   fetchStatus,
@@ -72,7 +73,10 @@ import {
   rankTempleSpecials,
   formatSpecialEventDateLabel,
   specialCountdown,
+  filterSpecialsForViewer,
+  isBoundSpecialRoot,
   type TempleSpecialsStatusUi,
+  type TempleSpecialProfileUi,
 } from './lib/specialsUi.js';
 import {
   isTipRaceLost,
@@ -226,7 +230,7 @@ function readRememberedChallenge(): StoredChallenge | null {
 }
 
 export default function App() {
-  const { locale, appearance, t } = useLocale();
+  const { locale, appearance, countryCode, t } = useLocale();
   const shareInAppBrowserGate = useShareInAppBrowserGate();
   const [installId] = useState(() => getOrCreateInstallId());
   const [note, setNote] = useState('');
@@ -350,6 +354,8 @@ export default function App() {
   const [searchError, setSearchError] = useState('');
   const searchGenRef = useRef(0);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Catalog id waiting for the first root burn. */
+  const pendingSpecialIdRef = useRef<string | null>(null);
   const tRef = useRef(t);
   const localeRef = useRef(locale);
   tRef.current = t;
@@ -1083,6 +1089,19 @@ export default function App() {
           setNote('');
           setAltar(null);
           void notifyIndexBurn(burnTxid);
+          const specialId = pendingSpecialIdRef.current;
+          if (specialId && burnTxid && !parentBurnTxid && !isAmend) {
+            try {
+              await claimTempleSpecial({
+                installId,
+                specialId,
+                profileId: burnTxid,
+              });
+            } catch {
+              /* first-writer may have claimed; status refresh still helps */
+            }
+            pendingSpecialIdRef.current = null;
+          }
           await refreshStatus();
           const offeredFor =
             memorialDisplayName(historyNote, localeRef.current) ||
@@ -1092,10 +1111,15 @@ export default function App() {
             uiPowMs / 1000,
             localeRef.current,
           );
+          const firstSpecial = Boolean(specialId) && !isReoffer && !isAmend;
           setMsg({
             kind: 'success',
-            text:
-              !isReoffer && !isAmend
+            text: firstSpecial
+              ? tRef.current('specialFirstBurnDone', {
+                  duration,
+                  name: offeredFor,
+                })
+              : !isReoffer && !isAmend
                 ? tRef.current('setupDoneIn', {
                     duration,
                     name: offeredFor,
@@ -1439,10 +1463,43 @@ export default function App() {
   }, [templeSpecials, offers]);
 
   const rankedHomeEvents = rankTempleSpecials(
-    templeSpecials?.profiles,
+    filterSpecialsForViewer(templeSpecials?.profiles, {
+      countryCode,
+      locale,
+    }),
     specialOfferCounts,
-    5,
+    8,
   );
+
+  function altarFromUnboundSpecial(sp: TempleSpecialProfileUi): AltarFields {
+    return {
+      ...emptyAltarFields(),
+      name: (sp.name || '').trim(),
+      note: (sp.storyTitle || sp.name || '').trim(),
+      deathDate: (sp.effectiveEventDate || sp.eventDate || '').trim(),
+      birthPlace: (sp.birthPlace || '').trim(),
+      birthYear: (sp.birthDate || '').replace(/^-/, '').slice(0, 4),
+    };
+  }
+
+  function openUnboundSpecial(sp: TempleSpecialProfileUi) {
+    pendingSpecialIdRef.current = (sp.id || '').trim() || null;
+    const fields = altarFromUnboundSpecial(sp);
+    setAltar(fields);
+    setNote(fields.note);
+    setAltarOpen(true);
+  }
+
+  function openHomeEvent(ev: TempleSpecialProfileUi) {
+    if (isBoundSpecialRoot(ev.profileId)) {
+      void openDedicationSheet({
+        parentBurnTxid: ev.profileId,
+        memorialNote: ev.name || '',
+      });
+      return;
+    }
+    openUnboundSpecial(ev);
+  }
 
   const recentGroups = groupOffersByOriginal(offers).filter(
     g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
@@ -1533,6 +1590,19 @@ export default function App() {
       };
     });
     const localRows = rankSearchCandidates(localCandidates, query);
+    const visibleSpecials = filterSpecialsForViewer(templeSpecials?.profiles, {
+      countryCode,
+      locale,
+    });
+    const catalogCandidates: SearchCandidate[] = visibleSpecials
+      .filter(sp => !isBoundSpecialRoot(sp.profileId))
+      .map(sp => ({
+        txid: `special:${sp.id || sp.name || ''}`,
+        name: sp.name || '',
+        totalBurns: 0,
+        atMs: 0,
+      }));
+    const catalogRows = rankSearchCandidates(catalogCandidates, query);
 
     try {
       const indexGroups = await searchIndexMemorials(query, 20);
@@ -1545,11 +1615,17 @@ export default function App() {
         totalBurns: g.totalBurns,
       }));
       return {
-        rows: mergeSearchResults(indexRows, localRows),
+        rows: mergeSearchResults(
+          mergeSearchResults(indexRows, localRows),
+          catalogRows,
+        ),
         indexUnavailable: false,
       };
     } catch {
-      return { rows: localRows, indexUnavailable: true };
+      return {
+        rows: mergeSearchResults(localRows, catalogRows),
+        indexUnavailable: true,
+      };
     }
   }
 
@@ -1604,11 +1680,20 @@ export default function App() {
 
   function onSearchSelect(txid: string) {
     closeSearch();
+    if (txid.startsWith('special:')) {
+      const id = txid.slice('special:'.length);
+      const sp = (templeSpecials?.profiles ?? []).find(
+        p => (p.id || '') === id || (p.name || '') === id,
+      );
+      if (sp) openUnboundSpecial(sp);
+      return;
+    }
     void openDedicationSheet({ parentBurnTxid: txid, memorialNote: '' });
   }
 
   function onSearchAdd() {
     closeSearch();
+    pendingSpecialIdRef.current = null;
     setAltarOpen(true);
   }
 
@@ -1751,7 +1836,10 @@ export default function App() {
                       type="button"
                       className="link-more"
                       disabled={busy || apiOnline === false}
-                      onClick={() => setAltarOpen(true)}
+                      onClick={() => {
+                        pendingSpecialIdRef.current = null;
+                        setAltarOpen(true);
+                      }}
                     >
                       {t('btnAltarEdit')}
                     </button>
@@ -1814,22 +1902,19 @@ export default function App() {
             <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
             <ul className="home-events-list">
               {rankedHomeEvents.map((ev, idx) => (
-                <li key={ev.profileId} className="home-events-item">
+                <li key={ev.id || ev.profileId || ev.name || idx} className="home-events-item">
                   <button
                     type="button"
                     className="home-events-btn"
                     disabled={busy || apiOnline === false}
-                    onClick={() =>
-                      void openDedicationSheet({
-                        parentBurnTxid: ev.profileId,
-                        memorialNote: ev.name || '',
-                      })
-                    }
+                    onClick={() => openHomeEvent(ev)}
                   >
                     <span className="home-events-rank">{idx + 1}</span>
                     <span className="home-events-main">
                       <span className="home-events-name">
-                        {ev.name || ev.profileId.slice(0, 8)}
+                        {ev.name ||
+                          ev.id ||
+                          (ev.profileId ? ev.profileId.slice(0, 8) : '')}
                       </span>
                       {(() => {
                         const cd = specialCountdown(ev);
@@ -1869,7 +1954,9 @@ export default function App() {
                       })()}
                     </span>
                     <span className="home-events-count">
-                      {t('homeEventsOfferings', { n: ev.offerCount })}
+                      {ev.offerCount > 0
+                        ? t('homeEventsOfferings', { n: ev.offerCount })
+                        : t('homeEventsFirstBurn')}
                     </span>
                   </button>
                 </li>
@@ -2140,10 +2227,18 @@ export default function App() {
         <AltarSetupModal
           initial={altar}
           fallbackName={altar ? undefined : note.trim()}
+          setupHint={
+            pendingSpecialIdRef.current
+              ? t('specialFirstBurnHint')
+              : undefined
+          }
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
           relatedAltarOptions={relatedAltarOptions}
-          onClose={() => setAltarOpen(false)}
+          onClose={() => {
+            pendingSpecialIdRef.current = null;
+            setAltarOpen(false);
+          }}
           onSave={fields => {
             setAltar(fields);
             setNote(fields.note);

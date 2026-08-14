@@ -95,6 +95,8 @@ export type MessageKey =
   | 'miningOnNewTip'
   | 'offeredIn'
   | 'setupDoneIn'
+  | 'specialFirstBurnDone'
+  | 'specialFirstBurnHint'
   | 'recentTitle'
   | 'reofferHint'
   | 'originalBurnBadge'
@@ -154,6 +156,7 @@ export type MessageKey =
   | 'searchCta'
   | 'homeEventsTitle'
   | 'homeEventsOfferings'
+  | 'homeEventsFirstBurn'
   | 'homeEventsDaysUntil'
   | 'homeEventsToday'
   | 'homeEventsOngoing'
@@ -279,6 +282,10 @@ const en: Dict = {
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Flower offered successfully in {duration} for {name}',
   setupDoneIn: 'Profile set up in {duration} for {name}',
+  specialFirstBurnDone:
+    'You were the first to offer a flower for {name} in {duration}',
+  specialFirstBurnHint:
+    'No one has offered yet. Your flower becomes the first on-chain root — others can re-offer to it later.',
   recentTitle: 'Recent',
   reofferHint:
     'Re-offer a lotus for a memorial. Tap the burn count for history; swipe left for explorer or delete on this device.',
@@ -345,6 +352,7 @@ const en: Dict = {
   searchCta: 'Search',
   homeEventsTitle: 'Events',
   homeEventsOfferings: '{n} offerings',
+  homeEventsFirstBurn: 'Be the first to offer',
   homeEventsDaysUntil: 'in {n} days',
   homeEventsToday: 'Today',
   homeEventsOngoing: 'Ongoing',
@@ -471,6 +479,10 @@ const vi: Dict = {
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa thành công trong {duration} cho {name}',
   setupDoneIn: 'Đã thiết lập hồ sơ trong {duration} cho {name}',
+  specialFirstBurnDone:
+    'Bạn là người đầu tiên dâng hoa cho {name} trong {duration}',
+  specialFirstBurnHint:
+    'Chưa ai dâng. Bông hoa của bạn sẽ là gốc trên chuỗi — người sau có thể dâng tiếp.',
   recentTitle: 'Gần đây',
   reofferHint:
     'Dâng lại hoa sen cho ban thờ. Chạm số lần dâng để xem lịch sử; vuốt sang trái để mở explorer hoặc xóa khỏi máy này.',
@@ -537,6 +549,7 @@ const vi: Dict = {
   searchCta: 'Tìm kiếm',
   homeEventsTitle: 'Sự kiện',
   homeEventsOfferings: '{n} dâng hoa',
+  homeEventsFirstBurn: 'Hãy là người dâng đầu tiên',
   homeEventsDaysUntil: 'còn {n} ngày',
   homeEventsToday: 'Hôm nay',
   homeEventsOngoing: 'Đang diễn ra',
@@ -661,6 +674,9 @@ const zh: Dict = {
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花成功，用时 {duration}，献给 {name}',
   setupDoneIn: '档案已设置，用时 {duration}，献给 {name}',
+  specialFirstBurnDone: '你是第一位为 {name} 献花的人，用时 {duration}',
+  specialFirstBurnHint:
+    '还没有人献过。你的莲花会成为链上的根，后来者可以再献。',
   recentTitle: '最近',
   reofferHint:
     '可为灵位再次献花。点按献花次数查看历史；向左滑动可打开浏览器或从本机删除。',
@@ -725,6 +741,7 @@ const zh: Dict = {
   searchCta: '搜索',
   homeEventsTitle: '活动',
   homeEventsOfferings: '{n} 次供奉',
+  homeEventsFirstBurn: '成为第一位献花者',
   homeEventsDaysUntil: '还有 {n} 天',
   homeEventsToday: '今天',
   homeEventsOngoing: '进行中',
