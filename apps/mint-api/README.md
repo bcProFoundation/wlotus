@@ -48,6 +48,40 @@ does not save a transaction):
 `fund-tip-fee-wallets` pre-places several sized fuels on the mint (change on
 desk) so offerings often skip the auto top-up.
 
+### Custody: one mnemonic today, split keys later
+
+Addresses are already separate. **Keys are not.** One `MINT_MNEMONIC` derives
+the desk (non-HD) and every tip HD account, and mint-api loads both. A
+compromise of the process can spend the treasury, even though remint never
+touches desk UTXOs.
+
+Keep them the same for now (auto-peel + one-secret ops). Split when the desk
+holds value worth stealing.
+
+| Role | Must be hot? | Today | Later |
+|------|----------------|-------|--------|
+| **Tip / mint keys** | Yes — remint and burn are in the request path | Same mnemonic | Stay in mint-api (own secret) |
+| **Desk / treasury key** | No — only peels ~40 XEC onto an empty tip | Same mnemonic, same process | Different secret, not on the mint host |
+
+**Why one desk funds all tips:** remint cannot attach a large UTXO, so treasury
+cannot sit on a remint-capable wallet. Per-tip HD keys still isolate fuel
+across parallel races. Pre-place `MINT_FUELS_PER_TIP` coins per tip; do not
+move treasury onto the tips.
+
+**When splitting keys:**
+
+1. Give tips their own mnemonic (or `TIP_SK` per account). mint-api keeps only
+   those keys.
+2. Keep the desk mnemonic off the mint host. Refill tips with
+   `fund-tip-fee-wallets` from a machine that has the desk key.
+3. Offerings fail closed when a tip is empty until ops peels from the desk
+   (no in-process auto-peel).
+4. Optional middle ground: mint-api holds a **small float** funding key (a few
+   thousand XEC) and the real desk stays cold.
+
+Do not treat address separation as key separation — anyone with today’s
+`MINT_MNEMONIC` can derive the desk and all 28 tip accounts.
+
 ```
 POST /api/challenge  { installId, note? }  → preimage + bits
   device mines nonce

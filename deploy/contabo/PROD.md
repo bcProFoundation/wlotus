@@ -210,6 +210,8 @@ TIER=wlotus BATON_INDEX=0 TOKEN_ID=$(jq -r .tokenId deployments/mainnet-wlotus.j
 
 ```bash
 # Fee wallet — NEW mnemonic (do not reuse test desk)
+# One phrase derives desk treasury + per-tip mint keys (keep shared for now).
+# Later split: apps/mint-api/README.md § Custody.
 sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
 MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787

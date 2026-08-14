@@ -83,7 +83,7 @@ Implementation: `src/mint/followMintBaton.ts`.
 | `contracts/` | Spedn remint covenants (`WlotusPowRemintMooreTipTemple`) |
 | `src/params/consensus.ts` | Shared constants |
 | `src/lib/moore.ts` | Moore bit schedule |
-| `apps/mint-api/` | Sponsored challenge / remint / burn desk |
+| `apps/mint-api/` | Sponsored challenge / remint / burn desk. One mnemonic derives desk treasury + per-tip HD fee keys today; split those secrets later — [mint-api README § Custody](../apps/mint-api/README.md#custody-one-mnemonic-today-split-keys-later). |
 | `apps/web/` | Offerings SPA |
 | `scripts/create-wlotus-token.ts` | Genesis (`WLOTUS` / `dWLOTUS`) |
 

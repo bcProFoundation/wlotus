@@ -8,6 +8,10 @@
  *
  * so tip 0 and tip 1 never share a fee UTXO. The tip key signs remint fuel and
  * therefore also receives the minted Prayer dust for that remint.
+ *
+ * These keys must stay hot in mint-api. The desk key does not — today it is
+ * the same mnemonic for auto-peel. Future: separate secrets so a mint-api
+ * compromise cannot drain treasury (apps/mint-api/README.md § Custody).
  */
 import { toHex } from 'ecash-lib';
 import { Wallet } from 'ecash-wallet';
