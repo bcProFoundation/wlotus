@@ -25,7 +25,7 @@ describe('specialCountries', () => {
     expect(normalizeSpecialCountries('VN, CN')).toEqual(['VN', 'CN']);
   });
 
-  it('maps locale to local countries for diaspora', () => {
+  it('maps locale to local countries for that language region', () => {
     expect(countriesFromLocale('vi')).toEqual(['VN']);
     expect(countriesFromLocale('zh-Hans')).toEqual([
       'CN',
@@ -44,14 +44,29 @@ describe('specialCountries', () => {
     expect(specialVisibleToViewer(undefined, { locale: 'zh' })).toBe(true);
   });
 
-  it('matches IP country or locale-implied country', () => {
+  it('uses the selected language as the region, not IP ∪ locale', () => {
     const vn = ['VN'];
+    const zh = ['CN', 'TW', 'HK', 'MO', 'SG'];
+    // Language switch must drop the other country's calendar.
     expect(specialVisibleToViewer(vn, { countryCode: 'VN', locale: 'en' })).toBe(
+      false,
+    );
+    expect(specialVisibleToViewer(zh, { countryCode: 'VN', locale: 'vi' })).toBe(
+      false,
+    );
+    expect(specialVisibleToViewer(vn, { countryCode: 'VN', locale: 'vi' })).toBe(
       true,
     );
+    expect(specialVisibleToViewer(zh, { countryCode: 'VN', locale: 'zh' })).toBe(
+      true,
+    );
+    // Diaspora: vi in the US still sees Vietnam, not US-only events.
     expect(specialVisibleToViewer(vn, { countryCode: 'US', locale: 'vi' })).toBe(
       true,
     );
+    expect(
+      specialVisibleToViewer(['US'], { countryCode: 'US', locale: 'vi' }),
+    ).toBe(false);
     expect(specialVisibleToViewer(vn, { countryCode: 'US', locale: 'en' })).toBe(
       false,
     );
@@ -62,5 +77,27 @@ describe('specialCountries', () => {
     expect(
       specialVisibleToViewer(vn, { countryCode: null, locale: 'en' }),
     ).toBe(false);
+  });
+
+  it('narrows to IP country when it sits in the language region', () => {
+    expect(
+      specialVisibleToViewer(['US'], { countryCode: 'US', locale: 'en' }),
+    ).toBe(true);
+    expect(
+      specialVisibleToViewer(['AU', 'NZ'], { countryCode: 'US', locale: 'en' }),
+    ).toBe(false);
+    expect(
+      specialVisibleToViewer(['AU', 'NZ'], { countryCode: 'AU', locale: 'en' }),
+    ).toBe(true);
+    expect(
+      specialVisibleToViewer(['US'], { countryCode: 'AU', locale: 'en' }),
+    ).toBe(false);
+    // English-speaking list still matches a US viewer (Halloween / All Souls).
+    expect(
+      specialVisibleToViewer([...ENGLISH_SPEAKING_COUNTRIES], {
+        countryCode: 'US',
+        locale: 'en',
+      }),
+    ).toBe(true);
   });
 });
