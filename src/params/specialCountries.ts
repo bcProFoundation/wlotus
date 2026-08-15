@@ -15,7 +15,9 @@
  * Visibility (home events list only — share links and burns stay open):
  *   Global → everyone
  *   Else → selected language's region, then that country if IP is in-region.
- *   Picking English must not keep Vietnamese events (no IP ∪ locale union).
+ *   Picking English must not keep Vietnamese *or* Chinese events.
+ *   Singapore is on both ZH and EN catalog lists (bilingual) but must not
+ *   be implied by locale, or `en` matches every Chinese special via SG.
  */
 
 /** Tokens that mean "show everywhere". */
@@ -41,7 +43,7 @@ export const CHINESE_SPEAKING_COUNTRIES = [
 
 /**
  * English-speaking countries for All Souls / Remembrance.
- * Singapore is also in the Chinese list (bilingual).
+ * Singapore is also in the Chinese catalog list (bilingual).
  */
 export const ENGLISH_SPEAKING_COUNTRIES = [
   'US',
@@ -54,6 +56,14 @@ export const ENGLISH_SPEAKING_COUNTRIES = [
   'PH',
   'SG',
 ] as const;
+
+/**
+ * Do not imply SG from `en` / `zh`. Catalog rows still list SG so an
+ * in-region IP can narrow; locale overlap would leak ZH events into English
+ * (and EN events into Chinese) for anyone whose IP is outside the region
+ * (typical: Vietnam user with English UI).
+ */
+const LOCALE_SKIP_OVERLAP = new Set(['SG']);
 
 /** Common names → ISO 3166-1 alpha-2. Unknown 2-letter codes pass through. */
 const COUNTRY_ALIASES: Record<string, string> = {
@@ -156,8 +166,12 @@ export function countriesFromLocale(
     .trim()
     .toLowerCase();
   if (l.startsWith('vi')) return [...VIETNAM_COUNTRIES];
-  if (l.startsWith('zh')) return [...CHINESE_SPEAKING_COUNTRIES];
-  if (l.startsWith('en')) return [...ENGLISH_SPEAKING_COUNTRIES];
+  if (l.startsWith('zh')) {
+    return CHINESE_SPEAKING_COUNTRIES.filter(c => !LOCALE_SKIP_OVERLAP.has(c));
+  }
+  if (l.startsWith('en')) {
+    return ENGLISH_SPEAKING_COUNTRIES.filter(c => !LOCALE_SKIP_OVERLAP.has(c));
+  }
   return [];
 }
 
