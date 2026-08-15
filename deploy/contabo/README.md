@@ -534,7 +534,7 @@ Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → `/var/www
 | **Automatic** | Push to `master` that touches `apps/mint-api/**`, `apps/dana-index/**`, `src/**`, or lockfile |
 | **Manual** | Actions → **Deploy mint-api (test)** → **Run workflow** (branch **master**; optional SHA) |
 
-Steps: SSH as `deploy` → `chown` `/opt/wlotus` (so `.git/objects` is writable) → backup live dryrun JSON + claims → `git reset --hard` that SHA → restore JSON → `npm ci` → `systemctl restart wlotus-mint-api` (dana-index too when sudoers allows) → `GET /health`.
+Steps: SSH as `deploy` → `chown` `/opt/wlotus` (so `.git/objects` is writable) → backup live dryrun JSON + claims → `git reset --hard` that SHA → restore JSON → `npm ci` → `systemctl restart wlotus-mint-api` (dana-index too when sudoers allows) → wait until the unit is active and `GET /health` succeeds (tsx needs a few seconds to bind `:8787`).
 
 **`sudo: a password is required`:** CI uses `sudo -n`. Ubuntu usrmerge makes `/bin/systemctl` resolve to `/usr/bin/systemctl`, which does **not** match a sudoers rule that lists only `/bin/systemctl`. Fix once as **root** on the test VM (does not require a full bootstrap):
 
@@ -650,6 +650,7 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | 403 / blank page | nginx or empty dist | `ls /var/www/wlotus-test`; re-run workflow |
 | Deploy mint-api (test): `sudo: a password is required` | `/etc/sudoers.d/wlotus-deploy` missing, or lists only `/bin/systemctl` while sudo matches `/usr/bin/systemctl` | As root: `sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh` then re-run the workflow. Do not add `NOPASSWD: ALL`. |
 | Deploy mint-api (test): `insufficient permission … .git/objects` / unpack-objects failed | Clone was created or fetched as **root**; `git fetch` ran before `chown` | Workflow now chowns first. One-time on the VM: `sudo chown -R deploy:deploy /opt/wlotus`. Re-run after that PR is on master. |
+| Deploy mint-api (test): `curl: (7) Failed to connect … 8787` | `systemctl restart` returns when tsx is spawned (`Type=simple`); HTTP is not listening yet. `curl --retry` does not retry connection refused | Workflow now waits for `is-active` then polls `/health` up to 45s. |
 
 ---
 
