@@ -241,8 +241,8 @@ a {
 }
 
 .brand-main .brand-mark--on-dark {
-  height: 72%;
-  max-width: 78%;
+  height: 62%;
+  max-width: 68%;
 }
 
 /* Light cream uses a baked rounded PNG; dark/wood use the transparent white W. */
@@ -275,8 +275,8 @@ a {
 
 /* Square plate fills the badge. Transparent lotus has no padding — scale it, not the plate. */
 .brand-mark-badge .brand-mark--on-dark {
-  width: 72%;
-  height: 72%;
+  width: 62%;
+  height: 62%;
 }
 
 .brand-letter {
