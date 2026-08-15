@@ -11,7 +11,7 @@
 #   CONTABO_REPO_PATH    — clone on VM; default /opt/wlotus
 #
 # Preserves live dryrun baton JSON + first-burn claims, then:
-#   chown deploy → git fetch/reset → npm ci → systemctl restart mint-api
+#   chown deploy → git fetch/reset → npm ci → systemctl restart mint-api → wait /health
 #
 # One-time VM setup: deploy/contabo/README.md (install-wlotus-deploy-sudoers.sh)
 
@@ -193,6 +193,33 @@ jobs:
           restart_unit wlotus-mint-api.service 1
           restart_unit wlotus-dana-index.service 0
           echo "mint-api at $(git rev-parse --short HEAD)"
-          curl -fsS --retry 8 --retry-delay 2 http://127.0.0.1:8787/health
-          echo
+          # Type=simple: systemctl restart returns when tsx is spawned, not when
+          # :8787 is listening. curl --retry does not retry connection refused.
+          echo "waiting for systemd active + http://127.0.0.1:8787/health"
+          i=0
+          while [ "$i" -lt 15 ]; do
+            i=$((i + 1))
+            systemctl is-active --quiet wlotus-mint-api.service && break
+            sleep 1
+          done
+          if ! systemctl is-active --quiet wlotus-mint-api.service; then
+            echo "::error::wlotus-mint-api.service is not active after restart"
+            systemctl status wlotus-mint-api.service --no-pager -l || true
+            exit 1
+          fi
+          i=0
+          while [ "$i" -lt 45 ]; do
+            i=$((i + 1))
+            if curl -fsS --max-time 2 http://127.0.0.1:8787/health 2>/dev/null; then
+              echo
+              echo "health OK after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 45 ]; then
+              echo "::error::mint-api did not listen on :8787 within 45s"
+              systemctl status wlotus-mint-api.service --no-pager -l || true
+              exit 1
+            fi
+            sleep 1
+          done
           REMOTE
