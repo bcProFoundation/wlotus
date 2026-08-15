@@ -2096,14 +2096,23 @@ a {
 }
 
 [data-theme='wood'] .glass-nav-shell {
-  --glass-fill: color-mix(in srgb, #2a1810 46%, transparent);
-  --glass-rim: color-mix(in srgb, #e8c98a 22%, transparent);
-  --glass-shine: color-mix(in srgb, #f3e2b8 28%, transparent);
-  --glass-blob: color-mix(in srgb, #e8c98a 18%, transparent);
-  --glass-ink: color-mix(in srgb, #e8d9c4 68%, transparent);
+  --glass-fill: color-mix(in srgb, #2a1810 26%, transparent);
+  --glass-rim: color-mix(in srgb, #e8d9c4 14%, transparent);
+  --glass-shine: color-mix(in srgb, #f6edd8 14%, transparent);
+  --glass-blob: color-mix(in srgb, #ffffff 12%, transparent);
+  --glass-ink: color-mix(in srgb, #e8d9c4 70%, transparent);
   --glass-ink-active: #f6edd8;
-  --glass-shadow: 0 10px 28px rgba(8, 4, 2, 0.38),
-    0 2px 8px rgba(8, 4, 2, 0.22);
+  --glass-shadow: 0 6px 16px rgba(8, 4, 2, 0.16),
+    0 1px 4px rgba(8, 4, 2, 0.08);
+  background: var(--glass-fill);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+}
+
+[data-theme='wood'] .glass-nav-blob {
+  background: var(--glass-blob);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent);
 }
 
 /* Lunar calendar */
