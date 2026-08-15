@@ -130,10 +130,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Vu Lan Báo Hiếu',
         body:
-          'Ngày xưa, Tôn giả Mục Kiền Liên — đệ tử thần thông đệ nhất của Đức Phật — dùng thiên nhãn tìm mẹ. Ngài thấy mẹ đang chịu kiếp ngạ quỷ: cổ họng nhỏ như kim, bụng đói không no. Ngài dâng cơm, nhưng thức ăn hóa thành lửa.\n\nĐức Phật dạy: một mình không đủ. Hãy đợi Rằm tháng Bảy, ngày chư Tăng tự tứ, thiết lễ Vu Lan Bồn — nhờ sức chúng tăng mười phương, mẹ mới được siêu thoát.\n\nTừ đó, Rằm tháng Bảy là ngày Báo Hiếu: dâng hoa, tưởng nhớ ông bà cha mẹ, hồi hướng công đức. Một bông sen W Lotus bạn dâng hôm nay cũng là một lời tri ân — hoa tưởng niệm không tàn.',
+          'Ngày xưa, Tôn giả Mục Kiền Liên — đệ tử thần thông đệ nhất của Đức Phật — dùng thiên nhãn tìm mẹ. Ngài thấy mẹ đang chịu kiếp ngạ quỷ: cổ họng nhỏ như kim, bụng đói không no. Ngài dâng cơm, nhưng thức ăn hóa thành lửa.\n\nĐức Phật dạy: một mình không đủ. Hãy đợi Rằm tháng Bảy, ngày chư Tăng tự tứ, thiết lễ Vu Lan Bồn — nhờ sức chúng tăng mười phương, mẹ mới được siêu thoát.\n\nTừ đó, Rằm tháng Bảy là ngày Báo Hiếu: dâng hoa, tưởng nhớ ông bà cha mẹ, hồi hướng công đức. Mỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà cha mẹ được siêu thoát, nguyện cho nhà nhà được bình an.',
         titleEn: 'Vu Lan — Filial Gratitude',
         bodyEn:
-          'Long ago, Venerable Maudgalyayana — foremost in supernatural power among the Buddha’s disciples — sought his mother with the divine eye. He found her reborn as a hungry ghost: throat thin as a needle, never sated. Food he offered turned to fire.\n\nThe Buddha taught: one person alone cannot lift such karma. Wait for the full moon of the seventh lunar month, when the Sangha completes the rains retreat. Offer the Ullambana rite; with the merit of the community of monastics, her suffering can be eased.\n\nSo the fifteenth of the seventh month became a day of filial gratitude: flowers, remembrance of parents and ancestors, dedication of merit. The lotus you offer on W Lotus is one more word of thanks — a flower of remembrance that does not fade.',
+          'Long ago, Venerable Maudgalyayana — foremost in supernatural power among the Buddha’s disciples — sought his mother with the divine eye. He found her reborn as a hungry ghost: throat thin as a needle, never sated. Food he offered turned to fire.\n\nThe Buddha taught: one person alone cannot lift such karma. Wait for the full moon of the seventh lunar month, when the Sangha completes the rains retreat. Offer the Ullambana rite; with the merit of the community of monastics, her suffering can be eased.\n\nSo the fifteenth of the seventh month became a day of filial gratitude: flowers, remembrance of parents and ancestors, dedication of merit. Each lotus offered today is also a prayer: that parents and ancestors may be at peace, and that every home may find peace.',
       },
     },
     {
@@ -153,10 +153,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Xá Tội Vong Nhân',
         body:
-          'Tháng Bảy âm lịch, dân gian gọi là tháng cô hồn. Cửa Quỷ Môn mở: những vong hồn không nơi nương tựa — chết oan, lạc lối, không người thờ cúng — được trở về cõi dương một thời.\n\nNgười sống bày mâm chay, cháo, muối… bố thí ngoài trời, không chỉ cho tổ tiên nhà mình mà cho cả những linh hồn lang thang. Đó là lòng từ bi: dù tội nghiệp nặng đến đâu, vẫn có ngày được xá, được no một bữa, được nhớ tới.\n\nCúng cô hồn không phải sợ hãi — là sẻ chia. Một bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho mọi hương linh được siêu thoát, nguyện cho nhà nhà bình an.',
+          'Tháng Bảy âm lịch, dân gian gọi là tháng cô hồn. Cửa Quỷ Môn mở: những vong hồn không nơi nương tựa — chết oan, lạc lối, không người thờ cúng — được trở về cõi dương một thời.\n\nNgười sống bày mâm chay, cháo, muối… bố thí ngoài trời, không chỉ cho tổ tiên nhà mình mà cho cả những linh hồn lang thang. Đó là lòng từ bi: dù tội nghiệp nặng đến đâu, vẫn có ngày được xá, được no một bữa, được nhớ tới.\n\nCúng cô hồn không phải sợ hãi mà là sẻ chia. Mỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho mọi hương linh được siêu thoát, nguyện cho nhà nhà được bình an.',
         titleEn: 'Pardon for Wandering Spirits',
         bodyEn:
-          'In the seventh lunar month, folk tradition speaks of the Hungry Ghost season. The ghost gate opens: spirits without a home — the wronged, the lost, those with no one to offer incense — may walk the living world for a time.\n\nPeople set out simple vegetarian offerings outdoors — not only for their own ancestors, but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear — it is sharing. The lotus you offer today is also a wish: that every spirit finds peace, and every home finds calm.',
+          'In the seventh lunar month, folk tradition speaks of the Hungry Ghost season. The ghost gate opens: spirits without a home — the wronged, the lost, those with no one to offer incense — may walk the living world for a time.\n\nPeople set out simple vegetarian offerings outdoors — not only for their own ancestors, but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear but sharing. Each lotus offered today is also a prayer: that every spirit may be at peace, and that every home may find peace.',
       },
     },
     {
@@ -173,10 +173,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tết Thanh Minh',
         body:
-          'Tiết Thanh Minh — trời trong, cây cỏ đâm chồi. Người Việt sửa sang phần mộ ông bà: nhổ cỏ, đắp đất, thắp hương, dâng hoa. Không phải ngày sợ hãi, mà là ngày về nhà với người đã khuất.\n\nTảo mộ rồi, cả nhà ngồi lại, kể chuyện người xưa, nhắc con cháu đừng quên nguồn cội. Một nắm đất, một nén hương, một bông hoa — đủ để nói: chúng con vẫn nhớ.\n\nSen W Lotus dâng hôm nay cũng là một lần tảo mộ trên chuỗi khối: hoa không tàn theo mưa nắng, lời tưởng niệm còn lại cho đời sau.',
+          'Tiết Thanh Minh — trời trong, cây cỏ đâm chồi. Người Việt sửa sang phần mộ ông bà: nhổ cỏ, đắp đất, thắp hương, dâng hoa. Không phải ngày sợ hãi, mà là ngày về nhà với người đã khuất.\n\nTảo mộ rồi, cả nhà ngồi lại, kể chuyện người xưa, nhắc con cháu đừng quên nguồn cội. Một nắm đất, một nén hương, một bông hoa — đủ để nói: chúng con vẫn nhớ.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà được nhớ, nguyện cho nhà nhà được bình an.',
         titleEn: 'Thanh Minh — Visiting the Graves',
         bodyEn:
-          'Thanh Minh is the clear-and-bright solar term, when families in Vietnam tend ancestral graves: pull weeds, add earth, light incense, offer flowers. It is not a day of fear, but a homecoming with those who came before.\n\nAfter the tombs are swept, people sit together and tell the old stories so children will not forget their roots. A handful of soil, a stick of incense, a flower — enough to say: we still remember.\n\nThe lotus you offer on W Lotus is one more grave-visit on the chain: a flower that rain cannot fade, a remembrance that remains.',
+          'Thanh Minh is the clear-and-bright solar term, when families in Vietnam tend ancestral graves: pull weeds, add earth, light incense, offer flowers. It is not a day of fear, but a homecoming with those who came before.\n\nAfter the tombs are swept, people sit together and tell the old stories so children will not forget their roots. A handful of soil, a stick of incense, a flower — enough to say: we still remember.\n\nEach lotus offered today is also a prayer: that those who came before are remembered, and that every home may find peace.',
       },
     },
     {
@@ -194,12 +194,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '盂兰盆 — 报恩',
         titleZh: '盂兰盆 — 报恩',
         body:
-          '昔日目连尊者以天眼寻母，见其堕饿鬼道：咽细如针，腹饥难饱。目连奉食，食至口边即化为火。\n\n佛言：一人之力不足。待七月十五僧自恣日，设盂兰盆供，仗十方众僧威德，母得解脱。\n\n自此七月十五成为报恩之日：供花、忆念父母祖先、回向功德。你在 W Lotus 献上的一朵莲花，也是一句谢谢——不凋的纪念。',
+          '昔日目连尊者以天眼寻母，见其堕饿鬼道：咽细如针，腹饥难饱。目连奉食，食至口边即化为火。\n\n佛言：一人之力不足。待七月十五僧自恣日，设盂兰盆供，仗十方众僧威德，母得解脱。\n\n自此七月十五成为报恩之日：供花、忆念父母祖先、回向功德。今日每一朵莲花，也是一句愿：愿父母祖先得安，愿家家得安宁。',
         bodyZh:
-          '昔日目连尊者以天眼寻母，见其堕饿鬼道：咽细如针，腹饥难饱。目连奉食，食至口边即化为火。\n\n佛言：一人之力不足。待七月十五僧自恣日，设盂兰盆供，仗十方众僧威德，母得解脱。\n\n自此七月十五成为报恩之日：供花、忆念父母祖先、回向功德。你在 W Lotus 献上的一朵莲花，也是一句谢谢——不凋的纪念。',
+          '昔日目连尊者以天眼寻母，见其堕饿鬼道：咽细如针，腹饥难饱。目连奉食，食至口边即化为火。\n\n佛言：一人之力不足。待七月十五僧自恣日，设盂兰盆供，仗十方众僧威德，母得解脱。\n\n自此七月十五成为报恩之日：供花、忆念父母祖先、回向功德。今日每一朵莲花，也是一句愿：愿父母祖先得安，愿家家得安宁。',
         titleEn: 'Ullambana — Filial Gratitude',
         bodyEn:
-          'Maudgalyayana searched for his mother with the divine eye and found her among the hungry ghosts. Food he offered turned to fire.\n\nThe Buddha taught him to wait for the fifteenth of the seventh lunar month, when the Sangha completes the rains retreat, and to offer the Ullambana rite so the merit of the community could ease her suffering.\n\nThat full moon became a day of filial gratitude. The lotus you offer on W Lotus is one more word of thanks — a flower of remembrance that does not fade.',
+          'Maudgalyayana searched for his mother with the divine eye and found her among the hungry ghosts. Food he offered turned to fire.\n\nThe Buddha taught him to wait for the fifteenth of the seventh lunar month, when the Sangha completes the rains retreat, and to offer the Ullambana rite so the merit of the community could ease her suffering.\n\nThat full moon became a day of filial gratitude. Each lotus offered today is also a prayer: that parents and ancestors may be at peace, and that every home may find peace.',
       },
     },
     {
@@ -220,12 +220,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '中元 — 普度',
         titleZh: '中元 — 普度',
         body:
-          '农历七月，民间称为鬼月。鬼门开，无祀孤魂——枉死、迷路、无人奉祀者——得返阳间一时。中元节在七月十五，是这月的高峰。\n\n活人在户外设素食、香烛，不只祭自家祖先，也布施一切流浪的灵魂。这是慈悲：再重的业，也有一日得赦、得一餐、被人想起。\n\n供孤不是恐惧，是分享。今日一朵莲花，也是愿一切有情得安、家家得宁。',
+          '农历七月，民间称为鬼月。鬼门开，无祀孤魂——枉死、迷路、无人奉祀者——得返阳间一时。中元节在七月十五，是这月的高峰。\n\n活人在户外设素食、香烛，不只祭自家祖先，也布施一切流浪的灵魂。这是慈悲：再重的业，也有一日得赦、得一餐、被人想起。\n\n供孤不是恐惧，而是分享。今日每一朵莲花，也是一句愿：愿一切有情得安，愿家家得安宁。',
         bodyZh:
-          '农历七月，民间称为鬼月。鬼门开，无祀孤魂——枉死、迷路、无人奉祀者——得返阳间一时。中元节在七月十五，是这月的高峰。\n\n活人在户外设素食、香烛，不只祭自家祖先，也布施一切流浪的灵魂。这是慈悲：再重的业，也有一日得赦、得一餐、被人想起。\n\n供孤不是恐惧，是分享。今日一朵莲花，也是愿一切有情得安、家家得宁。',
+          '农历七月，民间称为鬼月。鬼门开，无祀孤魂——枉死、迷路、无人奉祀者——得返阳间一时。中元节在七月十五，是这月的高峰。\n\n活人在户外设素食、香烛，不只祭自家祖先，也布施一切流浪的灵魂。这是慈悲：再重的业，也有一日得赦、得一餐、被人想起。\n\n供孤不是恐惧，而是分享。今日每一朵莲花，也是一句愿：愿一切有情得安，愿家家得安宁。',
         titleEn: 'Zhongyuan — Feeding Lonely Spirits',
         bodyEn:
-          'The seventh lunar month is Ghost Month. The gate opens: unattended spirits — the wronged, the lost, those with no one to offer incense — may walk among the living for a time. Zhongyuan on the fifteenth is the peak of that month.\n\nPeople set out simple vegetarian offerings outdoors, not only for their own ancestors but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear — it is sharing. The lotus you offer today is also a wish that every being finds peace.',
+          'The seventh lunar month is Ghost Month. The gate opens: unattended spirits — the wronged, the lost, those with no one to offer incense — may walk among the living for a time. Zhongyuan on the fifteenth is the peak of that month.\n\nPeople set out simple vegetarian offerings outdoors, not only for their own ancestors but for every wandering soul. It is compassion: even heavy karma is granted a day of pardon, a meal, a moment of being remembered.\n\nOffering to lonely spirits is not fear but sharing. Each lotus offered today is also a prayer: that every being may be at peace, and that every home may find peace.',
       },
     },
     {
@@ -243,12 +243,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '清明 — 扫墓',
         titleZh: '清明 — 扫墓',
         body:
-          '清明时节，春草发、天色清。家人上坟：除草、培土、献花、上香。不是哀伤的节日，而是与先人的一次团聚。\n\n扫墓之后，把旧事讲给孩子听，让根还在。一抔土、一炷香、一枝花，已足够说：我们还记得。\n\nW Lotus 上的莲花，是链上的一次扫墓——雨打不凋，纪念仍在。',
+          '清明时节，春草发、天色清。家人上坟：除草、培土、献花、上香。不是哀伤的节日，而是与先人的一次团聚。\n\n扫墓之后，把旧事讲给孩子听，让根还在。一抔土、一炷香、一枝花，已足够说：我们还记得。\n\n今日每一朵莲花，也是一句愿：愿先人被记得，愿家家得安宁。',
         bodyZh:
-          '清明时节，春草发、天色清。家人上坟：除草、培土、献花、上香。不是哀伤的节日，而是与先人的一次团聚。\n\n扫墓之后，把旧事讲给孩子听，让根还在。一抔土、一炷香、一枝花，已足够说：我们还记得。\n\nW Lotus 上的莲花，是链上的一次扫墓——雨打不凋，纪念仍在。',
+          '清明时节，春草发、天色清。家人上坟：除草、培土、献花、上香。不是哀伤的节日，而是与先人的一次团聚。\n\n扫墓之后，把旧事讲给孩子听，让根还在。一抔土、一炷香、一枝花，已足够说：我们还记得。\n\n今日每一朵莲花，也是一句愿：愿先人被记得，愿家家得安宁。',
         titleEn: 'Qingming — Tomb Sweeping',
         bodyEn:
-          'At Qingming the air clears and spring returns. Families visit ancestral graves: pull weeds, add earth, offer flowers and incense. It is not only mourning — it is a reunion with those who came before.\n\nAfter the tombs are swept, the old stories are told so children will not forget their roots. A handful of soil, incense, a flower — enough to say: we still remember.\n\nThe lotus you offer on W Lotus is a tomb-sweeping on the chain: a flower rain cannot fade.',
+          'At Qingming the air clears and spring returns. Families visit ancestral graves: pull weeds, add earth, offer flowers and incense. It is not only mourning — it is a reunion with those who came before.\n\nAfter the tombs are swept, the old stories are told so children will not forget their roots. A handful of soil, incense, a flower — enough to say: we still remember.\n\nEach lotus offered today is also a prayer: that those who came before are remembered, and that every home may find peace.',
       },
     },
     {
@@ -266,9 +266,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: "All Souls' Day",
         titleEn: "All Souls' Day",
         body:
-          'On the second of November, churches and families remember all the dead — not only the famous, but every soul still held in love. People visit graves, light candles, and lay flowers.\n\nThe day follows All Saints. Together they say: the living and the dead remain one household. A prayer, a name spoken aloud, a flower on the stone.\n\nThe lotus you offer on W Lotus is that flower kept: a remembrance that does not wilt, for every soul you still carry.',
+          'On the second of November, churches and families remember all the dead — not only the famous, but every soul still held in love. People visit graves, light candles, and lay flowers.\n\nThe day follows All Saints. Together they say: the living and the dead remain one household. A prayer, a name spoken aloud, a flower on the stone.\n\nEach lotus offered today is also a prayer: for every soul still held in love, and that every home may find peace.',
         bodyEn:
-          'On the second of November, churches and families remember all the dead — not only the famous, but every soul still held in love. People visit graves, light candles, and lay flowers.\n\nThe day follows All Saints. Together they say: the living and the dead remain one household. A prayer, a name spoken aloud, a flower on the stone.\n\nThe lotus you offer on W Lotus is that flower kept: a remembrance that does not wilt, for every soul you still carry.',
+          'On the second of November, churches and families remember all the dead — not only the famous, but every soul still held in love. People visit graves, light candles, and lay flowers.\n\nThe day follows All Saints. Together they say: the living and the dead remain one household. A prayer, a name spoken aloud, a flower on the stone.\n\nEach lotus offered today is also a prayer: for every soul still held in love, and that every home may find peace.',
       },
     },
     {
@@ -286,9 +286,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: 'Remembrance Day',
         titleEn: 'Remembrance Day',
         body:
-          'At the eleventh hour of the eleventh day of the eleventh month, many English-speaking countries fall silent for those who died in war. In the United States the same date is Veterans Day; across the Commonwealth it is Remembrance Day.\n\nA poppy, a name on a wall, a minute of quiet. The point is not victory — it is not forgetting people who did not come home.\n\nA lotus on W Lotus can stand with that silence: one more flower for the dead, kept on the chain.',
+          'At the eleventh hour of the eleventh day of the eleventh month, many English-speaking countries fall silent for those who died in war. In the United States the same date is Veterans Day; across the Commonwealth it is Remembrance Day.\n\nA poppy, a name on a wall, a minute of quiet. The point is not victory — it is not forgetting people who did not come home.\n\nEach lotus offered today is also a prayer: that they are not forgotten, and that every home may find peace.',
         bodyEn:
-          'At the eleventh hour of the eleventh day of the eleventh month, many English-speaking countries fall silent for those who died in war. In the United States the same date is Veterans Day; across the Commonwealth it is Remembrance Day.\n\nA poppy, a name on a wall, a minute of quiet. The point is not victory — it is not forgetting people who did not come home.\n\nA lotus on W Lotus can stand with that silence: one more flower for the dead, kept on the chain.',
+          'At the eleventh hour of the eleventh day of the eleventh month, many English-speaking countries fall silent for those who died in war. In the United States the same date is Veterans Day; across the Commonwealth it is Remembrance Day.\n\nA poppy, a name on a wall, a minute of quiet. The point is not victory — it is not forgetting people who did not come home.\n\nEach lotus offered today is also a prayer: that they are not forgotten, and that every home may find peace.',
       },
     },
     {
@@ -305,10 +305,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Giỗ Tổ Hùng Vương',
         body:
-          'Mùng mười tháng Ba âm lịch, người Việt nhớ các Vua Hùng — tổ của giống nòi. Không phải giỗ một người, mà giỗ nguồn cội: đất Phong Châu, trăm trứng, núi Nghĩa Lĩnh.\n\nDâng hoa hôm nay là nhớ tổ tiên chung, trước khi nhớ ông bà nhà mình.',
+          'Mùng mười tháng Ba âm lịch, người Việt nhớ các Vua Hùng — tổ của giống nòi. Không phải giỗ một người, mà giỗ nguồn cội: đất Phong Châu, trăm trứng, núi Nghĩa Lĩnh.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện nhớ tổ tiên chung, nguyện cho nhà nhà được bình an.',
         titleEn: 'Hung Kings’ Anniversary',
         bodyEn:
-          'On the tenth of the third lunar month, Vietnamese people remember the Hùng Kings — the ancestral founders. It is not one person’s death day, but a day for the shared origin of the people.\n\nThe lotus you offer is for those first ancestors, before the ancestors of your own house.',
+          'On the tenth of the third lunar month, Vietnamese people remember the Hùng Kings — the ancestral founders. It is not one person’s death day, but a day for the shared origin of the people.\n\nEach lotus offered today is also a prayer: for those first ancestors, and that every home may find peace.',
       },
     },
     {
@@ -325,10 +325,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Ngày Thương binh liệt sĩ',
         body:
-          '27 tháng 7, cả nước thắp hương cho người ngã xuống vì chiến tranh — liệt sĩ không tên và người còn sống mang thương tích.\n\nMột bông sen không hỏi phe phái. Chỉ nhớ: có người không về, và gia đình họ vẫn thắp đèn.',
+          '27 tháng 7, cả nước thắp hương cho người ngã xuống vì chiến tranh — liệt sĩ không tên và người còn sống mang thương tích.\n\nMột bông sen không hỏi phe phái. Mỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện người đã khuất được nhớ, nguyện cho nhà nhà được bình an.',
         titleEn: 'War Invalids and Martyrs Day',
         bodyEn:
-          'On 27 July, Vietnam remembers those who fell in war — named and unnamed — and those who came home wounded.\n\nA lotus does not ask which side. It only remembers that someone did not return, and a family still lights a lamp.',
+          'On 27 July, Vietnam remembers those who fell in war — named and unnamed — and those who came home wounded.\n\nA lotus does not ask which side. Each lotus offered today is also a prayer: that those who did not return are remembered, and that every home may find peace.',
       },
     },
     {
@@ -345,10 +345,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Đức Thánh Trần',
         body:
-          'Ngày 20 tháng Tám âm lịch là giỗ Hưng Đạo Vương Trần Quốc Tuấn. Dân gian thờ Ngài như Đức Thánh Trần — vị anh hùng thành thần, người ta cầu bình an hơn là kể chiến công.\n\nDâng sen là nhớ một người đã thành chỗ dựa thiêng cho nhiều nhà.',
+          'Ngày 20 tháng Tám âm lịch là giỗ Hưng Đạo Vương Trần Quốc Tuấn. Dân gian thờ Ngài như Đức Thánh Trần — vị anh hùng thành thần, người ta cầu bình an hơn là kể chiến công.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện được che chở, nguyện cho nhà nhà được bình an.',
         titleEn: 'Trần Hưng Đạo',
         bodyEn:
-          'The twentieth of the eighth lunar month is the memorial of Prince Trần Hưng Đạo. Folk tradition honours him as Đức Thánh Trần — a hero who became a guardian, asked for peace more than for victory.\n\nA lotus here is for a name that many households still keep as a refuge.',
+          'The twentieth of the eighth lunar month is the memorial of Prince Trần Hưng Đạo. Folk tradition honours him as Đức Thánh Trần — a hero who became a guardian, asked for peace more than for victory.\n\nEach lotus offered today is also a prayer: for that refuge, and that every home may find peace.',
       },
     },
     {
@@ -366,10 +366,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Hồ Chí Minh',
         body:
-          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nSen W Lotus giữ lời tưởng niệm đó trên chuỗi khối.',
+          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
         titleEn: 'Hồ Chí Minh',
         bodyEn:
-          '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nThe lotus on W Lotus keeps that remembrance on the chain.',
+          '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
       },
     },
     {
@@ -386,10 +386,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Hai Bà Trưng',
         body:
-          'Mùng sáu tháng Hai âm lịch, nhiều nơi giỗ Hai Bà Trưng — Trưng Trắc và Trưng Nhị. Không chỉ kể trận, mà nhớ hai người phụ nữ thành chỗ dựa thiêng cho nhiều nhà.\n\nSen dâng hôm nay là một nén hương cho tên còn được giữ.',
+          'Mùng sáu tháng Hai âm lịch, nhiều nơi giỗ Hai Bà Trưng — Trưng Trắc và Trưng Nhị. Không chỉ kể trận, mà nhớ hai người phụ nữ thành chỗ dựa thiêng cho nhiều nhà.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện tên còn được giữ, nguyện cho nhà nhà được bình an.',
         titleEn: 'The Trưng Sisters',
         bodyEn:
-          'On the sixth of the second lunar month, many places remember the Trưng sisters — Trưng Trắc and Trưng Nhị. Not only a battle story: two women who became a refuge in folk memory.\n\nA lotus here is incense for names still kept.',
+          'On the sixth of the second lunar month, many places remember the Trưng sisters — Trưng Trắc and Trưng Nhị. Not only a battle story: two women who became a refuge in folk memory.\n\nEach lotus offered today is also a prayer: that these names are still kept, and that every home may find peace.',
       },
     },
     {
@@ -407,12 +407,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '寒衣节',
         titleZh: '寒衣节',
         body:
-          '农历十月初一，入冬。生者给亡者送寒衣——烧纸衣、纸钱，怕路上冷。\n\n一朵莲花也可以是一件寒衣：让被记得的人，冬天里不孤。',
+          '农历十月初一，入冬。生者给亡者送寒衣——烧纸衣、纸钱，怕路上冷。\n\n今日每一朵莲花，也是一句愿：愿亡者不孤，愿家家得安宁。',
         bodyZh:
-          '农历十月初一，入冬。生者给亡者送寒衣——烧纸衣、纸钱，怕路上冷。\n\n一朵莲花也可以是一件寒衣：让被记得的人，冬天里不孤。',
+          '农历十月初一，入冬。生者给亡者送寒衣——烧纸衣、纸钱，怕路上冷。\n\n今日每一朵莲花，也是一句愿：愿亡者不孤，愿家家得安宁。',
         titleEn: 'Cold Clothes Festival',
         bodyEn:
-          'On the first of the tenth lunar month, winter begins. The living send warm clothes to the dead — paper garments, paper money — so the road is less cold.\n\nA lotus can be that garment: so those who are remembered are not alone in winter.',
+          'On the first of the tenth lunar month, winter begins. The living send warm clothes to the dead — paper garments, paper money — so the road is less cold.\n\nEach lotus offered today is also a prayer: that those who are remembered are not alone, and that every home may find peace.',
       },
     },
     {
@@ -430,12 +430,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '重阳节',
         titleZh: '重阳节',
         body:
-          '九月九，登高、敬老。有的地方也在这一天扫墓，把秋天的花带给先人。\n\n莲花是给还在的老人，也是给已经走远的老人。',
+          '九月九，登高、敬老。有的地方也在这一天扫墓，把秋天的花带给先人。\n\n今日每一朵莲花，也是一句愿：愿长者安康，愿家家得安宁。',
         bodyZh:
-          '九月九，登高、敬老。有的地方也在这一天扫墓，把秋天的花带给先人。\n\n莲花是给还在的老人，也是给已经走远的老人。',
+          '九月九，登高、敬老。有的地方也在这一天扫墓，把秋天的花带给先人。\n\n今日每一朵莲花，也是一句愿：愿长者安康，愿家家得安宁。',
         titleEn: 'Double Ninth Festival',
         bodyEn:
-          'On the ninth of the ninth lunar month people climb high and honour elders. In some regions they also visit graves and bring autumn flowers.\n\nA lotus is for the old who are still here, and for the old who have already gone ahead.',
+          'On the ninth of the ninth lunar month people climb high and honour elders. In some regions they also visit graves and bring autumn flowers.\n\nEach lotus offered today is also a prayer: for elders still here and those gone ahead, and that every home may find peace.',
       },
     },
     {
@@ -453,12 +453,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '冬至',
         titleZh: '冬至',
         body:
-          '一年最长的夜。不少人家在这一天祭祖、吃汤圆，把还活着的人和已经走的人算进同一桌。\n\n莲花是给这一桌空着的位子。',
+          '一年最长的夜。不少人家在这一天祭祖、吃汤圆，把还活着的人和已经走的人算进同一桌。\n\n今日每一朵莲花，也是一句愿：愿这一桌团圆，愿家家得安宁。',
         bodyZh:
-          '一年最长的夜。不少人家在这一天祭祖、吃汤圆，把还活着的人和已经走的人算进同一桌。\n\n莲花是给这一桌空着的位子。',
+          '一年最长的夜。不少人家在这一天祭祖、吃汤圆，把还活着的人和已经走的人算进同一桌。\n\n今日每一朵莲花，也是一句愿：愿这一桌团圆，愿家家得安宁。',
         titleEn: 'Winter Solstice',
         bodyEn:
-          'The longest night of the year. Many households honour ancestors, share tangyuan, and count the living and the dead at one table.\n\nA lotus is for the empty place at that table.',
+          'The longest night of the year. Many households honour ancestors, share tangyuan, and count the living and the dead at one table.\n\nEach lotus offered today is also a prayer: for the empty place at that table, and that every home may find peace.',
       },
     },
     {
@@ -476,12 +476,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '孔子诞辰',
         titleZh: '孔子诞辰',
         body:
-          '九月二十八，祭祀至圣先师。不是帝王的忌日，是老师的生日：有教无类，慎终追远。\n\n一朵莲花，献给把“祭”教给后人的人。',
+          '九月二十八，祭祀至圣先师。不是帝王的忌日，是老师的生日：有教无类，慎终追远。\n\n今日每一朵莲花，也是一句愿：愿慎终追远，愿家家得安宁。',
         bodyZh:
-          '九月二十八，祭祀至圣先师。不是帝王的忌日，是老师的生日：有教无类，慎终追远。\n\n一朵莲花，献给把“祭”教给后人的人。',
+          '九月二十八，祭祀至圣先师。不是帝王的忌日，是老师的生日：有教无类，慎终追远。\n\n今日每一朵莲花，也是一句愿：愿慎终追远，愿家家得安宁。',
         titleEn: 'Confucius’s Birthday',
         bodyEn:
-          '28 September honours Confucius, the teacher — not an emperor’s death day, but a birthday: education without class, and remembrance of ancestors.\n\nA lotus for the person who taught later generations how to honour the dead.',
+          '28 September honours Confucius, the teacher — not an emperor’s death day, but a birthday: education without class, and remembrance of ancestors.\n\nEach lotus offered today is also a prayer: that remembrance is taught on, and that every home may find peace.',
       },
     },
     {
@@ -499,12 +499,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '关公诞',
         titleZh: '关公诞',
         body:
-          '六月廿四，祭祀关羽。英雄成神：人家求的是信义与平安，不只是战场。\n\n一朵莲花，献给仍被称作“关公”的名字。',
+          '六月廿四，祭祀关羽。英雄成神：人家求的是信义与平安，不只是战场。\n\n今日每一朵莲花，也是一句愿：愿信义长在，愿家家得安宁。',
         bodyZh:
-          '六月廿四，祭祀关羽。英雄成神：人家求的是信义与平安，不只是战场。\n\n一朵莲花，献给仍被称作“关公”的名字。',
+          '六月廿四，祭祀关羽。英雄成神：人家求的是信义与平安，不只是战场。\n\n今日每一朵莲花，也是一句愿：愿信义长在，愿家家得安宁。',
         titleEn: 'Guan Yu',
         bodyEn:
-          'The twenty-fourth of the sixth lunar month honours Guan Yu. A hero who became a guardian: households ask for trust and peace, not only victory.\n\nA lotus for the name still called Lord Guan.',
+          'The twenty-fourth of the sixth lunar month honours Guan Yu. A hero who became a guardian: households ask for trust and peace, not only victory.\n\nEach lotus offered today is also a prayer: for honour and trust, and that every home may find peace.',
       },
     },
     {
@@ -522,12 +522,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '妈祖诞',
         titleZh: '妈祖诞',
         body:
-          '三月廿三，祭祀妈祖。沿海人家记得她护佑出海的人——有的回来，有的没有。\n\n莲花给还在海上的名字，也给没有回来的名字。',
+          '三月廿三，祭祀妈祖。沿海人家记得她护佑出海的人——有的回来，有的没有。\n\n今日每一朵莲花，也是一句愿：愿出海的人平安归来，愿家家得安宁。',
         bodyZh:
-          '三月廿三，祭祀妈祖。沿海人家记得她护佑出海的人——有的回来，有的没有。\n\n莲花给还在海上的名字，也给没有回来的名字。',
+          '三月廿三，祭祀妈祖。沿海人家记得她护佑出海的人——有的回来，有的没有。\n\n今日每一朵莲花，也是一句愿：愿出海的人平安归来，愿家家得安宁。',
         titleEn: 'Mazu',
         bodyEn:
-          'The twenty-third of the third lunar month honours Mazu. Coastal households remember her as a guardian of those at sea — some who returned, and some who did not.\n\nA lotus for names still on the water, and names that did not come home.',
+          'The twenty-third of the third lunar month honours Mazu. Coastal households remember her as a guardian of those at sea — some who returned, and some who did not.\n\nEach lotus offered today is also a prayer: for those at sea and those who did not come home, and that every home may find peace.',
       },
     },
     {
@@ -545,9 +545,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: "All Hallows' Eve",
         titleEn: "All Hallows' Eve",
         body:
-          'The night before All Saints, old Europe said the veil between living and dead grew thin. Lanterns, names, a place at the table for those who had gone.\n\nA lotus here is not a costume. It is a light left on for wandering souls, the night before the saints are named.',
+          'The night before All Saints, old Europe said the veil between living and dead grew thin. Lanterns, names, a place at the table for those who had gone.\n\nA lotus here is not a costume. Each lotus offered today is also a prayer: a light for wandering souls, and that every home may find peace.',
         bodyEn:
-          'The night before All Saints, old Europe said the veil between living and dead grew thin. Lanterns, names, a place at the table for those who had gone.\n\nA lotus here is not a costume. It is a light left on for wandering souls, the night before the saints are named.',
+          'The night before All Saints, old Europe said the veil between living and dead grew thin. Lanterns, names, a place at the table for those who had gone.\n\nA lotus here is not a costume. Each lotus offered today is also a prayer: a light for wandering souls, and that every home may find peace.',
       },
     },
     {
@@ -565,9 +565,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: "All Saints' Day",
         titleEn: "All Saints' Day",
         body:
-          '1 November remembers all the holy dead — famous and forgotten. Graves are visited, candles lit, flowers laid, the day before All Souls.\n\nA lotus is for every name the calendar cannot list.',
+          '1 November remembers all the holy dead — famous and forgotten. Graves are visited, candles lit, flowers laid, the day before All Souls.\n\nEach lotus offered today is also a prayer: for every name the calendar cannot list, and that every home may find peace.',
         bodyEn:
-          '1 November remembers all the holy dead — famous and forgotten. Graves are visited, candles lit, flowers laid, the day before All Souls.\n\nA lotus is for every name the calendar cannot list.',
+          '1 November remembers all the holy dead — famous and forgotten. Graves are visited, candles lit, flowers laid, the day before All Souls.\n\nEach lotus offered today is also a prayer: for every name the calendar cannot list, and that every home may find peace.',
       },
     },
     {
@@ -585,9 +585,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: 'Memorial Day',
         titleEn: 'Memorial Day',
         body:
-          'The last Monday in May, the United States remembers those who died in military service. Flags, graves, a weekend that began as Decoration Day — flowers on stones.\n\nA lotus can be that decoration: not a parade, a name kept.',
+          'The last Monday in May, the United States remembers those who died in military service. Flags, graves, a weekend that began as Decoration Day — flowers on stones.\n\nEach lotus offered today is also a prayer: that names are kept, and that every home may find peace.',
         bodyEn:
-          'The last Monday in May, the United States remembers those who died in military service. Flags, graves, a weekend that began as Decoration Day — flowers on stones.\n\nA lotus can be that decoration: not a parade, a name kept.',
+          'The last Monday in May, the United States remembers those who died in military service. Flags, graves, a weekend that began as Decoration Day — flowers on stones.\n\nEach lotus offered today is also a prayer: that names are kept, and that every home may find peace.',
       },
     },
     {
@@ -605,9 +605,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: 'ANZAC Day',
         titleEn: 'ANZAC Day',
         body:
-          '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nA lotus at dawn is that silence kept on the chain.',
+          '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nEach lotus offered today is also a prayer: that this silence is kept, and that every home may find peace.',
         bodyEn:
-          '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nA lotus at dawn is that silence kept on the chain.',
+          '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nEach lotus offered today is also a prayer: that this silence is kept, and that every home may find peace.',
       },
     },
   ];

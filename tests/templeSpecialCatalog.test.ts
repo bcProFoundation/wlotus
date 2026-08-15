@@ -37,6 +37,28 @@ describe('temple special catalog', () => {
     expect(cat.length).toBeGreaterThanOrEqual(19);
   });
 
+  it('says Cô Hồn offering is sharing, not fear', () => {
+    const co = templeSpecialCatalog(2026).find(e => e.id === 'co-hon');
+    expect(co?.story.body).toContain(
+      'Cúng cô hồn không phải sợ hãi mà là sẻ chia',
+    );
+    expect(co?.story.body).toContain('nguyện cho nhà nhà được bình an');
+  });
+
+  it('ends each special story with a lotus prayer for peace', () => {
+    for (const e of templeSpecialCatalog(2026)) {
+      const texts = [e.story.body, e.story.bodyEn, e.story.bodyZh].filter(
+        (t): t is string => Boolean(t?.trim()),
+      );
+      expect(texts.length).toBeGreaterThan(0);
+      for (const t of texts) {
+        const last = t.trim().split(/\n\n+/).pop() ?? '';
+        expect(last).toMatch(/lời nguyện|prayer|一句愿/);
+        expect(last).toMatch(/bình an|peace|安宁|平安/);
+      }
+    }
+  });
+
   it('matches live Vu Lan / Cô Hồn names and extra aliases', () => {
     expect(findCatalogEntryByName('Vu Lan')?.id).toBe('vu-lan');
     expect(findCatalogEntryByName('Cô Hồn')?.id).toBe('co-hon');
