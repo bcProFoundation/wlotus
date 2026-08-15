@@ -543,11 +543,34 @@ Steps: SSH as `deploy` → backup live dryrun JSON + claims → `git reset --har
 sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh
 ```
 
-Until the script is on the VM, write the file by hand (user `deploy`; both `/usr/bin` and `/bin`):
+Until the script is on the VM, write the file by hand (user `deploy`; both `/usr/bin` and `/bin`). Escape `:` in `chown` as `\:` — sudoers treats `:` as a field separator:
 
 ```bash
 cat >/etc/sudoers.d/wlotus-deploy <<'EOF'
-deploy ALL=(root) NOPASSWD: /usr/bin/systemctl try-restart wlotus-mint-api.service, /usr/bin/systemctl restart wlotus-mint-api.service, /usr/bin/systemctl try-restart wlotus-dana-index.service, /usr/bin/systemctl restart wlotus-dana-index.service, /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/systemctl try-restart wlotus-dana-index.service, /bin/systemctl restart wlotus-dana-index.service, /usr/bin/mkdir -p /etc/wlotus, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /usr/bin/tee /etc/wlotus/dana-index.env, /bin/tee /etc/wlotus/mint.env, /bin/tee /etc/wlotus/dana-index.env, /usr/bin/chmod 600 /etc/wlotus/mint.env, /usr/bin/chmod 600 /etc/wlotus/dana-index.env, /bin/chmod 600 /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/dana-index.env, /usr/bin/chown -R deploy:deploy /opt/wlotus, /bin/chown -R deploy:deploy /opt/wlotus, /usr/bin/rm -rf /opt/wlotus/node_modules, /bin/rm -rf /opt/wlotus/node_modules
+# Exact-command NOPASSWD for CI (do not use ALL).
+deploy ALL=(root) NOPASSWD: \
+  /usr/bin/systemctl try-restart wlotus-mint-api.service, \
+  /usr/bin/systemctl restart wlotus-mint-api.service, \
+  /usr/bin/systemctl try-restart wlotus-dana-index.service, \
+  /usr/bin/systemctl restart wlotus-dana-index.service, \
+  /bin/systemctl try-restart wlotus-mint-api.service, \
+  /bin/systemctl restart wlotus-mint-api.service, \
+  /bin/systemctl try-restart wlotus-dana-index.service, \
+  /bin/systemctl restart wlotus-dana-index.service, \
+  /usr/bin/mkdir -p /etc/wlotus, \
+  /bin/mkdir -p /etc/wlotus, \
+  /usr/bin/tee /etc/wlotus/mint.env, \
+  /usr/bin/tee /etc/wlotus/dana-index.env, \
+  /bin/tee /etc/wlotus/mint.env, \
+  /bin/tee /etc/wlotus/dana-index.env, \
+  /usr/bin/chmod 600 /etc/wlotus/mint.env, \
+  /usr/bin/chmod 600 /etc/wlotus/dana-index.env, \
+  /bin/chmod 600 /etc/wlotus/mint.env, \
+  /bin/chmod 600 /etc/wlotus/dana-index.env, \
+  /usr/bin/chown -R deploy\:deploy /opt/wlotus, \
+  /bin/chown -R deploy\:deploy /opt/wlotus, \
+  /usr/bin/rm -rf /opt/wlotus/node_modules, \
+  /bin/rm -rf /opt/wlotus/node_modules
 EOF
 chmod 440 /etc/sudoers.d/wlotus-deploy
 visudo -c -f /etc/sudoers.d/wlotus-deploy
