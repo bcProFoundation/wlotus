@@ -2311,5 +2311,9 @@ a {
 }
 
 .calendar-day-item.is-on-selected .calendar-day-item-name {
-  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-day-item:not(.is-on-selected) {
+  opacity: 0.82;
 }
