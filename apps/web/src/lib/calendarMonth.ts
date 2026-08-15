@@ -1,3 +1,8 @@
+import {
+  findCatalogEntryById,
+  findCatalogEntryByName,
+  foldSpecialName,
+} from '../../../../src/params/templeSpecialCatalog.js';
 import { solarToLunar, type LunarDate } from './lunarCalendar.js';
 import type { TempleSpecialProfileUi } from './specialsUi.js';
 
@@ -203,6 +208,94 @@ export interface CalendarMemorial {
   name: string;
   deathYmd: string;
   parentTxid: string;
+}
+
+function catalogYearFromSpecial(special: TempleSpecialProfileUi): number {
+  return (
+    parseYmd(
+      special.effectiveEventDate || special.eventDate || '',
+    )?.y ?? 2026
+  );
+}
+
+function specialNameFolds(special: TempleSpecialProfileUi): string[] {
+  const year = catalogYearFromSpecial(special);
+  const catalog =
+    findCatalogEntryById(special.id, year) ||
+    findCatalogEntryByName(special.name, year);
+  const raw = [
+    special.id,
+    special.name,
+    catalog?.id,
+    catalog?.name,
+    catalog?.altarName,
+    catalog?.note,
+    ...(catalog?.aliases ?? []),
+  ];
+  const out = new Set<string>();
+  for (const r of raw) {
+    const f = foldSpecialName(r || '');
+    if (f) out.add(f);
+  }
+  return [...out];
+}
+
+/** Folded names overlap when they match, or one contains the other. */
+function foldedNamesOverlap(memorialFold: string, specialFold: string): boolean {
+  if (!memorialFold || !specialFold) return false;
+  if (memorialFold === specialFold) return true;
+  const cjk = /[\u4e00-\u9fff]/.test(memorialFold + specialFold);
+  const minLen = cjk ? 2 : 4;
+  if (specialFold.length >= minLen && memorialFold.includes(specialFold)) {
+    return true;
+  }
+  if (memorialFold.length >= minLen && specialFold.includes(memorialFold)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * True when this giỗ is the same temple special already listed as a festival.
+ * Personal memorials on the same lunar day are kept.
+ */
+export function memorialDuplicatesSpecial(
+  memorial: CalendarMemorial,
+  specials: TempleSpecialProfileUi[] | null | undefined,
+): boolean {
+  const list = specials ?? [];
+  if (list.length === 0) return false;
+  const txid = memorial.parentTxid.trim().toLowerCase();
+  if (
+    txid.length === 64 &&
+    list.some(s => s.profileId.trim().toLowerCase() === txid)
+  ) {
+    return true;
+  }
+  const memFold = foldSpecialName(memorial.name);
+  if (!memFold) return false;
+  const catalog = findCatalogEntryByName(memorial.name);
+  for (const s of list) {
+    if (catalog) {
+      const sid = (s.id || '').trim().toLowerCase();
+      if (sid && sid === catalog.id) return true;
+      if (foldSpecialName(s.name || '') === foldSpecialName(catalog.name)) {
+        return true;
+      }
+    }
+    if (specialNameFolds(s).some(n => foldedNamesOverlap(memFold, n))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Drop temple specials from the giỗ list so they only appear as festivals. */
+export function excludeSpecialDuplicateMemorials(
+  memorials: CalendarMemorial[],
+  specials: TempleSpecialProfileUi[] | null | undefined,
+): CalendarMemorial[] {
+  return memorials.filter(m => !memorialDuplicatesSpecial(m, specials));
 }
 
 /** Lunar death anniversary (giỗ) falls on this grid day. */

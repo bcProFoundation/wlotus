@@ -1,8 +1,11 @@
 import {
   addMonths,
   buildSolarMonthGrid,
+  excludeSpecialDuplicateMemorials,
   lunarCellLabel,
+  memorialDuplicatesSpecial,
   memorialOnYmd,
+  memorialsInMonth,
   orderMonthSpecials,
   specialCoversYmd,
   specialsInMonth,
@@ -91,6 +94,58 @@ describe('calendarMonth', () => {
     expect(
       orderMonthSpecials(month, '2026-08-27').map(s => s.name),
     ).toEqual(['Cô Hồn', 'Vu Lan', 'Early']);
+  });
+
+  it('drops temple specials from giỗ but keeps a personal memorial on the same lunar day', () => {
+    const boundId = 'a'.repeat(64);
+    const vuLan = stubSpecial('2026-08-27');
+    vuLan.id = 'vu-lan';
+    vuLan.name = 'Vu Lan';
+    vuLan.profileId = boundId;
+    const ghost = stubSpecial('2026-08-14', '2026-08-27');
+    ghost.id = 'co-hon';
+    ghost.name = 'Cô Hồn';
+    ghost.profileId = '';
+    const specials = [vuLan, ghost];
+
+    const fromBoundRoot = {
+      name: 'Vu Lan',
+      deathYmd: '2026-08-27',
+      parentTxid: boundId,
+    };
+    const fromAltarNote = {
+      name: 'Cúng Cô Hồn',
+      deathYmd: '2026-08-14',
+      parentTxid: 'b'.repeat(64),
+    };
+    const fromVuLanNote = {
+      name: 'Vu Lan Báo Hiếu',
+      deathYmd: '2026-08-27',
+      parentTxid: 'c'.repeat(64),
+    };
+    const personalOnVuLanDay = {
+      name: 'Bà Nguyễn Thị Lan',
+      deathYmd: '2026-08-27',
+      parentTxid: 'd'.repeat(64),
+    };
+
+    expect(memorialDuplicatesSpecial(fromBoundRoot, specials)).toBe(true);
+    expect(memorialDuplicatesSpecial(fromAltarNote, specials)).toBe(true);
+    expect(memorialDuplicatesSpecial(fromVuLanNote, specials)).toBe(true);
+    expect(memorialDuplicatesSpecial(personalOnVuLanDay, specials)).toBe(false);
+
+    const kept = excludeSpecialDuplicateMemorials(
+      [fromBoundRoot, fromAltarNote, fromVuLanNote, personalOnVuLanDay],
+      specials,
+    );
+    expect(kept.map(m => m.name)).toEqual(['Bà Nguyễn Thị Lan']);
+
+    const days = buildSolarMonthGrid(2026, 8, 'vi', new Date(2026, 7, 14));
+    const inMonth = days.filter(d => d.inMonth);
+    const month = memorialsInMonth(kept, inMonth, '2026-08-27', 'vi');
+    expect(month).toHaveLength(1);
+    expect(month[0]!.name).toBe('Bà Nguyễn Thị Lan');
+    expect(month[0]!.onYmd).toBe('2026-08-27');
   });
 
   it('adds months and parses tab hash', () => {
