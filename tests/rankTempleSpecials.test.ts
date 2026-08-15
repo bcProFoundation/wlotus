@@ -40,7 +40,26 @@ describe('rankTempleSpecials', () => {
       8,
       now,
     );
-    expect(ranked.map(r => r.id)).toEqual(['co-hon', 'halloween']);
+    expect(ranked.map(r => r.id)).toEqual([
+      'co-hon',
+      'halloween',
+      'thanh-minh',
+      'memorial-day',
+    ]);
+    expect(ranked.find(r => r.id === 'thanh-minh')?.effectiveStartDate).toBe(
+      '2027-04-05',
+    );
+  });
+
+  it('rolls a past festival to next year instead of dropping it', () => {
+    const ranked = rankTempleSpecials(
+      [spec('halloween', '2026-10-31')],
+      {},
+      8,
+      new Date(2026, 10, 1), // 1 Nov 2026
+    );
+    expect(ranked).toHaveLength(1);
+    expect(ranked[0]!.effectiveStartDate).toBe('2027-10-31');
   });
 
   it('orders upcoming by soonest start', () => {

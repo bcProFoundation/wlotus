@@ -315,8 +315,12 @@ export function catalogToSpecial(
 function catalogYearFromEnv(
   env: NodeJS.ProcessEnv | Record<string, string | undefined>,
 ): number {
-  const y = Number(env.EVENT_YEAR?.trim() || '2026');
-  return Number.isFinite(y) && y >= 2020 && y <= 2100 ? y : 2026;
+  const raw = env.EVENT_YEAR?.trim();
+  if (raw) {
+    const y = Number(raw);
+    if (Number.isFinite(y) && y >= 2020 && y <= 2100) return y;
+  }
+  return new Date().getFullYear();
 }
 
 function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {

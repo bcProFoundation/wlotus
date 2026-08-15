@@ -107,7 +107,7 @@ ops clarity; keep lunar conversion when the cultural date is naturally âm lịc
 ### Built-in catalog (no JSON required)
 
 `loadTempleSpecialsFromEnv` always starts from `templeSpecialCatalog(year)`
-(`EVENT_YEAR`, default 2026). Rows have empty `profileId` until claimed.
+(`EVENT_YEAR`, or the current civil year). Rows have empty `profileId` until claimed.
 
 Optional overlays, in order:
 

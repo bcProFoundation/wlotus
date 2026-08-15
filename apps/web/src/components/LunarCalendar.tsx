@@ -49,8 +49,9 @@ export function LunarCalendar(props: {
     [props.memorials, props.specials],
   );
   const monthSpecials = orderMonthSpecials(
-    specialsInMonth(props.specials, cursor.year, cursor.month),
+    specialsInMonth(props.specials, cursor.year, cursor.month, locale),
     selected.ymd,
+    locale,
   );
   const monthMemorials = memorialsInMonth(
     personalMemorials,
@@ -95,7 +96,7 @@ export function LunarCalendar(props: {
 
   function marksFor(day: CalendarDay): { special: boolean; memorial: boolean } {
     return {
-      special: specialsOnYmd(props.specials, day.ymd).length > 0,
+      special: specialsOnYmd(props.specials, day.ymd, locale).length > 0,
       memorial: memorialsOnYmd(personalMemorials, day, locale).length > 0,
     };
   }
@@ -199,7 +200,7 @@ export function LunarCalendar(props: {
         {monthSpecials.length > 0 ? (
           <ul className="calendar-day-list">
             {monthSpecials.map(sp => {
-              const onSelected = specialCoversYmd(sp, selected.ymd);
+              const onSelected = specialCoversYmd(sp, selected.ymd, locale);
               return (
                 <li key={sp.id || sp.profileId || sp.name}>
                   <button
