@@ -147,14 +147,14 @@ export interface RankedTempleSpecial extends TempleSpecialProfileUi {
 }
 
 /**
- * Top specials for the home ranking list — “what’s next / what’s now”.
+ * Top specials for the home ranking list — what’s next / what’s now.
+ * Past windows are omitted (forward-looking only).
  *
- * Order (generalized):
- *   1. Happening now (active / in window) before upcoming before past
+ * Order:
+ *   1. Happening now (active / in window) before upcoming
  *   2. Within a tier: closer in time first
  *        - upcoming → soonest start first
  *        - active   → most offerings first (same day competition, e.g. 15/7)
- *        - past     → most recently ended first
  *   3. Tie-break: offerCount desc, then name
  *
  * Example (before 2/7 lunar): Cô Hồn (starts sooner) above Vu Lan.
@@ -186,7 +186,7 @@ export function rankTempleSpecials(
     return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   };
 
-  type Tier = 0 | 1 | 2; // 0 active, 1 upcoming, 2 past
+  type Tier = 0 | 1 | 2; // 0 active, 1 upcoming, 2 past (dropped)
 
   const ranked: RankedTempleSpecial[] = list.map(p => {
     const start =
@@ -231,33 +231,29 @@ export function rankTempleSpecials(
         days: Math.round((startMs - todayUtc) / 86_400_000),
       };
     }
-    // past
     return {
       tier: 2,
       days: Math.round((todayUtc - endMs) / 86_400_000),
     };
   };
 
-  ranked.sort((a, b) => {
+  const forward = ranked.filter(p => meta(p).tier !== 2);
+
+  forward.sort((a, b) => {
     const ma = meta(a);
     const mb = meta(b);
     if (ma.tier !== mb.tier) return ma.tier - mb.tier;
     if (ma.tier === 0) {
-      // Both happening: more offerings first (Vu Lan on 15/7)
       if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
-    } else if (ma.tier === 1) {
-      // Upcoming: sooner start first (Cô Hồn before Vu Lan)
-      if (ma.days !== mb.days) return ma.days - mb.days;
-      if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
-    } else {
-      // Past: most recent first, then offerings
-      if (ma.days !== mb.days) return ma.days - mb.days;
-      if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
+    } else if (ma.days !== mb.days) {
+      return ma.days - mb.days;
+    } else if (a.offerCount !== b.offerCount) {
+      return b.offerCount - a.offerCount;
     }
     return (a.name || '').localeCompare(b.name || '', 'vi');
   });
 
-  return ranked.slice(0, Math.max(0, limit));
+  return forward.slice(0, Math.max(0, limit));
 }
 
 /**
