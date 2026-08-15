@@ -373,7 +373,8 @@ const en: Dict = {
   cungSessionTitle: 'Cúng Cô Hồn',
   vuLanSessionTitle: 'Vu Lan — Filial Gratitude',
   specialStoryHeading: 'Temple story',
-  specialStoryHint: 'While the lotus is found, you may read this remembrance.',
+  specialStoryHint:
+    'You can take a few minutes to read this story while searching for a lotus.',
   themeAppearance: 'Appearance',
   themeLight: 'Light',
   themeDark: 'Dark',
@@ -579,7 +580,8 @@ const vi: Dict = {
   cungSessionTitle: 'Cúng Cô Hồn',
   vuLanSessionTitle: 'Vu Lan Báo Hiếu',
   specialStoryHeading: 'Câu chuyện từ chùa',
-  specialStoryHint: 'Trong lúc tìm hoa sen, bạn có thể đọc lời tưởng niệm này.',
+  specialStoryHint:
+    'Bạn có thể dành ít phút để đọc câu chuyện này trong lúc tìm hoa sen.',
   themeAppearance: 'Giao diện',
   themeLight: 'Sáng',
   themeDark: 'Tối',
@@ -779,7 +781,7 @@ const zh: Dict = {
   cungSessionTitle: '祭孤魂',
   vuLanSessionTitle: '盂兰盆 — 报恩',
   specialStoryHeading: '寺院故事',
-  specialStoryHint: '寻找莲花时，可以阅读这段追思。',
+  specialStoryHint: '你可以花几分钟读这个故事，一边寻找莲花。',
   themeAppearance: '外观',
   themeLight: '浅色',
   themeDark: '深色',
