@@ -2309,3 +2309,7 @@ a {
   color: var(--muted);
   flex-shrink: 0;
 }
+
+.calendar-day-item.is-on-selected .calendar-day-item-name {
+  color: var(--accent);
+}
