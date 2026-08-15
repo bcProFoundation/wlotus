@@ -536,6 +536,25 @@ Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → `/var/www
 
 Steps: SSH as `deploy` → backup live dryrun JSON + claims → `git reset --hard` that SHA on `/opt/wlotus` → restore JSON → `npm ci` → `systemctl restart wlotus-mint-api` (dana-index too when sudoers allows) → `GET /health`.
 
+**`sudo: a password is required`:** CI uses `sudo -n`. Ubuntu usrmerge makes `/bin/systemctl` resolve to `/usr/bin/systemctl`, which does **not** match a sudoers rule that lists only `/bin/systemctl`. Fix once as **root** on the test VM (does not require a full bootstrap):
+
+```bash
+# After this file is on the VM (git fetch + reset, or copy the script):
+sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh
+```
+
+Until the script is on the VM, write the file by hand (user `deploy`; both `/usr/bin` and `/bin`):
+
+```bash
+cat >/etc/sudoers.d/wlotus-deploy <<'EOF'
+deploy ALL=(root) NOPASSWD: /usr/bin/systemctl try-restart wlotus-mint-api.service, /usr/bin/systemctl restart wlotus-mint-api.service, /usr/bin/systemctl try-restart wlotus-dana-index.service, /usr/bin/systemctl restart wlotus-dana-index.service, /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/systemctl try-restart wlotus-dana-index.service, /bin/systemctl restart wlotus-dana-index.service, /usr/bin/mkdir -p /etc/wlotus, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /usr/bin/tee /etc/wlotus/dana-index.env, /bin/tee /etc/wlotus/mint.env, /bin/tee /etc/wlotus/dana-index.env, /usr/bin/chmod 600 /etc/wlotus/mint.env, /usr/bin/chmod 600 /etc/wlotus/dana-index.env, /bin/chmod 600 /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/dana-index.env, /usr/bin/chown -R deploy:deploy /opt/wlotus, /bin/chown -R deploy:deploy /opt/wlotus, /usr/bin/rm -rf /opt/wlotus/node_modules, /bin/rm -rf /opt/wlotus/node_modules
+EOF
+chmod 440 /etc/sudoers.d/wlotus-deploy
+visudo -c -f /etc/sudoers.d/wlotus-deploy
+```
+
+Then re-run Actions → **Deploy mint-api (test)**.
+
 Use **manual** after a catalog/API merge if you do not want to wait for the path filter, or to redeploy the same SHA again.
 
 Feature branches do **not** trigger either deploy (cost control).
@@ -606,6 +625,7 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | Node 20 deprecation warning in Actions | GitHub runner notice | Warning only — not a deploy failure |
 | Smoke check fails | Site/DNS/TLS not ready | Fix HTTP first; set `CONTABO_SMOKE_URL` after |
 | 403 / blank page | nginx or empty dist | `ls /var/www/wlotus-test`; re-run workflow |
+| Deploy mint-api (test): `sudo: a password is required` | `/etc/sudoers.d/wlotus-deploy` missing, or lists only `/bin/systemctl` while sudo matches `/usr/bin/systemctl` | As root: `sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh` then re-run the workflow. Do not add `NOPASSWD: ALL`. |
 
 ---
 

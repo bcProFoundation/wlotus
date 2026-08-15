@@ -120,17 +120,14 @@ elif [[ "$SKIP_DANA_INDEX" != "1" ]]; then
   echo "WARN: dana-index not in this checkout — merge PR #64 or set BRANCH to that branch" >&2
 fi
 
-# Passwordless restarts for CI/deploy (same idea as bootstrap-prod)
-if [[ "$HAVE_DANA" == "1" ]]; then
-  cat >/etc/sudoers.d/wlotus-deploy <<EOF
-${DEPLOY_USER} ALL=(root) NOPASSWD: /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/systemctl try-restart wlotus-dana-index.service, /bin/systemctl restart wlotus-dana-index.service, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /usr/bin/tee /etc/wlotus/dana-index.env, /bin/chmod 600 /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/dana-index.env, /bin/chown -R ${DEPLOY_USER}\:${DEPLOY_USER} /opt/wlotus, /bin/rm -rf /opt/wlotus/node_modules
-EOF
-else
-  cat >/etc/sudoers.d/wlotus-deploy <<EOF
-${DEPLOY_USER} ALL=(root) NOPASSWD: /bin/systemctl try-restart wlotus-mint-api.service, /bin/systemctl restart wlotus-mint-api.service, /bin/mkdir -p /etc/wlotus, /usr/bin/tee /etc/wlotus/mint.env, /bin/chmod 600 /etc/wlotus/mint.env, /bin/chown -R ${DEPLOY_USER}\:${DEPLOY_USER} /opt/wlotus, /bin/rm -rf /opt/wlotus/node_modules
-EOF
+# Passwordless restarts for CI/deploy. Lists /usr/bin and /bin (Ubuntu usrmerge).
+_HELPER="$REPO/deploy/contabo/install-wlotus-deploy-sudoers.sh"
+if [[ ! -f "$_HELPER" ]]; then
+  _HELPER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/install-wlotus-deploy-sudoers.sh"
 fi
-chmod 440 /etc/sudoers.d/wlotus-deploy
+# shellcheck source=install-wlotus-deploy-sudoers.sh
+source "$_HELPER"
+install_wlotus_deploy_sudoers "$DEPLOY_USER"
 
 TOKEN_ID=""
 for dep in \

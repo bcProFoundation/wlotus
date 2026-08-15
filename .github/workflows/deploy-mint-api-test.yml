@@ -13,7 +13,7 @@
 # Preserves live dryrun baton JSON + first-burn claims, then:
 #   git reset --hard <sha> → npm ci → systemctl restart mint-api
 #
-# One-time VM setup: deploy/contabo/README.md (bootstrap-opt-wlotus.sh)
+# One-time VM setup: deploy/contabo/README.md (install-wlotus-deploy-sudoers.sh)
 
 name: Deploy mint-api (test)
 
@@ -137,12 +137,20 @@ jobs:
               cp -a "$BAK/$f" "deployments/$f"
             fi
           done
+          sudo_n() {
+            local bin="$1"; shift
+            local base
+            base="$(basename "$bin")"
+            sudo -n "/usr/bin/$base" "$@" || sudo -n "/bin/$base" "$@" || sudo -n "$bin" "$@"
+          }
           if [ "$REPO" = /opt/wlotus ]; then
-            sudo -n /bin/chown -R "$ME:$ME" /opt/wlotus \
-              && echo "chown $ME:$ME /opt/wlotus OK" \
-              || echo "chown skipped (sudoers missing — re-run bootstrap-opt-wlotus.sh)"
+            if sudo_n /bin/chown -R "$ME:$ME" /opt/wlotus; then
+              echo "chown $ME:$ME /opt/wlotus OK"
+            else
+              echo "chown skipped (sudoers missing — install-wlotus-deploy-sudoers.sh)"
+            fi
             if [ -d /opt/wlotus/node_modules ] && [ ! -w /opt/wlotus/node_modules ]; then
-              sudo -n /bin/rm -rf /opt/wlotus/node_modules \
+              sudo_n /bin/rm -rf /opt/wlotus/node_modules \
                 && echo "removed root-owned /opt/wlotus/node_modules" \
                 || true
             fi
@@ -153,8 +161,29 @@ jobs:
             exit 1
           fi
           npm ci
-          sudo -n /bin/systemctl restart wlotus-mint-api.service
-          sudo -n /bin/systemctl restart wlotus-dana-index.service || true
+          restart_unit() {
+            local unit="$1"
+            local required="${2:-1}"
+            if sudo -n /usr/bin/systemctl restart "$unit" \
+               || sudo -n /bin/systemctl restart "$unit"; then
+              echo "restarted $unit"
+              return 0
+            fi
+            if [ "$required" = 1 ]; then
+              echo "::error::sudo restart $unit failed (password required or sudoers path mismatch)."
+              echo "Ubuntu usrmerge: sudo matches /usr/bin/systemctl, not only /bin/systemctl."
+              echo "On the test VM as root, install passwordless sudo for $ME:"
+              echo "  sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh"
+              echo "If that file is not on the VM yet, as root paste the visudo block in"
+              echo "  deploy/contabo/README.md  (section Deploy mint-api (test))."
+              echo "Then re-run Actions → Deploy mint-api (test)."
+              exit 1
+            fi
+            echo "::warning::sudo restart $unit skipped (unit missing or sudoers path mismatch)"
+            return 0
+          }
+          restart_unit wlotus-mint-api.service 1
+          restart_unit wlotus-dana-index.service 0
           echo "mint-api at $(git rev-parse --short HEAD)"
           curl -fsS --retry 8 --retry-delay 2 http://127.0.0.1:8787/health
           echo

@@ -139,7 +139,7 @@ jobs:
             ssh -p "$PORT" "${CONTABO_USER}@${CONTABO_HOST}" \
               'sudo tee /etc/wlotus/mint.env > /dev/null && sudo chmod 600 /etc/wlotus/mint.env'
           ssh -p "$PORT" "${CONTABO_USER}@${CONTABO_HOST}" \
-            'sudo systemctl try-restart wlotus-mint-api.service || true'
+            'sudo -n /usr/bin/systemctl try-restart wlotus-mint-api.service || sudo -n /bin/systemctl try-restart wlotus-mint-api.service || true'
           echo "Synced /etc/wlotus/mint.env and attempted mint-api restart"
 
       - name: Smoke check (optional HTTP)
