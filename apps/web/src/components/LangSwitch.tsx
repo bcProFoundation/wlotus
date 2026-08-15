@@ -84,7 +84,10 @@ export function LangSwitch() {
                     : 'theme-toggle-btn'
                 }
                 aria-pressed={appearance === 'light'}
-                onClick={() => setAppearance('light')}
+                onClick={() => {
+                  setAppearance('light');
+                  setOpen(false);
+                }}
               >
                 {t('themeLight')}
               </button>
@@ -96,7 +99,10 @@ export function LangSwitch() {
                     : 'theme-toggle-btn'
                 }
                 aria-pressed={appearance === 'dark'}
-                onClick={() => setAppearance('dark')}
+                onClick={() => {
+                  setAppearance('dark');
+                  setOpen(false);
+                }}
               >
                 {t('themeDark')}
               </button>
