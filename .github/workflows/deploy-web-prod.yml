@@ -182,14 +182,6 @@ jobs:
             exit 0
           fi
           cd "$REPO"
-          git fetch --tags origin
-          if [ -n "$TAG" ]; then
-            git checkout --force "tags/$TAG" || git checkout --force "$TAG"
-          else
-            git checkout --force "$SHA"
-          fi
-          # node_modules is often root-owned after manual `npm` as root → EACCES on npm ci.
-          # sudoers (install-wlotus-deploy-sudoers.sh) allows exact /usr/bin and /bin paths.
           ME="$(whoami)"
           sudo_n() {
             local bin="$1"; shift
@@ -197,6 +189,7 @@ jobs:
             base="$(basename "$bin")"
             sudo -n "/usr/bin/$base" "$@" || sudo -n "/bin/$base" "$@" || sudo -n "$bin" "$@"
           }
+          # Fetch must run after chown — .git/objects is often root-owned.
           if [ "$REPO" = /opt/wlotus ]; then
             if sudo_n /bin/chown -R "$ME:$ME" /opt/wlotus; then
               echo "chown $ME:$ME /opt/wlotus OK"
@@ -208,6 +201,17 @@ jobs:
                 && echo "removed root-owned /opt/wlotus/node_modules" \
                 || true
             fi
+          fi
+          if [ ! -w "$REPO/.git/objects" ]; then
+            echo "::error::$REPO/.git/objects is not writable by $ME (git fetch would fail)."
+            echo "On the VM as root: sudo chown -R $ME:$ME $REPO"
+            exit 1
+          fi
+          git fetch --tags origin
+          if [ -n "$TAG" ]; then
+            git checkout --force "tags/$TAG" || git checkout --force "$TAG"
+          else
+            git checkout --force "$SHA"
           fi
           if [ -d node_modules ] && [ ! -w node_modules ]; then
             echo "::error::$REPO/node_modules is not writable by $ME (still root-owned?)."

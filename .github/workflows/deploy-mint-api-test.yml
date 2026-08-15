@@ -11,7 +11,7 @@
 #   CONTABO_REPO_PATH    — clone on VM; default /opt/wlotus
 #
 # Preserves live dryrun baton JSON + first-burn claims, then:
-#   git reset --hard <sha> → npm ci → systemctl restart mint-api
+#   chown deploy → git fetch/reset → npm ci → systemctl restart mint-api
 #
 # One-time VM setup: deploy/contabo/README.md (install-wlotus-deploy-sudoers.sh)
 
@@ -118,6 +118,32 @@ jobs:
           fi
           cd "$REPO"
           ME="$(whoami)"
+          sudo_n() {
+            local bin="$1"; shift
+            local base
+            base="$(basename "$bin")"
+            sudo -n "/usr/bin/$base" "$@" || sudo -n "/bin/$base" "$@" || sudo -n "$bin" "$@"
+          }
+          # .git/objects is often root-owned after bootstrap as root. Fetch must
+          # run *after* chown or unpack-objects fails (exit 128).
+          if [ "$REPO" = /opt/wlotus ]; then
+            if sudo_n /bin/chown -R "$ME:$ME" /opt/wlotus; then
+              echo "chown $ME:$ME /opt/wlotus OK"
+            else
+              echo "chown skipped (sudoers missing — install-wlotus-deploy-sudoers.sh)"
+            fi
+            if [ -d /opt/wlotus/node_modules ] && [ ! -w /opt/wlotus/node_modules ]; then
+              sudo_n /bin/rm -rf /opt/wlotus/node_modules \
+                && echo "removed root-owned /opt/wlotus/node_modules" \
+                || true
+            fi
+          fi
+          if [ ! -w "$REPO/.git/objects" ]; then
+            echo "::error::$REPO/.git/objects is not writable by $ME (git fetch would fail)."
+            echo "On the VM as root: sudo chown -R $ME:$ME $REPO"
+            echo "Then: sudo bash $REPO/deploy/contabo/install-wlotus-deploy-sudoers.sh"
+            exit 1
+          fi
           BAK=/tmp/wlotus-deploy-bak
           mkdir -p "$BAK"
           for f in \
@@ -137,24 +163,6 @@ jobs:
               cp -a "$BAK/$f" "deployments/$f"
             fi
           done
-          sudo_n() {
-            local bin="$1"; shift
-            local base
-            base="$(basename "$bin")"
-            sudo -n "/usr/bin/$base" "$@" || sudo -n "/bin/$base" "$@" || sudo -n "$bin" "$@"
-          }
-          if [ "$REPO" = /opt/wlotus ]; then
-            if sudo_n /bin/chown -R "$ME:$ME" /opt/wlotus; then
-              echo "chown $ME:$ME /opt/wlotus OK"
-            else
-              echo "chown skipped (sudoers missing — install-wlotus-deploy-sudoers.sh)"
-            fi
-            if [ -d /opt/wlotus/node_modules ] && [ ! -w /opt/wlotus/node_modules ]; then
-              sudo_n /bin/rm -rf /opt/wlotus/node_modules \
-                && echo "removed root-owned /opt/wlotus/node_modules" \
-                || true
-            fi
-          fi
           if [ -d node_modules ] && [ ! -w node_modules ]; then
             echo "::error::$REPO/node_modules is not writable by $ME"
             echo "On the VM as root: sudo chown -R $ME:$ME $REPO"
