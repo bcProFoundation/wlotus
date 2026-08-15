@@ -27,14 +27,12 @@ describe('specialCountries', () => {
 
   it('maps locale to local countries for that language region', () => {
     expect(countriesFromLocale('vi')).toEqual(['VN']);
-    expect(countriesFromLocale('zh-Hans')).toEqual([
-      'CN',
-      'TW',
-      'HK',
-      'MO',
-      'SG',
-    ]);
-    expect(countriesFromLocale('en')).toEqual([...ENGLISH_SPEAKING_COUNTRIES]);
+    expect(countriesFromLocale('zh-Hans')).toEqual(['CN', 'TW', 'HK', 'MO']);
+    expect(countriesFromLocale('en')).toEqual(
+      ENGLISH_SPEAKING_COUNTRIES.filter(c => c !== 'SG'),
+    );
+    expect(countriesFromLocale('en')).not.toContain('SG');
+    expect(countriesFromLocale('zh')).not.toContain('SG');
   });
 
   it('shows Global specials to everyone', () => {
@@ -98,6 +96,27 @@ describe('specialCountries', () => {
         countryCode: 'US',
         locale: 'en',
       }),
+    ).toBe(true);
+  });
+
+  it('does not show Chinese events in English (Singapore overlap)', () => {
+    const zh = ['CN', 'TW', 'HK', 'MO', 'SG'];
+    const en = [...ENGLISH_SPEAKING_COUNTRIES];
+    expect(
+      specialVisibleToViewer(zh, { countryCode: 'US', locale: 'en' }),
+    ).toBe(false);
+    expect(
+      specialVisibleToViewer(zh, { countryCode: null, locale: 'en' }),
+    ).toBe(false);
+    // Vietnam (or any out-of-region IP) + English must not pick up ZH via SG.
+    expect(
+      specialVisibleToViewer(zh, { countryCode: 'VN', locale: 'en' }),
+    ).toBe(false);
+    expect(
+      specialVisibleToViewer(en, { countryCode: 'VN', locale: 'zh' }),
+    ).toBe(false);
+    expect(
+      specialVisibleToViewer(zh, { countryCode: 'VN', locale: 'zh' }),
     ).toBe(true);
   });
 });

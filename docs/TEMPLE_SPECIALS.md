@@ -157,11 +157,13 @@ TEMPLE_SPECIALS_JSON='[
 | `"countries": ["US","GB",…]` | English-speaking (`en`) |
 
 Home Events shows **Global** plus specials for the **selected language**.
-`vi` → VN, `zh` → CN/TW/HK/MO/SG, `en` → English-speaking list. IP does **not**
-keep the old country’s calendar after a language change (VN + English no longer
-shows Vu Lan). If IP sits *inside* that language region, the list narrows to
-that country (US English sees Memorial Day, not ANZAC). Burns and share links
-are **not** gated.
+`vi` → VN, `zh` → CN/TW/HK/MO, `en` → US/GB/CA/AU/NZ/IE/ZA/PH.
+Singapore is on both Chinese and English catalog lists (bilingual) but is
+**not** implied by locale — otherwise English UI shows 中元节 / 盂兰盆 via SG.
+IP does **not** keep the old country’s calendar after a language change
+(VN + English no longer shows Vu Lan). If IP sits *inside* that language
+region, the list narrows to that country (US English sees Memorial Day, not
+ANZAC). Burns and share links are **not** gated.
 
 Live Vu Lan / Cô Hồn JSON without `countries` stays **Global**. Patch countries
 without a new burn:
