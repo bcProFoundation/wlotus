@@ -14,6 +14,8 @@ import {
   ymdKey,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
+import { catalogToSpecial } from '../src/params/templeSpecials.js';
+import { templeSpecialCatalog } from '../src/params/templeSpecialCatalog.js';
 import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
 
 function stubSpecial(
@@ -28,6 +30,21 @@ function stubSpecial(
     eventDate: start,
     effectiveStartDate: start,
     effectiveEndDate: end,
+  };
+}
+
+function catalogAsUi(id: string, year = 2026): TempleSpecialProfileUi {
+  const e = templeSpecialCatalog(year).find(x => x.id === id);
+  if (!e) throw new Error(`missing catalog ${id}`);
+  const s = catalogToSpecial(e);
+  return {
+    id: s.id,
+    profileId: '',
+    kind: s.kind,
+    name: s.name ?? '',
+    active: false,
+    eventDate: s.eventDate,
+    eventCalendar: s.eventCalendar,
   };
 }
 
@@ -203,6 +220,19 @@ describe('calendarMonth', () => {
       expect(day?.lunar.day).toBe(21);
       expect(day?.lunar.month).toBe(7);
     }
+  });
+
+  it('places Hồ Chí Minh giỗ on 2 Sep 2026 (lunar 21/7)', () => {
+    const gio = catalogAsUi('ho-chi-minh');
+    const bday = catalogAsUi('ho-chi-minh-birthday');
+    expect(specialWindowInYear(gio, 2026, 'vi')?.peak).toBe('2026-09-02');
+    const sep = specialsInMonth([gio, bday], 2026, 9, 'vi', '2026-09-02');
+    expect(sep.map(s => s.id)).toEqual(['ho-chi-minh']);
+    expect(sep[0]!.effectiveEventDate).toBe('2026-09-02');
+    expect(specialCoversYmd(gio, '2026-09-02', 'vi')).toBe(true);
+    const may = specialsInMonth([gio, bday], 2026, 5, 'vi', '2026-05-19');
+    expect(may.map(s => s.id)).toEqual(['ho-chi-minh-birthday']);
+    expect(may[0]!.effectiveStartDate).toBe('2026-05-19');
   });
 
   it('adds months and parses tab hash', () => {

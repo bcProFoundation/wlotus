@@ -20,6 +20,7 @@
  *   Lunar 1/7  → 13 Aug (ghost-month open, Chinese calendar)
  *   Lunar 2/7  → 14 Aug (VN Cô Hồn start, Hồ Ngọc Đức UTC+7)
  *   Lunar 15/7 → 27 Aug (Vu Lan / Ullambana / Zhongyuan peak)
+ *   Lunar 21/7 → 2 Sep 2026 (Hồ Chí Minh giỗ; died 2 Sep 1969)
  *   Qingming / Thanh Minh → 5 Apr 2026 (solar term; PRC holiday 4–6 Apr)
  *   US Memorial Day → 25 May 2026 (last Monday)
  *   All Souls' → 2 Nov 2026
@@ -354,20 +355,41 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
     {
       id: 'ho-chi-minh',
       name: 'Hồ Chí Minh',
-      aliases: ['bac ho', 'ngay sinh chu tich ho chi minh'],
+      aliases: ['bac ho', 'chu tich ho chi minh', 'ngay gio bac ho'],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-07-21`,
+      birthDate: '1890-05-19',
+      countries: vn,
+      birthPlace: 'Kim Liên, Nam Đàn, Nghệ An',
+      altarName: 'Hồ Chí Minh',
+      note: 'Giỗ Hồ Chí Minh',
+      story: {
+        title: 'Giỗ Hồ Chí Minh',
+        body:
+          'Ngày 21 tháng Bảy âm lịch là giỗ Chủ tịch Hồ Chí Minh — Người mất ngày 2 tháng 9 năm 1969 (âm lịch 21/7 năm Kỷ Dậu). Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Hồ Chí Minh — Death Anniversary',
+        bodyEn:
+          'The twenty-first of the seventh lunar month is the death anniversary of President Hồ Chí Minh, who died on 2 September 1969 (lunar 21/7 of the Kỷ Dậu year). Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'ho-chi-minh-birthday',
+      name: 'Ngày sinh Hồ Chí Minh',
+      aliases: ['ngay sinh chu tich ho chi minh', 'sinh nhat bac ho'],
       kind: 'hero',
       eventCalendar: 'solar',
       eventDate: `${y}-05-19`,
       birthDate: '1890-05-19',
       countries: vn,
       birthPlace: 'Kim Liên, Nam Đàn, Nghệ An',
-      altarName: 'Hồ Chí Minh',
-      note: 'Hồ Chí Minh',
+      altarName: 'Ngày sinh Hồ Chí Minh',
+      note: 'Ngày sinh Hồ Chí Minh',
       story: {
-        title: 'Hồ Chí Minh',
+        title: 'Ngày sinh Hồ Chí Minh',
         body:
           '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
-        titleEn: 'Hồ Chí Minh',
+        titleEn: 'Hồ Chí Minh — Birthday',
         bodyEn:
           '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
       },
