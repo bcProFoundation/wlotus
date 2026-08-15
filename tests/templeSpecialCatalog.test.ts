@@ -19,7 +19,11 @@ describe('temple special catalog', () => {
     expect(byId['co-hon']!.kind).toBe('ghost');
     expect(byId['thanh-minh']!.eventDate).toBe('2026-04-05');
     expect(byId['hung-kings']!.eventDate).toBe('2026-03-10');
-    expect(byId['hai-ba-trung']!.kind).toBe('hero');
+    expect(byId['ho-chi-minh']!.eventCalendar).toBe('lunar');
+    expect(byId['ho-chi-minh']!.eventDate).toBe('2026-07-21');
+    expect(byId['ho-chi-minh-birthday']!.eventCalendar).toBe('solar');
+    expect(byId['ho-chi-minh-birthday']!.eventDate).toBe('2026-05-19');
+    expect(byId['ho-chi-minh-birthday']!.kind).toBe('event');
     expect(byId['yulanpen']!.countries).toEqual([...CHINESE_SPEAKING_COUNTRIES]);
     expect(byId['zhongyuan']!.eventStart).toBe('2026-07-01');
     expect(byId['qingming']!.eventCalendar).toBe('solar');
@@ -65,12 +69,18 @@ describe('temple special catalog', () => {
     expect(findCatalogEntryByName('盂兰盆')?.id).toBe('yulanpen');
     expect(findCatalogEntryByName("All Souls' Day")?.id).toBe('all-souls');
     expect(findCatalogEntryByName('Halloween')?.id).toBe('halloween');
-    expect(findCatalogEntryByName('Giỗ Tổ Hùng Vương')?.id).toBe('hung-kings');
+    expect(findCatalogEntryByName('Hồ Chí Minh')?.id).toBe('ho-chi-minh');
+    expect(findCatalogEntryByName('Ngày sinh Hồ Chí Minh')?.id).toBe(
+      'ho-chi-minh-birthday',
+    );
+    expect(findCatalogEntryByName('ngay sinh chu tich ho chi minh')?.id).toBe(
+      'ho-chi-minh-birthday',
+    );
     expect(findCatalogEntryByName('关公')?.id).toBe('guan-yu');
   });
 
   it('2026 lunar 15/7 is 27 Aug (VN UTC+7)', () => {
-    expect(lunarYmdToSolarYmd('2026-07-15', 7)).toBe('2026-08-27');
+    expect(lunarYmdToSolarYmd('2026-07-21', 7)).toBe('2026-09-02');
     expect(lunarYmdToSolarYmd('2026-07-02', 7)).toBe('2026-08-14');
     expect(lunarYmdToSolarYmd('2026-07-01', 7)).toBe('2026-08-13');
     expect(qingmingSolarYmd(2026)).toBe('2026-04-05');

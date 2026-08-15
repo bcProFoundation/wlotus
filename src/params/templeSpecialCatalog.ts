@@ -7,7 +7,8 @@
  *
  * Research (memorial / ancestral offering days that fit W Lotus):
  *   VN  — Vu Lan, Cô Hồn, Tết Thanh Minh, Giỗ Tổ Hùng Vương,
- *         Thương binh liệt sĩ, Trần Hưng Đạo, Hồ Chí Minh, Hai Bà Trưng.
+ *         Thương binh liệt sĩ, Trần Hưng Đạo, Hồ Chí Minh (giỗ + ngày sinh),
+ *         Hai Bà Trưng.
  *   ZH  — 盂兰盆, 中元节, 清明节, 寒衣节, 重阳节, 冬至, 孔子, 关羽, 妈祖.
  *         Chinese-speaking: CN, TW, HK, MO, SG.
  *   EN  — All Hallows' Eve, All Saints', All Souls', Remembrance,
@@ -20,6 +21,7 @@
  *   Lunar 1/7  → 13 Aug (ghost-month open, Chinese calendar)
  *   Lunar 2/7  → 14 Aug (VN Cô Hồn start, Hồ Ngọc Đức UTC+7)
  *   Lunar 15/7 → 27 Aug (Vu Lan / Ullambana / Zhongyuan peak)
+ *   Lunar 21/7 → 2 Sep 2026 (Hồ Chí Minh giỗ; coincides with Quốc khánh that year)
  *   Qingming / Thanh Minh → 5 Apr 2026 (solar term; PRC holiday 4–6 Apr)
  *   US Memorial Day → 25 May 2026 (last Monday)
  *   All Souls' → 2 Nov 2026
@@ -354,22 +356,48 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
     {
       id: 'ho-chi-minh',
       name: 'Hồ Chí Minh',
-      aliases: ['bac ho', 'ngay sinh chu tich ho chi minh'],
+      aliases: ['bac ho', 'gio bac ho', 'gio ho chi minh'],
       kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-07-21`,
+      birthDate: '1890-05-19',
+      countries: vn,
+      birthPlace: 'Kim Liên, Nam Đàn, Nghệ An',
+      altarName: 'Hồ Chí Minh',
+      note: 'Giỗ Hồ Chí Minh',
+      story: {
+        title: 'Giỗ Hồ Chí Minh',
+        body:
+          'Ngày 21 tháng Bảy âm lịch là giỗ Chủ tịch Hồ Chí Minh. Người mất ngày 2 tháng 9 năm 1969 — nhằm 21/7 năm Kỷ Dậu. Dân gian, quê Kim Liên và nhiều đền thờ thắp hương theo âm lịch, như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện nhớ công ơn, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Hồ Chí Minh — Memorial',
+        bodyEn:
+          'The twenty-first of the seventh lunar month is the death anniversary of President Hồ Chí Minh. He died on 2 September 1969 — lunar 21/7 of the year Kỷ Dậu. Kim Liên, local shrines, and many households offer incense on the lunar date, quietly, as they would for a grandfather of the country.\n\nEach lotus offered today is also a prayer: that this gratitude is kept, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'ho-chi-minh-birthday',
+      name: 'Ngày sinh Hồ Chí Minh',
+      aliases: [
+        'ngay sinh chu tich ho chi minh',
+        'sinh nhat bac ho',
+        '19/5',
+        '19 thang 5',
+      ],
+      kind: 'event',
       eventCalendar: 'solar',
       eventDate: `${y}-05-19`,
       birthDate: '1890-05-19',
       countries: vn,
       birthPlace: 'Kim Liên, Nam Đàn, Nghệ An',
       altarName: 'Hồ Chí Minh',
-      note: 'Hồ Chí Minh',
+      note: 'Ngày sinh Hồ Chí Minh',
       story: {
-        title: 'Hồ Chí Minh',
+        title: 'Ngày sinh Hồ Chí Minh',
         body:
-          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
-        titleEn: 'Hồ Chí Minh',
+          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh (1890) — một ngày lễ lớn của cả nước. Nhiều nhà thắp hương, vào Lăng viếng, dâng hoa ở Kim Liên.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Hồ Chí Minh — Birthday',
         bodyEn:
-          '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
+          '19 May is the birthday of President Hồ Chí Minh (1890), one of Vietnam’s official commemoration days. Households offer incense; people visit the Mausoleum and Kim Liên with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
       },
     },
     {

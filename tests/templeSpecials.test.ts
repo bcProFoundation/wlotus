@@ -175,7 +175,7 @@ describe('templeSpecials', () => {
     expect(effectiveEventDate('2026-09-02', 0, 'solar')).toBe('2026-09-02');
   });
 
-  it('solar eventCalendar for heroes (e.g. Hồ Chí Minh 2 Sep)', () => {
+  it('solar eventCalendar stays on the given Gregorian day', () => {
     const profile = 'c'.repeat(64);
     const specials = [
       {

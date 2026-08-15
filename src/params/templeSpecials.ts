@@ -18,7 +18,7 @@
  * Event calendar:
  *   - lunar (default) — eventDate is a lunar YYYY-MM-DD; converted to solar
  *     via Hồ Ngọc Đức algorithm (VN timeZone 7) before the civil-day window.
- *   - solar — eventDate is already a Gregorian YYYY-MM-DD (e.g. Hồ Chí Minh).
+ *   - solar — eventDate is already a Gregorian YYYY-MM-DD (e.g. 19 May).
  *
  * Window: global civil range (UTC−12 … UTC+14 on each edge) from eventStart
  * through eventEnd (default both = eventDate), server time only.
@@ -65,7 +65,7 @@ export interface TempleSpecial {
   eventDate: string;
   /**
    * Calendar of `eventDate`. Default `'lunar'` (âm lịch).
-   * Use `'solar'` for fixed Gregorian anniversaries (e.g. Hồ Chí Minh 2 Sep).
+   * Use `'solar'` for fixed Gregorian anniversaries (e.g. 19 May).
    */
   eventCalendar?: TempleEventCalendar;
   /**
