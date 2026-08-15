@@ -416,7 +416,7 @@ Use semver: `v1.0.0`, `v1.0.1`, `v1.1.0`. Workflow matches `v*`.
 | Symptom | Fix |
 |---------|-----|
 | Job fails “not an ancestor of master” | Tag a commit that is already merged to master |
-| Permission denied on mint-api restart | Re-run bootstrap or fix `/etc/sudoers.d/wlotus-deploy` |
+| Permission denied / `sudo: a password is required` on mint-api restart | `/etc/sudoers.d/wlotus-deploy` missing, or lists only `/bin/systemctl` (Ubuntu usrmerge matches `/usr/bin/systemctl`) | As root: `sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh` (or re-run bootstrap-prod). Then re-tag / Deploy web (prod). |
 | Site updates but API old | Ensure `/opt/wlotus` clone exists and `CONTABO_PROD_REPO_PATH` is correct |
 | `npm ci` EACCES on `/opt/wlotus/node_modules` | Repo owned by **root**; CI user `deploy` cannot delete packages. **Fix once as root:** `sudo chown -R deploy:deploy /opt/wlotus`. Re-run bootstrap from **latest master** so sudoers matches CI (`chown -R deploy:deploy /opt/wlotus`). Prod deploys run the workflow from the **tag** — cut a new `v*` tag after this fix lands on master. |
 | Wrong ticker on SPA | Set Environment variable `VITE_PRAYER_TICKER=WLOTUS` (not repo test var) |
