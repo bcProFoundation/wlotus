@@ -19,7 +19,7 @@ install_wlotus_deploy_sudoers() {
   local cmds=()
   local sys unit bin
 
-  if [[ "$(id -u)" -ne 0 ]]; then
+  if [[ "$dest" == /etc/* && "$(id -u)" -ne 0 ]]; then
     echo "Run as root (sudo)." >&2
     return 1
   fi
@@ -42,23 +42,28 @@ install_wlotus_deploy_sudoers() {
     cmds+=("${bin} 600 /etc/wlotus/dana-index.env")
   done
   for bin in /usr/bin/chown /bin/chown; do
-    cmds+=("${bin} -R ${user}:${user} /opt/wlotus")
+    # sudoers treats ':' as a field separator — escape it (deploy\:deploy).
+    cmds+=("${bin} -R ${user}\\:${user} /opt/wlotus")
   done
   for bin in /usr/bin/rm /bin/rm; do
     cmds+=("${bin} -rf /opt/wlotus/node_modules")
   done
 
-  local joined
-  joined="$(printf '%s, ' "${cmds[@]}")"
-  joined="${joined%, }"
-
   local tmp
   tmp="$(mktemp)"
-  cat >"$tmp" <<EOF
-# Managed by deploy/contabo/install-wlotus-deploy-sudoers.sh
-# Exact-command NOPASSWD for CI (do not use ALL).
-${user} ALL=(root) NOPASSWD: ${joined}
-EOF
+  {
+    printf '%s\n' "# Managed by deploy/contabo/install-wlotus-deploy-sudoers.sh"
+    printf '%s\n' "# Exact-command NOPASSWD for CI (do not use ALL)."
+    printf '%s\n' "${user} ALL=(root) NOPASSWD: \\"
+    local i
+    for i in "${!cmds[@]}"; do
+      if [[ "$i" -lt $((${#cmds[@]} - 1)) ]]; then
+        printf '  %s, \\\n' "${cmds[$i]}"
+      else
+        printf '  %s\n' "${cmds[$i]}"
+      fi
+    done
+  } >"$tmp"
   chmod 440 "$tmp"
   if ! visudo -c -f "$tmp"; then
     echo "generated sudoers failed visudo -c" >&2
@@ -74,5 +79,5 @@ EOF
 # Execute when run as a script (including `curl | sudo bash`, where BASH_SOURCE is empty).
 # When sourced from bootstrap-*.sh, only the function is defined.
 if [[ -z "${BASH_SOURCE[0]:-}" || "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  install_wlotus_deploy_sudoers "${DEPLOY_USER:-deploy}"
+  install_wlotus_deploy_sudoers "${DEPLOY_USER:-deploy}" "${DEST:-/etc/sudoers.d/wlotus-deploy}"
 fi
