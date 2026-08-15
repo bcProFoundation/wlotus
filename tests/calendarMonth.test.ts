@@ -3,7 +3,9 @@ import {
   buildSolarMonthGrid,
   lunarCellLabel,
   memorialOnYmd,
+  orderMonthSpecials,
   specialCoversYmd,
+  specialsInMonth,
   tabFromHash,
   ymdKey,
 } from '../apps/web/src/lib/calendarMonth.js';
@@ -66,6 +68,29 @@ describe('calendarMonth', () => {
       expect(hit.lunar.day).toBe(21);
       expect(hit.lunar.month).toBe(7);
     }
+  });
+
+  it('lists month specials with the selected day first', () => {
+    const early = stubSpecial('2026-08-05');
+    early.name = 'Early';
+    const ghost = stubSpecial('2026-08-14', '2026-08-27');
+    ghost.name = 'Cô Hồn';
+    const vuLan = stubSpecial('2026-08-27');
+    vuLan.name = 'Vu Lan';
+    const halloween = stubSpecial('2026-10-31');
+    halloween.name = 'Halloween';
+    const month = specialsInMonth(
+      [halloween, vuLan, early, ghost],
+      2026,
+      8,
+    );
+    expect(month.map(s => s.name).sort()).toEqual(['Cô Hồn', 'Early', 'Vu Lan']);
+    expect(
+      orderMonthSpecials(month, '2026-08-05').map(s => s.name),
+    ).toEqual(['Early', 'Cô Hồn', 'Vu Lan']);
+    expect(
+      orderMonthSpecials(month, '2026-08-27').map(s => s.name),
+    ).toEqual(['Cô Hồn', 'Vu Lan', 'Early']);
   });
 
   it('adds months and parses tab hash', () => {

@@ -179,6 +179,7 @@ export type MessageKey =
   | 'calendarNextMonth'
   | 'calendarToday'
   | 'calendarEmptyDay'
+  | 'calendarEmptyMonth'
   | 'calendarMemorialsHeading';
 
 type Dict = Record<MessageKey, string>;
@@ -386,6 +387,7 @@ const en: Dict = {
   calendarNextMonth: 'Next month',
   calendarToday: 'Today',
   calendarEmptyDay: 'No observances on this day.',
+  calendarEmptyMonth: 'No observances this month.',
   calendarMemorialsHeading: 'Memorial days',
 };
 
@@ -593,6 +595,7 @@ const vi: Dict = {
   calendarNextMonth: 'Tháng sau',
   calendarToday: 'Hôm nay',
   calendarEmptyDay: 'Ngày này không có lễ hay giỗ.',
+  calendarEmptyMonth: 'Tháng này không có lễ hay giỗ.',
   calendarMemorialsHeading: 'Ngày giỗ',
 };
 
@@ -792,6 +795,7 @@ const zh: Dict = {
   calendarNextMonth: '下个月',
   calendarToday: '今天',
   calendarEmptyDay: '这一天没有节日或忌日。',
+  calendarEmptyMonth: '这个月没有节日或忌日。',
   calendarMemorialsHeading: '忌日',
 };
 

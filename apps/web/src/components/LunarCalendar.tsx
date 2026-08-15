@@ -5,14 +5,21 @@ import {
   buildSolarMonthGrid,
   lunarCellLabel,
   lunarTimeZone,
+  memorialsInMonth,
   memorialsOnYmd,
+  orderMonthSpecials,
+  specialCoversYmd,
+  specialsInMonth,
   specialsOnYmd,
   todayYmd,
   type CalendarDay,
   type CalendarMemorial,
 } from '../lib/calendarMonth.js';
 import { canChiYear, solarToLunar } from '../lib/lunarCalendar.js';
-import type { TempleSpecialProfileUi } from '../lib/specialsUi.js';
+import {
+  formatSpecialEventDateLabel,
+  type TempleSpecialProfileUi,
+} from '../lib/specialsUi.js';
 
 export function LunarCalendar(props: {
   specials: TempleSpecialProfileUi[];
@@ -35,8 +42,17 @@ export function LunarCalendar(props: {
   );
 
   const selected = days.find(d => d.ymd === selectedYmd) ?? days.find(d => d.isToday) ?? days[0]!;
-  const daySpecials = specialsOnYmd(props.specials, selected.ymd);
-  const dayMemorials = memorialsOnYmd(props.memorials, selected, locale);
+  const inMonthDays = days.filter(d => d.inMonth);
+  const monthSpecials = orderMonthSpecials(
+    specialsInMonth(props.specials, cursor.year, cursor.month),
+    selected.ymd,
+  );
+  const monthMemorials = memorialsInMonth(
+    props.memorials,
+    inMonthDays,
+    selected.ymd,
+    locale,
+  );
 
   const monthTitle = new Date(cursor.year, cursor.month - 1, 1).toLocaleDateString(
     locale === 'zh' ? 'zh-CN' : locale === 'vi' ? 'vi-VN' : 'en-GB',
@@ -171,47 +187,68 @@ export function LunarCalendar(props: {
           </span>
         </h3>
 
-        {daySpecials.length === 0 && dayMemorials.length === 0 ? (
-          <p className="hint">{t('calendarEmptyDay')}</p>
+        {monthSpecials.length === 0 && monthMemorials.length === 0 ? (
+          <p className="hint">{t('calendarEmptyMonth')}</p>
         ) : null}
 
-        {daySpecials.length > 0 ? (
+        {monthSpecials.length > 0 ? (
           <ul className="calendar-day-list">
-            {daySpecials.map(sp => (
-              <li key={sp.id || sp.profileId || sp.name}>
-                <button
-                  type="button"
-                  className="calendar-day-item"
-                  disabled={props.disabled}
-                  onClick={() => props.onOpenSpecial(sp)}
-                >
-                  <span className="calendar-day-item-name">{sp.name || sp.id}</span>
-                  <span className="calendar-day-item-kind">
-                    {sp.active ? t('homeEventsOngoing') : t('tabCalendar')}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {monthSpecials.map(sp => {
+              const onSelected = specialCoversYmd(sp, selected.ymd);
+              return (
+                <li key={sp.id || sp.profileId || sp.name}>
+                  <button
+                    type="button"
+                    className={[
+                      'calendar-day-item',
+                      onSelected ? 'is-on-selected' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={props.disabled}
+                    onClick={() => props.onOpenSpecial(sp)}
+                  >
+                    <span className="calendar-day-item-name">{sp.name || sp.id}</span>
+                    <span className="calendar-day-item-kind">
+                      {onSelected && sp.active
+                        ? t('homeEventsOngoing')
+                        : formatSpecialEventDateLabel(sp, locale)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : null}
 
-        {dayMemorials.length > 0 ? (
+        {monthMemorials.length > 0 ? (
           <>
             <h4 className="calendar-day-sub">{t('calendarMemorialsHeading')}</h4>
             <ul className="calendar-day-list">
-              {dayMemorials.map(m => (
-                <li key={m.parentTxid}>
-                  <button
-                    type="button"
-                    className="calendar-day-item"
-                    disabled={props.disabled}
-                    onClick={() => props.onOpenMemorial(m.parentTxid)}
-                  >
-                    <span className="calendar-day-item-name">{m.name}</span>
-                    <span className="calendar-day-item-kind">{t('calendarMemorialsHeading')}</span>
-                  </button>
-                </li>
-              ))}
+              {monthMemorials.map(m => {
+                const onSelected = m.onYmd === selected.ymd;
+                const p = m.onYmd.split('-');
+                const dateLabel =
+                  p.length === 3 ? `${Number(p[2])}/${Number(p[1])}` : m.onYmd;
+                return (
+                  <li key={m.parentTxid}>
+                    <button
+                      type="button"
+                      className={[
+                        'calendar-day-item',
+                        onSelected ? 'is-on-selected' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      disabled={props.disabled}
+                      onClick={() => props.onOpenMemorial(m.parentTxid)}
+                    >
+                      <span className="calendar-day-item-name">{m.name}</span>
+                      <span className="calendar-day-item-kind">{dateLabel}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </>
         ) : null}

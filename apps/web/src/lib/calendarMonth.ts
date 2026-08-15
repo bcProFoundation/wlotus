@@ -129,6 +129,76 @@ export function specialsOnYmd(
   return (specials ?? []).filter(s => specialCoversYmd(s, ymd));
 }
 
+function specialStartYmd(special: TempleSpecialProfileUi): string {
+  return (
+    special.effectiveStartDate ||
+    special.effectiveEventDate ||
+    special.eventDate ||
+    ''
+  ).trim();
+}
+
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+export function monthStartEnd(
+  year: number,
+  month: number,
+): { start: string; end: string } {
+  return {
+    start: ymdKey(year, month, 1),
+    end: ymdKey(year, month, lastDayOfMonth(year, month)),
+  };
+}
+
+/** Special's window overlaps this solar month. */
+export function specialOverlapsMonth(
+  special: TempleSpecialProfileUi,
+  year: number,
+  month: number,
+): boolean {
+  const start = specialStartYmd(special);
+  const endRaw = (
+    special.effectiveEndDate ||
+    special.effectiveEventDate ||
+    start
+  ).trim();
+  if (!parseYmd(start)) return false;
+  const end = parseYmd(endRaw) ? endRaw : start;
+  const { start: monthStart, end: monthEnd } = monthStartEnd(year, month);
+  return start <= monthEnd && end >= monthStart;
+}
+
+export function specialsInMonth(
+  specials: TempleSpecialProfileUi[] | null | undefined,
+  year: number,
+  month: number,
+): TempleSpecialProfileUi[] {
+  return (specials ?? []).filter(s => specialOverlapsMonth(s, year, month));
+}
+
+/** Selected-day specials first, then the rest of the month by start date. */
+export function orderMonthSpecials(
+  specials: TempleSpecialProfileUi[],
+  selectedYmd: string,
+): TempleSpecialProfileUi[] {
+  const onDay: TempleSpecialProfileUi[] = [];
+  const rest: TempleSpecialProfileUi[] = [];
+  for (const s of specials) {
+    if (specialCoversYmd(s, selectedYmd)) onDay.push(s);
+    else rest.push(s);
+  }
+  const byStart = (a: TempleSpecialProfileUi, b: TempleSpecialProfileUi) => {
+    const cmp = specialStartYmd(a).localeCompare(specialStartYmd(b));
+    if (cmp !== 0) return cmp;
+    return (a.name || '').localeCompare(b.name || '', 'vi');
+  };
+  onDay.sort(byStart);
+  rest.sort(byStart);
+  return [...onDay, ...rest];
+}
+
 export interface CalendarMemorial {
   name: string;
   deathYmd: string;
@@ -155,6 +225,36 @@ export function memorialsOnYmd(
   locale: string,
 ): CalendarMemorial[] {
   return memorials.filter(m => memorialOnYmd(m, day, locale));
+}
+
+export interface MonthMemorial extends CalendarMemorial {
+  /** Solar day in this month where the giỗ falls. */
+  onYmd: string;
+}
+
+/** Unique giỗ that fall on an in-month grid day; selected day first. */
+export function memorialsInMonth(
+  memorials: CalendarMemorial[],
+  inMonthDays: CalendarDay[],
+  selectedYmd: string,
+  locale: string,
+): MonthMemorial[] {
+  const seen = new Set<string>();
+  const onDay: MonthMemorial[] = [];
+  const rest: MonthMemorial[] = [];
+  for (const day of inMonthDays) {
+    for (const m of memorials) {
+      if (!memorialOnYmd(m, day, locale)) continue;
+      const key = m.parentTxid.trim().toLowerCase() || `${m.name}:${m.deathYmd}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const row = { ...m, onYmd: day.ymd };
+      if (day.ymd === selectedYmd) onDay.push(row);
+      else rest.push(row);
+    }
+  }
+  rest.sort((a, b) => a.onYmd.localeCompare(b.onYmd) || a.name.localeCompare(b.name, 'vi'));
+  return [...onDay, ...rest];
 }
 
 export type AppTab = 'home' | 'calendar';

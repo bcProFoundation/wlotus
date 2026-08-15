@@ -2309,3 +2309,11 @@ a {
   color: var(--muted);
   flex-shrink: 0;
 }
+
+.calendar-day-item.is-on-selected .calendar-day-item-name {
+  font-weight: 700;
+}
+
+.calendar-day-item:not(.is-on-selected) {
+  opacity: 0.82;
+}
