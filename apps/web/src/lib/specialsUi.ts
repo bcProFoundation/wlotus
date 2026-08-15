@@ -1,5 +1,10 @@
 import { solarToLunar } from './lunarCalendar.js';
 import { specialVisibleToViewer } from './specialCountries.js';
+import {
+  nextSpecialWindow,
+  projectSpecialWindow,
+  todayYmd,
+} from './calendarMonth.js';
 
 /**
  * Temple specials UI helpers — kind-driven copy + story during soft pray.
@@ -165,6 +170,7 @@ export function rankTempleSpecials(
   offerCountByProfileId: Record<string, number> | Map<string, number>,
   limit = 5,
   now: Date = new Date(),
+  locale = 'vi',
 ): RankedTempleSpecial[] {
   const list = profiles ?? [];
   const getCount = (id: string): number => {
@@ -175,6 +181,7 @@ export function rankTempleSpecials(
     return offerCountByProfileId[key] ?? 0;
   };
 
+  const today = todayYmd(now);
   const todayUtc = Date.UTC(
     now.getFullYear(),
     now.getMonth(),
@@ -188,21 +195,17 @@ export function rankTempleSpecials(
 
   type Tier = 0 | 1 | 2; // 0 active, 1 upcoming, 2 past (dropped)
 
-  const ranked: RankedTempleSpecial[] = list.map(p => {
-    const start =
-      (p.effectiveStartDate || p.effectiveEventDate || p.eventDate || '').trim();
-    const end = (
-      p.effectiveEndDate ||
-      p.effectiveEventDate ||
-      start
-    ).trim();
-    const sortDate = start || end;
-    return {
-      ...p,
-      sortDate,
+  const ranked: RankedTempleSpecial[] = [];
+  for (const p of list) {
+    const window = nextSpecialWindow(p, today, locale);
+    if (!window) continue;
+    const projected = projectSpecialWindow(p, window, today);
+    ranked.push({
+      ...projected,
+      sortDate: window.start,
       offerCount: getCount(p.profileId),
-    };
-  });
+    });
+  }
 
   const meta = (p: RankedTempleSpecial): { tier: Tier; days: number } => {
     const start = (

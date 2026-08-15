@@ -9,6 +9,7 @@ import {
   orderMonthSpecials,
   specialCoversYmd,
   specialsInMonth,
+  specialWindowInYear,
   tabFromHash,
   ymdKey,
 } from '../apps/web/src/lib/calendarMonth.js';
@@ -146,6 +147,62 @@ describe('calendarMonth', () => {
     expect(month).toHaveLength(1);
     expect(month[0]!.name).toBe('Bà Nguyễn Thị Lan');
     expect(month[0]!.onYmd).toBe('2026-08-27');
+  });
+
+  it('repeats festivals and personal death days every year', () => {
+    const vuLan = stubSpecial('2026-08-27');
+    vuLan.id = 'vu-lan';
+    vuLan.name = 'Vu Lan';
+    vuLan.eventCalendar = 'lunar';
+    vuLan.eventDate = '2026-07-15';
+    const birthday = stubSpecial('2026-05-19');
+    birthday.id = 'ho-chi-minh-birthday';
+    birthday.name = 'Ngày sinh Hồ Chí Minh';
+    birthday.eventCalendar = 'solar';
+
+    const aug2027 = specialsInMonth(
+      [vuLan, birthday],
+      2027,
+      8,
+      'vi',
+      '2027-08-01',
+    );
+    expect(aug2027.map(s => s.id)).toEqual(['vu-lan']);
+    const vuLan2027 = specialWindowInYear(vuLan, 2027, 'vi');
+    expect(vuLan2027).not.toBeNull();
+    expect(aug2027[0]!.effectiveEventDate).toBe(vuLan2027!.peak);
+    expect(aug2027[0]!.effectiveEventDate).not.toBe('2026-08-27');
+
+    const may2027 = specialsInMonth(
+      [vuLan, birthday],
+      2027,
+      5,
+      'vi',
+      '2027-05-01',
+    );
+    expect(may2027.map(s => s.id)).toEqual(['ho-chi-minh-birthday']);
+    expect(may2027[0]!.effectiveStartDate).toBe('2027-05-19');
+    expect(specialCoversYmd(birthday, '2027-05-19', 'vi')).toBe(true);
+    expect(specialCoversYmd(birthday, '2026-05-19', 'vi')).toBe(true);
+
+    const personal = {
+      name: 'Ông nội',
+      deathYmd: '1969-09-02',
+      parentTxid: 'e'.repeat(64),
+    };
+    const sep2025 = buildSolarMonthGrid(2025, 9, 'vi', new Date(2025, 8, 1));
+    const solarHit = sep2025.find(d => d.ymd === '2025-09-02');
+    expect(solarHit && memorialOnYmd(personal, solarHit, 'vi')).toBe(true);
+    const inMonth = sep2025.filter(d => d.inMonth);
+    const listed = memorialsInMonth( [personal], inMonth, '2025-09-02', 'vi');
+    expect(listed.some(m => m.onYmd === '2025-09-02')).toBe(true);
+    const lunarHits = listed.filter(m => m.onYmd !== '2025-09-02');
+    expect(lunarHits.length).toBeGreaterThanOrEqual(1);
+    for (const row of lunarHits) {
+      const day = sep2025.find(d => d.ymd === row.onYmd);
+      expect(day?.lunar.day).toBe(21);
+      expect(day?.lunar.month).toBe(7);
+    }
   });
 
   it('adds months and parses tab hash', () => {

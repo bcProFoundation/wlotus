@@ -3,6 +3,7 @@ import {
   findCatalogEntryByName,
   foldSpecialName,
 } from '../../../../src/params/templeSpecialCatalog.js';
+import { lunarYmdToSolarYmd } from '../../../../src/lib/lunarCalendar.js';
 import { solarToLunar, type LunarDate } from './lunarCalendar.js';
 import type { TempleSpecialProfileUi } from './specialsUi.js';
 
@@ -107,31 +108,162 @@ export function lunarCellLabel(lunar: LunarDate, locale: string): string {
   return lunar.leap ? `L${lunar.month}` : `M${lunar.month}`;
 }
 
-export function specialCoversYmd(
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function solarYmdInYear(ymd: string, year: number): string | null {
+  const p = parseYmd(ymd);
+  if (!p) return null;
+  const last = lastDayOfMonth(year, p.m);
+  return ymdKey(year, p.m, Math.min(p.d, last));
+}
+
+export interface SpecialWindow {
+  start: string;
+  end: string;
+  peak: string;
+}
+
+function orderedWindow(start: string, end: string, peak: string): SpecialWindow {
+  if (start <= end) return { start, end, peak };
+  return { start: end, end: start, peak };
+}
+
+/**
+ * Recurring window for this special in a given civil year.
+ * Lunar festivals convert that year's lunar month/day; solar ones reuse
+ * month/day (or the catalog row, so Qingming / Memorial Day stay correct).
+ */
+export function specialWindowInYear(
   special: TempleSpecialProfileUi,
-  ymd: string,
-): boolean {
-  const start = (
+  year: number,
+  locale = 'vi',
+): SpecialWindow | null {
+  const catalog =
+    findCatalogEntryById(special.id, year) ||
+    findCatalogEntryByName(special.name, year);
+  if (catalog) {
+    const peakRaw = catalog.eventDate;
+    const startRaw = catalog.eventStart || peakRaw;
+    const endRaw = catalog.eventEnd || peakRaw;
+    if (catalog.eventCalendar === 'lunar') {
+      const tz = lunarTimeZone(locale);
+      const start = lunarYmdToSolarYmd(startRaw, tz);
+      const end = lunarYmdToSolarYmd(endRaw, tz);
+      const peak = lunarYmdToSolarYmd(peakRaw, tz);
+      if (!start || !end || !peak) return null;
+      return orderedWindow(start, end, peak);
+    }
+    if (!parseYmd(startRaw) || !parseYmd(endRaw) || !parseYmd(peakRaw)) {
+      return null;
+    }
+    return orderedWindow(startRaw, endRaw, peakRaw);
+  }
+
+  const cal = (special.eventCalendar || '').toLowerCase();
+  const srcStart = (
     special.effectiveStartDate ||
     special.effectiveEventDate ||
     special.eventDate ||
     ''
   ).trim();
-  const end = (
+  const srcEnd = (
     special.effectiveEndDate ||
     special.effectiveEventDate ||
-    start
+    srcStart
   ).trim();
-  if (!start || !parseYmd(ymd)) return false;
-  const last = end && parseYmd(end) ? end : start;
-  return ymd >= start && ymd <= last;
+  const srcPeak = (
+    special.effectiveEventDate ||
+    special.eventDate ||
+    srcStart
+  ).trim();
+  const startP = parseYmd(srcStart);
+  if (!startP) return null;
+  const endP = parseYmd(srcEnd) ?? startP;
+  const peakP = parseYmd(srcPeak) ?? startP;
+  const tz = lunarTimeZone(locale);
+
+  if (cal === 'lunar') {
+    const eventP = parseYmd((special.eventDate || '').trim());
+    const startL = solarToLunar(startP.d, startP.m, startP.y, tz);
+    const endL = solarToLunar(endP.d, endP.m, endP.y, tz);
+    const peakL = eventP
+      ? { month: eventP.m, day: eventP.d }
+      : solarToLunar(peakP.d, peakP.m, peakP.y, tz);
+    const start = lunarYmdToSolarYmd(
+      `${year}-${pad2(startL.month)}-${pad2(startL.day)}`,
+      tz,
+    );
+    const end = lunarYmdToSolarYmd(
+      `${year}-${pad2(endL.month)}-${pad2(endL.day)}`,
+      tz,
+    );
+    const peak = lunarYmdToSolarYmd(
+      `${year}-${pad2(peakL.month)}-${pad2(peakL.day)}`,
+      tz,
+    );
+    if (!start || !end || !peak) return null;
+    return orderedWindow(start, end, peak);
+  }
+
+  const start = solarYmdInYear(srcStart, year);
+  const end = solarYmdInYear(srcEnd, year);
+  const peak = solarYmdInYear(srcPeak, year);
+  if (!start || !end || !peak) return null;
+  return orderedWindow(start, end, peak);
+}
+
+/** Next window whose end is today or later (this year, else next). */
+export function nextSpecialWindow(
+  special: TempleSpecialProfileUi,
+  today: string,
+  locale = 'vi',
+): SpecialWindow | null {
+  const p = parseYmd(today);
+  if (!p) return null;
+  for (let y = p.y - 1; y <= p.y + 2; y++) {
+    const w = specialWindowInYear(special, y, locale);
+    if (w && w.end >= today) return w;
+  }
+  return null;
+}
+
+export function projectSpecialWindow(
+  special: TempleSpecialProfileUi,
+  window: SpecialWindow,
+  today = todayYmd(),
+): TempleSpecialProfileUi {
+  const inWindow = today >= window.start && today <= window.end;
+  return {
+    ...special,
+    effectiveStartDate: window.start,
+    effectiveEndDate: window.end,
+    effectiveEventDate: window.peak,
+    active: inWindow,
+  };
+}
+
+export function specialCoversYmd(
+  special: TempleSpecialProfileUi,
+  ymd: string,
+  locale = 'vi',
+): boolean {
+  const p = parseYmd(ymd);
+  if (!p) return false;
+  for (const y of [p.y - 1, p.y, p.y + 1]) {
+    const w = specialWindowInYear(special, y, locale);
+    if (w && ymd >= w.start && ymd <= w.end) return true;
+  }
+  return false;
 }
 
 export function specialsOnYmd(
   specials: TempleSpecialProfileUi[] | null | undefined,
   ymd: string,
+  locale = 'vi',
 ): TempleSpecialProfileUi[] {
-  return (specials ?? []).filter(s => specialCoversYmd(s, ymd));
+  return (specials ?? []).filter(s => specialCoversYmd(s, ymd, locale));
 }
 
 function specialStartYmd(special: TempleSpecialProfileUi): string {
@@ -141,10 +273,6 @@ function specialStartYmd(special: TempleSpecialProfileUi): string {
     special.eventDate ||
     ''
   ).trim();
-}
-
-function lastDayOfMonth(year: number, month: number): number {
-  return new Date(year, month, 0).getDate();
 }
 
 export function monthStartEnd(
@@ -157,41 +285,55 @@ export function monthStartEnd(
   };
 }
 
-/** Special's window overlaps this solar month. */
+/** Special's recurring window overlaps this solar month. */
 export function specialOverlapsMonth(
   special: TempleSpecialProfileUi,
   year: number,
   month: number,
+  locale = 'vi',
 ): boolean {
-  const start = specialStartYmd(special);
-  const endRaw = (
-    special.effectiveEndDate ||
-    special.effectiveEventDate ||
-    start
-  ).trim();
-  if (!parseYmd(start)) return false;
-  const end = parseYmd(endRaw) ? endRaw : start;
   const { start: monthStart, end: monthEnd } = monthStartEnd(year, month);
-  return start <= monthEnd && end >= monthStart;
+  for (const y of [year - 1, year, year + 1]) {
+    const w = specialWindowInYear(special, y, locale);
+    if (w && w.start <= monthEnd && w.end >= monthStart) return true;
+  }
+  return false;
 }
 
 export function specialsInMonth(
   specials: TempleSpecialProfileUi[] | null | undefined,
   year: number,
   month: number,
+  locale = 'vi',
+  today = todayYmd(),
 ): TempleSpecialProfileUi[] {
-  return (specials ?? []).filter(s => specialOverlapsMonth(s, year, month));
+  const { start: monthStart, end: monthEnd } = monthStartEnd(year, month);
+  const out: TempleSpecialProfileUi[] = [];
+  const seen = new Set<string>();
+  for (const s of specials ?? []) {
+    const key = (s.id || s.profileId || s.name || '').trim().toLowerCase();
+    for (const y of [year - 1, year, year + 1]) {
+      const w = specialWindowInYear(s, y, locale);
+      if (!w || w.start > monthEnd || w.end < monthStart) continue;
+      if (key && seen.has(key)) break;
+      if (key) seen.add(key);
+      out.push(projectSpecialWindow(s, w, today));
+      break;
+    }
+  }
+  return out;
 }
 
 /** Selected-day specials first, then the rest of the month by start date. */
 export function orderMonthSpecials(
   specials: TempleSpecialProfileUi[],
   selectedYmd: string,
+  locale = 'vi',
 ): TempleSpecialProfileUi[] {
   const onDay: TempleSpecialProfileUi[] = [];
   const rest: TempleSpecialProfileUi[] = [];
   for (const s of specials) {
-    if (specialCoversYmd(s, selectedYmd)) onDay.push(s);
+    if (specialCoversYmd(s, selectedYmd, locale)) onDay.push(s);
     else rest.push(s);
   }
   const byStart = (a: TempleSpecialProfileUi, b: TempleSpecialProfileUi) => {
@@ -298,7 +440,7 @@ export function excludeSpecialDuplicateMemorials(
   return memorials.filter(m => !memorialDuplicatesSpecial(m, specials));
 }
 
-/** Lunar death anniversary (giỗ) falls on this grid day. */
+/** Lunar giỗ or solar death anniversary falls on this grid day. */
 export function memorialOnYmd(
   memorial: CalendarMemorial,
   day: CalendarDay,
@@ -306,6 +448,7 @@ export function memorialOnYmd(
 ): boolean {
   const p = parseYmd(memorial.deathYmd);
   if (!p) return false;
+  if (p.m === day.solarM && p.d === day.solarD) return true;
   const deathLunar = solarToLunar(p.d, p.m, p.y, lunarTimeZone(locale));
   return (
     deathLunar.day === day.lunar.day && deathLunar.month === day.lunar.month
@@ -338,7 +481,8 @@ export function memorialsInMonth(
   for (const day of inMonthDays) {
     for (const m of memorials) {
       if (!memorialOnYmd(m, day, locale)) continue;
-      const key = m.parentTxid.trim().toLowerCase() || `${m.name}:${m.deathYmd}`;
+      const key =
+        `${m.parentTxid.trim().toLowerCase() || m.name}:${day.ymd}`;
       if (seen.has(key)) continue;
       seen.add(key);
       const row = { ...m, onYmd: day.ymd };

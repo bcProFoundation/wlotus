@@ -1498,6 +1498,8 @@ export default function App() {
     }),
     specialOfferCounts,
     8,
+    new Date(),
+    locale,
   );
 
   function altarFromUnboundSpecial(sp: TempleSpecialProfileUi): AltarFields {
