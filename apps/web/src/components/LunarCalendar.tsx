@@ -3,6 +3,7 @@ import { useLocale } from '../i18n/LocaleContext.js';
 import {
   addMonths,
   buildSolarMonthGrid,
+  excludeSpecialDuplicateMemorials,
   lunarCellLabel,
   lunarTimeZone,
   memorialsInMonth,
@@ -43,12 +44,16 @@ export function LunarCalendar(props: {
 
   const selected = days.find(d => d.ymd === selectedYmd) ?? days.find(d => d.isToday) ?? days[0]!;
   const inMonthDays = days.filter(d => d.inMonth);
+  const personalMemorials = useMemo(
+    () => excludeSpecialDuplicateMemorials(props.memorials, props.specials),
+    [props.memorials, props.specials],
+  );
   const monthSpecials = orderMonthSpecials(
     specialsInMonth(props.specials, cursor.year, cursor.month),
     selected.ymd,
   );
   const monthMemorials = memorialsInMonth(
-    props.memorials,
+    personalMemorials,
     inMonthDays,
     selected.ymd,
     locale,
@@ -91,7 +96,7 @@ export function LunarCalendar(props: {
   function marksFor(day: CalendarDay): { special: boolean; memorial: boolean } {
     return {
       special: specialsOnYmd(props.specials, day.ymd).length > 0,
-      memorial: memorialsOnYmd(props.memorials, day, locale).length > 0,
+      memorial: memorialsOnYmd(personalMemorials, day, locale).length > 0,
     };
   }
 
