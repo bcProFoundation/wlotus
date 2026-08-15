@@ -32,7 +32,6 @@ on:
       - master
     paths:
       - 'apps/web/**'
-      - 'apps/mint-api/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-web-test.yml'

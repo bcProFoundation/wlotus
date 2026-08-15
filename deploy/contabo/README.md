@@ -515,18 +515,32 @@ and Environment `production` variables — see **[PROD.md § Upgrade: new live g
 
 ### Test — https://test.wlotus.org
 
-Workflow: **Deploy web (test)** — `.github/workflows/deploy-web-test.yml`
+Two workflows. The SPA and mint-api do **not** deploy together: rsyncing HTML
+does not restart the API, and restarting the API should not wait on a Vite build.
+
+#### Deploy web (test) — `.github/workflows/deploy-web-test.yml`
 
 | Trigger | When |
 |---------|------|
-| **Automatic** | Push to `master` that touches `apps/web/**`, `apps/mint-api/**`, `package.json`, workflow, or `deploy/contabo/**` |
-| **Manual** | Actions → Deploy web (test) → **Run workflow** (use branch **master** only) |
+| **Automatic** | Push to `master` that touches `apps/web/**`, `package.json`, workflow, or `deploy/contabo/**` |
+| **Manual** | Actions → **Deploy web (test)** → **Run workflow** (branch **master**) |
 
-Feature branches do **not** trigger deploy (cost control).
+Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → `/var/www/wlotus-test`.
 
-Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → VM.
+#### Deploy mint-api (test) — `.github/workflows/deploy-mint-api-test.yml`
 
-After a green run, https://test.wlotus.org serves the new build (hard-refresh if cached).
+| Trigger | When |
+|---------|------|
+| **Automatic** | Push to `master` that touches `apps/mint-api/**`, `apps/dana-index/**`, `src/**`, or lockfile |
+| **Manual** | Actions → **Deploy mint-api (test)** → **Run workflow** (branch **master**; optional SHA) |
+
+Steps: SSH as `deploy` → backup live dryrun JSON + claims → `git reset --hard` that SHA on `/opt/wlotus` → restore JSON → `npm ci` → `systemctl restart wlotus-mint-api` (dana-index too when sudoers allows) → `GET /health`.
+
+Use **manual** after a catalog/API merge if you do not want to wait for the path filter, or to redeploy the same SHA again.
+
+Feature branches do **not** trigger either deploy (cost control).
+
+After a green **web** run, https://test.wlotus.org serves the new SPA (hard-refresh if cached). After a green **mint-api** run, `/api/status` is the matching server.
 
 ### Production — https://wlotus.org
 

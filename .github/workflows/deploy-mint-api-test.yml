@@ -1,0 +1,161 @@
+# Update /opt/wlotus on the Contabo **test** VM and restart mint-api.
+# Separate from Deploy web (test): SPA rsync does not restart the API.
+#
+# Required GitHub secrets (same as Deploy web (test)):
+#   CONTABO_HOST
+#   CONTABO_USER
+#   CONTABO_SSH_PRIVATE_KEY
+#
+# Optional:
+#   CONTABO_SSH_PORT     — default 22
+#   CONTABO_REPO_PATH    — clone on VM; default /opt/wlotus
+#
+# Preserves live dryrun baton JSON + first-burn claims, then:
+#   git reset --hard <sha> → npm ci → systemctl restart mint-api
+#
+# One-time VM setup: deploy/contabo/README.md (bootstrap-opt-wlotus.sh)
+
+name: Deploy mint-api (test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'master SHA, or empty for this workflow ref (must be on master)'
+        required: false
+        type: string
+  push:
+    branches:
+      - master
+    paths:
+      - 'apps/mint-api/**'
+      - 'apps/dana-index/**'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-mint-api-test.yml'
+
+concurrency:
+  group: deploy-mint-api-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve deploy ref
+        id: ref
+        run: |
+          if [ -n "${{ inputs.ref }}" ]; then
+            echo "ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Ensure commit is on master
+        run: |
+          git fetch origin master
+          SHA="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$SHA" origin/master; then
+            echo "::error::Deploy ref $SHA is not on origin/master. Run from master (or a SHA already merged)."
+            exit 1
+          fi
+          echo "OK: $SHA is on master"
+
+      - name: Require Contabo secrets
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+          CONTABO_SSH_PRIVATE_KEY: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+        run: |
+          missing=0
+          for name in CONTABO_HOST CONTABO_USER CONTABO_SSH_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name secret is not set"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CONTABO_SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
+        run: |
+          PORT="${CONTABO_SSH_PORT:-22}"
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$PORT" -H "$CONTABO_HOST" >> ~/.ssh/known_hosts
+
+      - name: Update mint-api checkout + restart
+        env:
+          CONTABO_HOST: ${{ secrets.CONTABO_HOST }}
+          CONTABO_USER: ${{ secrets.CONTABO_USER }}
+          CONTABO_SSH_PORT: ${{ secrets.CONTABO_SSH_PORT }}
+          CONTABO_REPO_PATH: ${{ secrets.CONTABO_REPO_PATH }}
+        run: |
+          PORT="${CONTABO_SSH_PORT:-22}"
+          REPO="${CONTABO_REPO_PATH:-/opt/wlotus}"
+          SHA="$(git rev-parse HEAD)"
+          ssh -p "$PORT" "${CONTABO_USER}@${CONTABO_HOST}" \
+            env REPO="$REPO" SHA="$SHA" \
+            bash -s <<'REMOTE'
+          set -euo pipefail
+          : "${REPO:?REPO required}" "${SHA:?SHA required}"
+          if [ ! -d "$REPO/.git" ]; then
+            echo "::error::No git clone at $REPO — run bootstrap-opt-wlotus.sh first"
+            exit 1
+          fi
+          cd "$REPO"
+          ME="$(whoami)"
+          BAK=/tmp/wlotus-deploy-bak
+          mkdir -p "$BAK"
+          for f in \
+            deployments/mainnet-dryrun-active.json \
+            deployments/mainnet-dryrun-wlotus.json \
+            deployments/temple-special-claims.json; do
+            [ -f "$f" ] && cp -a "$f" "$BAK/" || true
+          done
+          git fetch origin
+          git reset --hard "$SHA"
+          mkdir -p deployments
+          for f in \
+            mainnet-dryrun-active.json \
+            mainnet-dryrun-wlotus.json \
+            temple-special-claims.json; do
+            if [ -f "$BAK/$f" ]; then
+              cp -a "$BAK/$f" "deployments/$f"
+            fi
+          done
+          if [ "$REPO" = /opt/wlotus ]; then
+            sudo -n /bin/chown -R "$ME:$ME" /opt/wlotus \
+              && echo "chown $ME:$ME /opt/wlotus OK" \
+              || echo "chown skipped (sudoers missing — re-run bootstrap-opt-wlotus.sh)"
+            if [ -d /opt/wlotus/node_modules ] && [ ! -w /opt/wlotus/node_modules ]; then
+              sudo -n /bin/rm -rf /opt/wlotus/node_modules \
+                && echo "removed root-owned /opt/wlotus/node_modules" \
+                || true
+            fi
+          fi
+          if [ -d node_modules ] && [ ! -w node_modules ]; then
+            echo "::error::$REPO/node_modules is not writable by $ME"
+            echo "On the VM as root: sudo chown -R $ME:$ME $REPO"
+            exit 1
+          fi
+          npm ci
+          sudo -n /bin/systemctl restart wlotus-mint-api.service
+          sudo -n /bin/systemctl restart wlotus-dana-index.service || true
+          echo "mint-api at $(git rev-parse --short HEAD)"
+          curl -fsS --retry 8 --retry-delay 2 http://127.0.0.1:8787/health
+          echo
+          REMOTE
