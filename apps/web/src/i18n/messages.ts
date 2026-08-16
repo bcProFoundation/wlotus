@@ -199,7 +199,7 @@ const en: Dict = {
     'Your phone searches for a digital WLOTUS. Keep the app open and in the foreground so the search can continue. Use that time to remember someone who has passed. You can stop the search anytime.',
   howMintTitle: '',
   howMintBody:
-    'Finding WLOTUS yields 108 digital lotuses — one full mala. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is burned as the flower offering. The remaining 107 go to the W Lotus developer on this platform in lieu of network fees. A pay-your-own-fees option will come later, when you can choose to keep a portion of the issued lotuses.',
+    'Finding WLOTUS yields 108 digital lotuses — one full mala. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is burned as the flower offering. The remaining 107 go to the W Lotus developer on this platform in lieu of eCash blockchain fees, so the lotus and the vow are kept forever. A pay-your-own-fees option will come later, when you can choose to keep a portion of the issued lotuses.',
   howWhyTitle: '',
   howWhyBody: '',
   howEternalTitle: '',
@@ -407,7 +407,7 @@ const vi: Dict = {
     'Điện thoại được dùng để tìm ra bông sen số WLOTUS. Bạn phải bật ứng dụng liên tục và không sử dụng ứng dụng khác để quá trình tìm kiếm bông sen số được tiếp tục. Trong lúc này, bạn có thể tưởng nhớ về người đã khuất. Bạn có thể dừng quá trình tìm kiếm này bất cứ lúc nào.',
   howMintTitle: '',
   howMintBody:
-    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. Một bông sen số được đốt làm lễ dâng hoa. 107 bông còn lại được chuyển cho nhà phát triển W Lotus trên nền tảng này, thay cho phí giao dịch. Tính năng tự trả phí sẽ ra mắt sau; khi đó bạn sẽ có lựa chọn giữ lại một phần số sen được phát hành.',
+    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. Một bông sen số được đốt làm lễ dâng hoa. 107 bông còn lại được chuyển cho nhà phát triển W Lotus trên nền tảng này, thay cho phí giao dịch trên chuỗi khối eCash để giữ lại bông sen và lời nguyện mãi mãi. Tính năng tự trả phí sẽ ra mắt sau; khi đó bạn sẽ có lựa chọn giữ lại một phần số sen được phát hành.',
   howWhyTitle: '',
   howWhyBody: '',
   howEternalTitle: '',
@@ -614,7 +614,7 @@ const zh: Dict = {
     '手机用于寻找数字莲花 WLOTUS。请保持应用持续开启，且不要切换到其他应用，以便寻找过程继续。在此期间，您可以追思逝去的亲人。您可以随时停止寻找。',
   howMintTitle: '',
   howMintBody:
-    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵燃烧作为献花。其余 107 朵交给本平台的 W Lotus 开发者以抵网络手续费。自行支付手续费的功能将稍后推出；届时您可选择保留一部分新发行的莲花。',
+    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵燃烧作为献花。其余 107 朵交给本平台的 W Lotus 开发者，以抵 eCash 链上手续费，好让莲花与愿言得以永存。自行支付手续费的功能将稍后推出；届时您可选择保留一部分新发行的莲花。',
   howWhyTitle: '',
   howWhyBody: '',
   howEternalTitle: '',
