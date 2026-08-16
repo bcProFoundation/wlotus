@@ -19,8 +19,8 @@
  *
  * 2026 solar anchors:
  *   Lunar 15/2 → 2 Apr (Mahayana Parinirvana)
- *   Lunar 8/4  → 24 May (Phật Đản / 佛诞 / bathing the Buddha)
- *   Lunar 15/4 → 31 May (Vesakha full moon / UN Vesak 2026)
+ *   Lunar 8/4  → 24 May (Bắc tông Phật Đản / 佛诞; start of VN Phật Đản week)
+ *   Lunar 15/4 → 31 May (Vesakha full moon / GHPGVN chính lễ / UN Vesak 2026)
  *   Lunar 1/7  → 13 Aug (ghost-month open, Chinese calendar)
  *   Lunar 2/7  → 14 Aug (VN Cô Hồn start, Hồ Ngọc Đức UTC+7)
  *   Lunar 15/7 → 27 Aug (Vu Lan / Ullambana / Zhongyuan peak)
@@ -179,7 +179,9 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       ],
       kind: 'event',
       eventCalendar: 'lunar',
-      eventDate: `${y}-04-08`,
+      eventDate: `${y}-04-15`,
+      eventStart: `${y}-04-08`,
+      eventEnd: `${y}-04-15`,
       countries: vn,
       birthPlace: 'Việt Nam',
       altarName: 'Phật Đản',
@@ -187,10 +189,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Lễ Phật Đản',
         body:
-          'Mùng tám tháng Tư âm lịch, chùa Việt Nam làm lễ Phật Đản — ngày Đức Phật Thích Ca đản sinh. Tắm Phật, dâng hoa, nhớ một người đã tìm ra con đường hết khổ.\n\nTruyền rằng khi Thái tử đản sinh, hoa sen nở dưới mỗi bước chân. Dâng sen hôm nay không phải thần thoại, mà là nhắc mình: từ bi bắt đầu từ một đời người.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ơn Phật còn được nhớ, nguyện cho nhà nhà được bình an.',
+          'Theo âm lịch (không phải Phật lịch đếm năm): Bắc tông nhớ ngày đản sinh vào mùng tám tháng Tư; Giáo hội Phật giáo Việt Nam lấy rằm tháng Tư — ngày trăng tròn tháng Vesak — làm chính lễ, tuần lễ từ mùng 8 đến rằm. Tắm Phật, dâng hoa, nhớ một người đã tìm ra con đường hết khổ.\n\nTruyền rằng khi Thái tử đản sinh, hoa sen nở dưới mỗi bước chân. Dâng sen hôm nay không phải thần thoại, mà là nhắc mình: từ bi bắt đầu từ một đời người.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ơn Phật còn được nhớ, nguyện cho nhà nhà được bình an.',
         titleEn: 'Buddha’s Birthday',
         bodyEn:
-          'On the eighth of the fourth lunar month, Vietnamese temples keep Phật Đản — the Buddha’s birth. Bathing the image, offering flowers: remembering someone who looked for a way out of suffering.\n\nLegend says lotuses opened under the infant’s steps. A lotus today is not that myth — it is a reminder that compassion begins in one human life.\n\nEach lotus offered today is also a prayer: that this birth is still remembered, and that every home may find peace.',
+          'On the East Asian lunar calendar (not Buddhist Era year-counting): Mahayana remembers the birth on the eighth of the fourth month; Vietnam’s sangha, with the 1950 Vesak agreement, keeps the full moon (the 15th) as the main day, with observances from the 8th to the 15th. Bathing the image, offering flowers: remembering someone who looked for a way out of suffering.\n\nLegend says lotuses opened under the infant’s steps. A lotus today is not that myth — it is a reminder that compassion begins in one human life.\n\nEach lotus offered today is also a prayer: that this birth is still remembered, and that every home may find peace.',
       },
     },
     {
@@ -416,6 +418,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       ],
       kind: 'event',
       eventCalendar: 'lunar',
+      // East Asian âm lịch 15/4 ≈ Vesakha full moon (SG/MY/TH/UN 2024–2028).
+      // Phật lịch is year numbering only. Myanmar/India may differ by a day.
       eventDate: `${y}-04-15`,
       countries: en,
       birthPlace: '',

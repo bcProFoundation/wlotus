@@ -67,8 +67,8 @@ test env before launch. Set **0** in production.
 | Lunar | Solar |
 |-------|--------|
 | 15/2/2026 | **2 Apr 2026** (Phật nhập Niết-bàn) |
-| 8/4/2026 | **24 May 2026** (Phật Đản / 佛诞) |
-| 15/4/2026 | **31 May 2026** (Vesakha full moon / Vesak) |
+| 8/4/2026 | **24 May 2026** (Bắc tông Phật Đản / 佛诞; start of VN week) |
+| 15/4/2026 | **31 May 2026** (GHPGVN chính lễ / Vesakha full moon / Vesak) |
 | 2/7/2026 | **14 Aug 2026** |
 | 15/7/2026 (Rằm) | **27 Aug 2026** |
 | 8/12/2026 | **15 Jan 2027** (Phật thành đạo / 佛成道) |
@@ -103,6 +103,8 @@ Each profile’s `eventDate` is interpreted according to **`eventCalendar`**:
 
 Altar `deathDate` is already **solar**. Prefer documenting solar equivalents for
 ops clarity; keep lunar conversion when the cultural date is naturally âm lịch.
+
+**Buddhist holy days** still use that East Asian lunisolar calendar (`eventCalendar: "lunar"`), not a separate “Buddha calendar” engine. **Phật lịch / Buddhist Era** is year numbering (CE + 543), not a different month/day. Mahayana VN/ZH keep 8/4, 15/2, 8/12 on âm lịch; Theravada Vesak is the Vesakha full moon, which we store as lunar 15/4 (matches SG/MY/TH/UN 2024–2028). GHPGVN Phật Đản week is lunar 8/4–15/4 with chính lễ on the 15th.
 
 ---
 

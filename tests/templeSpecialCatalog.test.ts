@@ -39,7 +39,9 @@ describe('temple special catalog', () => {
     expect(byId['memorial-day']!.countries).toEqual(['US']);
     expect(byId['anzac']!.countries).toEqual(['AU', 'NZ']);
     expect(byId['phat-dan']!.eventCalendar).toBe('lunar');
-    expect(byId['phat-dan']!.eventDate).toBe('2026-04-08');
+    expect(byId['phat-dan']!.eventDate).toBe('2026-04-15');
+    expect(byId['phat-dan']!.eventStart).toBe('2026-04-08');
+    expect(byId['phat-dan']!.eventEnd).toBe('2026-04-15');
     expect(byId['phat-dan']!.countries).toEqual([...VIETNAM_COUNTRIES]);
     expect(byId['fo-dan']!.eventDate).toBe('2026-04-08');
     expect(byId['fo-dan']!.countries).toEqual([...CHINESE_SPEAKING_COUNTRIES]);
