@@ -140,6 +140,20 @@ export function specialWindowInYear(
   year: number,
   locale = 'vi',
 ): SpecialWindow | null {
+  // Trust the server window for this civil year. The SPA catalog can be a
+  // deploy behind mint-api (web path filters used to miss src/**).
+  const apiPeak = (special.effectiveEventDate || '').trim();
+  const apiStart = (special.effectiveStartDate || apiPeak).trim();
+  const apiEnd = (special.effectiveEndDate || apiPeak).trim();
+  const apiPeakP = parseYmd(apiPeak);
+  if (
+    apiPeakP?.y === year &&
+    parseYmd(apiStart) &&
+    parseYmd(apiEnd)
+  ) {
+    return orderedWindow(apiStart, apiEnd, apiPeak);
+  }
+
   const catalog =
     findCatalogEntryById(special.id, year) ||
     findCatalogEntryByName(special.name, year);

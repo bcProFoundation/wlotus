@@ -522,7 +522,7 @@ does not restart the API, and restarting the API should not wait on a Vite build
 
 | Trigger | When |
 |---------|------|
-| **Automatic** | Push to `master` that touches `apps/web/**`, `package.json`, workflow, or `deploy/contabo/**` |
+| **Automatic** | Push to `master` that touches `apps/web/**`, `src/**` (catalog used by the calendar), `package.json`, workflow, or `deploy/contabo/**` |
 | **Manual** | Actions → **Deploy web (test)** → **Run workflow** (branch **master**) |
 
 Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → `/var/www/wlotus-test`.
