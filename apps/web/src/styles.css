@@ -246,6 +246,20 @@ a {
   max-width: 68%;
 }
 
+/*
+ * Optical lift vs neighboring text only. The lotus-W is bottom-heavy; that
+ * bowl is correct on standalone icons and PWA plates. When the transparent
+ * glyph sits in a row with a wordmark, nudge it up so it matches the type.
+ * Stacked marks (open-in-browser) and boxed --on-light plates are not shifted.
+ */
+.brand-main .brand-mark--on-dark,
+.btn-reoffer-lotus .brand-mark--on-dark,
+.offer-session-title .brand-mark--on-dark,
+.home-events-count--offers .brand-mark--on-dark,
+.memorial-history-note:has(.memorial-history-note-text) .brand-mark--on-dark {
+  transform: translateY(-8%);
+}
+
 /* Light cream uses a baked rounded PNG; dark/wood use the transparent white W. */
 .brand-mark--on-light {
   display: none;
@@ -1945,6 +1959,22 @@ a {
   line-height: 1.25;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.home-events-count--offers {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  flex: 0 0 auto;
+  max-width: none;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.home-events-count--offers .brand-mark-badge {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 
