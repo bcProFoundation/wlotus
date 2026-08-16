@@ -6,21 +6,26 @@
  * becomes the on-chain root.
  *
  * Research (memorial / ancestral offering days that fit W Lotus):
- *   VN  — Vu Lan, Cô Hồn, Tết Thanh Minh, Giỗ Tổ Hùng Vương,
- *         Thương binh liệt sĩ, Trần Hưng Đạo, Hồ Chí Minh, Hai Bà Trưng.
- *   ZH  — 盂兰盆, 中元节, 清明节, 寒衣节, 重阳节, 冬至, 孔子, 关羽, 妈祖.
- *         Chinese-speaking: CN, TW, HK, MO, SG.
- *   EN  — All Hallows' Eve, All Saints', All Souls', Remembrance,
+ *   VN  — Phật Đản, Phật thành đạo, Phật nhập Niết-bàn, Vu Lan, Cô Hồn,
+ *         Tết Thanh Minh, Giỗ Tổ Hùng Vương, Thương binh liệt sĩ,
+ *         Trần Hưng Đạo, Hồ Chí Minh, Hai Bà Trưng.
+ *   ZH  — 佛诞, 佛成道, 佛涅槃, 盂兰盆, 中元节, 清明节, 寒衣节, 重阳节,
+ *         冬至, 孔子, 关羽, 妈祖. Chinese-speaking: CN, TW, HK, MO, SG.
+ *   EN  — Vesak, All Hallows' Eve, All Saints', All Souls', Remembrance,
  *         Memorial Day (US), ANZAC Day (AU/NZ).
  *
  * Catalog rows are unbound until a visitor's first offering claims the root.
  * Temple does not pre-burn.
  *
  * 2026 solar anchors:
+ *   Lunar 15/2 → 2 Apr (Mahayana Parinirvana)
+ *   Lunar 8/4  → 24 May (Phật Đản / 佛诞 / bathing the Buddha)
+ *   Lunar 15/4 → 31 May (Vesakha full moon / UN Vesak 2026)
  *   Lunar 1/7  → 13 Aug (ghost-month open, Chinese calendar)
  *   Lunar 2/7  → 14 Aug (VN Cô Hồn start, Hồ Ngọc Đức UTC+7)
  *   Lunar 15/7 → 27 Aug (Vu Lan / Ullambana / Zhongyuan peak)
  *   Lunar 21/7 → 2 Sep 2026 (Hồ Chí Minh giỗ; died 2 Sep 1969)
+ *   Lunar 8/12 → 15 Jan 2027 (Mahayana Bodhi / 成道 of lunar year 2026)
  *   Qingming / Thanh Minh → 5 Apr 2026 (solar term; PRC holiday 4–6 Apr)
  *   US Memorial Day → 25 May 2026 (last Monday)
  *   All Souls' → 2 Nov 2026
@@ -161,6 +166,84 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       },
     },
     {
+      id: 'phat-dan',
+      name: 'Phật Đản',
+      aliases: [
+        'le phat dan',
+        'le phat an',
+        'phat dan',
+        'vesak vn',
+        'buddha birthday vn',
+        'tam phat',
+        'Lễ Phật Đản',
+      ],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-04-08`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Phật Đản',
+      note: 'Lễ Phật Đản',
+      story: {
+        title: 'Lễ Phật Đản',
+        body:
+          'Mùng tám tháng Tư âm lịch, chùa Việt Nam làm lễ Phật Đản — ngày Đức Phật Thích Ca đản sinh. Tắm Phật, dâng hoa, nhớ một người đã tìm ra con đường hết khổ.\n\nTruyền rằng khi Thái tử đản sinh, hoa sen nở dưới mỗi bước chân. Dâng sen hôm nay không phải thần thoại, mà là nhắc mình: từ bi bắt đầu từ một đời người.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ơn Phật còn được nhớ, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Buddha’s Birthday',
+        bodyEn:
+          'On the eighth of the fourth lunar month, Vietnamese temples keep Phật Đản — the Buddha’s birth. Bathing the image, offering flowers: remembering someone who looked for a way out of suffering.\n\nLegend says lotuses opened under the infant’s steps. A lotus today is not that myth — it is a reminder that compassion begins in one human life.\n\nEach lotus offered today is also a prayer: that this birth is still remembered, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'phat-niet-ban',
+      name: 'Phật nhập Niết-bàn',
+      aliases: [
+        'phat nhap niet ban',
+        'le phat tiet',
+        'parinirvana vn',
+        'nirvana day vn',
+      ],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-02-15`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Phật nhập Niết-bàn',
+      note: 'Phật nhập Niết-bàn',
+      story: {
+        title: 'Phật nhập Niết-bàn',
+        body:
+          'Rằm tháng Hai âm lịch, nhiều chùa làm lễ Phật nhập Niết-bàn — ngày Đức Phật tịch. Không phải ngày hội, mà là giỗ của bậc thầy: nhớ người đã đi hết con đường, rồi nằm nghiêng bên gốc sala.\n\nMột bông sen trên ban thờ hôm ấy là lời tiễn và lời cảm ơn.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ơn thầy còn được giữ, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Parinirvana — the Buddha’s Passing',
+        bodyEn:
+          'On the full moon of the second lunar month, many Mahayana temples keep the Buddha’s Parinirvana — the day he died. Not a festival: a teacher’s memorial, remembering a life that walked the path to the end.\n\nA lotus on the shrine that day is both farewell and thanks.\n\nEach lotus offered today is also a prayer: that this teacher is still kept, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'phat-thanh-dao',
+      name: 'Phật thành đạo',
+      aliases: [
+        'le phat thanh dao',
+        'thanh dao',
+        'bodhi day vn',
+        'bo de',
+      ],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-12-08`,
+      countries: vn,
+      birthPlace: 'Việt Nam',
+      altarName: 'Phật thành đạo',
+      note: 'Lễ Phật thành đạo',
+      story: {
+        title: 'Lễ Phật thành đạo',
+        body:
+          'Mùng tám tháng Chạp âm lịch là lễ Phật thành đạo — đêm Thái tử ngồi dưới cội Bồ-đề, thấy rõ khổ và lối ra.\n\nNgười tới chùa dâng hoa, thắp đèn, nhớ phút tỉnh thức ấy không thuộc riêng một dân tộc.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện còn chỗ để tỉnh, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Bodhi Day — the Buddha’s Awakening',
+        bodyEn:
+          'On the eighth of the twelfth lunar month, temples keep the Buddha’s awakening — the night under the Bodhi tree when he saw suffering clearly, and a way out.\n\nPeople offer flowers and light, remembering an hour that does not belong to one nation.\n\nEach lotus offered today is also a prayer: that there is still a place to wake, and that every home may find peace.',
+      },
+    },
+    {
       id: 'thanh-minh',
       name: 'Tết Thanh Minh',
       aliases: ['thanh minh', 'tao mo'],
@@ -250,6 +333,101 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         titleEn: 'Qingming — Tomb Sweeping',
         bodyEn:
           'At Qingming the air clears and spring returns. Families visit ancestral graves: pull weeds, add earth, offer flowers and incense. It is not only mourning — it is a reunion with those who came before.\n\nAfter the tombs are swept, the old stories are told so children will not forget their roots. A handful of soil, incense, a flower — enough to say: we still remember.\n\nEach lotus offered today is also a prayer: that those who came before are remembered, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'fo-dan',
+      name: '佛诞',
+      aliases: ['fo dan', '浴佛节', '浴佛', '佛誕', 'buddha birthday zh'],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-04-08`,
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '佛诞',
+      note: '浴佛节',
+      story: {
+        title: '佛诞 — 浴佛',
+        titleZh: '佛诞 — 浴佛',
+        body:
+          '农历四月初八，浴佛节。纪念释迦牟尼诞生：以香水浴佛、献花，记得有一个人走出王宫，去找离苦的路。\n\n传说太子诞生时，步步生莲。今日献莲不是神话，而是提醒：慈悲始于一个生命。\n\n今日每一朵莲花，也是一句愿：愿佛恩被记得，愿家家得安宁。',
+        bodyZh:
+          '农历四月初八，浴佛节。纪念释迦牟尼诞生：以香水浴佛、献花，记得有一个人走出王宫，去找离苦的路。\n\n传说太子诞生时，步步生莲。今日献莲不是神话，而是提醒：慈悲始于一个生命。\n\n今日每一朵莲花，也是一句愿：愿佛恩被记得，愿家家得安宁。',
+        titleEn: 'Buddha’s Birthday — Bathing the Buddha',
+        bodyEn:
+          'On the eighth of the fourth lunar month, Chinese-speaking temples keep the Buddha’s birthday: bathing the image, offering flowers, remembering someone who left the palace to look for a way out of suffering.\n\nLegend says lotuses opened under each infant step. A lotus today is not that myth — it is a reminder that compassion begins in one life.\n\nEach lotus offered today is also a prayer: that this birth is still remembered, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'fo-niepan',
+      name: '佛涅槃',
+      aliases: ['niepan', '涅槃节', '佛入涅槃', 'parinirvana zh'],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-02-15`,
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '佛涅槃',
+      note: '佛涅槃',
+      story: {
+        title: '佛涅槃',
+        titleZh: '佛涅槃',
+        body:
+          '农历二月十五，纪念佛陀入涅槃。不是欢庆，而是老师的忌日：记得那个人走完了路，在娑罗树下侧卧而逝。\n\n一朵莲花，是送别，也是感恩。\n\n今日每一朵莲花，也是一句愿：愿师恩被记得，愿家家得安宁。',
+        bodyZh:
+          '农历二月十五，纪念佛陀入涅槃。不是欢庆，而是老师的忌日：记得那个人走完了路，在娑罗树下侧卧而逝。\n\n一朵莲花，是送别，也是感恩。\n\n今日每一朵莲花，也是一句愿：愿师恩被记得，愿家家得安宁。',
+        titleEn: 'Parinirvana',
+        bodyEn:
+          'On the fifteenth of the second lunar month, Mahayana temples remember the Buddha’s passing. Not a festival: a teacher’s death day — a life that walked the path to the end.\n\nA lotus is farewell and thanks.\n\nEach lotus offered today is also a prayer: that this teacher is still kept, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'fo-chengdao',
+      name: '佛成道',
+      aliases: ['chengdao', '成道', '腊八', '臘八', 'bodhi day zh'],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-12-08`,
+      countries: zh,
+      birthPlace: '中国',
+      altarName: '佛成道',
+      note: '佛成道',
+      story: {
+        title: '佛成道',
+        titleZh: '佛成道',
+        body:
+          '农历十二月初八，成道日——也是腊八。纪念佛陀在菩提树下觉悟：看清苦，也看见出路。\n\n献花、燃灯，记得那一夜不属于一个国家。\n\n今日每一朵莲花，也是一句愿：愿仍有醒处，愿家家得安宁。',
+        bodyZh:
+          '农历十二月初八，成道日——也是腊八。纪念佛陀在菩提树下觉悟：看清苦，也看见出路。\n\n献花、燃灯，记得那一夜不属于一个国家。\n\n今日每一朵莲花，也是一句愿：愿仍有醒处，愿家家得安宁。',
+        titleEn: 'Bodhi Day',
+        bodyEn:
+          'On the eighth of the twelfth lunar month — Laba in folk calendars — temples keep the Buddha’s awakening under the Bodhi tree: suffering seen clearly, and a way out.\n\nFlowers and lamps remember an hour that does not belong to one nation.\n\nEach lotus offered today is also a prayer: that there is still a place to wake, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'vesak',
+      name: 'Vesak',
+      aliases: [
+        'vesakha',
+        'wesak',
+        'buddha day',
+        'buddha birthday',
+        'visakha puja',
+      ],
+      kind: 'event',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-04-15`,
+      countries: en,
+      birthPlace: '',
+      altarName: 'Vesak',
+      note: 'Vesak',
+      story: {
+        title: 'Vesak',
+        titleEn: 'Vesak',
+        body:
+          'On the full moon of the fourth lunar month (Vesakha), many Buddhist communities remember the Buddha’s birth, enlightenment, and passing — three moments, one day of flowers.\n\nA lotus on the shrine is the old offering: not a slogan. Presence, and a life that pointed a way out of suffering.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
+        bodyEn:
+          'On the full moon of the fourth lunar month (Vesakha), many Buddhist communities remember the Buddha’s birth, enlightenment, and passing — three moments, one day of flowers.\n\nA lotus on the shrine is the old offering: not a slogan. Presence, and a life that pointed a way out of suffering.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
       },
     },
     {

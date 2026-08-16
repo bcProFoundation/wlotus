@@ -235,6 +235,18 @@ describe('calendarMonth', () => {
     expect(may[0]!.effectiveStartDate).toBe('2026-05-19');
   });
 
+  it('places Phật Đản on 24 May 2026 (lunar 8/4) and Vesak on 31 May', () => {
+    const phatDan = catalogAsUi('phat-dan');
+    const vesak = catalogAsUi('vesak');
+    expect(specialWindowInYear(phatDan, 2026, 'vi')?.peak).toBe('2026-05-24');
+    expect(specialWindowInYear(vesak, 2026, 'en')?.peak).toBe('2026-05-31');
+    const mayVn = specialsInMonth([phatDan], 2026, 5, 'vi', '2026-05-24');
+    expect(mayVn.map(s => s.id)).toEqual(['phat-dan']);
+    expect(specialCoversYmd(phatDan, '2026-05-24', 'vi')).toBe(true);
+    const mayEn = specialsInMonth([vesak], 2026, 5, 'en', '2026-05-31');
+    expect(mayEn.map(s => s.id)).toEqual(['vesak']);
+  });
+
   it('uses the API solar window when the SPA catalog is stale', () => {
     const stale = stubSpecial('2026-05-19');
     stale.id = 'ho-chi-minh';

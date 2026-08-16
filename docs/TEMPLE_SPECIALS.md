@@ -66,8 +66,12 @@ test env before launch. Set **0** in production.
 
 | Lunar | Solar |
 |-------|--------|
+| 15/2/2026 | **2 Apr 2026** (Phật nhập Niết-bàn) |
+| 8/4/2026 | **24 May 2026** (Phật Đản / 佛诞) |
+| 15/4/2026 | **31 May 2026** (Vesakha full moon / Vesak) |
 | 2/7/2026 | **14 Aug 2026** |
 | 15/7/2026 (Rằm) | **27 Aug 2026** |
+| 8/12/2026 | **15 Jan 2027** (Phật thành đạo / 佛成道) |
 
 ### Launch timing (2026)
 

@@ -38,7 +38,18 @@ describe('temple special catalog', () => {
     expect(byId['memorial-day']!.eventDate).toBe('2026-05-25');
     expect(byId['memorial-day']!.countries).toEqual(['US']);
     expect(byId['anzac']!.countries).toEqual(['AU', 'NZ']);
-    expect(cat.length).toBeGreaterThanOrEqual(19);
+    expect(byId['phat-dan']!.eventCalendar).toBe('lunar');
+    expect(byId['phat-dan']!.eventDate).toBe('2026-04-08');
+    expect(byId['phat-dan']!.countries).toEqual([...VIETNAM_COUNTRIES]);
+    expect(byId['fo-dan']!.eventDate).toBe('2026-04-08');
+    expect(byId['fo-dan']!.countries).toEqual([...CHINESE_SPEAKING_COUNTRIES]);
+    expect(byId['vesak']!.eventDate).toBe('2026-04-15');
+    expect(byId['vesak']!.countries).toEqual([...ENGLISH_SPEAKING_COUNTRIES]);
+    expect(byId['phat-niet-ban']!.eventDate).toBe('2026-02-15');
+    expect(byId['phat-thanh-dao']!.eventDate).toBe('2026-12-08');
+    expect(byId['fo-niepan']!.eventDate).toBe('2026-02-15');
+    expect(byId['fo-chengdao']!.eventDate).toBe('2026-12-08');
+    expect(cat.length).toBeGreaterThanOrEqual(26);
   });
 
   it('says Cô Hồn offering is sharing, not fear', () => {
@@ -85,6 +96,18 @@ describe('temple special catalog', () => {
       'ho-chi-minh-birthday',
     );
     expect(findCatalogEntryByName('关公')?.id).toBe('guan-yu');
+    expect(findCatalogEntryByName('Phật Đản')?.id).toBe('phat-dan');
+    expect(findCatalogEntryByName('Lễ Phật Đản')?.id).toBe('phat-dan');
+    expect(findCatalogEntryByName('佛诞')?.id).toBe('fo-dan');
+    expect(findCatalogEntryByName('浴佛节')?.id).toBe('fo-dan');
+    expect(findCatalogEntryByName('Vesak')?.id).toBe('vesak');
+    expect(findCatalogEntryByName('Wesak')?.id).toBe('vesak');
+    expect(findCatalogEntryByName('Phật nhập Niết-bàn')?.id).toBe(
+      'phat-niet-ban',
+    );
+    expect(findCatalogEntryByName('佛涅槃')?.id).toBe('fo-niepan');
+    expect(findCatalogEntryByName('Phật thành đạo')?.id).toBe('phat-thanh-dao');
+    expect(findCatalogEntryByName('腊八')?.id).toBe('fo-chengdao');
   });
 
   it('2026 lunar 15/7 is 27 Aug (VN UTC+7)', () => {
@@ -92,6 +115,10 @@ describe('temple special catalog', () => {
     expect(lunarYmdToSolarYmd('2026-07-02', 7)).toBe('2026-08-14');
     expect(lunarYmdToSolarYmd('2026-07-01', 7)).toBe('2026-08-13');
     expect(lunarYmdToSolarYmd('2026-07-21', 7)).toBe('2026-09-02');
+    expect(lunarYmdToSolarYmd('2026-04-08', 7)).toBe('2026-05-24');
+    expect(lunarYmdToSolarYmd('2026-04-15', 7)).toBe('2026-05-31');
+    expect(lunarYmdToSolarYmd('2026-02-15', 7)).toBe('2026-04-02');
+    expect(lunarYmdToSolarYmd('2026-12-08', 7)).toBe('2027-01-15');
     expect(qingmingSolarYmd(2026)).toBe('2026-04-05');
     expect(memorialDaySolarYmd(2026)).toBe('2026-05-25');
   });
