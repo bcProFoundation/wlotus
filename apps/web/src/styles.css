@@ -228,6 +228,7 @@ a {
   height: 100%;
   width: auto;
   object-fit: contain;
+  object-position: center;
 }
 
 /* Hero lockup — square plate keeps the original box; only the transparent glyph scales down. */
@@ -273,7 +274,7 @@ a {
   object-fit: contain;
 }
 
-/* Square plate fills the badge. Transparent lotus has no padding — scale it, not the plate. */
+/* Square plate fills the badge. Transparent lotus is optically padded — scale it, not the plate. */
 .brand-mark-badge .brand-mark--on-dark {
   width: 62%;
   height: 62%;
