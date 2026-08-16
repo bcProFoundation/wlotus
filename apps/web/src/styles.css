@@ -260,7 +260,6 @@ a {
  * and boxed --on-light plates are not shifted.
  */
 .btn-reoffer-lotus .brand-mark--on-dark,
-.offer-session-title .brand-mark--on-dark,
 .memorial-history-note:has(.memorial-history-note-text) .brand-mark--on-dark {
   transform: translateY(-8%);
 }
@@ -1660,13 +1659,20 @@ a {
 .offer-session-title {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
+  line-height: 1;
 }
 
 .offer-session-title-mark {
   flex-shrink: 0;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1em;
+  height: 1em;
+}
+
+.offer-session-title .brand-mark--on-dark {
+  width: 92%;
+  height: 92%;
+  transform: none;
 }
 
 .offer-session-label {
