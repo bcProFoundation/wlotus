@@ -2026,7 +2026,7 @@ export default function App() {
                           <span className="home-events-count-n">
                             {ev.offerCount}
                           </span>
-                          <BrandMark badge width={18} height={18} />
+                          <BrandMark badge width={24} height={24} />
                         </>
                       ) : (
                         t('homeEventsFirstBurn')
