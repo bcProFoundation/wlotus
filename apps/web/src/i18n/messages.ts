@@ -380,8 +380,7 @@ const en: Dict = {
   themeDark: 'Dark',
   tabHome: 'Home',
   tabCalendar: 'Calendar',
-  calendarHint:
-    'Come back on festival days and death anniversaries — a reason to offer again.',
+  calendarHint: 'See events in the month or on a day.',
   calendarPrevMonth: 'Previous month',
   calendarNextMonth: 'Next month',
   calendarToday: 'Today',
@@ -587,8 +586,7 @@ const vi: Dict = {
   themeDark: 'Tối',
   tabHome: 'Trang chủ',
   tabCalendar: 'Lịch',
-  calendarHint:
-    'Quay lại vào ngày lễ và ngày giỗ — một lý do để dâng hoa lần nữa.',
+  calendarHint: 'Xem sự kiện trong tháng hoặc ngày.',
   calendarPrevMonth: 'Tháng trước',
   calendarNextMonth: 'Tháng sau',
   calendarToday: 'Hôm nay',
@@ -787,7 +785,7 @@ const zh: Dict = {
   themeDark: '深色',
   tabHome: '首页',
   tabCalendar: '日历',
-  calendarHint: '节日与忌日再来献花。',
+  calendarHint: '查看本月或当日的活动。',
   calendarPrevMonth: '上个月',
   calendarNextMonth: '下个月',
   calendarToday: '今天',
