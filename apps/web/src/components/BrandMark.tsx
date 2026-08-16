@@ -6,6 +6,8 @@
  * `badge` is the compact square for history / re-offer rows.
  * Light in-app marks use the padded 192 asset (same as the header), not the
  * tight 16/32 browser favicons.
+ * Alignment with neighboring text is CSS-only (`.brand-mark--on-dark` in a
+ * lockup). The PNG itself and PWA/boxed plates keep the heavier bowl.
  */
 export function BrandMark(props: {
   className?: string;

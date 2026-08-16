@@ -4,22 +4,20 @@
 Source: apps/web/public/images/W-bold.png (white glyph, already transparent).
 
 Outputs:
-  W-white.png                  white glyph, transparent background, optically centered
+  W-white.png                  cropped white glyph, transparent background
   wlotus-icon-{16,32}          browser favicons — W close to the rounded edge
   wlotus-icon-{192,512}        PWA any-purpose rounded black square
+  wlotus-icon-180.png          full-bleed black (iOS apple-touch; OS applies mask)
   wlotus-icon-180.png          full-bleed black (iOS apple-touch; OS applies mask)
   apple-touch-icon.png         same as 180
   wlotus-icon-maskable-512.png full-bleed black, glyph in the 80% safe zone
   favicon.ico                  16/32/48 rounded
-
-`--white-only` rewrites W-white.png and leaves the boxed plates alone.
 
 Requires: pip install pillow
 """
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -57,55 +55,6 @@ def extract_white_glyph(src: Image.Image) -> Image.Image:
     if bbox:
         out = out.crop(bbox)
     return out
-
-
-def alpha_centroid(img: Image.Image) -> tuple[float, float]:
-    """Return the alpha-weighted center of mass in pixel coordinates."""
-    img = img.convert("RGBA")
-    px = img.load()
-    assert px is not None
-    w, h = img.size
-    mass = 0.0
-    mx = 0.0
-    my = 0.0
-    for y in range(h):
-        for x in range(w):
-            a = px[x, y][3]
-            if not a:
-                continue
-            mass += a
-            mx += a * (x + 0.5)
-            my += a * (y + 0.5)
-    if mass <= 0:
-        return w / 2, h / 2
-    return mx / mass, my / mass
-
-
-def pad_to_optical_center(glyph: Image.Image) -> Image.Image:
-    """Pad so the alpha-weighted centroid sits at the canvas midpoint.
-
-    The lotus-W is bottom-heavy (bowl + lower petals). A tight bbox crop puts
-    that mass below geometric center, so CSS `object-fit: contain` still looks
-    low in the header. Boxed square plates keep using the tight glyph.
-    """
-    cx, cy = alpha_centroid(glyph)
-    w, h = glyph.size
-    # Positive pad_left / pad_top when the centroid is left / above center.
-    dx = round(w - 2 * cx)
-    dy = round(h - 2 * cy)
-    pad_left = max(0, dx)
-    pad_right = max(0, -dx)
-    pad_top = max(0, dy)
-    pad_bottom = max(0, -dy)
-    if pad_left == pad_right == pad_top == pad_bottom == 0:
-        return glyph
-    canvas = Image.new(
-        "RGBA",
-        (w + pad_left + pad_right, h + pad_top + pad_bottom),
-        (0, 0, 0, 0),
-    )
-    canvas.paste(glyph, (pad_left, pad_top), glyph)
-    return canvas
 
 
 def fit_glyph(glyph: Image.Image, box: int) -> Image.Image:
@@ -156,20 +105,8 @@ def save_png(img: Image.Image, path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--white-only",
-        action="store_true",
-        help="Rewrite W-white.png only; do not touch boxed favicons / PWA plates",
-    )
-    args = parser.parse_args()
-
-    tight = extract_white_glyph(Image.open(SOURCE))
-    save_png(pad_to_optical_center(tight), IMAGES / "W-white.png")
-    if args.white_only:
-        return
-
-    glyph = tight
+    glyph = extract_white_glyph(Image.open(SOURCE))
+    save_png(glyph, IMAGES / "W-white.png")
 
     for size in (16, 32):
         save_png(

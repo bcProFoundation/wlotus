@@ -246,6 +246,19 @@ a {
   max-width: 68%;
 }
 
+/*
+ * Optical lift vs neighboring text only. The lotus-W is bottom-heavy; that
+ * bowl is correct on standalone icons and PWA plates. When the transparent
+ * glyph sits in a row with a wordmark, nudge it up so it matches the type.
+ * Stacked marks (open-in-browser) and boxed --on-light plates are not shifted.
+ */
+.brand-main .brand-mark--on-dark,
+.btn-reoffer-lotus .brand-mark--on-dark,
+.offer-session-title .brand-mark--on-dark,
+.memorial-history-note:has(.memorial-history-note-text) .brand-mark--on-dark {
+  transform: translateY(-8%);
+}
+
 /* Light cream uses a baked rounded PNG; dark/wood use the transparent white W. */
 .brand-mark--on-light {
   display: none;
@@ -274,7 +287,7 @@ a {
   object-fit: contain;
 }
 
-/* Square plate fills the badge. Transparent lotus is optically padded — scale it, not the plate. */
+/* Square plate fills the badge. Transparent lotus has no padding — scale it, not the plate. */
 .brand-mark-badge .brand-mark--on-dark {
   width: 62%;
   height: 62%;
