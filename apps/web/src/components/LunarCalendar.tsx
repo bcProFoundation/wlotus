@@ -175,23 +175,25 @@ export function LunarCalendar(props: {
         >
           ›
         </button>
-        <button type="button" className="link-more calendar-today-btn" onClick={goToday}>
-          {t('calendarToday')}
-        </button>
       </div>
 
       <div className="calendar-day-panel">
-        <h3 className="calendar-day-heading">
-          {selected.solarD}/{selected.solarM}
-          <span className="calendar-day-lunar">
-            {' · '}
-            {locale.startsWith('zh')
-              ? `${selected.lunar.leap ? '闰' : ''}${selected.lunar.month}月${selected.lunar.day}日`
-              : locale.startsWith('vi')
-                ? `ngày ${selected.lunar.day}/${selected.lunar.month}${selected.lunar.leap ? ' nhuận' : ''}`
-                : `lunar ${selected.lunar.day}/${selected.lunar.month}${selected.lunar.leap ? ' leap' : ''}`}
-          </span>
-        </h3>
+        <div className="calendar-day-heading-row">
+          <h3 className="calendar-day-heading">
+            {selected.solarD}/{selected.solarM}
+            <span className="calendar-day-lunar">
+              {' · '}
+              {locale.startsWith('zh')
+                ? `${selected.lunar.leap ? '闰' : ''}${selected.lunar.month}月${selected.lunar.day}日`
+                : locale.startsWith('vi')
+                  ? `ngày ${selected.lunar.day}/${selected.lunar.month}${selected.lunar.leap ? ' nhuận' : ''}`
+                  : `lunar ${selected.lunar.day}/${selected.lunar.month}${selected.lunar.leap ? ' leap' : ''}`}
+            </span>
+          </h3>
+          <button type="button" className="link-more calendar-today-btn" onClick={goToday}>
+            {t('calendarToday')}
+          </button>
+        </div>
 
         {monthSpecials.length === 0 && monthMemorials.length === 0 ? (
           <p className="hint">{t('calendarEmptyMonth')}</p>
