@@ -2168,6 +2168,21 @@ a {
 
 .calendar-today-btn {
   flex-shrink: 0;
+  align-self: baseline;
+}
+
+.calendar-day-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.calendar-day-heading {
+  margin: 0;
+  min-width: 0;
+  font-size: 1rem;
 }
 
 .calendar-weekdays {
@@ -2254,11 +2269,6 @@ a {
 .calendar-day-panel {
   margin-top: 0.35rem;
   padding-top: 0.35rem;
-}
-
-.calendar-day-heading {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
 }
 
 .calendar-day-lunar {
