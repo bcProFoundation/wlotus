@@ -200,9 +200,8 @@ const en: Dict = {
   howMintTitle: '',
   howMintBody:
     'Finding WLOTUS yields 108 digital lotuses — one full mala. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is burned as the flower offering. The remaining 107 go to the W Lotus developer on this platform in lieu of network fees. A pay-your-own-fees option will come later, when you can choose to keep a portion of the issued lotuses.',
-  howWhyTitle: 'Why do the remaining 107 go to the developer?',
-  howWhyBody:
-    'Each mint needs a small eCash network fee. On phones, W Lotus sponsors that fee so you can offer without holding XEC — the remaining 107 lotuses stay with the developer on this platform. When you can pay the fee yourself, you will keep most of the issue; a small temple share will still help run the system.',
+  howWhyTitle: '',
+  howWhyBody: '',
   howEternalTitle: '',
   howEternalBody:
     'Each offering is recorded forever on the blockchain — a mark of lasting reverence.',
@@ -409,9 +408,8 @@ const vi: Dict = {
   howMintTitle: '',
   howMintBody:
     'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. Một bông sen số được đốt làm lễ dâng hoa. 107 bông còn lại được chuyển cho nhà phát triển W Lotus trên nền tảng này, thay cho phí giao dịch. Tính năng tự trả phí sẽ ra mắt sau; khi đó bạn sẽ có lựa chọn giữ lại một phần số sen được phát hành.',
-  howWhyTitle: 'Vì sao 107 bông được chuyển cho nhà phát triển?',
-  howWhyBody:
-    'Mỗi lần phát hành sen đều cần một khoản phí mạng eCash. Trên điện thoại, W Lotus tài trợ phí này để bạn dâng hoa mà không cần giữ XEC — 107 bông còn lại thuộc về nhà phát triển trên nền tảng này. Khi tự trả phí, bạn sẽ giữ phần lớn số sen; một phần nhỏ vẫn dành cho đền thờ để duy trì hệ thống.',
+  howWhyTitle: '',
+  howWhyBody: '',
   howEternalTitle: '',
   howEternalBody:
     'Mỗi lần dâng sen được ghi lại mãi mãi trên chuỗi khối eCash, đánh dấu cho lòng thành kính vĩnh hằng.',
@@ -617,9 +615,8 @@ const zh: Dict = {
   howMintTitle: '',
   howMintBody:
     '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵燃烧作为献花。其余 107 朵交给本平台的 W Lotus 开发者以抵网络手续费。自行支付手续费的功能将稍后推出；届时您可选择保留一部分新发行的莲花。',
-  howWhyTitle: '为何其余 107 朵交给开发者？',
-  howWhyBody:
-    '每次发行莲花都需要一小笔 eCash 网络手续费。在手机上，W Lotus 代付该费用，让您无需持有 XEC 即可献花——其余 107 朵留在本平台开发者处。待您可自行支付手续费时，将保留大部分新发行的莲花；仍有一小部分交给寺庙以维持系统。',
+  howWhyTitle: '',
+  howWhyBody: '',
   howEternalTitle: '',
   howEternalBody:
     '每一次献花都会永久记在区块链上，铭刻一份永恒的敬意。',
