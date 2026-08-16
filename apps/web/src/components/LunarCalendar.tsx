@@ -115,29 +115,6 @@ export function LunarCalendar(props: {
         <p className="hint calendar-hint">{t('calendarHint')}</p>
       </div>
 
-      <div className="calendar-nav">
-        <button
-          type="button"
-          className="header-icon-btn"
-          aria-label={t('calendarPrevMonth')}
-          onClick={() => setCursor(c => addMonths(c.year, c.month, -1))}
-        >
-          ‹
-        </button>
-        <h2 className="calendar-month-title">{monthTitle}</h2>
-        <button
-          type="button"
-          className="header-icon-btn"
-          aria-label={t('calendarNextMonth')}
-          onClick={() => setCursor(c => addMonths(c.year, c.month, 1))}
-        >
-          ›
-        </button>
-        <button type="button" className="link-more calendar-today-btn" onClick={goToday}>
-          {t('calendarToday')}
-        </button>
-      </div>
-
       <div className="calendar-weekdays" aria-hidden="true">
         {weekdayLabels.map((w, i) => (
           <span key={i}>{w}</span>
@@ -178,6 +155,29 @@ export function LunarCalendar(props: {
             </button>
           );
         })}
+      </div>
+
+      <div className="calendar-nav">
+        <button
+          type="button"
+          className="header-icon-btn"
+          aria-label={t('calendarPrevMonth')}
+          onClick={() => setCursor(c => addMonths(c.year, c.month, -1))}
+        >
+          ‹
+        </button>
+        <h2 className="calendar-month-title">{monthTitle}</h2>
+        <button
+          type="button"
+          className="header-icon-btn"
+          aria-label={t('calendarNextMonth')}
+          onClick={() => setCursor(c => addMonths(c.year, c.month, 1))}
+        >
+          ›
+        </button>
+        <button type="button" className="link-more calendar-today-btn" onClick={goToday}>
+          {t('calendarToday')}
+        </button>
       </div>
 
       <div className="calendar-day-panel">
