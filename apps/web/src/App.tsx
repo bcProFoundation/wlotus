@@ -2009,10 +2009,28 @@ export default function App() {
                         );
                       })()}
                     </span>
-                    <span className="home-events-count">
-                      {ev.offerCount > 0
-                        ? t('homeEventsOfferings', { n: ev.offerCount })
-                        : t('homeEventsFirstBurn')}
+                    <span
+                      className={
+                        ev.offerCount > 0
+                          ? 'home-events-count home-events-count--offers'
+                          : 'home-events-count'
+                      }
+                      aria-label={
+                        ev.offerCount > 0
+                          ? t('homeEventsOfferings', { n: ev.offerCount })
+                          : undefined
+                      }
+                    >
+                      {ev.offerCount > 0 ? (
+                        <>
+                          <span className="home-events-count-n">
+                            {ev.offerCount}
+                          </span>
+                          <BrandMark badge width={18} height={18} />
+                        </>
+                      ) : (
+                        t('homeEventsFirstBurn')
+                      )}
                     </span>
                   </button>
                 </li>
