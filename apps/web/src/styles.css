@@ -221,6 +221,7 @@ a {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  height: 3.5rem;
 }
 
 .brand-mark {
@@ -231,28 +232,33 @@ a {
   object-position: center;
 }
 
-/* Hero lockup — square plate keeps the original box; only the transparent glyph scales down. */
+/* Hero lockup — match the wordmark cap height; boxed light plate fills the wrap. */
 .brand-main .brand-mark-wrap {
-  height: clamp(2.75rem, 8vw, 3.5rem);
+  height: 0.92em;
+  font-size: clamp(2.6rem, 7vw, 3.8rem);
 }
 
 .brand-main .brand-mark {
-  height: clamp(2.75rem, 8vw, 3.5rem);
-  max-width: clamp(4.25rem, 14vw, 5.5rem);
+  height: 100%;
+  max-width: 1.7em;
 }
 
 .brand-main .brand-mark--on-dark {
-  height: 62%;
-  max-width: 68%;
+  height: 92%;
+  max-width: 1.65em;
+}
+
+.brand-main .brand-mark--on-light {
+  height: 100%;
+  max-width: 1em;
 }
 
 /*
  * Optical lift vs neighboring text only. The lotus-W is bottom-heavy; that
- * bowl is correct on standalone icons and PWA plates. When the transparent
- * glyph sits in a row with a wordmark, nudge it up so it matches the type.
- * Stacked marks (open-in-browser) and boxed --on-light plates are not shifted.
+ * bowl is correct on standalone icons and PWA plates. Header and event-list
+ * counts size the wrap to the type instead. Stacked marks (open-in-browser)
+ * and boxed --on-light plates are not shifted.
  */
-.brand-main .brand-mark--on-dark,
 .btn-reoffer-lotus .brand-mark--on-dark,
 .offer-session-title .brand-mark--on-dark,
 .memorial-history-note:has(.memorial-history-note-text) .brand-mark--on-dark {
@@ -302,6 +308,7 @@ a {
   font-size: clamp(2.6rem, 7vw, 3.8rem);
   font-weight: 600;
   letter-spacing: -0.03em;
+  line-height: 1;
   margin: 0;
   color: var(--brand-ink);
   min-width: 0;

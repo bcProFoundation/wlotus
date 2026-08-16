@@ -51,7 +51,11 @@ export function BrandMark(props: {
 
   const wrapClass = ['brand-mark-wrap', props.className].filter(Boolean).join(' ');
   return (
-    <span className={wrapClass} style={{ height: h }} aria-hidden="true">
+    <span
+      className={wrapClass}
+      style={props.height !== undefined ? { height: h } : undefined}
+      aria-hidden="true"
+    >
       {imgs}
     </span>
   );
