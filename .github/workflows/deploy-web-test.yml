@@ -32,6 +32,7 @@ on:
       - master
     paths:
       - 'apps/web/**'
+      - 'src/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-web-test.yml'

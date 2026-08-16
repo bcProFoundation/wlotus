@@ -235,6 +235,20 @@ describe('calendarMonth', () => {
     expect(may[0]!.effectiveStartDate).toBe('2026-05-19');
   });
 
+  it('uses the API solar window when the SPA catalog is stale', () => {
+    const stale = stubSpecial('2026-05-19');
+    stale.id = 'ho-chi-minh';
+    stale.name = 'Hồ Chí Minh';
+    stale.eventCalendar = 'solar';
+    stale.effectiveEventDate = '2026-09-02';
+    stale.effectiveStartDate = '2026-09-02';
+    stale.effectiveEndDate = '2026-09-02';
+    expect(specialWindowInYear(stale, 2026, 'vi')?.peak).toBe('2026-09-02');
+    expect(specialCoversYmd(stale, '2026-09-02', 'vi')).toBe(true);
+    const sep = specialsInMonth([stale], 2026, 9, 'vi', '2026-09-02');
+    expect(sep.map(s => s.id)).toEqual(['ho-chi-minh']);
+  });
+
   it('adds months and parses tab hash', () => {
     expect(addMonths(2026, 1, -1)).toEqual({ year: 2025, month: 12 });
     expect(addMonths(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
