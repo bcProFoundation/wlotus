@@ -95,7 +95,7 @@ Each profile’s `eventDate` is interpreted according to **`eventCalendar`**:
 | `eventCalendar` | Meaning | Example |
 |-----------------|---------|---------|
 | **`lunar`** (default) | `eventDate` is âm lịch YYYY-MM-DD; converted to solar via Hồ Ngọc Đức (VN UTC+7) before the civil-day window | Cô Hồn / Vu Lan: lunar `2026-07-15` |
-| **`solar`** | `eventDate` is already Gregorian YYYY-MM-DD | Hồ Chí Minh: `2026-09-02` |
+| **`solar`** | `eventDate` is already Gregorian YYYY-MM-DD | Ngày sinh Hồ Chí Minh: `2026-05-19` |
 
 Altar `deathDate` is already **solar**. Prefer documenting solar equivalents for
 ops clarity; keep lunar conversion when the cultural date is naturally âm lịch.
@@ -186,7 +186,8 @@ Memorial / ancestral offering days. Unbound until a visitor claims the root.
 | VN | Giỗ Tổ Hùng Vương | hero | lunar 10/3 | `VN` |
 | VN | Thương binh liệt sĩ | hero | solar 27 Jul | `VN` |
 | VN | Trần Hưng Đạo | hero | lunar 20/8 | `VN` |
-| VN | Hồ Chí Minh | hero | solar 19 May | `VN` |
+| VN | Hồ Chí Minh | hero | lunar 21/7 (2 Sep 2026) | `VN` |
+| VN | Ngày sinh Hồ Chí Minh | hero | solar 19 May | `VN` |
 | VN | Hai Bà Trưng | hero | lunar 6/2 | `VN` |
 | ZH | 盂兰盆 | event | lunar 15/7 (27 Aug 2026) | CN, TW, HK, MO, SG |
 | ZH | 中元节 | ghost | lunar 1/7–15/7 (13–27 Aug) | CN, TW, HK, MO, SG |
