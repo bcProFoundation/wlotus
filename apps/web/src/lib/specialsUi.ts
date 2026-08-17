@@ -169,13 +169,19 @@ export function specialStoryForLocale(
 
 /**
  * Section label above AltarDetails in offer/session UI.
- * ghost/event → null (no "Ban thờ"); hero/default → normal altar/profile label.
+ * Catalog specials (event / ghost / hero) skip Ban thờ fields — they are
+ * predefined; users only offer. A personal altar for the same person is
+ * a separate setup flow without a temple special.
  */
 export function specialHidesAltarSectionLabel(
   special: TempleSpecialProfileUi | null,
 ): boolean {
   if (!special) return false;
-  return special.kind === 'ghost' || special.kind === 'event';
+  return (
+    special.kind === 'ghost' ||
+    special.kind === 'event' ||
+    special.kind === 'hero'
+  );
 }
 
 export interface RankedTempleSpecial extends TempleSpecialProfileUi {
