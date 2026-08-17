@@ -199,10 +199,9 @@ const en: Dict = {
     'Your phone searches for a digital WLOTUS. Keep the app open and in the foreground so the search can continue. Use that time to remember someone who has passed. You can stop the search anytime.',
   howMintTitle: '',
   howMintBody:
-    'Finding WLOTUS yields 108 digital lotuses — one full mala. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is burned as the flower offering. The remaining 107 go to the W Lotus developer on this platform in lieu of network fees. A pay-your-own-fees option will come later, when you can choose to keep a portion of the issued lotuses.',
-  howWhyTitle: 'Why do the remaining 107 go to the developer?',
-  howWhyBody:
-    'Each mint needs a small eCash network fee. On phones, W Lotus sponsors that fee so you can offer without holding XEC — the remaining 107 lotuses stay with the developer on this platform. When you can pay the fee yourself, you will keep most of the issue; a small temple share will still help run the system.',
+    'Finding WLOTUS yields 108 digital lotuses — one full mala. Depending on your device, this may take from about two minutes to over ten minutes. One lotus is burned as the flower offering. The remaining 107 go to the W Lotus developer on this platform in lieu of eCash blockchain fees, so the lotus and the vow are kept forever. A pay-your-own-fees option will come later, when you can choose to keep a portion of the issued lotuses.',
+  howWhyTitle: '',
+  howWhyBody: '',
   howEternalTitle: '',
   howEternalBody:
     'Each offering is recorded forever on the blockchain — a mark of lasting reverence.',
@@ -381,8 +380,7 @@ const en: Dict = {
   themeDark: 'Dark',
   tabHome: 'Home',
   tabCalendar: 'Calendar',
-  calendarHint:
-    'Come back on festival days and death anniversaries — a reason to offer again.',
+  calendarHint: 'See events in the month or on a day.',
   calendarPrevMonth: 'Previous month',
   calendarNextMonth: 'Next month',
   calendarToday: 'Today',
@@ -408,10 +406,9 @@ const vi: Dict = {
     'Điện thoại được dùng để tìm ra bông sen số WLOTUS. Bạn phải bật ứng dụng liên tục và không sử dụng ứng dụng khác để quá trình tìm kiếm bông sen số được tiếp tục. Trong lúc này, bạn có thể tưởng nhớ về người đã khuất. Bạn có thể dừng quá trình tìm kiếm này bất cứ lúc nào.',
   howMintTitle: '',
   howMintBody:
-    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. Một bông sen số được đốt làm lễ dâng hoa. 107 bông còn lại được chuyển cho nhà phát triển W Lotus trên nền tảng này, thay cho phí giao dịch. Tính năng tự trả phí sẽ ra mắt sau; khi đó bạn sẽ có lựa chọn giữ lại một phần số sen được phát hành.',
-  howWhyTitle: 'Vì sao 107 bông được chuyển cho nhà phát triển?',
-  howWhyBody:
-    'Mỗi lần phát hành sen đều cần một khoản phí mạng eCash. Trên điện thoại, W Lotus tài trợ phí này để bạn dâng hoa mà không cần giữ XEC — 107 bông còn lại thuộc về nhà phát triển trên nền tảng này. Khi tự trả phí, bạn sẽ giữ phần lớn số sen; một phần nhỏ vẫn dành cho đền thờ để duy trì hệ thống.',
+    'Quá trình tìm kiếm WLOTUS sẽ sinh ra 108 đóa sen số — một vòng tràng hạt. Tùy theo năng lực của máy, quá trình này có thể từ khoảng 2 phút đến trên 10 phút. Một bông sen số được đốt làm lễ dâng hoa. 107 bông còn lại được chuyển cho nhà phát triển W Lotus trên nền tảng này, thay cho phí giao dịch trên chuỗi khối eCash để giữ lại bông sen và lời nguyện mãi mãi. Tính năng tự trả phí sẽ ra mắt sau; khi đó bạn sẽ có lựa chọn giữ lại một phần số sen được phát hành.',
+  howWhyTitle: '',
+  howWhyBody: '',
   howEternalTitle: '',
   howEternalBody:
     'Mỗi lần dâng sen được ghi lại mãi mãi trên chuỗi khối eCash, đánh dấu cho lòng thành kính vĩnh hằng.',
@@ -589,8 +586,7 @@ const vi: Dict = {
   themeDark: 'Tối',
   tabHome: 'Trang chủ',
   tabCalendar: 'Lịch',
-  calendarHint:
-    'Quay lại vào ngày lễ và ngày giỗ — một lý do để dâng hoa lần nữa.',
+  calendarHint: 'Xem sự kiện trong tháng hoặc ngày.',
   calendarPrevMonth: 'Tháng trước',
   calendarNextMonth: 'Tháng sau',
   calendarToday: 'Hôm nay',
@@ -616,10 +612,9 @@ const zh: Dict = {
     '手机用于寻找数字莲花 WLOTUS。请保持应用持续开启，且不要切换到其他应用，以便寻找过程继续。在此期间，您可以追思逝去的亲人。您可以随时停止寻找。',
   howMintTitle: '',
   howMintBody:
-    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵燃烧作为献花。其余 107 朵交给本平台的 W Lotus 开发者以抵网络手续费。自行支付手续费的功能将稍后推出；届时您可选择保留一部分新发行的莲花。',
-  howWhyTitle: '为何其余 107 朵交给开发者？',
-  howWhyBody:
-    '每次发行莲花都需要一小笔 eCash 网络手续费。在手机上，W Lotus 代付该费用，让您无需持有 XEC 即可献花——其余 107 朵留在本平台开发者处。待您可自行支付手续费时，将保留大部分新发行的莲花；仍有一小部分交给寺庙以维持系统。',
+    '寻找 WLOTUS 会生出 108 朵数字莲花——一整圈念珠。视设备性能，大约需要 2 分钟到 10 分钟以上。其中 1 朵燃烧作为献花。其余 107 朵交给本平台的 W Lotus 开发者，以抵 eCash 链上手续费，好让莲花与愿言得以永存。自行支付手续费的功能将稍后推出；届时您可选择保留一部分新发行的莲花。',
+  howWhyTitle: '',
+  howWhyBody: '',
   howEternalTitle: '',
   howEternalBody:
     '每一次献花都会永久记在区块链上，铭刻一份永恒的敬意。',
@@ -790,7 +785,7 @@ const zh: Dict = {
   themeDark: '深色',
   tabHome: '首页',
   tabCalendar: '日历',
-  calendarHint: '节日与忌日再来献花。',
+  calendarHint: '查看本月或当日的活动。',
   calendarPrevMonth: '上个月',
   calendarNextMonth: '下个月',
   calendarToday: '今天',
