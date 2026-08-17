@@ -3,6 +3,7 @@ import { useLocale } from '../i18n/LocaleContext.js';
 import {
   addMonths,
   buildSolarMonthGrid,
+  defaultSelectedYmdForMonth,
   excludeSpecialDuplicateMemorials,
   lunarCellLabel,
   lunarTimeZone,
@@ -42,7 +43,15 @@ export function LunarCalendar(props: {
     [cursor.year, cursor.month, locale, now],
   );
 
-  const selected = days.find(d => d.ymd === selectedYmd) ?? days.find(d => d.isToday) ?? days[0]!;
+  const selected =
+    days.find(d => d.ymd === selectedYmd) ??
+    days.find(d => d.inMonth && d.ymd === defaultSelectedYmdForMonth(
+      cursor.year,
+      cursor.month,
+      now,
+    )) ??
+    days.find(d => d.inMonth) ??
+    days[0]!;
   const inMonthDays = days.filter(d => d.inMonth);
   const personalMemorials = useMemo(
     () => excludeSpecialDuplicateMemorials(props.memorials, props.specials),
@@ -94,6 +103,12 @@ export function LunarCalendar(props: {
     setSelectedYmd(todayYmd(n));
   }
 
+  function goMonth(delta: number) {
+    const next = addMonths(cursor.year, cursor.month, delta);
+    setCursor(next);
+    setSelectedYmd(defaultSelectedYmdForMonth(next.year, next.month, now));
+  }
+
   function marksFor(day: CalendarDay): { special: boolean; memorial: boolean } {
     return {
       special: specialsOnYmd(props.specials, day.ymd, locale).length > 0,
@@ -140,7 +155,12 @@ export function LunarCalendar(props: {
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => setSelectedYmd(day.ymd)}
+              onClick={() => {
+                if (!day.inMonth) {
+                  setCursor({ year: day.solarY, month: day.solarM });
+                }
+                setSelectedYmd(day.ymd);
+              }}
             >
               <span className="calendar-cell-solar">{day.solarD}</span>
               <span className="calendar-cell-lunar">
@@ -162,7 +182,7 @@ export function LunarCalendar(props: {
           type="button"
           className="header-icon-btn"
           aria-label={t('calendarPrevMonth')}
-          onClick={() => setCursor(c => addMonths(c.year, c.month, -1))}
+          onClick={() => goMonth(-1)}
         >
           ‹
         </button>
@@ -171,7 +191,7 @@ export function LunarCalendar(props: {
           type="button"
           className="header-icon-btn"
           aria-label={t('calendarNextMonth')}
-          onClick={() => setCursor(c => addMonths(c.year, c.month, 1))}
+          onClick={() => goMonth(1)}
         >
           ›
         </button>

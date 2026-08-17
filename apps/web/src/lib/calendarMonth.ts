@@ -37,6 +37,18 @@ export function todayYmd(now = new Date()): string {
   return ymdKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
+/** Current month → today; any other month → the 1st. */
+export function defaultSelectedYmdForMonth(
+  year: number,
+  month: number,
+  now = new Date(),
+): string {
+  if (year === now.getFullYear() && month === now.getMonth() + 1) {
+    return todayYmd(now);
+  }
+  return ymdKey(year, month, 1);
+}
+
 export interface CalendarDay {
   solarY: number;
   solarM: number;
@@ -379,6 +391,26 @@ function specialStartYmd(special: TempleSpecialProfileUi): string {
   ).trim();
 }
 
+function specialEndYmd(special: TempleSpecialProfileUi): string {
+  return (
+    special.effectiveEndDate ||
+    special.effectiveEventDate ||
+    special.eventDate ||
+    specialStartYmd(special)
+  ).trim();
+}
+
+/** True when the special is still on or after the selected day. */
+export function specialOnOrAfterYmd(
+  special: TempleSpecialProfileUi,
+  ymd: string,
+  locale = 'vi',
+): boolean {
+  if (specialCoversYmd(special, ymd, locale)) return true;
+  const end = specialEndYmd(special);
+  return Boolean(end && end >= ymd);
+}
+
 export function monthStartEnd(
   year: number,
   month: number,
@@ -443,15 +475,18 @@ export function specialsInMonth(
   return out;
 }
 
-/** Selected-day specials first, then the rest of the month by start date. */
+/** Selected-day specials first, then later days in the month. Past days omitted. */
 export function orderMonthSpecials(
   specials: TempleSpecialProfileUi[],
   selectedYmd: string,
   locale = 'vi',
 ): TempleSpecialProfileUi[] {
+  const upcoming = specials.filter(s =>
+    specialOnOrAfterYmd(s, selectedYmd, locale),
+  );
   const onDay: TempleSpecialProfileUi[] = [];
   const rest: TempleSpecialProfileUi[] = [];
-  for (const s of specials) {
+  for (const s of upcoming) {
     if (specialCoversYmd(s, selectedYmd, locale)) onDay.push(s);
     else rest.push(s);
   }
@@ -587,7 +622,7 @@ export interface MonthMemorial extends CalendarMemorial {
   onYmd: string;
 }
 
-/** Unique giỗ that fall on an in-month grid day; selected day first. */
+/** Unique giỗ from the selected day onward in this month; selected day first. */
 export function memorialsInMonth(
   memorials: CalendarMemorial[],
   inMonthDays: CalendarDay[],
@@ -598,6 +633,7 @@ export function memorialsInMonth(
   const onDay: MonthMemorial[] = [];
   const rest: MonthMemorial[] = [];
   for (const day of inMonthDays) {
+    if (day.ymd < selectedYmd) continue;
     for (const m of memorials) {
       if (!memorialOnYmd(m, day, locale)) continue;
       const key =
