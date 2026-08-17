@@ -8,6 +8,7 @@ import { LangSwitch } from './components/LangSwitch.js';
 import { AltarDetails, type RelatedAltarOption } from './components/AltarDetails.js';
 import { AltarSetupModal } from './components/AltarSetupModal.js';
 import { BrandMark } from './components/BrandMark.js';
+import { TempleStory } from './components/TempleStory.js';
 import {
   OpenInBrowserGate,
   useShareInAppBrowserGate,
@@ -69,9 +70,9 @@ import { waitMinPray } from './lib/minPraySeconds.js';
 import { tabFromHash, type AppTab } from './lib/calendarMonth.js';
 import {
   findSpecialForParent,
+  findSpecialById,
   specialOfferButtonKind,
   specialSessionTitle,
-  specialStoryForLocale,
   specialHidesAltarSectionLabel,
   rankTempleSpecials,
   formatSpecialEventDateLabel,
@@ -2328,6 +2329,10 @@ export default function App() {
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
           relatedAltarOptions={relatedAltarOptions}
+          special={findSpecialById(
+            templeSpecials,
+            pendingSpecialIdRef.current,
+          )}
           onClose={() => {
             pendingSpecialIdRef.current = null;
             setAltarOpen(false);
@@ -2380,6 +2385,14 @@ export default function App() {
                   : t('profileDetailTitle');
               })()}
             </h2>
+            <TempleStory
+              special={findSpecialForParent(
+                templeSpecials,
+                dedicationSheet.parentBurnTxid,
+              )}
+              omitPrayer
+              className="temple-story--details"
+            />
             <AltarDetails
               altar={dedicationSheet.altar}
               specialKind={
@@ -2685,32 +2698,13 @@ export default function App() {
               }</span>
             </h2>
             <div className="offer-session-body">
-              {(() => {
-                const st = specialStoryForLocale(
-                  findSpecialForParent(
-                    templeSpecials,
-                    session.parentBurnTxid,
-                  ),
-                  locale,
-                );
-                if (!st) return null;
-                return (
-                  <div className="temple-story" key="temple-story">
-                    <p className="temple-story-heading">{t('specialStoryHeading')}</p>
-                    <p className="temple-story-hint">{t('specialStoryHint')}</p>
-                    {st.title ? (
-                      <h3 className="temple-story-title">{st.title}</h3>
-                    ) : null}
-                    {st.body.split('\n').map((para, i) =>
-                      para.trim() ? (
-                        <p key={i} className="temple-story-para">
-                          {para}
-                        </p>
-                      ) : null,
-                    )}
-                  </div>
-                );
-              })()}
+              <TempleStory
+                special={findSpecialForParent(
+                  templeSpecials,
+                  session.parentBurnTxid,
+                )}
+                showHint
+              />
               {session.altar ? (
                 <>
                   {(() => {

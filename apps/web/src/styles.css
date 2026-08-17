@@ -1832,7 +1832,7 @@ a {
 }
 
 
-/* Temple special story during soft pray / offer session */
+/* Temple special story on details and during soft pray / offer session */
 .temple-story {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
@@ -1841,6 +1841,10 @@ a {
   border: 1px solid color-mix(in srgb, #c9a227 35%, transparent);
   max-height: 40vh;
   overflow-y: auto;
+}
+.temple-story.temple-story--details {
+  max-height: none;
+  overflow: visible;
 }
 .temple-story-heading {
   margin: 0 0 0.25rem;

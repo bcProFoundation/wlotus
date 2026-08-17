@@ -1,5 +1,11 @@
-import { rankTempleSpecials } from '../apps/web/src/lib/specialsUi.js';
+import {
+  findSpecialById,
+  omitLotusPrayerParagraph,
+  rankTempleSpecials,
+  specialStoryForLocale,
+} from '../apps/web/src/lib/specialsUi.js';
 import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
+import { templeSpecialCatalog } from '../src/params/templeSpecialCatalog.js';
 
 function spec(
   id: string,
@@ -70,5 +76,72 @@ describe('rankTempleSpecials', () => {
       now,
     );
     expect(ranked.map(r => r.id)).toEqual(['halloween', 'all-souls']);
+  });
+});
+
+describe('omitLotusPrayerParagraph', () => {
+  it('keeps the story and drops only the closing lotus prayer', () => {
+    const vu = templeSpecialCatalog(2026).find(e => e.id === 'vu-lan')!;
+    const hung = templeSpecialCatalog(2026).find(e => e.id === 'hung-kings')!;
+    const yulan = templeSpecialCatalog(2026).find(e => e.id === 'yulanpen')!;
+
+    const vi = omitLotusPrayerParagraph(vu.story.body);
+    expect(vi).toContain('Rằm tháng Bảy là ngày Báo Hiếu');
+    expect(vi).not.toMatch(/lời nguyện/);
+    expect(vi).toContain('mẹ mới được siêu thoát');
+
+    const hungBody = omitLotusPrayerParagraph(hung.story.body);
+    expect(hungBody).toContain('Vua Hùng');
+    expect(hungBody).not.toMatch(/lời nguyện/);
+
+    const en = omitLotusPrayerParagraph(vu.story.bodyEn!);
+    expect(en).toContain('filial gratitude');
+    expect(en).not.toMatch(/also a prayer/i);
+
+    const zh = omitLotusPrayerParagraph(yulan.story.bodyZh || yulan.story.body);
+    expect(zh).toContain('盂兰盆');
+    expect(zh).not.toMatch(/一句愿/);
+  });
+
+  it('strips the lotus prayer from every catalog locale body', () => {
+    for (const e of templeSpecialCatalog(2026)) {
+      const texts = [e.story.body, e.story.bodyEn, e.story.bodyZh].filter(
+        (t): t is string => Boolean(t?.trim()),
+      );
+      for (const t of texts) {
+        const out = omitLotusPrayerParagraph(t);
+        expect(out.length).toBeGreaterThan(20);
+        expect(out).not.toMatch(/lời nguyện|also a prayer|一句愿/i);
+      }
+    }
+  });
+
+  it('omits the prayer from locale story used on details', () => {
+    const vu = templeSpecialCatalog(2026).find(e => e.id === 'vu-lan')!;
+    const special: TempleSpecialProfileUi = {
+      id: vu.id,
+      profileId: '',
+      kind: vu.kind,
+      name: vu.name,
+      active: false,
+      storyTitle: vu.story.title,
+      storyBody: vu.story.body,
+      storyTitleEn: vu.story.titleEn,
+      storyBodyEn: vu.story.bodyEn,
+    };
+    const details = specialStoryForLocale(special, 'vi', { omitPrayer: true });
+    const session = specialStoryForLocale(special, 'vi');
+    expect(details?.body).not.toMatch(/lời nguyện/);
+    expect(session?.body).toMatch(/lời nguyện/);
+  });
+
+  it('finds an unbound special by catalog id', () => {
+    const status = {
+      profiles: [
+        spec('vu-lan', '2026-08-27', { id: 'vu-lan', profileId: 'pending' }),
+      ],
+    };
+    expect(findSpecialById(status, 'vu-lan')?.id).toBe('vu-lan');
+    expect(findSpecialById(status, '')).toBeNull();
   });
 });

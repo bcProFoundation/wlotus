@@ -21,12 +21,14 @@ import {
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
+import type { TempleSpecialProfileUi } from '../lib/specialsUi.js';
 import {
   AltarDetails,
   relatedMetaMap,
   relationshipKindLabel,
   type RelatedAltarOption,
 } from './AltarDetails.js';
+import { TempleStory } from './TempleStory.js';
 
 type Step = 'edit' | 'review';
 type ModalVariant = 'setup' | 'relationship' | 'death';
@@ -205,6 +207,8 @@ export function AltarSetupModal(props: {
   etaLabel: string;
   offerDisabled?: boolean;
   relatedAltarOptions: RelatedAltarOption[];
+  /** Unbound temple special — story on setup/details, without the lotus prayer. */
+  special?: TempleSpecialProfileUi | null;
   onClose: () => void;
   onSave: (fields: AltarFields) => void;
   onOffer: (fields: AltarFields) => void;
@@ -417,6 +421,13 @@ export function AltarSetupModal(props: {
           <>
             <h2 id="altar-setup-title">{editTitle}</h2>
             <p className="hint">{editHint}</p>
+            {!relationshipOnly && !deathOnly ? (
+              <TempleStory
+                special={props.special}
+                omitPrayer
+                className="temple-story--details"
+              />
+            ) : null}
 
             {relationshipOnly ? (
               <>
@@ -666,6 +677,13 @@ export function AltarSetupModal(props: {
         ) : (
           <>
             <h2 id="altar-setup-title">{reviewTitle}</h2>
+            {!relationshipOnly && !deathOnly ? (
+              <TempleStory
+                special={props.special}
+                omitPrayer
+                className="temple-story--details"
+              />
+            ) : null}
             {review ? (
               <AltarDetails
                 altar={

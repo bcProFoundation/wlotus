@@ -7,7 +7,7 @@ import {
 } from './calendarMonth.js';
 
 /**
- * Temple specials UI helpers — kind-driven copy + story during soft pray.
+ * Temple specials UI helpers — kind-driven copy + story on details / soft pray.
  * Status comes from GET /api/status → templeSpecials.
  */
 
@@ -52,6 +52,17 @@ export function findSpecialForParent(
   if (!id || id.length !== 64) return null;
   const list = status?.profiles ?? status?.active ?? [];
   return list.find(p => p.profileId.toLowerCase() === id) ?? null;
+}
+
+/** Catalog / status row by special id (unbound first-burn details). */
+export function findSpecialById(
+  status: TempleSpecialsStatusUi | null | undefined,
+  id: string | undefined | null,
+): TempleSpecialProfileUi | null {
+  const key = (id ?? '').trim();
+  if (!key) return null;
+  const list = status?.profiles ?? status?.active ?? [];
+  return list.find(p => (p.id || '').trim() === key) ?? null;
 }
 
 export function isBoundSpecialRoot(profileId: string | null | undefined): boolean {
@@ -108,10 +119,26 @@ export function specialSessionTitle(
   return special.name;
 }
 
-/** Story body for soft-pray reading (prefer locale). */
+/**
+ * Drop the catalog closing lotus-prayer sentence (details UI).
+ * Soft-pray sessions keep the full body.
+ */
+export function omitLotusPrayerParagraph(body: string): string {
+  const stripped = body.replace(
+    /(?:Mỗi bông sen dâng lên hôm nay cũng là một lời nguyện|Each lotus offered today is also a prayer|今日每一朵莲花，也是一句愿)[^\n]*/gu,
+    '',
+  );
+  return stripped
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Story body for details / soft-pray reading (prefer locale). */
 export function specialStoryForLocale(
   special: TempleSpecialProfileUi | null,
   locale: string,
+  opts?: { omitPrayer?: boolean },
 ): { title: string; body: string } | null {
   if (!special) return null;
   const zh = locale.startsWith('zh');
@@ -121,13 +148,17 @@ export function specialStoryForLocale(
     : en
       ? special.storyTitleEn || special.storyTitle
       : special.storyTitle || special.storyTitleEn;
-  const body = zh
+  const raw = zh
     ? special.storyBodyZh || special.storyBodyEn || special.storyBody
     : en
       ? special.storyBodyEn || special.storyBody
       : special.storyBody || special.storyBodyEn;
-  if (!body?.trim()) return null;
-  return { title: (title || special.name || '').trim(), body: body.trim() };
+  if (!raw?.trim()) return null;
+  const body = opts?.omitPrayer
+    ? omitLotusPrayerParagraph(raw)
+    : raw.trim();
+  if (!body) return null;
+  return { title: (title || special.name || '').trim(), body };
 }
 
 /**
