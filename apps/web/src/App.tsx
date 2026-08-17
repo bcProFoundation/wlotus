@@ -1883,9 +1883,23 @@ export default function App() {
             <>
               <div className="field-label-row">
                 <label>
-                  {altarHasDeathDate(altar)
-                    ? t('altarLabel')
-                    : t('profileLabel')}
+                  {(() => {
+                    const sp =
+                      findSpecialForParent(
+                        templeSpecials,
+                        linkedParentBurnTxid,
+                      ) ||
+                      findSpecialById(
+                        templeSpecials,
+                        pendingSpecialIdRef.current,
+                      );
+                    if (specialHidesAltarSectionLabel(sp)) {
+                      return sp?.name || t('homeEventsTitle');
+                    }
+                    return altarHasDeathDate(altar)
+                      ? t('altarLabel')
+                      : t('profileLabel');
+                  })()}
                 </label>
                 {!linkedParentBurnTxid ? (
                   <div className="field-label-links">
@@ -1894,7 +1908,6 @@ export default function App() {
                       className="link-more"
                       disabled={busy || apiOnline === false}
                       onClick={() => {
-                        pendingSpecialIdRef.current = null;
                         setAltarOpen(true);
                       }}
                     >
@@ -1905,6 +1918,7 @@ export default function App() {
                       className="link-more"
                       disabled={busy}
                       onClick={() => {
+                        pendingSpecialIdRef.current = null;
                         setAltar(null);
                         setNote('');
                         setLinkedParentBurnTxid(null);
@@ -1921,7 +1935,12 @@ export default function App() {
                   findSpecialForParent(
                     templeSpecials,
                     linkedParentBurnTxid,
-                  )?.kind ?? null
+                  )?.kind ??
+                  findSpecialById(
+                    templeSpecials,
+                    pendingSpecialIdRef.current,
+                  )?.kind ??
+                  null
                 }
                 relatedAltarOptions={relatedAltarOptions}
               />
@@ -2334,7 +2353,6 @@ export default function App() {
             pendingSpecialIdRef.current,
           )}
           onClose={() => {
-            pendingSpecialIdRef.current = null;
             setAltarOpen(false);
           }}
           onSave={fields => {

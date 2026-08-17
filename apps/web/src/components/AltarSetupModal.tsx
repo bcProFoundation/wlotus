@@ -21,7 +21,11 @@ import {
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
-import type { TempleSpecialProfileUi } from '../lib/specialsUi.js';
+import {
+  specialHidesAltarSectionLabel,
+  specialStoryForLocale,
+  type TempleSpecialProfileUi,
+} from '../lib/specialsUi.js';
 import {
   AltarDetails,
   relatedMetaMap,
@@ -370,6 +374,15 @@ export function AltarSetupModal(props: {
     props.onOffer(fields);
   }
 
+  const festivalSpecial = specialHidesAltarSectionLabel(props.special ?? null);
+  const specialTitle = (
+    specialStoryForLocale(props.special ?? null, locale, {
+      omitPrayer: true,
+    })?.title ||
+    props.special?.name ||
+    ''
+  ).trim();
+
   const personLabel =
     formatAltarPersonName(props.initial ?? draft, locale) ||
     t('offeringFallback');
@@ -378,9 +391,11 @@ export function AltarSetupModal(props: {
     ? t('altarRelationshipTitle')
     : deathOnly
       ? t('firstOfferDeathTitle')
-      : altarHasDeathDate(draft)
-        ? t('altarTitle')
-        : t('profileTitle');
+      : festivalSpecial && specialTitle
+        ? specialTitle
+        : altarHasDeathDate(draft)
+          ? t('altarTitle')
+          : t('profileTitle');
   const editHint = relationshipOnly
     ? t('altarRelationshipHint')
     : deathOnly
@@ -396,9 +411,11 @@ export function AltarSetupModal(props: {
     ? t('altarRelationshipTitle')
     : deathOnly
       ? t('firstOfferDeathTitle')
-      : altarHasDeathDate(review ?? draft)
-        ? t('altarDetailTitle')
-        : t('profileDetailTitle');
+      : festivalSpecial && specialTitle
+        ? specialTitle
+        : altarHasDeathDate(review ?? draft)
+          ? t('altarDetailTitle')
+          : t('profileDetailTitle');
 
   return (
     <div
@@ -505,6 +522,7 @@ export function AltarSetupModal(props: {
               </>
             ) : (
               <>
+                {festivalSpecial ? null : (
                 <div className="field">
                   <span
                     className="altar-honorific-label"
@@ -543,6 +561,7 @@ export function AltarSetupModal(props: {
                     </button>
                   </div>
                 </div>
+                )}
 
                 <div className="field">
                   <label htmlFor="altar-name">{t('altarName')}</label>
@@ -559,6 +578,7 @@ export function AltarSetupModal(props: {
                   ) : null}
                 </div>
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-note">{t('altarNote')}</label>
                   <textarea
@@ -569,6 +589,7 @@ export function AltarSetupModal(props: {
                     placeholder={t('altarNotePlaceholder')}
                   />
                 </div>
+                )}
 
                 <div className="field">
                   <label htmlFor="altar-birth-place">
@@ -583,6 +604,7 @@ export function AltarSetupModal(props: {
                   />
                 </div>
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-birth-date">{t('altarBirthDate')}</label>
                   <input
@@ -606,7 +628,9 @@ export function AltarSetupModal(props: {
                     </p>
                   ) : null}
                 </div>
+                )}
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-death-place">
                     {t('altarDeathPlace')}
@@ -619,10 +643,13 @@ export function AltarSetupModal(props: {
                     placeholder={t('altarPlaceOptional')}
                   />
                 </div>
+                )}
 
                 <div className="field">
                   <label htmlFor="altar-death-date">
-                    {t('altarDeathDate')}{' '}
+                    {festivalSpecial
+                      ? t('altarEventDate')
+                      : t('altarDeathDate')}{' '}
                     <span className="hint">({t('altarPlaceOptional')})</span>
                   </label>
                   <input
@@ -647,6 +674,7 @@ export function AltarSetupModal(props: {
                   ) : null}
                 </div>
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-funeral-place">
                     {t('altarFuneralPlace')}
@@ -659,6 +687,7 @@ export function AltarSetupModal(props: {
                     placeholder={t('altarPlaceOptional')}
                   />
                 </div>
+                )}
 
               </>
             )}
@@ -714,6 +743,7 @@ export function AltarSetupModal(props: {
                       : review
                 }
                 relatedAltarOptions={props.relatedAltarOptions}
+                specialKind={props.special?.kind ?? null}
               />
             ) : null}
             <p className="hint eta" style={{ marginTop: '0.85rem' }}>

@@ -117,7 +117,9 @@ export function AltarDetails(props: {
   const nameText = altar.name.trim();
 
   const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
-    { key: 'honorific', label: t('altarHonorific'), value: honorific },
+    ...(isFestivalSpecial
+      ? []
+      : [{ key: 'honorific', label: t('altarHonorific'), value: honorific }]),
     ...(isFestivalSpecial
       ? []
       : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
