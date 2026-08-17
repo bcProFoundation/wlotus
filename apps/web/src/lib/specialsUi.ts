@@ -4,6 +4,8 @@ import {
   nextSpecialWindow,
   projectSpecialWindow,
   todayYmd,
+  lunarTimeZone,
+  parseYmd,
 } from './calendarMonth.js';
 import {
   findCatalogEntryById,
@@ -302,6 +304,82 @@ export function rankTempleSpecials(
   return forward.slice(0, Math.max(0, limit));
 }
 
+const ZH_LUNAR_MONTHS = [
+  '正',
+  '二',
+  '三',
+  '四',
+  '五',
+  '六',
+  '七',
+  '八',
+  '九',
+  '十',
+  '冬',
+  '腊',
+];
+
+function isMonthlyLunarSpecial(special: TempleSpecialProfileUi): boolean {
+  const catalog =
+    findCatalogEntryById(special.id) ||
+    findCatalogEntryByName(special.name);
+  return (
+    special.eventRecurrence === 'monthly-lunar' ||
+    catalog?.eventRecurrence === 'monthly-lunar'
+  );
+}
+
+/** Lunar month phrase: 7, giêng, chạp / 七月, 正月, 腊月. */
+export function formatLunarMonthPhrase(
+  month: number,
+  locale: string,
+  leap = false,
+): string {
+  if (locale.startsWith('vi')) {
+    const name = month === 1 ? 'giêng' : month === 12 ? 'chạp' : String(month);
+    return leap ? `${name} nhuận` : name;
+  }
+  if (locale.startsWith('zh')) {
+    const n = ZH_LUNAR_MONTHS[month - 1] ?? String(month);
+    return `${leap ? '闰' : ''}${n}月`;
+  }
+  return leap ? `leap month ${month}` : `month ${month}`;
+}
+
+/**
+ * List title for a special. Monthly sóc/vọng use the occurrence month
+ * (1 tháng 7, rằm tháng chạp) instead of the generic catalog name.
+ */
+export function formatSpecialListName(
+  special: TempleSpecialProfileUi,
+  locale: string,
+): string {
+  const fallback = (special.name || special.id || '').trim();
+  if (!isMonthlyLunarSpecial(special)) return fallback;
+  const catalog =
+    findCatalogEntryById(special.id) ||
+    findCatalogEntryByName(special.name);
+  let peak = (special.effectiveEventDate || '').trim();
+  if (!peak) {
+    peak = nextSpecialWindow(special, todayYmd(), locale)?.peak ?? '';
+  }
+  const p = parseYmd(peak);
+  if (!p) return fallback;
+  const lunar = solarToLunar(p.d, p.m, p.y, lunarTimeZone(locale));
+  const month = formatLunarMonthPhrase(lunar.month, locale, lunar.leap);
+  const catalogDay = Number(
+    (catalog?.eventDate || special.eventDate || '').slice(8, 10),
+  );
+  const ram = catalogDay === 15 || lunar.day === 15;
+  if (locale.startsWith('vi')) {
+    return ram ? `rằm tháng ${month}` : `1 tháng ${month}`;
+  }
+  if (locale.startsWith('zh')) {
+    return ram ? `${month}十五` : `${month}初一`;
+  }
+  return ram ? `full moon of ${month}` : `1st of ${month}`;
+}
+
 /**
  * Event date label in the special's own calendar.
  * Multi-day windows → "start–end" range (prefers start over peak/finish alone).
@@ -317,7 +395,12 @@ export function formatSpecialEventDateLabel(
   const monthly =
     special.eventRecurrence === 'monthly-lunar' ||
     catalog?.eventRecurrence === 'monthly-lunar';
-  if (monthly) {
+  const occurrenceStart = (
+    special.effectiveStartDate ||
+    special.effectiveEventDate ||
+    ''
+  ).trim();
+  if (monthly && !occurrenceStart) {
     const day =
       catalog?.eventDate || special.eventDate
         ? Number(
@@ -390,7 +473,7 @@ export function formatSpecialEventDateLabel(
     return `Lunar ${m[1]}-${m[2]}-${m[3]}`;
   };
 
-  if (cal === 'lunar') {
+  if (cal === 'lunar' || monthly) {
     const a = startSolar ? formatLunarFromSolar(startSolar) : null;
     const b =
       endSolar && endSolar !== startSolar

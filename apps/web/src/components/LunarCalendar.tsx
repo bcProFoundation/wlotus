@@ -20,6 +20,7 @@ import {
 import { canChiYear, solarToLunar } from '../lib/lunarCalendar.js';
 import {
   formatSpecialEventDateLabel,
+  formatSpecialListName,
   type TempleSpecialProfileUi,
 } from '../lib/specialsUi.js';
 
@@ -244,7 +245,9 @@ export function LunarCalendar(props: {
                     disabled={props.disabled}
                     onClick={() => props.onOpenSpecial(sp)}
                   >
-                    <span className="calendar-day-item-name">{sp.name || sp.id}</span>
+                    <span className="calendar-day-item-name">
+                      {formatSpecialListName(sp, locale)}
+                    </span>
                     <span className="calendar-day-item-kind">
                       {onSelected && sp.active
                         ? t('homeEventsOngoing')
