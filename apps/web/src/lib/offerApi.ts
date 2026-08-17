@@ -85,6 +85,8 @@ export interface StatusOk {
       effectiveEventDate?: string;
       effectiveStartDate?: string;
       effectiveEndDate?: string;
+      eventRecurrence?: 'yearly' | 'monthly-lunar';
+      lunarMonthEnd?: boolean;
       birthDate?: string | null;
       birthPlace?: string | null;
       storyTitle?: string | null;

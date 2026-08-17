@@ -1,6 +1,7 @@
 import {
   addCalendarDays,
   burnAtomsForDeskKeep,
+  catalogToSpecial,
   DEFAULT_SPECIAL_DESK_KEEP,
   effectiveEventDate,
   globalCivilDayWindowUtc,
@@ -11,7 +12,8 @@ import {
   resolveOfferBurnAtoms,
   resolveTempleSpecialsStatus,
 } from '../src/params/templeSpecials.js';
-import { lunarYmdToSolarYmd, lunarToSolar } from '../src/lib/lunarCalendar.js';
+import { lunarYmdToSolarYmd, lunarToSolar, lunarMonthLastSolarYmd } from '../src/lib/lunarCalendar.js';
+import { templeSpecialCatalog } from '../src/params/templeSpecialCatalog.js';
 
 describe('templeSpecials', () => {
   it('parses global civil-day window for a fixed ymd', () => {
@@ -305,5 +307,45 @@ describe('templeSpecials', () => {
     });
     expect(on.burnAtoms).toBe(1n);
     expect(on.special).toBeNull();
+  });
+
+  it('treats Giao thừa as the last day of tháng Chạp, not lunar day 30', () => {
+    expect(lunarMonthLastSolarYmd(2025, 12, 7)).toBe('2026-02-16');
+    const entry = templeSpecialCatalog(2025).find(e => e.id === 'giao-thua');
+    expect(entry).toBeTruthy();
+    const st = resolveTempleSpecialsStatus(
+      [catalogToSpecial(entry!)],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-02-16T12:00:00Z'),
+    );
+    expect(st.profiles[0]!.effectiveEventDate).toBe('2026-02-16');
+    expect(st.active).toHaveLength(1);
+  });
+
+  it('activates monthly mùng 1 on a later lunar first, not only Tết', () => {
+    const entry = templeSpecialCatalog(2026).find(e => e.id === 'mung-1');
+    expect(entry?.eventRecurrence).toBe('monthly-lunar');
+    const profile = '2'.repeat(64);
+    const spec = { ...catalogToSpecial(entry!), profileId: profile };
+    const tet = resolveTempleSpecialsStatus(
+      [spec],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-02-17T12:00:00Z'),
+    );
+    expect(tet.active).toHaveLength(1);
+    const later = resolveTempleSpecialsStatus(
+      [spec],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-08-13T12:00:00Z'),
+    );
+    // 13 Aug 2026 is lunar 1/7 (Cô Hồn eve / ghost-month open).
+    expect(later.profiles[0]!.effectiveEventDate).toBe('2026-08-13');
+    expect(later.active).toHaveLength(1);
+    const off = resolveTempleSpecialsStatus(
+      [spec],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-08-17T12:00:00Z'),
+    );
+    expect(off.active).toHaveLength(0);
   });
 });

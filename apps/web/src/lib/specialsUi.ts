@@ -5,6 +5,10 @@ import {
   projectSpecialWindow,
   todayYmd,
 } from './calendarMonth.js';
+import {
+  findCatalogEntryById,
+  findCatalogEntryByName,
+} from '../../../../src/params/templeSpecialCatalog.js';
 
 /**
  * Temple specials UI helpers — kind-driven copy + story on details / soft pray.
@@ -24,6 +28,8 @@ export interface TempleSpecialProfileUi {
   effectiveEventDate?: string;
   effectiveStartDate?: string;
   effectiveEndDate?: string;
+  eventRecurrence?: 'yearly' | 'monthly-lunar';
+  lunarMonthEnd?: boolean;
   birthDate?: string | null;
   birthPlace?: string | null;
   storyTitle?: string | null;
@@ -299,6 +305,30 @@ export function formatSpecialEventDateLabel(
   special: TempleSpecialProfileUi,
   locale: string,
 ): string {
+  const catalog =
+    findCatalogEntryById(special.id) ||
+    findCatalogEntryByName(special.name);
+  const monthly =
+    special.eventRecurrence === 'monthly-lunar' ||
+    catalog?.eventRecurrence === 'monthly-lunar';
+  if (monthly) {
+    const day =
+      catalog?.eventDate || special.eventDate
+        ? Number(
+            (catalog?.eventDate || special.eventDate || '')
+              .slice(8, 10),
+          )
+        : 1;
+    if (locale.startsWith('vi')) {
+      return day === 15 ? 'Rằm mỗi tháng' : 'Mùng 1 mỗi tháng';
+    }
+    if (locale.startsWith('zh')) {
+      return day === 15 ? '每月十五' : '每月初一';
+    }
+    return day === 15
+      ? '15th of each lunar month'
+      : '1st of each lunar month';
+  }
   const cal = (special.eventCalendar || 'solar').toLowerCase();
   const startSolar = (
     special.effectiveStartDate ||

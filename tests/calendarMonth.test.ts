@@ -271,4 +271,32 @@ describe('calendarMonth', () => {
     expect(tabFromHash('')).toBe('home');
     expect(ymdKey(2026, 8, 4)).toBe('2026-08-04');
   });
+
+  it('repeats mùng 1 and rằm every lunar month', () => {
+    const mung = catalogAsUi('mung-1');
+    const ram = catalogAsUi('ram');
+    expect(specialCoversYmd(mung, '2026-02-17', 'vi')).toBe(true);
+    expect(specialCoversYmd(ram, '2026-08-27', 'vi')).toBe(true);
+    expect(specialCoversYmd(mung, '2026-08-27', 'vi')).toBe(false);
+    const aug = specialsInMonth([mung, ram], 2026, 8, 'vi', '2026-08-17');
+    expect(aug.map(s => s.id).sort()).toEqual(['mung-1', 'ram']);
+  });
+
+  it('places Giao thừa on the last day of tháng Chạp (29 in 2025)', () => {
+    const giao = catalogAsUi('giao-thua', 2025);
+    giao.eventDate = '2025-12-30';
+    const w = specialWindowInYear(giao, 2025, 'vi');
+    expect(w?.peak).toBe('2026-02-16');
+    expect(specialCoversYmd(giao, '2026-02-16', 'vi')).toBe(true);
+    expect(specialCoversYmd(giao, '2026-02-17', 'vi')).toBe(false);
+  });
+
+  it('keeps Tết as 1/1–1/3 and tiễn ông bà on mùng 3', () => {
+    const tet = catalogAsUi('tet');
+    const tien = catalogAsUi('tien-ong-ba');
+    expect(specialCoversYmd(tet, '2026-02-17', 'vi')).toBe(true);
+    expect(specialCoversYmd(tet, '2026-02-19', 'vi')).toBe(true);
+    expect(specialCoversYmd(tet, '2026-02-20', 'vi')).toBe(false);
+    expect(specialCoversYmd(tien, '2026-02-19', 'vi')).toBe(true);
+  });
 });
