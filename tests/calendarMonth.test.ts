@@ -12,6 +12,7 @@ import {
   specialWindowInYear,
   tabFromHash,
   ymdKey,
+  defaultSelectedYmdForMonth,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
 import { formatSpecialEventDateLabel } from '../apps/web/src/lib/specialsUi.js';
@@ -92,7 +93,7 @@ describe('calendarMonth', () => {
     }
   });
 
-  it('lists month specials with the selected day first', () => {
+  it('lists month specials from the selected day onward', () => {
     const early = stubSpecial('2026-08-05');
     early.name = 'Early';
     const ghost = stubSpecial('2026-08-14', '2026-08-27');
@@ -111,8 +112,14 @@ describe('calendarMonth', () => {
       orderMonthSpecials(month, '2026-08-05').map(s => s.name),
     ).toEqual(['Early', 'Cô Hồn', 'Vu Lan']);
     expect(
+      orderMonthSpecials(month, '2026-08-14').map(s => s.name),
+    ).toEqual(['Cô Hồn', 'Vu Lan']);
+    expect(
       orderMonthSpecials(month, '2026-08-27').map(s => s.name),
-    ).toEqual(['Cô Hồn', 'Vu Lan', 'Early']);
+    ).toEqual(['Cô Hồn', 'Vu Lan']);
+    expect(
+      orderMonthSpecials(month, '2026-08-28').map(s => s.name),
+    ).toEqual([]);
   });
 
   it('drops temple specials from giỗ but keeps a personal memorial on the same lunar day', () => {
@@ -165,6 +172,9 @@ describe('calendarMonth', () => {
     expect(month).toHaveLength(1);
     expect(month[0]!.name).toBe('Bà Nguyễn Thị Lan');
     expect(month[0]!.onYmd).toBe('2026-08-27');
+    expect(
+      memorialsInMonth(kept, inMonth, '2026-08-28', 'vi'),
+    ).toHaveLength(0);
   });
 
   it('repeats festivals and personal death days every year', () => {
@@ -215,8 +225,8 @@ describe('calendarMonth', () => {
     const listed = memorialsInMonth( [personal], inMonth, '2025-09-02', 'vi');
     expect(listed.some(m => m.onYmd === '2025-09-02')).toBe(true);
     const lunarHits = listed.filter(m => m.onYmd !== '2025-09-02');
-    expect(lunarHits.length).toBeGreaterThanOrEqual(1);
     for (const row of lunarHits) {
+      expect(row.onYmd >= '2025-09-02').toBe(true);
       const day = sep2025.find(d => d.ymd === row.onYmd);
       expect(day?.lunar.day).toBe(21);
       expect(day?.lunar.month).toBe(7);
@@ -273,6 +283,14 @@ describe('calendarMonth', () => {
     expect(ymdKey(2026, 8, 4)).toBe('2026-08-04');
   });
 
+  it('selects today in the current month and the 1st otherwise', () => {
+    const now = new Date(2026, 7, 17);
+    expect(defaultSelectedYmdForMonth(2026, 8, now)).toBe('2026-08-17');
+    expect(defaultSelectedYmdForMonth(2026, 9, now)).toBe('2026-09-01');
+    expect(defaultSelectedYmdForMonth(2026, 7, now)).toBe('2026-07-01');
+    expect(defaultSelectedYmdForMonth(2025, 12, now)).toBe('2025-12-01');
+  });
+
   it('repeats mùng 1 and rằm on the eve and peak, skipping named festival months', () => {
     const mung = catalogAsUi('mung-1');
     const ram = catalogAsUi('ram');
@@ -286,6 +304,16 @@ describe('calendarMonth', () => {
     expect(specialCoversYmd(mung, '2026-08-27', 'vi')).toBe(false);
     const aug = specialsInMonth([mung, ram], 2026, 8, 'vi', '2026-08-17');
     expect(aug.map(s => s.id)).toEqual(['mung-1']);
+    expect(
+      orderMonthSpecials(aug, '2026-08-17', 'vi').map(s => s.id),
+    ).toEqual([]);
+    expect(
+      orderMonthSpecials(aug, '2026-08-12', 'vi').map(s => s.id),
+    ).toEqual(['mung-1']);
+    const oct = specialsInMonth([mung], 2026, 10, 'vi', '2026-10-01');
+    expect(
+      orderMonthSpecials(oct, '2026-10-01', 'vi').map(s => s.id),
+    ).toEqual(['mung-1']);
     const jun = specialsInMonth([ram], 2026, 6, 'vi', '2026-06-29');
     expect(jun.map(s => s.id)).toEqual(['ram']);
     expect(jun[0]!.effectiveStartDate).toBe('2026-06-28');
