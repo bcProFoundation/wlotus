@@ -59,6 +59,8 @@ describe('temple special catalog', () => {
     expect(byId['nguyen-tieu']!.eventDate).toBe('2026-01-15');
     expect(byId['nguyen-tieu']!.eventStart).toBe('2026-01-14');
     expect(byId['mung-1']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['mung-1']!.kind).toBe('event');
+    expect(byId['ram']!.kind).toBe('event');
     expect(byId['mung-1']!.monthlyEve).toBe(true);
     expect(byId['mung-1']!.skipLunarMonths).toEqual([1]);
     expect(byId['ram']!.eventRecurrence).toBe('monthly-lunar');
@@ -80,24 +82,24 @@ describe('temple special catalog', () => {
     expect(cat.length).toBeGreaterThanOrEqual(42);
   });
 
-  it('keeps Ông Táo and Tết copy on the middle way', () => {
-    const preachy = /Khói giấy thì không|không cần đốt|bỏ đống khói|不必再烧|去掉烟/;
-    const tao = templeSpecialCatalog(2026).find(e => e.id === 'ong-tao');
-    expect(tao?.story.body).toContain('Tùy tâm');
-    expect(tao?.story.body).not.toMatch(preachy);
-    const tet = templeSpecialCatalog(2026).find(e => e.id === 'tet');
-    expect(tet?.story.body).toContain('tùy tâm');
-    expect(tet?.story.body).not.toMatch(preachy);
+  it('keeps sóc/vọng copy short and customary', () => {
+    const preachy = /tùy tâm|Tùy tâm|随心|29 nếu tháng thiếu/;
     const mung = templeSpecialCatalog(2026).find(e => e.id === 'mung-1');
-    expect(mung?.story.body).toMatch(/30|29/);
-    expect(mung?.story.body).toContain('tùy tâm');
+    expect(mung?.kind).toBe('event');
+    expect(mung?.story.body).toContain(
+      'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 30 và mùng 1 hằng tháng để tưởng nhớ ông bà tổ tiên.',
+    );
+    expect(mung?.story.body).not.toMatch(preachy);
     const ram = templeSpecialCatalog(2026).find(e => e.id === 'ram');
-    expect(ram?.story.body).toContain('14');
-    expect(ram?.story.body).toContain('tùy tâm');
+    expect(ram?.kind).toBe('event');
+    expect(ram?.story.body).toContain(
+      'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 14 và rằm hằng tháng để tưởng nhớ ông bà tổ tiên.',
+    );
     expect(ram?.story.body).not.toMatch(preachy);
-    const jizao = templeSpecialCatalog(2026).find(e => e.id === 'jizao');
-    expect(jizao?.story.bodyZh).toContain('随心');
-    expect(jizao?.story.bodyZh).not.toMatch(preachy);
+    const chu = templeSpecialCatalog(2026).find(e => e.id === 'chu-yi');
+    expect(chu?.kind).toBe('event');
+    expect(chu?.story.bodyZh).toContain('按习俗');
+    expect(chu?.story.bodyZh).not.toMatch(preachy);
   });
 
   it('says Cô Hồn offering is sharing, not fear', () => {
