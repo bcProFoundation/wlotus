@@ -32,7 +32,11 @@
 
 import { readFileSync } from 'node:fs';
 import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
-import { lunarYmdToSolarYmd, lunarMonthLastSolarYmd, nextSolarYmdForLunarDay } from '../lib/lunarCalendar.js';
+import {
+  lunarYmdToSolarYmd,
+  lunarMonthLastSolarYmd,
+  nextMonthlyLunarWindow,
+} from '../lib/lunarCalendar.js';
 import { normalizeSpecialCountries } from './specialCountries.js';
 import { findCatalogEntryById, findCatalogEntryByName, templeSpecialCatalog } from './templeSpecialCatalog.js';
 import { loadSpecialClaims } from './templeSpecialClaims.js';
@@ -100,6 +104,10 @@ export interface TempleSpecial {
    * Giao thừa / 除夕: tháng Chạp.
    */
   lunarMonthEnd?: boolean;
+  /** Include the eve (14 with rằm, last day of the previous month with mùng 1). */
+  monthlyEve?: boolean;
+  /** Named festivals already cover these lunar months — skip the generic sóc/vọng row. */
+  skipLunarMonths?: number[];
   /**
    * Hour (0–23) on the end solar day when the window closes (server UTC window
    * still uses global civil span on end day). Default end-of-civil-day.
@@ -294,27 +302,53 @@ export function effectiveEventDate(
   return addCalendarDays(solarYmd, -testOffsetDays);
 }
 
-function monthlyLunarPeakAroundNow(
+function parseSkipLunarMonths(raw: unknown): number[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const months = [
+    ...new Set(
+      raw
+        .map(n => Math.floor(Number(n)))
+        .filter(n => Number.isFinite(n) && n >= 1 && n <= 12),
+    ),
+  ];
+  return months.length ? months : undefined;
+}
+
+function monthlyLunarWindowAroundNow(
   lunarDay: number,
+  includeEve: boolean,
+  skipLunarMonths: number[] | undefined,
   nowMs: number,
   testOffsetDays: number,
-): string | null {
+): { start: string; peak: string } | null {
   const utc = new Date(nowMs);
   const utcYmd = `${utc.getUTCFullYear()}-${String(utc.getUTCMonth() + 1).padStart(2, '0')}-${String(utc.getUTCDate()).padStart(2, '0')}`;
-  const from = addCalendarDays(utcYmd, -2);
+  const from = addCalendarDays(utcYmd, includeEve ? -2 : -1);
   if (!from) return null;
-  let ymd = nextSolarYmdForLunarDay(from, lunarDay, 7);
-  let firstFuture: string | null = null;
-  for (let i = 0; i < 4 && ymd; i++) {
-    const peak =
-      testOffsetDays > 0 ? addCalendarDays(ymd, -testOffsetDays) : ymd;
-    if (!peak) break;
-    const w = globalCivilDayWindowUtc(peak);
-    if (w && nowMs >= w.startMs && nowMs < w.endMs) return peak;
-    if (w && nowMs < w.startMs && !firstFuture) firstFuture = peak;
-    const nextStart = addCalendarDays(ymd, 1);
+  let ymd = from;
+  let firstFuture: { start: string; peak: string } | null = null;
+  for (let i = 0; i < 6 && ymd; i++) {
+    const window = nextMonthlyLunarWindow(
+      ymd,
+      { peakDay: lunarDay, includeEve, skipLunarMonths },
+      7,
+    );
+    if (!window) break;
+    let start = window.start;
+    let peak = window.peak;
+    if (testOffsetDays > 0) {
+      const shiftedStart = addCalendarDays(start, -testOffsetDays);
+      const shiftedPeak = addCalendarDays(peak, -testOffsetDays);
+      if (!shiftedStart || !shiftedPeak) break;
+      start = shiftedStart;
+      peak = shiftedPeak;
+    }
+    const w = globalCivilRangeWindowUtc(start, peak);
+    if (w && nowMs >= w.startMs && nowMs < w.endMs) return { start, peak };
+    if (w && nowMs < w.startMs && !firstFuture) firstFuture = { start, peak };
+    const nextStart = addCalendarDays(window.peak, 1);
     if (!nextStart) break;
-    ymd = nextSolarYmdForLunarDay(nextStart, lunarDay, 7);
+    ymd = nextStart;
   }
   return firstFuture;
 }
@@ -359,6 +393,8 @@ export function catalogToSpecial(
     eventEndHour: e.eventEndHour,
     eventRecurrence: e.eventRecurrence,
     lunarMonthEnd: e.lunarMonthEnd,
+    monthlyEve: e.monthlyEve,
+    skipLunarMonths: e.skipLunarMonths,
     countries: e.countries.length > 0 ? [...e.countries] : undefined,
   };
 }
@@ -428,6 +464,12 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
   const lunarMonthEnd = Boolean(
     raw.lunarMonthEnd ?? raw.lunar_month_end ?? catalog?.lunarMonthEnd,
   );
+  const monthlyEveRaw = raw.monthlyEve ?? raw.monthly_eve ?? catalog?.monthlyEve;
+  const monthlyEve =
+    monthlyEveRaw == null ? undefined : Boolean(monthlyEveRaw);
+  const skipLunarMonths = parseSkipLunarMonths(
+    raw.skipLunarMonths ?? raw.skip_lunar_months ?? catalog?.skipLunarMonths,
+  );
   const countries = normalizeSpecialCountries(
     raw.countries ??
       raw.country ??
@@ -469,6 +511,8 @@ function normalizeSpecial(raw: Record<string, unknown>): TempleSpecial | null {
     eventEndHour,
     eventRecurrence,
     lunarMonthEnd: lunarMonthEnd || undefined,
+    monthlyEve,
+    skipLunarMonths,
     story,
     countries: countries.length > 0 ? countries : undefined,
   };
@@ -669,11 +713,17 @@ export function toPublicSpecial(
   if (recurrence === 'monthly-lunar') {
     const day = parseYmd(s.eventDate)?.d;
     if (!day) return null;
-    const occ = monthlyLunarPeakAroundNow(day, nowMs, testOffsetDays);
+    const occ = monthlyLunarWindowAroundNow(
+      day,
+      s.monthlyEve !== false,
+      s.skipLunarMonths,
+      nowMs,
+      testOffsetDays,
+    );
     if (!occ) return null;
-    a = occ;
-    b = occ;
-    peak = occ;
+    a = occ.start;
+    b = occ.peak;
+    peak = occ.peak;
   } else {
     const p = convert(s.eventDate);
     if (!p) return null;

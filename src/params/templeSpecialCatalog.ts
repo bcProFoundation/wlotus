@@ -75,6 +75,17 @@ export interface TempleSpecialCatalogEntry {
   eventRecurrence?: TempleEventRecurrence;
   /** Last day of the lunar month in `eventDate` (Giao thừa / 除夕). */
   lunarMonthEnd?: boolean;
+  /**
+   * Monthly sóc/vọng: include the eve (14 before rằm, 29/30 before mùng 1).
+   * Folk custom: many households burn on the afternoon before, not only the
+   * named morning.
+   */
+  monthlyEve?: boolean;
+  /**
+   * Lunar months where this monthly row is hidden because a named festival
+   * already covers that rằm/sóc (1 Nguyên Tiêu/Tết, 7 Vu Lan–Cô Hồn, 8 Trung Thu).
+   */
+  skipLunarMonths?: number[];
   countries: string[];
   /** On-chain altar birthPlace (quê quán label). */
   birthPlace: string;
@@ -134,6 +145,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
   const vn = [...VIETNAM_COUNTRIES];
   const zh = [...CHINESE_SPEAKING_COUNTRIES];
   const en = [...ENGLISH_SPEAKING_COUNTRIES];
+  const skipRamMonths = [1, 7, 8];
+  const skipSocMonths = [1];
 
   return [
     {
@@ -299,10 +312,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tiễn Ông Công Ông Táo',
         body:
-          'Ngày 23 tháng Chạp, mỗi nhà tiễn Ông Công Ông Táo về trời. Cá chép giấy, mũ áo giấy, vàng mã — đốt cho ông lên đường.\n\nLễ tiễn vẫn cần. Khói giấy thì không. Một bông sen số giữ lời tiễn, không thêm một đống vàng mã.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông Táo lên đường thanh thản, nguyện cho nhà nhà được bình an.',
+          'Ngày 23 tháng Chạp, nhiều nhà làm lễ tiễn Ông Công Ông Táo về trời: cá chép, mũ áo, vàng mã — mỗi nhà một cách.\n\nSen nếu muốn, cũng là lời tiễn. Tùy tâm mà đổi.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông Táo lên đường thanh thản, nguyện cho nhà nhà được bình an.',
         titleEn: 'Kitchen Gods — sending off',
         bodyEn:
-          'On the twenty-third of the twelfth lunar month, Vietnamese households send the Kitchen Gods to heaven. Paper carp, paper clothes, joss paper — burned for the road.\n\nThe farewell remains. The smoke does not. A lotus keeps the sending-off without another pile of votive paper.\n\nEach lotus offered today is also a prayer: that they go in peace, and that every home may find peace.',
+          'On the twenty-third of the twelfth lunar month, Vietnamese households send the Kitchen Gods to heaven: paper carp, clothes, joss paper — each home in its own way.\n\nA lotus, if you wish, is also a sending-off. Change only as the heart allows.\n\nEach lotus offered today is also a prayer: that they go in peace, and that every home may find peace.',
       },
     },
     {
@@ -320,10 +333,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Giao thừa',
         body:
-          'Đêm cuối năm — 29 hoặc 30 tháng Chạp — bàn thờ thắp hương đón năm mới: cúng trời đất, cúng ông bà, rước ông Táo về. Giao thừa là phút cửa nhà mở cho người sống và người đã khuất.\n\nSen trắng thay vàng mã và hoa cắt. Lời tiễn năm cũ, lời đón năm mới — một bông, không khói.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện năm cũ được tiễn, nguyện cho nhà nhà được bình an.',
+          'Đêm cuối năm — 29 hoặc 30 tháng Chạp — nhiều nhà thắp hương đón năm mới: cúng trời đất, cúng ông bà, rước ông Táo về. Giao thừa là phút cửa nhà mở cho người sống và người đã khuất.\n\nSen cũng là lời tiễn năm cũ, đón năm mới — nếu muốn. Tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện năm cũ được tiễn, nguyện cho nhà nhà được bình an.',
         titleEn: 'New Year’s Eve — Giao thừa',
         bodyEn:
-          'The last night of the lunar year — the 29th or 30th of the twelfth month — households offer incense to heaven and earth, to ancestors, and welcome the Kitchen Gods home. The year turns with the door open to the living and the dead.\n\nA white lotus stands in for joss paper and cut flowers. Farewell to the old year, welcome to the new — one bloom, no smoke.\n\nEach lotus offered today is also a prayer: that the year is seen out in peace, and that every home may find peace.',
+          'The last night of the lunar year — the 29th or 30th of the twelfth month — many households offer incense to heaven and earth, to ancestors, and welcome the Kitchen Gods home. The year turns with the door open to the living and the dead.\n\nA lotus is also a farewell to the old year and a welcome to the new — if you wish. As the heart allows.\n\nEach lotus offered today is also a prayer: that the year is seen out in peace, and that every home may find peace.',
       },
     },
     {
@@ -342,10 +355,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tết Nguyên Đán',
         body:
-          'Mùng 1 đến mùng 3, bàn thờ nhà Việt không tắt hương. Ông bà được đón về ăn Tết với con cháu: hoa, bánh, vàng mã — rồi hóa.\n\nW Lotus giữ cái Tết ấy mà bỏ đống khói: dâng sen, nhớ người, không cần cắt thêm một cành hoa thật.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà về ăn Tết, nguyện cho nhà nhà được bình an.',
+          'Mùng 1 đến mùng 3, bàn thờ nhà Việt thường không tắt hương. Ông bà được đón về ăn Tết với con cháu.\n\nNhớ người là đủ. Dâng sen hay dâng hoa nhà — tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà về ăn Tết, nguyện cho nhà nhà được bình an.',
         titleEn: 'Tết — Lunar New Year',
         bodyEn:
-          'From the first to the third of the first lunar month, Vietnamese ancestral altars stay lit. Ancestors are welcomed home for Tết: flowers, cakes, joss paper — then burned.\n\nW Lotus keeps that Tết and drops the smoke: offer a lotus, remember someone, without cutting another real flower.\n\nEach lotus offered today is also a prayer: that those who came before share this New Year, and that every home may find peace.',
+          'From the first to the third of the first lunar month, Vietnamese ancestral altars often stay lit. Ancestors are welcomed home for Tết.\n\nRemembering is enough. Offer a lotus or flowers from the house — as the heart allows.\n\nEach lotus offered today is also a prayer: that those who came before share this New Year, and that every home may find peace.',
       },
     },
     {
@@ -362,10 +375,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tiễn ông bà',
         body:
-          'Mùng 3 Tết (nhiều nhà mùng 4 hoặc mùng 7), hóa vàng tiễn ông bà về. Đốt vàng mã cho người đã khuất mang theo — rồi dọn bàn, hạ nêu, Tết khép lại.\n\nTiễn đưa không cần lửa giấy. Một bông sen là lễ đưa, để ông bà về thanh thản.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà về thanh thản, nguyện cho nhà nhà được bình an.',
+          'Mùng 3 Tết (nhiều nhà mùng 4 hoặc mùng 7), nhiều nhà làm lễ tiễn ông bà về, rồi dọn bàn, hạ nêu, Tết khép lại.\n\nLễ đưa tùy nhà: hương hoa, vàng mã, hay một đóa sen.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà về thanh thản, nguyện cho nhà nhà được bình an.',
         titleEn: 'Seeing ancestors off',
         bodyEn:
-          'On the third of Tết (some homes the fourth or seventh), families burn joss paper to send ancestors back. Then the altar is cleared, the nêu pole comes down, and Tết closes.\n\nThe sending-off does not need paper fire. A lotus is the farewell, so they go in peace.\n\nEach lotus offered today is also a prayer: that those who visited go home in peace, and that every home may find peace.',
+          'On the third of Tết (some homes the fourth or seventh), many families see ancestors off, then clear the altar, take down the nêu pole, and close Tết.\n\nThe farewell is each household’s own: incense and flowers, joss paper, or a lotus.\n\nEach lotus offered today is also a prayer: that those who visited go home in peace, and that every home may find peace.',
       },
     },
     {
@@ -375,6 +388,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       kind: 'event',
       eventCalendar: 'lunar',
       eventDate: `${y}-01-15`,
+      eventStart: `${y}-01-14`,
+      eventEnd: `${y}-01-15`,
       countries: vn,
       birthPlace: 'Việt Nam',
       altarName: 'Nguyên Tiêu',
@@ -382,10 +397,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Rằm tháng Giêng',
         body:
-          'Rằm tháng Giêng — Tết Nguyên Tiêu, rằm đầu năm. Người tới chùa, thắp hương, hoa đăng, cầu an cho cả năm.\n\nRằm này không phải rằm thường. Sen thay cho hương khói dày đặc đầu năm, thay cho hoa cắt đầy sảnh chùa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện năm mới được mở bằng một bông sen, nguyện cho nhà nhà được bình an.',
+          'Rằm tháng Giêng — Tết Nguyên Tiêu. Nhiều nhà lễ từ chiều 14; sáng rằm tới chùa, thắp hương, hoa đăng, cầu an cho cả năm.\n\nSen tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện năm mới được mở bằng một bông sen, nguyện cho nhà nhà được bình an.',
         titleEn: 'First Full Moon — Nguyên Tiêu',
         bodyEn:
-          'The fifteenth of the first lunar month is Nguyên Tiêu, the year’s first full moon. People go to the temple, light incense, hang lanterns, and ask peace for the year.\n\nThis rằm is not an ordinary fifteenth. A lotus stands in for the thick New Year smoke and the cut flowers that fill temple halls.\n\nEach lotus offered today is also a prayer: that the year opens with a lotus, and that every home may find peace.',
+          'The fifteenth of the first lunar month is Nguyên Tiêu, the year’s first full moon. Many households begin on the afternoon of the fourteenth; on the fifteenth people go to the temple, light incense, hang lanterns, and ask peace for the year.\n\nA lotus, if you wish.\n\nEach lotus offered today is also a prayer: that the year opens with a lotus, and that every home may find peace.',
       },
     },
     {
@@ -396,6 +411,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       eventCalendar: 'lunar',
       eventDate: `${y}-01-01`,
       eventRecurrence: 'monthly-lunar',
+      monthlyEve: true,
+      skipLunarMonths: skipSocMonths,
       countries: vn,
       birthPlace: 'Việt Nam',
       altarName: 'Mùng 1',
@@ -403,10 +420,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Mùng 1 âm lịch',
         body:
-          'Mùng 1 âm lịch, nhiều nhà Việt thắp hương ông bà — sóc, ngày trăng mới. Vàng mã, hoa tươi, một mâm nhỏ: hai lần mỗi tháng, tháng nào cũng thế.\n\nKhông cần đốt giấy hay hái hoa mỗi mùng 1. Một bông sen số là lễ sóc.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà được nhớ mỗi tháng, nguyện cho nhà nhà được bình an.',
+          'Nhiều nhà lễ sóc từ chiều 30 (hoặc 29 nếu tháng thiếu); sáng mùng 1 thắp hương ông bà. Tháng Giêng đã có Tết nên không nhắc lại mùng 1 riêng.\n\nAi muốn đổi sang sen, tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà được nhớ mỗi tháng, nguyện cho nhà nhà được bình an.',
         titleEn: 'First of the lunar month',
         bodyEn:
-          'On the first of each lunar month many Vietnamese households offer incense to ancestors — the new-moon day. Joss paper, fresh flowers, a small tray: twice a month, every month.\n\nNo need to burn paper or pick flowers on every first. A lotus is the new-moon offering.\n\nEach lotus offered today is also a prayer: that ancestors are remembered each month, and that every home may find peace.',
+          'Many households begin the new-moon offering on the afternoon of the 30th (or the 29th in a short month); on the first, incense for ancestors. The first lunar month already has Tết, so this row is not shown then.\n\nIf you wish to offer a lotus instead, as the heart allows.\n\nEach lotus offered today is also a prayer: that ancestors are remembered each month, and that every home may find peace.',
       },
     },
     {
@@ -417,6 +434,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       eventCalendar: 'lunar',
       eventDate: `${y}-01-15`,
       eventRecurrence: 'monthly-lunar',
+      monthlyEve: true,
+      skipLunarMonths: skipRamMonths,
       countries: vn,
       birthPlace: 'Việt Nam',
       altarName: 'Ngày rằm',
@@ -424,10 +443,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Ngày rằm',
         body:
-          'Ngày rằm, trăng tròn — vọng. Bàn thờ lại có hương, hoa, vàng mã. Cùng mùng 1, đó là nhịp thở của nhà Việt quanh năm: hai lần thắp, hai lần nhớ.\n\nSen thay cho hương khói và hoa cắt mỗi rằm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện mỗi rằm còn một bông sen, nguyện cho nhà nhà được bình an.',
+          'Bắc thường hóa từ chiều 14; Nam nhiều nhà chờ sáng rằm. Cả hai ngày đều được. Tháng Giêng, tháng 7 và tháng 8 đã có lễ riêng nên không nhắc rằm thường.\n\nSen nếu muốn — tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện mỗi rằm còn một bông sen, nguyện cho nhà nhà được bình an.',
         titleEn: 'Full-moon day',
         bodyEn:
-          'On the fifteenth, the full moon — vọng. The altar has incense, flowers, joss paper again. With the first of the month, this is the year’s rhythm in a Vietnamese home: twice to light, twice to remember.\n\nA lotus stands in for smoke and cut flowers on every full moon.\n\nEach lotus offered today is also a prayer: that each full moon still has a lotus, and that every home may find peace.',
+          'In the north many households offer from the afternoon of the fourteenth; in the south many wait until the morning of the fifteenth. Both days count. The first, seventh, and eighth lunar months already have named festivals, so the ordinary rằm is not listed then.\n\nA lotus, if you wish — as the heart allows.\n\nEach lotus offered today is also a prayer: that each full moon still has a lotus, and that every home may find peace.',
       },
     },
     {
@@ -444,10 +463,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tết Đoan Ngọ',
         body:
-          'Mùng 5 tháng 5 âm lịch, Tết Đoan Ngọ. Rượu nếp, quả, lá — cúng ông bà giữa năm, giết sâu bọ, cầu an.\n\nVẫn là ngày dâng lễ trên bàn thờ, không phải ngày đốt cho nhiều. Một bông sen đủ.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữa năm được an, nguyện cho nhà nhà được bình an.',
+          'Mùng 5 tháng 5 âm lịch, Tết Đoan Ngọ. Nhiều nhà rượu nếp, quả, lá — cúng ông bà giữa năm, diệt sâu, cầu an.\n\nSen nếu muốn. Tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữa năm được an, nguyện cho nhà nhà được bình an.',
         titleEn: 'Dragon Boat / Đoan Ngọ',
         bodyEn:
-          'On the fifth of the fifth lunar month, Tết Đoan Ngọ. Sticky-rice wine, fruit, herbs — offered to ancestors at mid-year, for health and a quiet house.\n\nIt is still an altar day, not a day to burn more. One lotus is enough.\n\nEach lotus offered today is also a prayer: for a peaceful mid-year, and that every home may find peace.',
+          'On the fifth of the fifth lunar month, Tết Đoan Ngọ. Sticky-rice wine, fruit, herbs — offered to ancestors at mid-year, for health and a quiet house.\n\nA lotus, if you wish. As the heart allows.\n\nEach lotus offered today is also a prayer: for a peaceful mid-year, and that every home may find peace.',
       },
     },
     {
@@ -457,6 +476,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       kind: 'event',
       eventCalendar: 'lunar',
       eventDate: `${y}-08-15`,
+      eventStart: `${y}-08-14`,
+      eventEnd: `${y}-08-15`,
       countries: vn,
       birthPlace: 'Việt Nam',
       altarName: 'Trung Thu',
@@ -464,10 +485,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tết Trung Thu',
         body:
-          'Rằm tháng Tám, Tết Trung Thu. Đèn, bánh, trẻ con — và nhiều nhà vẫn thắp hương ông bà dưới trăng.\n\nSen trên bàn thờ thay cho hoa cắt đêm rằm, thay cho khói giấy giữa hội đèn.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện trăng rằm còn chỗ cho ông bà, nguyện cho nhà nhà được bình an.',
+          'Rằm tháng Tám, Tết Trung Thu. Đèn, bánh, trẻ con — nhiều nhà lễ từ chiều 14, thắp hương ông bà dưới trăng.\n\nSen tùy tâm.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện trăng rằm còn chỗ cho ông bà, nguyện cho nhà nhà được bình an.',
         titleEn: 'Mid-Autumn Festival',
         bodyEn:
-          'The fifteenth of the eighth lunar month is Tết Trung Thu. Lanterns, cakes, children — and many households still offer incense to ancestors under the moon.\n\nA lotus on the altar stands in for cut flowers that night, and for paper smoke in the lantern crowd.\n\nEach lotus offered today is also a prayer: that the full moon still has a place for those who came before, and that every home may find peace.',
+          'The fifteenth of the eighth lunar month is Tết Trung Thu. Lanterns, cakes, children — and many households begin on the afternoon of the fourteenth, offering incense to ancestors under the moon.\n\nA lotus, if you wish.\n\nEach lotus offered today is also a prayer: that the full moon still has a place for those who came before, and that every home may find peace.',
       },
     },
     {
@@ -559,12 +580,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '祭灶 — 小年',
         titleZh: '祭灶 — 小年',
         body:
-          '腊月二十三或二十四，送灶神上天。纸马、糖瓜、烧纸——让他路上甜、少说坏话。\n\n礼还在，烟可以放下。一朵莲花是送行，不必再烧一叠纸钱。\n\n今日每一朵莲花，也是一句愿：愿灶神路上平安，愿家家得安宁。',
+          '腊月二十三或二十四，送灶神上天。纸马、糖瓜、烧纸——各家各礼。\n\n想献莲，随心。\n\n今日每一朵莲花，也是一句愿：愿灶神路上平安，愿家家得安宁。',
         bodyZh:
-          '腊月二十三或二十四，送灶神上天。纸马、糖瓜、烧纸——让他路上甜、少说坏话。\n\n礼还在，烟可以放下。一朵莲花是送行，不必再烧一叠纸钱。\n\n今日每一朵莲花，也是一句愿：愿灶神路上平安，愿家家得安宁。',
+          '腊月二十三或二十四，送灶神上天。纸马、糖瓜、烧纸——各家各礼。\n\n想献莲，随心。\n\n今日每一朵莲花，也是一句愿：愿灶神路上平安，愿家家得安宁。',
         titleEn: 'Kitchen God — Little New Year',
         bodyEn:
-          'On the twenty-third or twenty-fourth of the twelfth lunar month, households send the Kitchen God to heaven. Paper horses, candy, joss paper — a sweet road, fewer harsh words.\n\nThe rite remains. The smoke can go. A lotus is the sending-off, without another stack of paper money.\n\nEach lotus offered today is also a prayer: for a peaceful road, and that every home may find peace.',
+          'On the twenty-third or twenty-fourth of the twelfth lunar month, households send the Kitchen God to heaven. Paper horses, candy, joss paper — each home in its own way.\n\nA lotus, if you wish. As the heart allows.\n\nEach lotus offered today is also a prayer: for a peaceful road, and that every home may find peace.',
       },
     },
     {
@@ -583,12 +604,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '除夕',
         titleZh: '除夕',
         body:
-          '一年最后一夜。接灶、祭祖、守岁。香烛、纸钱、一桌给还在的人和已经走的人。\n\n一朵莲花代替烧纸和折枝的花。辞旧、迎新，不必再添烟。\n\n今日每一朵莲花，也是一句愿：愿旧年被好好送走，愿家家得安宁。',
+          '一年最后一夜。接灶、祭祖、守岁。香烛、一桌给还在的人和已经走的人。\n\n莲花也是辞旧迎新，若愿意。随心。\n\n今日每一朵莲花，也是一句愿：愿旧年被好好送走，愿家家得安宁。',
         bodyZh:
-          '一年最后一夜。接灶、祭祖、守岁。香烛、纸钱、一桌给还在的人和已经走的人。\n\n一朵莲花代替烧纸和折枝的花。辞旧、迎新，不必再添烟。\n\n今日每一朵莲花，也是一句愿：愿旧年被好好送走，愿家家得安宁。',
+          '一年最后一夜。接灶、祭祖、守岁。香烛、一桌给还在的人和已经走的人。\n\n莲花也是辞旧迎新，若愿意。随心。\n\n今日每一朵莲花，也是一句愿：愿旧年被好好送走，愿家家得安宁。',
         titleEn: 'New Year’s Eve — Chúxī',
         bodyEn:
-          'The last night of the year. Welcome the Kitchen God home, honour ancestors, stay up. Incense, paper money, a table for the living and the dead.\n\nA lotus stands in for burned paper and cut flowers. See the old year out without more smoke.\n\nEach lotus offered today is also a prayer: that the year is seen out in peace, and that every home may find peace.',
+          'The last night of the year. Welcome the Kitchen God home, honour ancestors, stay up. Incense, a table for the living and the dead.\n\nA lotus is also a farewell to the old year — if you wish. As the heart allows.\n\nEach lotus offered today is also a prayer: that the year is seen out in peace, and that every home may find peace.',
       },
     },
     {
@@ -608,12 +629,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '春节',
         titleZh: '春节',
         body:
-          '正月初一到初三，香火不断。先人被请回家过年：花、糕、纸钱，再烧掉。\n\n莲花留下过年的礼，去掉烟。献一朵，记得人，不必再折一枝真花。\n\n今日每一朵莲花，也是一句愿：愿先人回家过年，愿家家得安宁。',
+          '正月初一到初三，香火不断。先人被请回家过年。\n\n记得就好。献莲或家花，随心。\n\n今日每一朵莲花，也是一句愿：愿先人回家过年，愿家家得安宁。',
         bodyZh:
-          '正月初一到初三，香火不断。先人被请回家过年：花、糕、纸钱，再烧掉。\n\n莲花留下过年的礼，去掉烟。献一朵，记得人，不必再折一枝真花。\n\n今日每一朵莲花，也是一句愿：愿先人回家过年，愿家家得安宁。',
+          '正月初一到初三，香火不断。先人被请回家过年。\n\n记得就好。献莲或家花，随心。\n\n今日每一朵莲花，也是一句愿：愿先人回家过年，愿家家得安宁。',
         titleEn: 'Spring Festival',
         bodyEn:
-          'From the first to the third of the first lunar month, incense stays lit. Ancestors are asked home for the New Year: flowers, cakes, paper money — then burned.\n\nA lotus keeps the rite and drops the smoke. Offer one bloom, remember someone, without cutting another real flower.\n\nEach lotus offered today is also a prayer: that those who came before share this New Year, and that every home may find peace.',
+          'From the first to the third of the first lunar month, incense stays lit. Ancestors are asked home for the New Year.\n\nRemembering is enough. Offer a lotus or flowers from the house — as the heart allows.\n\nEach lotus offered today is also a prayer: that those who came before share this New Year, and that every home may find peace.',
       },
     },
     {
@@ -623,6 +644,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       kind: 'event',
       eventCalendar: 'lunar',
       eventDate: `${y}-01-15`,
+      eventStart: `${y}-01-14`,
+      eventEnd: `${y}-01-15`,
       countries: zh,
       birthPlace: '中国',
       altarName: '元宵节',
@@ -631,12 +654,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '元宵 — 上元',
         titleZh: '元宵 — 上元',
         body:
-          '正月十五，一年第一个满月。灯、汤圆、上香，把年过完。\n\n这一望不是平常的十五。莲花代替年初浓烟和折来的花。\n\n今日每一朵莲花，也是一句愿：愿新年以莲花开场，愿家家得安宁。',
+          '正月十四到十五，一年第一个满月。灯、汤圆、上香。不少人家从十四下午起祭。\n\n随心献莲。\n\n今日每一朵莲花，也是一句愿：愿新年以莲花开场，愿家家得安宁。',
         bodyZh:
-          '正月十五，一年第一个满月。灯、汤圆、上香，把年过完。\n\n这一望不是平常的十五。莲花代替年初浓烟和折来的花。\n\n今日每一朵莲花，也是一句愿：愿新年以莲花开场，愿家家得安宁。',
+          '正月十四到十五，一年第一个满月。灯、汤圆、上香。不少人家从十四下午起祭。\n\n随心献莲。\n\n今日每一朵莲花，也是一句愿：愿新年以莲花开场，愿家家得安宁。',
         titleEn: 'Lantern Festival',
         bodyEn:
-          'The fifteenth of the first lunar month is the year’s first full moon. Lanterns, tangyuan, incense — the New Year closing.\n\nThis full moon is not an ordinary fifteenth. A lotus stands in for the thick New Year smoke and cut flowers.\n\nEach lotus offered today is also a prayer: that the year opens with a lotus, and that every home may find peace.',
+          'The fourteenth to fifteenth of the first lunar month is the year’s first full moon. Lanterns, tangyuan, incense. Many households begin on the afternoon of the fourteenth.\n\nA lotus, if you wish.\n\nEach lotus offered today is also a prayer: that the year opens with a lotus, and that every home may find peace.',
       },
     },
     {
@@ -647,6 +670,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       eventCalendar: 'lunar',
       eventDate: `${y}-01-01`,
       eventRecurrence: 'monthly-lunar',
+      monthlyEve: true,
+      skipLunarMonths: skipSocMonths,
       countries: zh,
       birthPlace: '中国',
       altarName: '初一',
@@ -655,12 +680,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '每月初一',
         titleZh: '每月初一',
         body:
-          '每月初一，朔。不少人家给祖先上香：纸钱、鲜花、一小桌，一个月两次。\n\n不必每月初一都烧纸、折花。一朵莲花就是朔日的供。\n\n今日每一朵莲花，也是一句愿：愿先人每月被记得，愿家家得安宁。',
+          '多从月末傍晚起祭，初一早晨上香。正月已有春节，不再单列初一。\n\n想换莲花，随心。\n\n今日每一朵莲花，也是一句愿：愿先人每月被记得，愿家家得安宁。',
         bodyZh:
-          '每月初一，朔。不少人家给祖先上香：纸钱、鲜花、一小桌，一个月两次。\n\n不必每月初一都烧纸、折花。一朵莲花就是朔日的供。\n\n今日每一朵莲花，也是一句愿：愿先人每月被记得，愿家家得安宁。',
+          '多从月末傍晚起祭，初一早晨上香。正月已有春节，不再单列初一。\n\n想换莲花，随心。\n\n今日每一朵莲花，也是一句愿：愿先人每月被记得，愿家家得安宁。',
         titleEn: 'First of the lunar month',
         bodyEn:
-          'On the first of each lunar month — the new moon — many households offer incense to ancestors: paper money, fresh flowers, a small table, twice a month.\n\nNo need to burn paper or cut flowers on every first. A lotus is the new-moon offering.\n\nEach lotus offered today is also a prayer: that ancestors are remembered each month, and that every home may find peace.',
+          'Many households begin on the last afternoon of the month; on the first, incense in the morning. The first lunar month already has Spring Festival, so this row is not listed then.\n\nIf you wish to offer a lotus, as the heart allows.\n\nEach lotus offered today is also a prayer: that ancestors are remembered each month, and that every home may find peace.',
       },
     },
     {
@@ -671,6 +696,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       eventCalendar: 'lunar',
       eventDate: `${y}-01-15`,
       eventRecurrence: 'monthly-lunar',
+      monthlyEve: true,
+      skipLunarMonths: skipRamMonths,
       countries: zh,
       birthPlace: '中国',
       altarName: '十五',
@@ -679,12 +706,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '每月十五',
         titleZh: '每月十五',
         body:
-          '每月十五，望，月圆。香、花、纸钱又上桌。和初一一起，是一年的呼吸：两次点燃，两次记得。\n\n莲花代替每个望日的烟和折枝。\n\n今日每一朵莲花，也是一句愿：愿每月十五仍有一朵莲，愿家家得安宁。',
+          '北方多十四下午，南方多十五早上。两天都行。正月、七月、八月已有专节，不再单列十五。\n\n想献莲，随心。\n\n今日每一朵莲花，也是一句愿：愿每月十五仍有一朵莲，愿家家得安宁。',
         bodyZh:
-          '每月十五，望，月圆。香、花、纸钱又上桌。和初一一起，是一年的呼吸：两次点燃，两次记得。\n\n莲花代替每个望日的烟和折枝。\n\n今日每一朵莲花，也是一句愿：愿每月十五仍有一朵莲，愿家家得安宁。',
+          '北方多十四下午，南方多十五早上。两天都行。正月、七月、八月已有专节，不再单列十五。\n\n想献莲，随心。\n\n今日每一朵莲花，也是一句愿：愿每月十五仍有一朵莲，愿家家得安宁。',
         titleEn: 'Fifteenth of the lunar month',
         bodyEn:
-          'On the fifteenth — the full moon — incense, flowers, and paper money return to the table. With the first of the month, this is the year’s rhythm: twice to light, twice to remember.\n\nA lotus stands in for smoke and cut stems on every full moon.\n\nEach lotus offered today is also a prayer: that each fifteenth still has a lotus, and that every home may find peace.',
+          'In the north many offer from the afternoon of the fourteenth; in the south many wait until the morning of the fifteenth. Both days count. The first, seventh, and eighth lunar months already have named festivals, so the ordinary fifteenth is not listed then.\n\nA lotus, if you wish.\n\nEach lotus offered today is also a prayer: that each fifteenth still has a lotus, and that every home may find peace.',
       },
     },
     {
@@ -694,6 +721,8 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       kind: 'event',
       eventCalendar: 'lunar',
       eventDate: `${y}-08-15`,
+      eventStart: `${y}-08-14`,
+      eventEnd: `${y}-08-15`,
       countries: zh,
       birthPlace: '中国',
       altarName: '中秋节',
@@ -702,12 +731,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '中秋',
         titleZh: '中秋',
         body:
-          '八月十五，月圆。灯、月饼、团圆——不少人家也在这一夜给祖先上香。\n\n莲花代替折来的花，也代替灯市里的纸烟。\n\n今日每一朵莲花，也是一句愿：愿圆月仍给先人留位，愿家家得安宁。',
+          '八月十四到十五，月圆。灯、月饼、团圆——不少人家从十四起给祖先上香。\n\n随心献莲。\n\n今日每一朵莲花，也是一句愿：愿圆月仍给先人留位，愿家家得安宁。',
         bodyZh:
-          '八月十五，月圆。灯、月饼、团圆——不少人家也在这一夜给祖先上香。\n\n莲花代替折来的花，也代替灯市里的纸烟。\n\n今日每一朵莲花，也是一句愿：愿圆月仍给先人留位，愿家家得安宁。',
+          '八月十四到十五，月圆。灯、月饼、团圆——不少人家从十四起给祖先上香。\n\n随心献莲。\n\n今日每一朵莲花，也是一句愿：愿圆月仍给先人留位，愿家家得安宁。',
         titleEn: 'Mid-Autumn Festival',
         bodyEn:
-          'The fifteenth of the eighth lunar month is the Mid-Autumn full moon. Lanterns, mooncakes, reunion — and many households still offer incense to ancestors that night.\n\nA lotus stands in for cut flowers, and for paper smoke in the lantern crowd.\n\nEach lotus offered today is also a prayer: that the full moon still has a place for those who came before, and that every home may find peace.',
+          'The fourteenth to fifteenth of the eighth lunar month is the Mid-Autumn full moon. Lanterns, mooncakes, reunion — and many households begin offering incense to ancestors from the fourteenth.\n\nA lotus, if you wish.\n\nEach lotus offered today is also a prayer: that the full moon still has a place for those who came before, and that every home may find peace.',
       },
     },
     {

@@ -5,6 +5,10 @@ import {
   solarDateForBirthYearLookup,
   solarToLunar,
 } from '../apps/web/src/lib/lunarCalendar.js';
+import {
+  nextMonthlyLunarWindow,
+  solarYmdInMonthlyLunar,
+} from '../src/lib/lunarCalendar.js';
 
 describe('lunarCalendar', () => {
   it('converts well-known Vietnamese Tết (lunar New Year) solar dates to lunar 1/1', () => {
@@ -90,5 +94,41 @@ describe('lunarCalendar', () => {
     );
     expect(formatLunarBirthYear('1926', 'en')).toBeNull();
     expect(formatLunarBirthYear('', 'vi')).toBeNull();
+  });
+});
+
+describe('monthly sóc/vọng windows', () => {
+  const ram = {
+    peakDay: 15,
+    includeEve: true,
+    skipLunarMonths: [1, 7, 8],
+  };
+  const soc = {
+    peakDay: 1,
+    includeEve: true,
+    skipLunarMonths: [1],
+  };
+
+  it('covers 14–rằm and skips Vu Lan / Nguyên Tiêu / Trung Thu months', () => {
+    expect(solarYmdInMonthlyLunar('2026-06-28', ram, 7)).toBe(true);
+    expect(solarYmdInMonthlyLunar('2026-06-29', ram, 7)).toBe(true);
+    expect(solarYmdInMonthlyLunar('2026-08-27', ram, 7)).toBe(false);
+    expect(solarYmdInMonthlyLunar('2026-03-03', ram, 7)).toBe(false);
+    expect(nextMonthlyLunarWindow('2026-08-01', ram, 7)).toEqual({
+      start: '2026-10-23',
+      end: '2026-10-24',
+      peak: '2026-10-24',
+    });
+  });
+
+  it('covers 30–mùng 1 and skips Tết', () => {
+    expect(solarYmdInMonthlyLunar('2026-02-17', soc, 7)).toBe(false);
+    expect(solarYmdInMonthlyLunar('2026-08-12', soc, 7)).toBe(true);
+    expect(solarYmdInMonthlyLunar('2026-08-13', soc, 7)).toBe(true);
+    expect(nextMonthlyLunarWindow('2026-02-16', soc, 7)).toEqual({
+      start: '2026-03-18',
+      end: '2026-03-19',
+      peak: '2026-03-19',
+    });
   });
 });

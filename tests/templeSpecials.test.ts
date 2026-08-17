@@ -322,7 +322,7 @@ describe('templeSpecials', () => {
     expect(st.active).toHaveLength(1);
   });
 
-  it('activates monthly mùng 1 on a later lunar first, not only Tết', () => {
+  it('activates monthly mùng 1 on the eve and peak, skipping Tết', () => {
     const entry = templeSpecialCatalog(2026).find(e => e.id === 'mung-1');
     expect(entry?.eventRecurrence).toBe('monthly-lunar');
     const profile = '2'.repeat(64);
@@ -332,7 +332,15 @@ describe('templeSpecials', () => {
       { deskKeep: 6, testOffsetDays: 0 },
       Date.parse('2026-02-17T12:00:00Z'),
     );
-    expect(tet.active).toHaveLength(1);
+    expect(tet.active).toHaveLength(0);
+    const eve = resolveTempleSpecialsStatus(
+      [spec],
+      { deskKeep: 6, testOffsetDays: 0 },
+      Date.parse('2026-08-12T12:00:00Z'),
+    );
+    expect(eve.profiles[0]!.effectiveStartDate).toBe('2026-08-12');
+    expect(eve.profiles[0]!.effectiveEventDate).toBe('2026-08-13');
+    expect(eve.active).toHaveLength(1);
     const later = resolveTempleSpecialsStatus(
       [spec],
       { deskKeep: 6, testOffsetDays: 0 },

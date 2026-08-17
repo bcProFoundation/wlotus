@@ -320,14 +320,14 @@ export function formatSpecialEventDateLabel(
           )
         : 1;
     if (locale.startsWith('vi')) {
-      return day === 15 ? 'Rằm mỗi tháng' : 'Mùng 1 mỗi tháng';
+      return day === 15 ? '14 và rằm mỗi tháng' : '30 và mùng 1 mỗi tháng';
     }
     if (locale.startsWith('zh')) {
-      return day === 15 ? '每月十五' : '每月初一';
+      return day === 15 ? '每月十四与十五' : '每月月末与初一';
     }
     return day === 15
-      ? '15th of each lunar month'
-      : '1st of each lunar month';
+      ? '14th–15th of each lunar month'
+      : 'month-end and 1st of each lunar month';
   }
   const cal = (special.eventCalendar || 'solar').toLowerCase();
   const startSolar = (

@@ -283,6 +283,101 @@ export function lunarMonthLastSolarYmd(
   return addSolarDaysYmd(formatSolarYmd(next), -1);
 }
 
+/** True when the next solar day is lunar mùng 1 (this ymd is 29 or 30). */
+export function isLunarMonthEndYmd(ymd: string, timeZone = 7): boolean {
+  const next = addSolarDaysYmd(ymd, 1);
+  if (!next) return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(next);
+  if (!m) return false;
+  return solarToLunar(Number(m[3]), Number(m[2]), Number(m[1]), timeZone).day === 1;
+}
+
+export interface MonthlyLunarSpec {
+  /** Lunar day-of-month at the close of the window (1 = sóc, 15 = vọng). */
+  peakDay: number;
+  /** Include the eve: 14 before rằm, last day of the month before mùng 1. */
+  includeEve: boolean;
+  /** Lunar months where a named festival already covers this rằm/sóc. */
+  skipLunarMonths?: number[];
+}
+
+function parseSolarYmd(
+  ymd: string,
+): { y: number; m: number; d: number } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+  if (!m) return null;
+  return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) };
+}
+
+function monthlyPeakSkipped(
+  peakYmd: string,
+  spec: MonthlyLunarSpec,
+  timeZone: number,
+): boolean {
+  const skip = spec.skipLunarMonths ?? [];
+  if (!skip.length) return false;
+  const p = parseSolarYmd(peakYmd);
+  if (!p) return false;
+  const lunar = solarToLunar(p.d, p.m, p.y, timeZone);
+  return !lunar.leap && skip.includes(lunar.month);
+}
+
+function isMonthlyWindowStart(
+  ymd: string,
+  spec: MonthlyLunarSpec,
+  timeZone: number,
+): boolean {
+  const p = parseSolarYmd(ymd);
+  if (!p) return false;
+  const lunar = solarToLunar(p.d, p.m, p.y, timeZone);
+  if (!spec.includeEve) return lunar.day === spec.peakDay;
+  if (spec.peakDay === 15) return lunar.day === 14;
+  if (spec.peakDay === 1) return isLunarMonthEndYmd(ymd, timeZone);
+  return lunar.day === spec.peakDay - 1;
+}
+
+/**
+ * Next 14–rằm or 30–mùng 1 window whose end is today or later.
+ * Skips lunar months that already have a named festival (Vu Lan, Nguyên Tiêu, …).
+ */
+export function nextMonthlyLunarWindow(
+  fromYmd: string,
+  spec: MonthlyLunarSpec,
+  timeZone = 7,
+): { start: string; end: string; peak: string } | null {
+  if (spec.peakDay < 1 || spec.peakDay > 30) return null;
+  const from = fromYmd.trim();
+  let ymd = spec.includeEve
+    ? addSolarDaysYmd(from, -1) ?? from
+    : from;
+  for (let i = 0; i < 120; i++) {
+    if (isMonthlyWindowStart(ymd, spec, timeZone)) {
+      const peak = spec.includeEve ? addSolarDaysYmd(ymd, 1) : ymd;
+      if (
+        peak &&
+        !monthlyPeakSkipped(peak, spec, timeZone)
+      ) {
+        if (peak >= from) {
+          return { start: ymd, end: peak, peak };
+        }
+      }
+    }
+    const next = addSolarDaysYmd(ymd, 1);
+    if (!next) return null;
+    ymd = next;
+  }
+  return null;
+}
+
+export function solarYmdInMonthlyLunar(
+  ymd: string,
+  spec: MonthlyLunarSpec,
+  timeZone = 7,
+): boolean {
+  const w = nextMonthlyLunarWindow(ymd, spec, timeZone);
+  return Boolean(w && ymd >= w.start && ymd <= w.end);
+}
+
 /** True when this solar civil day is that lunar day-of-month (1 or 15, …). */
 export function solarYmdIsLunarDay(
   ymd: string,

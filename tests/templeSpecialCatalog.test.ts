@@ -57,27 +57,47 @@ describe('temple special catalog', () => {
     expect(byId['tet']!.eventEnd).toBe('2026-01-03');
     expect(byId['tien-ong-ba']!.eventDate).toBe('2026-01-03');
     expect(byId['nguyen-tieu']!.eventDate).toBe('2026-01-15');
+    expect(byId['nguyen-tieu']!.eventStart).toBe('2026-01-14');
     expect(byId['mung-1']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['mung-1']!.monthlyEve).toBe(true);
+    expect(byId['mung-1']!.skipLunarMonths).toEqual([1]);
     expect(byId['ram']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['ram']!.monthlyEve).toBe(true);
+    expect(byId['ram']!.skipLunarMonths).toEqual([1, 7, 8]);
     expect(byId['doan-ngo']!.eventDate).toBe('2026-05-05');
     expect(byId['trung-thu']!.eventDate).toBe('2026-08-15');
+    expect(byId['trung-thu']!.eventStart).toBe('2026-08-14');
     expect(byId['jizao']!.eventEnd).toBe('2026-12-24');
     expect(byId['chuxi']!.lunarMonthEnd).toBe(true);
     expect(byId['chunjie']!.eventEnd).toBe('2026-01-03');
+    expect(byId['yuanxiao']!.eventStart).toBe('2026-01-14');
     expect(byId['chu-yi']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['chu-yi']!.skipLunarMonths).toEqual([1]);
     expect(byId['shi-wu']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['shi-wu']!.skipLunarMonths).toEqual([1, 7, 8]);
     expect(byId['zhongqiu']!.eventDate).toBe('2026-08-15');
+    expect(byId['zhongqiu']!.eventStart).toBe('2026-08-14');
     expect(cat.length).toBeGreaterThanOrEqual(42);
   });
 
-  it('says Ông Táo and Tết offerings replace vàng mã and cut flowers', () => {
+  it('keeps Ông Táo and Tết copy on the middle way', () => {
+    const preachy = /Khói giấy thì không|không cần đốt|bỏ đống khói|不必再烧|去掉烟/;
     const tao = templeSpecialCatalog(2026).find(e => e.id === 'ong-tao');
-    expect(tao?.story.body).toContain('vàng mã');
-    expect(tao?.story.bodyEn).toMatch(/joss paper/i);
+    expect(tao?.story.body).toContain('Tùy tâm');
+    expect(tao?.story.body).not.toMatch(preachy);
     const tet = templeSpecialCatalog(2026).find(e => e.id === 'tet');
-    expect(tet?.story.body).toContain('không cần cắt thêm một cành hoa thật');
+    expect(tet?.story.body).toContain('tùy tâm');
+    expect(tet?.story.body).not.toMatch(preachy);
     const mung = templeSpecialCatalog(2026).find(e => e.id === 'mung-1');
-    expect(mung?.story.body).toContain('hai lần mỗi tháng');
+    expect(mung?.story.body).toMatch(/30|29/);
+    expect(mung?.story.body).toContain('tùy tâm');
+    const ram = templeSpecialCatalog(2026).find(e => e.id === 'ram');
+    expect(ram?.story.body).toContain('14');
+    expect(ram?.story.body).toContain('tùy tâm');
+    expect(ram?.story.body).not.toMatch(preachy);
+    const jizao = templeSpecialCatalog(2026).find(e => e.id === 'jizao');
+    expect(jizao?.story.bodyZh).toContain('随心');
+    expect(jizao?.story.bodyZh).not.toMatch(preachy);
   });
 
   it('says Cô Hồn offering is sharing, not fear', () => {
