@@ -2222,9 +2222,17 @@ a {
   font-weight: 600;
 }
 
-.calendar-today-btn {
+.calendar-today-btn,
+.calendar-today-label {
   flex-shrink: 0;
   align-self: baseline;
+}
+
+.calendar-today-label {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .calendar-day-heading-row {

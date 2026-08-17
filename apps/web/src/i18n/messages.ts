@@ -178,6 +178,7 @@ export type MessageKey =
   | 'calendarPrevMonth'
   | 'calendarNextMonth'
   | 'calendarToday'
+  | 'calendarViewToday'
   | 'calendarEmptyDay'
   | 'calendarEmptyMonth'
   | 'calendarMemorialsHeading';
@@ -384,6 +385,7 @@ const en: Dict = {
   calendarPrevMonth: 'Previous month',
   calendarNextMonth: 'Next month',
   calendarToday: 'Today',
+  calendarViewToday: 'View today',
   calendarEmptyDay: 'No observances on this day.',
   calendarEmptyMonth: 'No observances this month.',
   calendarMemorialsHeading: 'Memorial days',
@@ -590,6 +592,7 @@ const vi: Dict = {
   calendarPrevMonth: 'Tháng trước',
   calendarNextMonth: 'Tháng sau',
   calendarToday: 'Hôm nay',
+  calendarViewToday: 'Xem hôm nay',
   calendarEmptyDay: 'Ngày này không có lễ hay giỗ.',
   calendarEmptyMonth: 'Tháng này không có lễ hay giỗ.',
   calendarMemorialsHeading: 'Ngày giỗ',
@@ -789,6 +792,7 @@ const zh: Dict = {
   calendarPrevMonth: '上个月',
   calendarNextMonth: '下个月',
   calendarToday: '今天',
+  calendarViewToday: '查看今天',
   calendarEmptyDay: '这一天没有节日或忌日。',
   calendarEmptyMonth: '这个月没有节日或忌日。',
   calendarMemorialsHeading: '忌日',

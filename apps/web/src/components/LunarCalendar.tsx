@@ -210,9 +210,17 @@ export function LunarCalendar(props: {
                   : `lunar ${selected.lunar.day}/${selected.lunar.month}${selected.lunar.leap ? ' leap' : ''}`}
             </span>
           </h3>
-          <button type="button" className="link-more calendar-today-btn" onClick={goToday}>
-            {t('calendarToday')}
-          </button>
+          {selected.ymd === todayYmd(now) ? (
+            <span className="calendar-today-label">{t('calendarToday')}</span>
+          ) : (
+            <button
+              type="button"
+              className="link-more calendar-today-btn"
+              onClick={goToday}
+            >
+              {t('calendarViewToday')}
+            </button>
+          )}
         </div>
 
         {monthSpecials.length === 0 && monthMemorials.length === 0 ? (
