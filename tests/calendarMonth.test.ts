@@ -14,6 +14,7 @@ import {
   ymdKey,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
+import { formatSpecialEventDateLabel } from '../apps/web/src/lib/specialsUi.js';
 import { catalogToSpecial } from '../src/params/templeSpecials.js';
 import { templeSpecialCatalog } from '../src/params/templeSpecialCatalog.js';
 import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
@@ -270,5 +271,66 @@ describe('calendarMonth', () => {
     expect(tabFromHash('#calendar')).toBe('calendar');
     expect(tabFromHash('')).toBe('home');
     expect(ymdKey(2026, 8, 4)).toBe('2026-08-04');
+  });
+
+  it('repeats mùng 1 and rằm on the eve and peak, skipping named festival months', () => {
+    const mung = catalogAsUi('mung-1');
+    const ram = catalogAsUi('ram');
+    expect(specialCoversYmd(mung, '2026-02-17', 'vi')).toBe(false);
+    expect(specialCoversYmd(mung, '2026-08-12', 'vi')).toBe(true);
+    expect(specialCoversYmd(mung, '2026-08-13', 'vi')).toBe(true);
+    expect(specialCoversYmd(ram, '2026-08-27', 'vi')).toBe(false);
+    expect(specialCoversYmd(ram, '2026-03-03', 'vi')).toBe(false);
+    expect(specialCoversYmd(ram, '2026-06-28', 'vi')).toBe(true);
+    expect(specialCoversYmd(ram, '2026-06-29', 'vi')).toBe(true);
+    expect(specialCoversYmd(mung, '2026-08-27', 'vi')).toBe(false);
+    const aug = specialsInMonth([mung, ram], 2026, 8, 'vi', '2026-08-17');
+    expect(aug.map(s => s.id)).toEqual(['mung-1']);
+    const jun = specialsInMonth([ram], 2026, 6, 'vi', '2026-06-29');
+    expect(jun.map(s => s.id)).toEqual(['ram']);
+    expect(jun[0]!.effectiveStartDate).toBe('2026-06-28');
+    expect(jun[0]!.effectiveEndDate).toBe('2026-06-29');
+  });
+
+  it('places Giao thừa on the last day of tháng Chạp (29 in 2025)', () => {
+    const giao = catalogAsUi('giao-thua', 2025);
+    giao.eventDate = '2025-12-30';
+    const w = specialWindowInYear(giao, 2025, 'vi');
+    expect(w?.peak).toBe('2026-02-16');
+    expect(specialCoversYmd(giao, '2026-02-16', 'vi')).toBe(true);
+    expect(specialCoversYmd(giao, '2026-02-17', 'vi')).toBe(false);
+  });
+
+  it('keeps Tết as 1/1–1/3 and tiễn ông bà on mùng 3', () => {
+    const tet = catalogAsUi('tet');
+    const tien = catalogAsUi('tien-ong-ba');
+    expect(specialCoversYmd(tet, '2026-02-17', 'vi')).toBe(true);
+    expect(specialCoversYmd(tet, '2026-02-19', 'vi')).toBe(true);
+    expect(specialCoversYmd(tet, '2026-02-20', 'vi')).toBe(false);
+    expect(specialCoversYmd(tien, '2026-02-19', 'vi')).toBe(true);
+  });
+
+  it('covers Nguyên Tiêu and Trung Thu from the 14th through rằm', () => {
+    const tieu = catalogAsUi('nguyen-tieu');
+    const thu = catalogAsUi('trung-thu');
+    expect(specialCoversYmd(tieu, '2026-03-02', 'vi')).toBe(true);
+    expect(specialCoversYmd(tieu, '2026-03-03', 'vi')).toBe(true);
+    expect(specialCoversYmd(thu, '2026-09-24', 'vi')).toBe(true);
+    expect(specialCoversYmd(thu, '2026-09-25', 'vi')).toBe(true);
+  });
+
+  it('labels monthly sóc/vọng as the two-day folk window', () => {
+    expect(formatSpecialEventDateLabel(catalogAsUi('mung-1'), 'vi')).toBe(
+      '30 và mùng 1 mỗi tháng',
+    );
+    expect(formatSpecialEventDateLabel(catalogAsUi('ram'), 'vi')).toBe(
+      '14 và rằm mỗi tháng',
+    );
+    expect(formatSpecialEventDateLabel(catalogAsUi('chu-yi'), 'zh')).toBe(
+      '每月月末与初一',
+    );
+    expect(formatSpecialEventDateLabel(catalogAsUi('shi-wu'), 'zh')).toBe(
+      '每月十四与十五',
+    );
   });
 });

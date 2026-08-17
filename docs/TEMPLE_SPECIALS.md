@@ -101,6 +101,13 @@ Each profile’s `eventDate` is interpreted according to **`eventCalendar`**:
 | **`lunar`** (default) | `eventDate` is âm lịch YYYY-MM-DD; converted to solar via Hồ Ngọc Đức (VN UTC+7) before the civil-day window | Cô Hồn / Vu Lan: lunar `2026-07-15` |
 | **`solar`** | `eventDate` is already Gregorian YYYY-MM-DD | Ngày sinh Hồ Chí Minh: `2026-05-19` |
 
+Optional flags:
+
+| Flag | Meaning |
+|------|---------|
+| `eventRecurrence: "monthly-lunar"` | Repeat the lunar **day-of-month** (01 or 15) every lunar month — mùng 1 / rằm, 初一 / 十五 |
+| `lunarMonthEnd: true` | Use the last day of that lunar month (29 or 30) — Giao thừa / 除夕 |
+
 Altar `deathDate` is already **solar**. Prefer documenting solar equivalents for
 ops clarity; keep lunar conversion when the cultural date is naturally âm lịch.
 
@@ -186,6 +193,15 @@ Memorial / ancestral offering days. Unbound until a visitor claims the root.
 
 | Region | Name | Kind | Window | Countries |
 |--------|------|------|--------|-----------|
+| VN | Tết Nguyên Đán | event | lunar 1/1–1/3 (17–19 Feb 2026) | `VN` |
+| VN | Ông Công Ông Táo | event | lunar 23/12 | `VN` |
+| VN | Giao thừa | event | last day of tháng Chạp | `VN` |
+| VN | Tiễn ông bà | event | lunar 3/1 (hóa vàng) | `VN` |
+| VN | Tết Nguyên Tiêu | event | lunar 15/1 | `VN` |
+| VN | Mùng 1 | event | lunar 1 every month | `VN` |
+| VN | Ngày rằm | event | lunar 15 every month | `VN` |
+| VN | Tết Đoan Ngọ | event | lunar 5/5 | `VN` |
+| VN | Tết Trung Thu | event | lunar 15/8 | `VN` |
 | VN | Vu Lan | event | lunar 15/7 (27 Aug 2026) | `VN` |
 | VN | Cô Hồn | ghost | lunar 2/7–15/7 (14–27 Aug) | `VN` |
 | VN | Tết Thanh Minh | event | solar 5 Apr 2026 | `VN` |
@@ -195,6 +211,13 @@ Memorial / ancestral offering days. Unbound until a visitor claims the root.
 | VN | Hồ Chí Minh | hero | lunar 21/7 (2 Sep 2026) | `VN` |
 | VN | Ngày sinh Hồ Chí Minh | hero | solar 19 May | `VN` |
 | VN | Hai Bà Trưng | hero | lunar 6/2 | `VN` |
+| ZH | 春节 | event | lunar 1/1–1/3 | CN, TW, HK, MO, SG |
+| ZH | 祭灶 | event | lunar 23–24/12 | CN, TW, HK, MO, SG |
+| ZH | 除夕 | event | last day of 腊月 | CN, TW, HK, MO, SG |
+| ZH | 元宵节 | event | lunar 15/1 | CN, TW, HK, MO, SG |
+| ZH | 初一 | event | lunar 1 every month | CN, TW, HK, MO, SG |
+| ZH | 十五 | event | lunar 15 every month | CN, TW, HK, MO, SG |
+| ZH | 中秋节 | event | lunar 15/8 | CN, TW, HK, MO, SG |
 | ZH | 盂兰盆 | event | lunar 15/7 (27 Aug 2026) | CN, TW, HK, MO, SG |
 | ZH | 中元节 | ghost | lunar 1/7–15/7 (13–27 Aug) | CN, TW, HK, MO, SG |
 | ZH | 清明节 | event | solar 5 Apr 2026 | CN, TW, HK, MO, SG |
@@ -216,6 +239,14 @@ and stories. Zhongyuan peak is the same lunar 15/7 as Vu Lan; we close Ghost
 Month at rằm. Remembrance Day is Veterans Day in the US. `en` locale maps to
 the English-speaking country list, so US Memorial Day / ANZAC can appear in
 English UI outside those countries.
+
+**Tết cycle and sóc vọng.** W Lotus is meant to replace vàng mã, incense smoke,
+and cut flowers. Catalog rows cover Ông Táo (tiễn 23/12), Giao thừa (last day
+of Chạp), Tết (1/1–1/3), tiễn ông bà / hóa vàng (3/1), Rằm tháng Giêng, plus
+**mùng 1 and rằm every lunar month** (`eventRecurrence: monthly-lunar`).
+Chinese-speaking regions get the parallel 祭灶 / 除夕 / 春节 / 元宵 / 初一 /
+十五 / 中秋. Giao thừa and 除夕 use `lunarMonthEnd` because tháng Chạp is 29
+or 30 days.
 
 Code: `src/params/templeSpecialCatalog.ts`.
 

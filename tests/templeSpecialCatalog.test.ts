@@ -51,7 +51,53 @@ describe('temple special catalog', () => {
     expect(byId['phat-thanh-dao']!.eventDate).toBe('2026-12-08');
     expect(byId['fo-niepan']!.eventDate).toBe('2026-02-15');
     expect(byId['fo-chengdao']!.eventDate).toBe('2026-12-08');
-    expect(cat.length).toBeGreaterThanOrEqual(26);
+    expect(byId['ong-tao']!.eventDate).toBe('2026-12-23');
+    expect(byId['giao-thua']!.lunarMonthEnd).toBe(true);
+    expect(byId['tet']!.eventStart).toBe('2026-01-01');
+    expect(byId['tet']!.eventEnd).toBe('2026-01-03');
+    expect(byId['tien-ong-ba']!.eventDate).toBe('2026-01-03');
+    expect(byId['nguyen-tieu']!.eventDate).toBe('2026-01-15');
+    expect(byId['nguyen-tieu']!.eventStart).toBe('2026-01-14');
+    expect(byId['mung-1']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['mung-1']!.monthlyEve).toBe(true);
+    expect(byId['mung-1']!.skipLunarMonths).toEqual([1]);
+    expect(byId['ram']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['ram']!.monthlyEve).toBe(true);
+    expect(byId['ram']!.skipLunarMonths).toEqual([1, 7, 8]);
+    expect(byId['doan-ngo']!.eventDate).toBe('2026-05-05');
+    expect(byId['trung-thu']!.eventDate).toBe('2026-08-15');
+    expect(byId['trung-thu']!.eventStart).toBe('2026-08-14');
+    expect(byId['jizao']!.eventEnd).toBe('2026-12-24');
+    expect(byId['chuxi']!.lunarMonthEnd).toBe(true);
+    expect(byId['chunjie']!.eventEnd).toBe('2026-01-03');
+    expect(byId['yuanxiao']!.eventStart).toBe('2026-01-14');
+    expect(byId['chu-yi']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['chu-yi']!.skipLunarMonths).toEqual([1]);
+    expect(byId['shi-wu']!.eventRecurrence).toBe('monthly-lunar');
+    expect(byId['shi-wu']!.skipLunarMonths).toEqual([1, 7, 8]);
+    expect(byId['zhongqiu']!.eventDate).toBe('2026-08-15');
+    expect(byId['zhongqiu']!.eventStart).toBe('2026-08-14');
+    expect(cat.length).toBeGreaterThanOrEqual(42);
+  });
+
+  it('keeps Ông Táo and Tết copy on the middle way', () => {
+    const preachy = /Khói giấy thì không|không cần đốt|bỏ đống khói|不必再烧|去掉烟/;
+    const tao = templeSpecialCatalog(2026).find(e => e.id === 'ong-tao');
+    expect(tao?.story.body).toContain('Tùy tâm');
+    expect(tao?.story.body).not.toMatch(preachy);
+    const tet = templeSpecialCatalog(2026).find(e => e.id === 'tet');
+    expect(tet?.story.body).toContain('tùy tâm');
+    expect(tet?.story.body).not.toMatch(preachy);
+    const mung = templeSpecialCatalog(2026).find(e => e.id === 'mung-1');
+    expect(mung?.story.body).toMatch(/30|29/);
+    expect(mung?.story.body).toContain('tùy tâm');
+    const ram = templeSpecialCatalog(2026).find(e => e.id === 'ram');
+    expect(ram?.story.body).toContain('14');
+    expect(ram?.story.body).toContain('tùy tâm');
+    expect(ram?.story.body).not.toMatch(preachy);
+    const jizao = templeSpecialCatalog(2026).find(e => e.id === 'jizao');
+    expect(jizao?.story.bodyZh).toContain('随心');
+    expect(jizao?.story.bodyZh).not.toMatch(preachy);
   });
 
   it('says Cô Hồn offering is sharing, not fear', () => {
@@ -110,6 +156,18 @@ describe('temple special catalog', () => {
     expect(findCatalogEntryByName('佛涅槃')?.id).toBe('fo-niepan');
     expect(findCatalogEntryByName('Phật thành đạo')?.id).toBe('phat-thanh-dao');
     expect(findCatalogEntryByName('腊八')?.id).toBe('fo-chengdao');
+    expect(findCatalogEntryByName('Ông Công Ông Táo')?.id).toBe('ong-tao');
+    expect(findCatalogEntryByName('Tết Nguyên Đán')?.id).toBe('tet');
+    expect(findCatalogEntryByName('Giao thừa')?.id).toBe('giao-thua');
+    expect(findCatalogEntryByName('Tiễn ông bà')?.id).toBe('tien-ong-ba');
+    expect(findCatalogEntryByName('Mùng 1')?.id).toBe('mung-1');
+    expect(findCatalogEntryByName('Ngày rằm')?.id).toBe('ram');
+    expect(findCatalogEntryByName('Tết Nguyên Tiêu')?.id).toBe('nguyen-tieu');
+    expect(findCatalogEntryByName('春节')?.id).toBe('chunjie');
+    expect(findCatalogEntryByName('祭灶')?.id).toBe('jizao');
+    expect(findCatalogEntryByName('除夕')?.id).toBe('chuxi');
+    expect(findCatalogEntryByName('元宵节')?.id).toBe('yuanxiao');
+    expect(findCatalogEntryByName('中秋节')?.id).toBe('zhongqiu');
   });
 
   it('2026 lunar 15/7 is 27 Aug (VN UTC+7)', () => {
@@ -121,6 +179,10 @@ describe('temple special catalog', () => {
     expect(lunarYmdToSolarYmd('2026-04-15', 7)).toBe('2026-05-31');
     expect(lunarYmdToSolarYmd('2026-02-15', 7)).toBe('2026-04-02');
     expect(lunarYmdToSolarYmd('2026-12-08', 7)).toBe('2027-01-15');
+    expect(lunarYmdToSolarYmd('2026-01-01', 7)).toBe('2026-02-17');
+    expect(lunarYmdToSolarYmd('2026-01-03', 7)).toBe('2026-02-19');
+    expect(lunarYmdToSolarYmd('2026-01-15', 7)).toBe('2026-03-03');
+    expect(lunarYmdToSolarYmd('2025-12-23', 7)).toBe('2026-02-10');
     expect(qingmingSolarYmd(2026)).toBe('2026-04-05');
     expect(memorialDaySolarYmd(2026)).toBe('2026-05-25');
   });

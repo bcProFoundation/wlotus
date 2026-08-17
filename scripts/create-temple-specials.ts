@@ -123,6 +123,10 @@ interface SpecialSpec {
   eventEnd?: string;
   /** Hour 0–23 on end civil day when window closes (Cô Hồn = 12). */
   eventEndHour?: number;
+  eventRecurrence?: 'yearly' | 'monthly-lunar';
+  lunarMonthEnd?: boolean;
+  monthlyEve?: boolean;
+  skipLunarMonths?: number[];
   countries: string[];
   birthPlace?: string;
 }
@@ -286,6 +290,10 @@ function specFromCatalog(entry: TempleSpecialCatalogEntry): SpecialSpec {
     eventStart: entry.eventStart,
     eventEnd: entry.eventEnd,
     eventEndHour: entry.eventEndHour,
+    eventRecurrence: entry.eventRecurrence,
+    lunarMonthEnd: entry.lunarMonthEnd,
+    monthlyEve: entry.monthlyEve,
+    skipLunarMonths: entry.skipLunarMonths,
     countries: [...entry.countries],
     birthPlace: entry.birthPlace,
   };
@@ -400,6 +408,10 @@ function registryEntry(
   if (spec.eventStart) base.eventStart = spec.eventStart;
   if (spec.eventEnd) base.eventEnd = spec.eventEnd;
   if (spec.eventEndHour != null) base.eventEndHour = spec.eventEndHour;
+  if (spec.eventRecurrence) base.eventRecurrence = spec.eventRecurrence;
+  if (spec.lunarMonthEnd) base.lunarMonthEnd = true;
+  if (spec.monthlyEve) base.monthlyEve = true;
+  if (spec.skipLunarMonths?.length) base.skipLunarMonths = spec.skipLunarMonths;
   if (spec.countries.length > 0) base.countries = spec.countries;
   if (spec.birthPlace) base.birthPlace = spec.birthPlace;
   return base;

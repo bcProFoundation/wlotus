@@ -3,7 +3,13 @@ import {
   findCatalogEntryByName,
   foldSpecialName,
 } from '../../../../src/params/templeSpecialCatalog.js';
-import { lunarYmdToSolarYmd } from '../../../../src/lib/lunarCalendar.js';
+import {
+  lunarMonthLastSolarYmd,
+  lunarYmdToSolarYmd,
+  nextMonthlyLunarWindow,
+  solarYmdInMonthlyLunar,
+  type MonthlyLunarSpec,
+} from '../../../../src/lib/lunarCalendar.js';
 import { solarToLunar, type LunarDate } from './lunarCalendar.js';
 import type { TempleSpecialProfileUi } from './specialsUi.js';
 
@@ -108,6 +114,64 @@ export function lunarCellLabel(lunar: LunarDate, locale: string): string {
   return lunar.leap ? `L${lunar.month}` : `M${lunar.month}`;
 }
 
+function catalogForSpecial(
+  special: TempleSpecialProfileUi,
+  year: number,
+) {
+  return (
+    findCatalogEntryById(special.id, year) ||
+    findCatalogEntryByName(special.name, year)
+  );
+}
+
+function monthlyLunarSpec(
+  special: TempleSpecialProfileUi,
+  locale = 'vi',
+): MonthlyLunarSpec | null {
+  const day = monthlyLunarDay(special, locale);
+  if (day == null) return null;
+  const today = todayYmd();
+  const year = parseYmd(today)?.y ?? 2026;
+  const catalog = catalogForSpecial(special, year);
+  return {
+    peakDay: day,
+    includeEve: catalog?.monthlyEve !== false,
+    skipLunarMonths: catalog?.skipLunarMonths,
+  };
+}
+
+function monthlyWindowFrom(
+  spec: MonthlyLunarSpec,
+  fromYmd: string,
+  locale: string,
+): SpecialWindow | null {
+  const w = nextMonthlyLunarWindow(fromYmd, spec, lunarTimeZone(locale));
+  if (!w) return null;
+  return { start: w.start, end: w.end, peak: w.peak };
+}
+
+function monthlyLunarDay(
+  special: TempleSpecialProfileUi,
+  locale = 'vi',
+): number | null {
+  const today = todayYmd();
+  const year = parseYmd(today)?.y ?? 2026;
+  const catalog = catalogForSpecial(special, year);
+  const rec =
+    special.eventRecurrence || catalog?.eventRecurrence || '';
+  if (rec !== 'monthly-lunar') return null;
+  const date = catalog?.eventDate || special.eventDate || '';
+  return parseYmd(date)?.d ?? null;
+}
+
+function usesLunarMonthEnd(
+  special: TempleSpecialProfileUi,
+  year: number,
+): boolean {
+  if (special.lunarMonthEnd) return true;
+  return Boolean(catalogForSpecial(special, year)?.lunarMonthEnd);
+}
+
 function lastDayOfMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
@@ -140,6 +204,16 @@ export function specialWindowInYear(
   year: number,
   locale = 'vi',
 ): SpecialWindow | null {
+  const monthly = monthlyLunarSpec(special, locale);
+  if (monthly) {
+    const occ = monthlyWindowFrom(monthly, `${year}-01-01`, locale);
+    if (!occ) return null;
+    const startY = parseYmd(occ.start)?.y;
+    const peakY = parseYmd(occ.peak)?.y;
+    if (startY !== year && peakY !== year) return null;
+    return occ;
+  }
+
   // Trust the server window for this civil year. The SPA catalog can be a
   // deploy behind mint-api (web path filters used to miss src/**).
   const apiPeak = (special.effectiveEventDate || '').trim();
@@ -163,9 +237,17 @@ export function specialWindowInYear(
     const endRaw = catalog.eventEnd || peakRaw;
     if (catalog.eventCalendar === 'lunar') {
       const tz = lunarTimeZone(locale);
-      const start = lunarYmdToSolarYmd(startRaw, tz);
-      const end = lunarYmdToSolarYmd(endRaw, tz);
-      const peak = lunarYmdToSolarYmd(peakRaw, tz);
+      const convert = (raw: string): string | null => {
+        if (catalog.lunarMonthEnd || usesLunarMonthEnd(special, year)) {
+          const p = parseYmd(raw);
+          if (!p) return null;
+          return lunarMonthLastSolarYmd(p.y, p.m, tz);
+        }
+        return lunarYmdToSolarYmd(raw, tz);
+      };
+      const start = convert(startRaw);
+      const end = convert(endRaw);
+      const peak = convert(peakRaw);
       if (!start || !end || !peak) return null;
       return orderedWindow(start, end, peak);
     }
@@ -234,6 +316,10 @@ export function nextSpecialWindow(
   today: string,
   locale = 'vi',
 ): SpecialWindow | null {
+  const monthly = monthlyLunarSpec(special, locale);
+  if (monthly) {
+    return monthlyWindowFrom(monthly, today, locale);
+  }
   const p = parseYmd(today);
   if (!p) return null;
   for (let y = p.y - 1; y <= p.y + 2; y++) {
@@ -263,6 +349,10 @@ export function specialCoversYmd(
   ymd: string,
   locale = 'vi',
 ): boolean {
+  const monthly = monthlyLunarSpec(special, locale);
+  if (monthly) {
+    return solarYmdInMonthlyLunar(ymd, monthly, lunarTimeZone(locale));
+  }
   const p = parseYmd(ymd);
   if (!p) return false;
   for (const y of [p.y - 1, p.y, p.y + 1]) {
@@ -306,7 +396,12 @@ export function specialOverlapsMonth(
   month: number,
   locale = 'vi',
 ): boolean {
+  const monthly = monthlyLunarSpec(special, locale);
   const { start: monthStart, end: monthEnd } = monthStartEnd(year, month);
+  if (monthly) {
+    const occ = monthlyWindowFrom(monthly, monthStart, locale);
+    return Boolean(occ && occ.start <= monthEnd && occ.end >= monthStart);
+  }
   for (const y of [year - 1, year, year + 1]) {
     const w = specialWindowInYear(special, y, locale);
     if (w && w.start <= monthEnd && w.end >= monthStart) return true;
@@ -326,6 +421,16 @@ export function specialsInMonth(
   const seen = new Set<string>();
   for (const s of specials ?? []) {
     const key = (s.id || s.profileId || s.name || '').trim().toLowerCase();
+    const monthly = monthlyLunarSpec(s, locale);
+    if (monthly) {
+      const occ = monthlyWindowFrom(monthly, monthStart, locale);
+      if (occ && occ.start <= monthEnd && occ.end >= monthStart) {
+        if (key && seen.has(key)) continue;
+        if (key) seen.add(key);
+        out.push(projectSpecialWindow(s, occ, today));
+      }
+      continue;
+    }
     for (const y of [year - 1, year, year + 1]) {
       const w = specialWindowInYear(s, y, locale);
       if (!w || w.start > monthEnd || w.end < monthStart) continue;
