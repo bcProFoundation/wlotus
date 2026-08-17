@@ -15,7 +15,8 @@ import {
   defaultSelectedYmdForMonth,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
-import { formatSpecialEventDateLabel } from '../apps/web/src/lib/specialsUi.js';
+import { formatSpecialEventDateLabel, formatSpecialListName } from '../apps/web/src/lib/specialsUi.js';
+import { lunarYmdToSolarYmd } from '../src/lib/lunarCalendar.js';
 import { catalogToSpecial } from '../src/params/templeSpecials.js';
 import { templeSpecialCatalog } from '../src/params/templeSpecialCatalog.js';
 import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
@@ -360,5 +361,44 @@ describe('calendarMonth', () => {
     expect(formatSpecialEventDateLabel(catalogAsUi('shi-wu'), 'zh')).toBe(
       '每月十四与十五',
     );
+  });
+
+  it('names monthly sóc/vọng with the lunar month of that occurrence', () => {
+    const mung = catalogAsUi('mung-1');
+    const ram = catalogAsUi('ram');
+    const aug = specialsInMonth([mung], 2026, 8, 'vi', '2026-08-12');
+    expect(formatSpecialListName(aug[0]!, 'vi')).toMatch(/^1 tháng /);
+    expect(formatSpecialListName(aug[0]!, 'vi')).not.toBe('Mùng 1');
+
+    const tetMung1 = {
+      ...mung,
+      eventRecurrence: 'monthly-lunar' as const,
+      effectiveStartDate: '2026-02-17',
+      effectiveEndDate: '2026-02-17',
+      effectiveEventDate: '2026-02-17',
+    };
+    expect(formatSpecialListName(tetMung1, 'vi')).toBe('1 tháng giêng');
+    expect(formatSpecialListName(tetMung1, 'zh')).toBe('正月初一');
+
+    const chapPeak = lunarYmdToSolarYmd('2026-12-15', 7);
+    expect(chapPeak).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const ramChap = {
+      ...ram,
+      eventRecurrence: 'monthly-lunar' as const,
+      effectiveStartDate: chapPeak!,
+      effectiveEndDate: chapPeak!,
+      effectiveEventDate: chapPeak!,
+    };
+    expect(formatSpecialListName(ramChap, 'vi')).toBe('rằm tháng chạp');
+    expect(formatSpecialListName(ramChap, 'zh')).toBe('腊月十五');
+
+    const ramThang9 = {
+      ...ram,
+      eventRecurrence: 'monthly-lunar' as const,
+      effectiveStartDate: lunarYmdToSolarYmd('2026-09-15', 7)!,
+      effectiveEndDate: lunarYmdToSolarYmd('2026-09-15', 7)!,
+      effectiveEventDate: lunarYmdToSolarYmd('2026-09-15', 7)!,
+    };
+    expect(formatSpecialListName(ramThang9, 'vi')).toBe('rằm tháng 9');
   });
 });

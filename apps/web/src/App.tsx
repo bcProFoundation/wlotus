@@ -76,6 +76,7 @@ import {
   specialHidesAltarSectionLabel,
   rankTempleSpecials,
   formatSpecialEventDateLabel,
+  formatSpecialListName,
   specialCountdown,
   filterSpecialsForViewer,
   isBoundSpecialRoot,
@@ -2011,7 +2012,8 @@ export default function App() {
                     <span className="home-events-rank">{idx + 1}</span>
                     <span className="home-events-main">
                       <span className="home-events-name">
-                        {ev.name ||
+                        {formatSpecialListName(ev, locale) ||
+                          ev.name ||
                           ev.id ||
                           (ev.profileId ? ev.profileId.slice(0, 8) : '')}
                       </span>
