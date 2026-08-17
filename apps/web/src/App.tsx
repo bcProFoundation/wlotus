@@ -1524,20 +1524,14 @@ export default function App() {
   function openUnboundSpecial(sp: TempleSpecialProfileUi) {
     pendingSpecialIdRef.current = (sp.id || '').trim() || null;
     const fields = altarFromUnboundSpecial(sp);
-    if (sp.kind === 'event' || sp.kind === 'ghost') {
-      setDedicationSheet({
-        parentBurnTxid: '',
-        specialId: (sp.id || '').trim() || undefined,
-        altar: fields,
-        extraNote: '',
-        relatedOptions: relatedAltarOptions,
-        isCreator: true,
-      });
-      return;
-    }
-    setAltar(fields);
-    setNote(fields.note);
-    setAltarOpen(true);
+    setDedicationSheet({
+      parentBurnTxid: '',
+      specialId: (sp.id || '').trim() || undefined,
+      altar: fields,
+      extraNote: '',
+      relatedOptions: relatedAltarOptions,
+      isCreator: true,
+    });
   }
 
   function specialForBurn(
@@ -2429,7 +2423,7 @@ export default function App() {
                   dedicationSheet.parentBurnTxid,
                   dedicationSheet.specialId,
                 );
-                if (sp && (sp.kind === 'event' || sp.kind === 'ghost')) {
+                if (sp) {
                   return sp.name || t('altarDetailTitle');
                 }
                 return altarHasDeathDate(dedicationSheet.altar)
@@ -2474,7 +2468,7 @@ export default function App() {
                         dedicationSheet.parentBurnTxid,
                         dedicationSheet.specialId,
                       );
-                      if (sp && (sp.kind === 'ghost' || sp.kind === 'event')) {
+                      if (sp) {
                         return t('specialPrayerNoteLabel');
                       }
                       return t('reofferExtraNoteLabel');

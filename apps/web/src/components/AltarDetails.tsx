@@ -65,9 +65,8 @@ export function AltarDetails(props: {
   altar: AltarFields;
   className?: string;
   /**
-   * When set for temple specials:
-   * - ghost/event: hide lời tưởng niệm; death date → Ngày lễ
-   * - hero: keep death-date wording (true memorial day)
+   * Temple catalog special — hide Ban thờ rows (name, hometown, dates).
+   * Users offer only; a personal altar for the same person is a separate flow.
    */
   specialKind?: AltarDetailsSpecialKind | null;
   onViewRelated?: (relatedTxid: string) => void;
@@ -75,8 +74,7 @@ export function AltarDetails(props: {
 }) {
   const { locale, t } = useLocale();
   const { altar, specialKind } = props;
-  const isFestivalSpecial =
-    specialKind === 'ghost' || specialKind === 'event';
+  const hideCatalogFields = Boolean(specialKind);
   const honorific = altarHonorificLabel(altar.title, locale);
   const solarDeath = displayAltarDate(altar.deathDate);
   const lunarDeathDate = formatLunarDeathDate(altar.deathDate.trim(), locale);
@@ -101,29 +99,29 @@ export function AltarDetails(props: {
       onClick={() => setShowLunarDeath(v => !v)}
     >
       {showLunarDeath
-        ? isFestivalSpecial
+        ? hideCatalogFields
           ? t('altarEventDateLunar')
           : t('altarDeathDateLunar')
-        : isFestivalSpecial
+        : hideCatalogFields
           ? t('altarEventDateSolar')
           : t('altarDeathDateSolar')}
     </button>
-  ) : isFestivalSpecial ? (
+  ) : hideCatalogFields ? (
     t('altarEventDate')
   ) : (
     t('altarDeathDate')
   );
 
-  const nameText = isFestivalSpecial ? '' : altar.name.trim();
+  const nameText = hideCatalogFields ? '' : altar.name.trim();
 
   const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [{ key: 'honorific', label: t('altarHonorific'), value: honorific }]),
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [
           {
@@ -132,10 +130,10 @@ export function AltarDetails(props: {
             value: altar.birthPlace.trim(),
           },
         ]),
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [{ key: 'birthDate', label: t('altarBirthDate'), value: birthValue }]),
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [
           {
@@ -144,7 +142,7 @@ export function AltarDetails(props: {
             value: altar.deathPlace.trim(),
           },
         ]),
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [
           {
@@ -153,7 +151,7 @@ export function AltarDetails(props: {
             value: deathValue,
           },
         ]),
-    ...(isFestivalSpecial
+    ...(hideCatalogFields
       ? []
       : [
           {
