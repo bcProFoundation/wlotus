@@ -225,7 +225,10 @@ export function AltarSetupModal(props: {
   const parentCount = existingLinks.filter(l => l.type === 'parent').length;
   const parentAtMax = parentCount >= MAX_PARENT_RELATIONSHIPS;
   const cardRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState<Step>('edit');
+  const festivalSpecial = specialHidesAltarSectionLabel(props.special ?? null);
+  const [step, setStep] = useState<Step>(() =>
+    festivalSpecial && !relationshipOnly && !deathOnly ? 'review' : 'edit',
+  );
   const [draft, setDraft] = useState<AltarFields>(() => {
     if (relationshipOnly) {
       return {
@@ -262,7 +265,18 @@ export function AltarSetupModal(props: {
       ? { ...base, name, relationshipType: '', relatedTxid: '' }
       : { ...base, relationshipType: '', relatedTxid: '' };
   });
-  const [review, setReview] = useState<AltarFields | null>(null);
+  const [review, setReview] = useState<AltarFields | null>(() => {
+    if (!festivalSpecial || relationshipOnly || deathOnly || !props.initial) {
+      return null;
+    }
+    return normalizeFields({
+      ...props.initial,
+      title: props.initial.title || '',
+      relationshipType: '',
+      relatedTxid: '',
+      relationships: props.initial.relationships ?? [],
+    });
+  });
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
   const availableOptions = props.relatedAltarOptions.filter(
@@ -374,7 +388,6 @@ export function AltarSetupModal(props: {
     props.onOffer(fields);
   }
 
-  const festivalSpecial = specialHidesAltarSectionLabel(props.special ?? null);
   const specialTitle = (
     specialStoryForLocale(props.special ?? null, locale, {
       omitPrayer: true,
@@ -563,6 +576,7 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-name">{t('altarName')}</label>
                   <input
@@ -577,6 +591,7 @@ export function AltarSetupModal(props: {
                     <p className="hint altar-field-error">{t('altarErrName')}</p>
                   ) : null}
                 </div>
+                )}
 
                 {festivalSpecial ? null : (
                 <div className="field">
@@ -591,6 +606,7 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-birth-place">
                     {t('altarBirthPlace')}
@@ -603,6 +619,7 @@ export function AltarSetupModal(props: {
                     placeholder={t('altarPlaceOptional')}
                   />
                 </div>
+                )}
 
                 {festivalSpecial ? null : (
                 <div className="field">
@@ -645,11 +662,10 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-death-date">
-                    {festivalSpecial
-                      ? t('altarEventDate')
-                      : t('altarDeathDate')}{' '}
+                    {t('altarDeathDate')}{' '}
                     <span className="hint">({t('altarPlaceOptional')})</span>
                   </label>
                   <input
@@ -673,6 +689,7 @@ export function AltarSetupModal(props: {
                     </p>
                   ) : null}
                 </div>
+                )}
 
                 {festivalSpecial ? null : (
                 <div className="field">
@@ -713,7 +730,7 @@ export function AltarSetupModal(props: {
                 className="temple-story--details"
               />
             ) : null}
-            {review ? (
+            {review && !festivalSpecial ? (
               <AltarDetails
                 altar={
                   relationshipOnly && props.initial
@@ -751,6 +768,7 @@ export function AltarSetupModal(props: {
             </p>
             <p className="hint">{t('hintKeepScreen')}</p>
             <div className="altar-setup-actions altar-review-actions">
+              {festivalSpecial ? <span /> : (
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -758,6 +776,7 @@ export function AltarSetupModal(props: {
               >
                 {t('btnAltarEdit')}
               </button>
+              )}
               <button
                 type="button"
                 className="btn btn-primary btn-offer"

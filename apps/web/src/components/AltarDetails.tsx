@@ -114,7 +114,7 @@ export function AltarDetails(props: {
     t('altarDeathDate')
   );
 
-  const nameText = altar.name.trim();
+  const nameText = isFestivalSpecial ? '' : altar.name.trim();
 
   const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
     ...(isFestivalSpecial
@@ -123,27 +123,45 @@ export function AltarDetails(props: {
     ...(isFestivalSpecial
       ? []
       : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
-    {
-      key: 'birthPlace',
-      label: t('altarBirthPlace'),
-      value: altar.birthPlace.trim(),
-    },
-    { key: 'birthDate', label: t('altarBirthDate'), value: birthValue },
-    {
-      key: 'deathPlace',
-      label: t('altarDeathPlace'),
-      value: altar.deathPlace.trim(),
-    },
-    {
-      key: 'deathDate',
-      label: deathLabel,
-      value: deathValue,
-    },
-    {
-      key: 'funeralPlace',
-      label: t('altarFuneralPlace'),
-      value: altar.funeralPlace.trim(),
-    },
+    ...(isFestivalSpecial
+      ? []
+      : [
+          {
+            key: 'birthPlace',
+            label: t('altarBirthPlace'),
+            value: altar.birthPlace.trim(),
+          },
+        ]),
+    ...(isFestivalSpecial
+      ? []
+      : [{ key: 'birthDate', label: t('altarBirthDate'), value: birthValue }]),
+    ...(isFestivalSpecial
+      ? []
+      : [
+          {
+            key: 'deathPlace',
+            label: t('altarDeathPlace'),
+            value: altar.deathPlace.trim(),
+          },
+        ]),
+    ...(isFestivalSpecial
+      ? []
+      : [
+          {
+            key: 'deathDate',
+            label: deathLabel,
+            value: deathValue,
+          },
+        ]),
+    ...(isFestivalSpecial
+      ? []
+      : [
+          {
+            key: 'funeralPlace',
+            label: t('altarFuneralPlace'),
+            value: altar.funeralPlace.trim(),
+          },
+        ]),
   ].filter(r => {
     if (typeof r.value === 'string') return r.value.length > 0;
     return Boolean(r.value);
