@@ -9,7 +9,8 @@
  *   VN  — Tết, Ông Táo, Giao thừa, tiễn ông bà, mùng 1, rằm, Nguyên Tiêu,
  *         Đoan Ngọ, Trung Thu, Phật Đản, Phật thành đạo, Phật nhập Niết-bàn,
  *         Vu Lan, Cô Hồn, Tết Thanh Minh, Giỗ Tổ Hùng Vương, Thương binh liệt sĩ,
- *         Trần Hưng Đạo, Hồ Chí Minh, Hai Bà Trưng.
+ *         Trần Hưng Đạo, Hồ Chí Minh, Hai Bà Trưng, Võ Thị Sáu, Thánh Mẫu Liễu Hạnh,
+ *         Bà Chúa Xứ, Bà Đen, Thiên Hậu.
  *   ZH  — 春节, 祭灶, 除夕, 元宵, 初一, 十五, 中秋, 佛诞, 佛成道, 佛涅槃,
  *         盂兰盆, 中元节, 清明节, 寒衣节, 重阳节, 冬至, 孔子, 关羽, 妈祖.
  *   EN  — Vesak, All Hallows' Eve, All Saints', All Souls', Remembrance,
@@ -25,6 +26,11 @@
  *   Lunar 3/1 → 19 Feb (tiễn ông bà / hóa vàng)
  *   Lunar 15/1 → 3 Mar (Rằm tháng Giêng / Nguyên Tiêu)
  *   Lunar 15/2 → 2 Apr (Mahayana Parinirvana)
+ *   Lunar 3/3   → 19 Apr 2026 (giỗ Mẫu Liễu Hạnh)
+ *   Lunar 23/3  → 9 May 2026 (Thiên Hậu / 妈祖诞)
+ *   Lunar 22–27/4 → 7–12 Jun 2026 (vía Bà Chúa Xứ; peak 25/4 → 10 Jun)
+ *   Lunar 4–6/5 → 18–20 Jun 2026 (vía Bà Đen)
+ *   Solar 23 Jan → giỗ Cô Sáu (hy sinh 23/1/1952)
  *   Lunar 8/4  → 24 May (Bắc tông Phật Đản / 佛诞; start of VN Phật Đản week)
  *   Lunar 15/4 → 31 May (Vesakha full moon / GHPGVN chính lễ / UN Vesak 2026)
  *   Lunar 1/7  → 13 Aug (ghost-month open, Chinese calendar)
@@ -996,6 +1002,131 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         titleEn: 'The Trưng Sisters',
         bodyEn:
           'On the sixth of the second lunar month, many places remember the Trưng sisters — Trưng Trắc and Trưng Nhị. Not only a battle story: two women who became a refuge in folk memory.\n\nEach lotus offered today is also a prayer: that these names are still kept, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'vo-thi-sau',
+      name: 'Võ Thị Sáu',
+      aliases: ['co sau', 'co sau con dao', 'vo thi sau', 'gio co sau'],
+      kind: 'hero',
+      eventCalendar: 'solar',
+      eventDate: `${y}-01-23`,
+      countries: vn,
+      birthPlace: 'Đất Đỏ, Bà Rịa – Vũng Tàu',
+      altarName: 'Cô Sáu',
+      note: 'Giỗ Cô Sáu',
+      story: {
+        title: 'Giỗ Cô Sáu',
+        body:
+          'Ngày 23 tháng 1, người ta nhớ Võ Thị Sáu — người con gái Đất Đỏ hy sinh ở Côn Đảo năm 1952, mười chín tuổi. Dân gian gọi Cô Sáu. Nhiều nhà dâng hương và một bông hoa, không ồn.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện tên còn được giữ, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Võ Thị Sáu',
+        bodyEn:
+          'On 23 January, people remember Võ Thị Sáu — the girl from Đất Đỏ who was killed on Côn Đảo in 1952, at nineteen. Folk memory calls her Cô Sáu. Many offer incense and a flower, quietly.\n\nEach lotus offered today is also a prayer: that this name is still kept, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'lieu-hanh',
+      name: 'Thánh Mẫu Liễu Hạnh',
+      aliases: [
+        'lieu hanh',
+        'mau lieu hanh',
+        'phu day',
+        'phu tay ho',
+        'thang ba gio me',
+      ],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-03-03`,
+      countries: vn,
+      birthPlace: 'Phủ Dầy, Nam Định',
+      altarName: 'Liễu Hạnh',
+      note: 'Giỗ Mẫu Liễu Hạnh',
+      story: {
+        title: 'Tháng Ba giỗ Mẹ',
+        body:
+          'Mùng ba tháng Ba âm lịch, Phủ Dầy và nhiều phủ nhớ Thánh Mẫu Liễu Hạnh — một trong Tứ bất tử. Dân gian nói tháng Tám giỗ Cha, tháng Ba giỗ Mẹ: Cha là Đức Thánh Trần, Mẹ là Mẫu Liễu.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện được che chở, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Mother Liễu Hạnh',
+        bodyEn:
+          'On the third of the third lunar month, Phủ Dầy and many shrines remember Thánh Mẫu Liễu Hạnh — one of the Four Immortals. Folk speech pairs her with Đức Thánh Trần: the eighth month for Father, the third month for Mother.\n\nEach lotus offered today is also a prayer: for that refuge, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'ba-chua-xu',
+      name: 'Bà Chúa Xứ',
+      aliases: [
+        'ba chua xu nui sam',
+        'nui sam',
+        'chau doc',
+        'via ba chua xu',
+      ],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-04-25`,
+      eventStart: `${y}-04-22`,
+      eventEnd: `${y}-04-27`,
+      countries: vn,
+      birthPlace: 'Núi Sam, Châu Đốc, An Giang',
+      altarName: 'Bà Chúa Xứ',
+      note: 'Vía Bà Chúa Xứ',
+      story: {
+        title: 'Vía Bà Chúa Xứ',
+        body:
+          'Cuối tháng Tư âm lịch, miền Tây về Núi Sam, Châu Đốc, lễ vía Bà Chúa Xứ. Nhiều nhà dâng hương, cầu bình an cho nhà — không ồn, một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện được che chở, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Bà Chúa Xứ of Núi Sam',
+        bodyEn:
+          'At the end of the fourth lunar month, the Mekong Delta goes to Núi Sam in Châu Đốc for the festival of Bà Chúa Xứ. Many households offer incense and ask for peace at home — quietly, with a flower.\n\nEach lotus offered today is also a prayer: for that refuge, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'ba-den',
+      name: 'Bà Đen',
+      aliases: [
+        'nui ba den',
+        'linh son thanh mau',
+        'via ba den',
+        'tay ninh ba den',
+      ],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-05-05`,
+      eventStart: `${y}-05-04`,
+      eventEnd: `${y}-05-06`,
+      countries: vn,
+      birthPlace: 'Núi Bà Đen, Tây Ninh',
+      altarName: 'Bà Đen',
+      note: 'Vía Bà Đen',
+      story: {
+        title: 'Vía Bà Đen',
+        body:
+          'Mùng bốn đến mùng sáu tháng Năm âm lịch, núi Bà Đen, Tây Ninh, lễ vía Linh Sơn Thánh Mẫu. Dân gian gọi Bà Đen. Nhiều nhà lên núi dâng hương, một bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện được che chở, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Bà Đen of Núi Bà Đen',
+        bodyEn:
+          'From the fourth to the sixth of the fifth lunar month, Núi Bà Đen in Tây Ninh holds the festival of Linh Sơn Thánh Mẫu — Bà Đen in folk speech. Many climb the mountain to offer incense and a flower.\n\nEach lotus offered today is also a prayer: for that refuge, and that every home may find peace.',
+      },
+    },
+    {
+      id: 'thien-hau',
+      name: 'Thiên Hậu',
+      aliases: [
+        'thien hau thanh mau',
+        'ba thien hau',
+        'chua ba cho lon',
+        'via ba thien hau',
+      ],
+      kind: 'hero',
+      eventCalendar: 'lunar',
+      eventDate: `${y}-03-23`,
+      countries: vn,
+      birthPlace: 'Chợ Lớn',
+      altarName: 'Thiên Hậu',
+      note: 'Vía Thiên Hậu',
+      story: {
+        title: 'Vía Thiên Hậu',
+        body:
+          'Ngày 23 tháng Ba âm lịch, chùa Bà Chợ Lớn và nhiều miếu ven biển nhớ Thiên Hậu Thánh Mẫu — bà phù hộ người đi biển, người về và người không về.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện người đi biển bình an, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Thiên Hậu',
+        bodyEn:
+          'On the twenty-third of the third lunar month, Chùa Bà in Chợ Lớn and many coastal shrines remember Thiên Hậu — guardian of those at sea, some who returned and some who did not.\n\nEach lotus offered today is also a prayer: for those at sea, and that every home may find peace.',
       },
     },
     {

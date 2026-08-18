@@ -20,6 +20,16 @@ describe('temple special catalog', () => {
     expect(byId['thanh-minh']!.eventDate).toBe('2026-04-05');
     expect(byId['hung-kings']!.eventDate).toBe('2026-03-10');
     expect(byId['hai-ba-trung']!.kind).toBe('hero');
+    expect(byId['vo-thi-sau']!.eventCalendar).toBe('solar');
+    expect(byId['vo-thi-sau']!.eventDate).toBe('2026-01-23');
+    expect(byId['lieu-hanh']!.eventDate).toBe('2026-03-03');
+    expect(byId['ba-chua-xu']!.eventStart).toBe('2026-04-22');
+    expect(byId['ba-chua-xu']!.eventDate).toBe('2026-04-25');
+    expect(byId['ba-chua-xu']!.eventEnd).toBe('2026-04-27');
+    expect(byId['ba-den']!.eventStart).toBe('2026-05-04');
+    expect(byId['ba-den']!.eventEnd).toBe('2026-05-06');
+    expect(byId['thien-hau']!.eventDate).toBe('2026-03-23');
+    expect(byId['thien-hau']!.countries).toEqual([...VIETNAM_COUNTRIES]);
     expect(byId['ho-chi-minh']!.eventCalendar).toBe('lunar');
     expect(byId['ho-chi-minh']!.eventDate).toBe('2026-07-21');
     expect(byId['ho-chi-minh-birthday']!.eventCalendar).toBe('solar');
@@ -141,6 +151,13 @@ describe('temple special catalog', () => {
     expect(findCatalogEntryByName("All Souls' Day")?.id).toBe('all-souls');
     expect(findCatalogEntryByName('Halloween')?.id).toBe('halloween');
     expect(findCatalogEntryByName('Giỗ Tổ Hùng Vương')?.id).toBe('hung-kings');
+    expect(findCatalogEntryByName('Hai Bà Trưng')?.id).toBe('hai-ba-trung');
+    expect(findCatalogEntryByName('Cô Sáu')?.id).toBe('vo-thi-sau');
+    expect(findCatalogEntryByName('Võ Thị Sáu')?.id).toBe('vo-thi-sau');
+    expect(findCatalogEntryByName('Thánh Mẫu Liễu Hạnh')?.id).toBe('lieu-hanh');
+    expect(findCatalogEntryByName('Bà Chúa Xứ')?.id).toBe('ba-chua-xu');
+    expect(findCatalogEntryByName('Bà Đen')?.id).toBe('ba-den');
+    expect(findCatalogEntryByName('Thiên Hậu')?.id).toBe('thien-hau');
     expect(findCatalogEntryByName('Hồ Chí Minh')?.id).toBe('ho-chi-minh');
     expect(findCatalogEntryByName('Ngày sinh Hồ Chí Minh')?.id).toBe(
       'ho-chi-minh-birthday',
@@ -180,6 +197,10 @@ describe('temple special catalog', () => {
     expect(lunarYmdToSolarYmd('2026-04-08', 7)).toBe('2026-05-24');
     expect(lunarYmdToSolarYmd('2026-04-15', 7)).toBe('2026-05-31');
     expect(lunarYmdToSolarYmd('2026-02-15', 7)).toBe('2026-04-02');
+    expect(lunarYmdToSolarYmd('2026-03-03', 7)).toBe('2026-04-19');
+    expect(lunarYmdToSolarYmd('2026-03-23', 7)).toBe('2026-05-09');
+    expect(lunarYmdToSolarYmd('2026-04-25', 7)).toBe('2026-06-10');
+    expect(lunarYmdToSolarYmd('2026-05-05', 7)).toBe('2026-06-19');
     expect(lunarYmdToSolarYmd('2026-12-08', 7)).toBe('2027-01-15');
     expect(lunarYmdToSolarYmd('2026-01-01', 7)).toBe('2026-02-17');
     expect(lunarYmdToSolarYmd('2026-01-03', 7)).toBe('2026-02-19');

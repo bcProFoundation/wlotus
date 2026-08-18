@@ -67,6 +67,10 @@ test env before launch. Set **0** in production.
 | Lunar | Solar |
 |-------|--------|
 | 15/2/2026 | **2 Apr 2026** (Phật nhập Niết-bàn) |
+| 3/3/2026 | **19 Apr 2026** (giỗ Mẫu Liễu Hạnh) |
+| 23/3/2026 | **9 May 2026** (Thiên Hậu / 妈祖) |
+| 22–27/4/2026 | **7–12 Jun 2026** (vía Bà Chúa Xứ; peak 25/4 → 10 Jun) |
+| 4–6/5/2026 | **18–20 Jun 2026** (vía Bà Đen) |
 | 8/4/2026 | **24 May 2026** (Bắc tông Phật Đản / 佛诞; start of VN week) |
 | 15/4/2026 | **31 May 2026** (GHPGVN chính lễ / Vesakha full moon / Vesak) |
 | 2/7/2026 | **14 Aug 2026** |
@@ -211,6 +215,11 @@ Memorial / ancestral offering days. Unbound until a visitor claims the root.
 | VN | Hồ Chí Minh | hero | lunar 21/7 (2 Sep 2026) | `VN` |
 | VN | Ngày sinh Hồ Chí Minh | hero | solar 19 May | `VN` |
 | VN | Hai Bà Trưng | hero | lunar 6/2 | `VN` |
+| VN | Võ Thị Sáu | hero | solar 23 Jan | `VN` |
+| VN | Thánh Mẫu Liễu Hạnh | hero | lunar 3/3 | `VN` |
+| VN | Bà Chúa Xứ | hero | lunar 22–27/4 (peak 25/4) | `VN` |
+| VN | Bà Đen | hero | lunar 4–6/5 | `VN` |
+| VN | Thiên Hậu | hero | lunar 23/3 | `VN` |
 | ZH | 春节 | event | lunar 1/1–1/3 | CN, TW, HK, MO, SG |
 | ZH | 祭灶 | event | lunar 23–24/12 | CN, TW, HK, MO, SG |
 | ZH | 除夕 | event | last day of 腊月 | CN, TW, HK, MO, SG |

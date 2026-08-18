@@ -247,6 +247,25 @@ describe('calendarMonth', () => {
     expect(may[0]!.effectiveStartDate).toBe('2026-05-19');
   });
 
+  it('places Cô Sáu on 23 Jan and Thánh Mẫu windows in 2026', () => {
+    const sau = catalogAsUi('vo-thi-sau');
+    const mau = catalogAsUi('lieu-hanh');
+    const xu = catalogAsUi('ba-chua-xu');
+    const den = catalogAsUi('ba-den');
+    const hau = catalogAsUi('thien-hau');
+    expect(specialWindowInYear(sau, 2026, 'vi')?.peak).toBe('2026-01-23');
+    expect(specialCoversYmd(sau, '2026-01-23', 'vi')).toBe(true);
+    expect(specialWindowInYear(mau, 2026, 'vi')?.peak).toBe('2026-04-19');
+    expect(specialWindowInYear(hau, 2026, 'vi')?.peak).toBe('2026-05-09');
+    expect(specialWindowInYear(xu, 2026, 'vi')?.start).toBe('2026-06-07');
+    expect(specialWindowInYear(xu, 2026, 'vi')?.peak).toBe('2026-06-10');
+    expect(specialWindowInYear(xu, 2026, 'vi')?.end).toBe('2026-06-12');
+    expect(specialCoversYmd(xu, '2026-06-07', 'vi')).toBe(true);
+    expect(specialCoversYmd(xu, '2026-06-12', 'vi')).toBe(true);
+    expect(specialWindowInYear(den, 2026, 'vi')?.start).toBe('2026-06-18');
+    expect(specialWindowInYear(den, 2026, 'vi')?.end).toBe('2026-06-20');
+  });
+
   it('places Phật Đản week 24–31 May 2026 (lunar 8–15/4) and Vesak on the full moon', () => {
     const phatDan = catalogAsUi('phat-dan');
     const vesak = catalogAsUi('vesak');
