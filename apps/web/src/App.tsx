@@ -80,6 +80,7 @@ import {
   specialCountdown,
   filterSpecialsForViewer,
   isBoundSpecialRoot,
+  homeEventOfferHint,
   type TempleSpecialsStatusUi,
   type TempleSpecialProfileUi,
 } from './lib/specialsUi.js';
@@ -1477,6 +1478,7 @@ export default function App() {
       const next: Record<string, number> = {};
       await Promise.all(
         profiles.map(async p => {
+          if (!isBoundSpecialRoot(p.profileId)) return;
           const id = p.profileId.trim().toLowerCase();
           let n = localByRoot.get(id) ?? 0;
           try {
@@ -1487,10 +1489,10 @@ export default function App() {
             ) {
               n = remote.totalBurns;
             }
+            next[id] = Math.max(n, 1);
           } catch {
-            /* offline index — local only */
+            if (n > 0) next[id] = n;
           }
-          next[id] = n;
         }),
       );
       if (!cancelled) setSpecialOfferCounts(next);
@@ -2001,7 +2003,9 @@ export default function App() {
           <div className="home-events" aria-label={t('homeEventsTitle')}>
             <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
             <ul className="home-events-list">
-              {rankedHomeEvents.map((ev, idx) => (
+              {rankedHomeEvents.map((ev, idx) => {
+                const hint = homeEventOfferHint(ev.profileId, ev.offerCount);
+                return (
                 <li key={ev.id || ev.profileId || ev.name || idx} className="home-events-item">
                   <button
                     type="button"
@@ -2056,30 +2060,31 @@ export default function App() {
                     </span>
                     <span
                       className={
-                        ev.offerCount > 0
+                        hint === 'count'
                           ? 'home-events-count home-events-count--offers'
                           : 'home-events-count'
                       }
                       aria-label={
-                        ev.offerCount > 0
-                          ? t('homeEventsOfferings', { n: ev.offerCount })
+                        hint === 'count'
+                          ? t('homeEventsOfferings', { n: ev.offerCount ?? 0 })
                           : undefined
                       }
                     >
-                      {ev.offerCount > 0 ? (
+                      {hint === 'count' ? (
                         <>
                           <span className="home-events-count-n">
                             {ev.offerCount}
                           </span>
                           <BrandMark badge width={24} height={24} />
                         </>
-                      ) : (
+                      ) : hint === 'first' ? (
                         t('homeEventsFirstBurn')
-                      )}
+                      ) : null}
                     </span>
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         ) : null}

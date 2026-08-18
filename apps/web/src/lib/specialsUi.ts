@@ -76,6 +76,22 @@ export function findSpecialById(
 export function isBoundSpecialRoot(profileId: string | null | undefined): boolean {
   return /^[0-9a-f]{64}$/i.test((profileId ?? '').trim());
 }
+
+/**
+ * Home-list offering hint.
+ * “Be the first” only when the special has no on-chain root.
+ * Bound + missing/unloaded index count → show nothing (don’t lie).
+ */
+export type HomeEventOfferHint = 'first' | 'count' | 'none';
+
+export function homeEventOfferHint(
+  profileId: string | null | undefined,
+  offerCount: number | null | undefined,
+): HomeEventOfferHint {
+  if (!isBoundSpecialRoot(profileId)) return 'first';
+  if (offerCount != null && offerCount > 0) return 'count';
+  return 'none';
+}
 export function filterSpecialsForViewer(
   profiles: TempleSpecialProfileUi[] | null | undefined,
   opts: { countryCode?: string | null; locale?: string | null },
@@ -192,8 +208,11 @@ export interface RankedTempleSpecial extends TempleSpecialProfileUi {
    * Ranking no longer uses “later date first”.
    */
   sortDate: string;
-  /** Public or local offering count under this profile root. */
-  offerCount: number;
+  /**
+   * Public or local offering count under this profile root.
+   * `null` = bound but index/local count not loaded yet (don’t treat as 0).
+   */
+  offerCount: number | null;
 }
 
 /**
@@ -218,13 +237,26 @@ export function rankTempleSpecials(
   locale = 'vi',
 ): RankedTempleSpecial[] {
   const list = profiles ?? [];
-  const getCount = (id: string): number => {
+  const hasCount = (id: string): boolean => {
+    const key = id.toLowerCase();
+    if (offerCountByProfileId instanceof Map) {
+      return offerCountByProfileId.has(key);
+    }
+    return Object.prototype.hasOwnProperty.call(offerCountByProfileId, key);
+  };
+  const rawCount = (id: string): number => {
     const key = id.toLowerCase();
     if (offerCountByProfileId instanceof Map) {
       return offerCountByProfileId.get(key) ?? 0;
     }
     return offerCountByProfileId[key] ?? 0;
   };
+  const offerCountFor = (profileId: string): number | null => {
+    if (!isBoundSpecialRoot(profileId)) return 0;
+    if (!hasCount(profileId)) return null;
+    return Math.max(1, rawCount(profileId));
+  };
+  const sortCount = (n: number | null): number => n ?? 0;
 
   const today = todayYmd(now);
   const todayUtc = Date.UTC(
@@ -248,7 +280,7 @@ export function rankTempleSpecials(
     ranked.push({
       ...projected,
       sortDate: window.start,
-      offerCount: getCount(p.profileId),
+      offerCount: offerCountFor(p.profileId),
     });
   }
 
@@ -292,11 +324,13 @@ export function rankTempleSpecials(
     const mb = meta(b);
     if (ma.tier !== mb.tier) return ma.tier - mb.tier;
     if (ma.tier === 0) {
-      if (a.offerCount !== b.offerCount) return b.offerCount - a.offerCount;
+      if (sortCount(a.offerCount) !== sortCount(b.offerCount)) {
+        return sortCount(b.offerCount) - sortCount(a.offerCount);
+      }
     } else if (ma.days !== mb.days) {
       return ma.days - mb.days;
-    } else if (a.offerCount !== b.offerCount) {
-      return b.offerCount - a.offerCount;
+    } else if (sortCount(a.offerCount) !== sortCount(b.offerCount)) {
+      return sortCount(b.offerCount) - sortCount(a.offerCount);
     }
     return (a.name || '').localeCompare(b.name || '', 'vi');
   });
