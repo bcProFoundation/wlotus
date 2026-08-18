@@ -426,10 +426,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Mùng 1 âm lịch',
         body:
-          'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 30 và mùng 1 hằng tháng để tưởng nhớ ông bà tổ tiên.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà được nhớ mỗi tháng, nguyện cho nhà nhà được bình an.',
+          'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 30 và mùng 1 hằng tháng để tưởng nhớ ông bà tổ tiên.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện tưởng nhớ ông bà tổ tiên, nguyện cho nhà nhà được bình an.',
         titleEn: 'First of the lunar month',
         bodyEn:
-          'By custom, households offer incense on the 30th and the first of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: that ancestors are remembered each month, and that every home may find peace.',
+          'By custom, households offer incense on the 30th and the first of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: remembrance of the ancestors, and that every home may find peace.',
       },
     },
     {
@@ -449,10 +449,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Ngày rằm',
         body:
-          'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 14 và rằm hằng tháng để tưởng nhớ ông bà tổ tiên.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện mỗi rằm còn một bông sen, nguyện cho nhà nhà được bình an.',
+          'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 14 và rằm hằng tháng để tưởng nhớ ông bà tổ tiên.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện tưởng nhớ ông bà tổ tiên, nguyện cho nhà nhà được bình an.',
         titleEn: 'Full-moon day',
         bodyEn:
-          'By custom, households offer incense on the 14th and the 15th of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: that each full moon still has a lotus, and that every home may find peace.',
+          'By custom, households offer incense on the 14th and the 15th of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: remembrance of the ancestors, and that every home may find peace.',
       },
     },
     {
@@ -686,12 +686,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '每月初一',
         titleZh: '每月初一',
         body:
-          '按习俗，各家在月末与初一上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿先人每月被记得，愿家家得安宁。',
+          '按习俗，各家在月末与初一上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿心念先人，愿家家得安宁。',
         bodyZh:
-          '按习俗，各家在月末与初一上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿先人每月被记得，愿家家得安宁。',
+          '按习俗，各家在月末与初一上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿心念先人，愿家家得安宁。',
         titleEn: 'First of the lunar month',
         bodyEn:
-          'By custom, households offer incense at month-end and on the first of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: that ancestors are remembered each month, and that every home may find peace.',
+          'By custom, households offer incense at month-end and on the first of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: remembrance of the ancestors, and that every home may find peace.',
       },
     },
     {
@@ -712,12 +712,12 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
         title: '每月十五',
         titleZh: '每月十五',
         body:
-          '按习俗，各家在十四与十五上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿每月十五仍有一朵莲，愿家家得安宁。',
+          '按习俗，各家在十四与十五上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿心念先人，愿家家得安宁。',
         bodyZh:
-          '按习俗，各家在十四与十五上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿每月十五仍有一朵莲，愿家家得安宁。',
+          '按习俗，各家在十四与十五上香，祭奠祖先。\n\n今日每一朵莲花，也是一句愿：愿心念先人，愿家家得安宁。',
         titleEn: 'Fifteenth of the lunar month',
         bodyEn:
-          'By custom, households offer incense on the 14th and the 15th of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: that each fifteenth still has a lotus, and that every home may find peace.',
+          'By custom, households offer incense on the 14th and the 15th of each lunar month in remembrance of ancestors.\n\nEach lotus offered today is also a prayer: remembrance of the ancestors, and that every home may find peace.',
       },
     },
     {

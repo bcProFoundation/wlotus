@@ -100,16 +100,28 @@ describe('temple special catalog', () => {
       'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 30 và mùng 1 hằng tháng để tưởng nhớ ông bà tổ tiên.',
     );
     expect(mung?.story.body).not.toMatch(preachy);
+    expect(mung?.story.body).toContain(
+      'nguyện tưởng nhớ ông bà tổ tiên, nguyện cho nhà nhà được bình an',
+    );
+    expect(mung?.story.body).not.toMatch(/nhớ mỗi tháng/);
     const ram = templeSpecialCatalog(2026).find(e => e.id === 'ram');
     expect(ram?.kind).toBe('event');
     expect(ram?.story.body).toContain(
       'Theo tục lệ, các nhà thắp hương, cúng lễ vào ngày 14 và rằm hằng tháng để tưởng nhớ ông bà tổ tiên.',
     );
     expect(ram?.story.body).not.toMatch(preachy);
+    expect(ram?.story.body).toContain(
+      'nguyện tưởng nhớ ông bà tổ tiên, nguyện cho nhà nhà được bình an',
+    );
     const chu = templeSpecialCatalog(2026).find(e => e.id === 'chu-yi');
     expect(chu?.kind).toBe('event');
     expect(chu?.story.bodyZh).toContain('按习俗');
+    expect(chu?.story.bodyZh).toContain('愿心念先人');
     expect(chu?.story.bodyZh).not.toMatch(preachy);
+    expect(chu?.story.bodyZh).not.toMatch(/每月被记得/);
+    const shi = templeSpecialCatalog(2026).find(e => e.id === 'shi-wu');
+    expect(shi?.story.bodyZh).toContain('愿心念先人');
+    expect(shi?.story.bodyZh).not.toMatch(/每月十五仍有一朵莲/);
   });
 
   it('says Cô Hồn offering is sharing, not fear', () => {
