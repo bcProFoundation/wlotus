@@ -20,7 +20,6 @@ export type MessageKey =
   | 'howEternalBody'
   | 'howEcashTitle'
   | 'howEcashBody'
-  | 'etaEstimated'
   | 'btnAltarEdit'
   | 'btnAltarDelete'
   | 'btnAltarMore'
@@ -209,7 +208,6 @@ const en: Dict = {
   howEcashTitle: 'Why eCash?',
   howEcashBody:
     'eCash is a blockchain network since 2009 — established, with very low fees and fast confirmation, well suited to record each W Lotus flower offering.',
-  etaEstimated: 'Estimated time {eta}',
   btnAltarMore: 'More',
   btnAltarEdit: 'Edit',
   btnAltarDelete: 'Delete',
@@ -417,7 +415,6 @@ const vi: Dict = {
   howEcashTitle: 'Tại sao eCash?',
   howEcashBody:
     'eCash là blockchain từ năm 2009 — uy tín, phí rất thấp và xác nhận nhanh, phù hợp để ghi nhận mỗi lần dâng hoa WLOTUS.',
-  etaEstimated: 'Thời gian ước tính {eta}',
   btnAltarMore: 'Thêm',
   btnAltarEdit: 'Sửa',
   btnAltarDelete: 'Xoá',
@@ -625,7 +622,6 @@ const zh: Dict = {
   howEcashBody:
     'eCash 是始于 2009 年的区块链网络——成熟可靠，手续费极低、确认迅速，适合记录每一次 W Lotus 献花。',
 
-  etaEstimated: '预计时间 {eta}',
   btnAltarMore: '添加',
   btnAltarEdit: '编辑',
   btnAltarDelete: '删除',
