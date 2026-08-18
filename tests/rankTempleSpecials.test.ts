@@ -1,5 +1,6 @@
 import {
   findSpecialById,
+  homeEventOfferHint,
   omitLotusPrayerParagraph,
   rankTempleSpecials,
   specialStoryForLocale,
@@ -76,6 +77,43 @@ describe('rankTempleSpecials', () => {
       now,
     );
     expect(ranked.map(r => r.id)).toEqual(['halloween', 'all-souls']);
+  });
+
+  it('leaves bound offer counts unknown until the index loads', () => {
+    const bound = 'ab'.repeat(32);
+    const ranked = rankTempleSpecials(
+      [
+        spec('vu-lan', '2026-08-27', { profileId: bound, active: true }),
+        spec('co-hon', '2026-08-27', { active: true }),
+      ],
+      {},
+      8,
+      now,
+    );
+    expect(ranked.find(r => r.id === 'vu-lan')?.offerCount).toBeNull();
+    expect(ranked.find(r => r.id === 'co-hon')?.offerCount).toBe(0);
+    const withCount = rankTempleSpecials(
+      [spec('vu-lan', '2026-08-27', { profileId: bound, active: true })],
+      { [bound]: 4 },
+      8,
+      now,
+    );
+    expect(withCount[0]!.offerCount).toBe(4);
+  });
+});
+
+describe('homeEventOfferHint', () => {
+  const bound = 'cd'.repeat(32);
+
+  it('shows first-burn only for unbound specials', () => {
+    expect(homeEventOfferHint('', 0)).toBe('first');
+    expect(homeEventOfferHint('', null)).toBe('first');
+  });
+
+  it('hides the count when a bound special has no loaded total', () => {
+    expect(homeEventOfferHint(bound, null)).toBe('none');
+    expect(homeEventOfferHint(bound, 0)).toBe('none');
+    expect(homeEventOfferHint(bound, 3)).toBe('count');
   });
 });
 
