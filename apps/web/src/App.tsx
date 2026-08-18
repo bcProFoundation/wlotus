@@ -2849,11 +2849,9 @@ export default function App() {
             <div className="offer-session-footer">
               <div className="offer-session-status-row" aria-live="polite">
                 <p className="offer-session-status">{buttonLabel}</p>
-                {mineStartedAt != null ? (
-                  <p className="mine-progress offer-session-elapsed">
-                    {t('miningElapsed', { elapsed: elapsedDisplay })}
-                  </p>
-                ) : null}
+                <p className="mine-progress offer-session-elapsed">
+                  {t('miningElapsed', { elapsed: elapsedDisplay })}
+                </p>
               </div>
               <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
@@ -2990,11 +2988,9 @@ export default function App() {
             <div className="offer-session-footer">
               <div className="offer-session-status-row" aria-live="polite">
                 <p className="offer-session-status">{buttonLabel}</p>
-                {mineStartedAt != null ? (
-                  <p className="mine-progress offer-session-elapsed">
-                    {t('miningElapsed', { elapsed: elapsedDisplay })}
-                  </p>
-                ) : null}
+                <p className="mine-progress offer-session-elapsed">
+                  {t('miningElapsed', { elapsed: elapsedDisplay })}
+                </p>
               </div>
               <p className="hint">{t('hintKeepScreen')}</p>
               {cancelLoseConfirm ? (
