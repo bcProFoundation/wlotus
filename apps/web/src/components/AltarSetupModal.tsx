@@ -208,6 +208,7 @@ export function AltarSetupModal(props: {
   variant?: ModalVariant;
   /** Overrides the default altar/profile hint (first-burn specials). */
   setupHint?: string;
+  etaLabel: string;
   offerDisabled?: boolean;
   relatedAltarOptions: RelatedAltarOption[];
   /** Unbound temple special — story on setup/details, without the lotus prayer. */
@@ -762,6 +763,9 @@ export function AltarSetupModal(props: {
                 specialKind={props.special?.kind ?? null}
               />
             ) : null}
+            <p className="hint eta" style={{ marginTop: '0.85rem' }}>
+              {t('etaEstimated', { eta: props.etaLabel })}
+            </p>
             <p className="hint">{t('hintKeepScreen')}</p>
             <div className="altar-setup-actions altar-review-actions">
               {festivalSpecial ? <span /> : (

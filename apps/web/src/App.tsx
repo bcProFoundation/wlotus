@@ -20,6 +20,7 @@ import { TabBar } from './components/TabBar.js';
 import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
+  formatEstimateDurationLocale,
 } from './i18n/format.js';
 import { useLocale } from './i18n/LocaleContext.js';
 import { applyDocumentTheme, documentTheme } from './i18n/appearance.js';
@@ -122,7 +123,9 @@ import {
   looksLikeShareInput,
 } from './lib/shareLink.js';
 import {
+  estimatePrayerPow,
   loadCachedHashrate,
+  OFFER_DESK_OVERHEAD_SECONDS,
   saveCachedHashrate,
 } from './lib/powEstimate.js';
 import { measureDeviceHashrate } from './lib/powMeasure.js';
@@ -276,6 +279,7 @@ export default function App() {
   const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [ticker, setTicker] = useState(PRAYER_TICKER);
+  const [baseZeroBits, setBaseZeroBits] = useState<number | null>(null);
   const [deviceHashrateHps, setDeviceHashrateHps] = useState<number | null>(
     () => initialHashrateHps(),
   );
@@ -413,6 +417,16 @@ export default function App() {
     }
   }, []);
 
+  const minPrayMs = getMinPrayMs();
+  const powEta = estimatePrayerPow({
+    bits: baseZeroBits,
+    hashesPerSec: deviceHashrateHps,
+  });
+  /** ETA = max(PoW, min pray) + desk overhead so low-diff sessions match wall time. */
+  const etaSeconds =
+    Math.max(powEta.seconds, minPrayMs / 1000) + OFFER_DESK_OVERHEAD_SECONDS;
+  const etaLabel = formatEstimateDurationLocale(etaSeconds, locale);
+
   const refreshStatus = useCallback(async () => {
     try {
       const s = await fetchStatus(installId);
@@ -420,6 +434,9 @@ export default function App() {
       setTokenId(s.tokenId);
       if (s.ticker?.trim()) setTicker(s.ticker.trim());
       if (s.maxOffersPerDay > 0) setMaxOffersPerDay(s.maxOffersPerDay);
+      if (s.baseZeroBits != null && Number.isFinite(s.baseZeroBits)) {
+        setBaseZeroBits(s.baseZeroBits);
+      }
       setTempleSpecials(s.templeSpecials ?? null);
       setApiOnline(true);
     } catch {
@@ -905,6 +922,7 @@ export default function App() {
           } else if (!document.hidden) {
             elapsedClockRef.current.resume();
           }
+          setBaseZeroBits(challenge.bits);
 
           const tipEpoch = challenge.tipEpoch ?? null;
           const tipIndex = challenge.tipIndex;
@@ -2357,6 +2375,7 @@ export default function App() {
               ? t('specialFirstBurnHint')
               : undefined
           }
+          etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
           relatedAltarOptions={relatedAltarOptions}
           special={findSpecialById(
@@ -2477,6 +2496,9 @@ export default function App() {
                     placeholder={t('reofferExtraNotePlaceholder')}
                   />
                 </div>
+                <p className="hint eta">
+                  {t('etaEstimated', { eta: etaLabel })}
+                </p>
                 <div className="offer-actions offer-session-actions">
                   <button
                     type="button"
@@ -2554,6 +2576,9 @@ export default function App() {
               dedicationSheet.parentBurnTxid ? (
               <>
                 <p className="hint">{t('firstOfferDeathHint')}</p>
+                <p className="hint eta">
+                  {t('etaEstimated', { eta: etaLabel })}
+                </p>
                 <div className="offer-actions offer-session-actions">
                   <button
                     type="button"
@@ -2594,6 +2619,7 @@ export default function App() {
         <AltarSetupModal
           variant={amendSheet.kind === 'death' ? 'death' : 'relationship'}
           initial={amendSheet.altar}
+          etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
           relatedAltarOptions={
             // Prefer dedication-sheet enriched names, then device Recent.
