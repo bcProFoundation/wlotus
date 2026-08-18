@@ -101,7 +101,7 @@ describe('temple special catalog', () => {
     );
     expect(mung?.story.body).not.toMatch(preachy);
     expect(mung?.story.body).toContain(
-      'gửi lòng tưởng nhớ tới ông bà tổ tiên, nguyện cho nhà nhà được bình an',
+      'nguyện tưởng nhớ ông bà tổ tiên, nguyện cho nhà nhà được bình an',
     );
     expect(mung?.story.body).not.toMatch(/nhớ mỗi tháng/);
     const ram = templeSpecialCatalog(2026).find(e => e.id === 'ram');
@@ -111,16 +111,16 @@ describe('temple special catalog', () => {
     );
     expect(ram?.story.body).not.toMatch(preachy);
     expect(ram?.story.body).toContain(
-      'gửi lòng tưởng nhớ tới ông bà tổ tiên, nguyện cho nhà nhà được bình an',
+      'nguyện tưởng nhớ ông bà tổ tiên, nguyện cho nhà nhà được bình an',
     );
     const chu = templeSpecialCatalog(2026).find(e => e.id === 'chu-yi');
     expect(chu?.kind).toBe('event');
     expect(chu?.story.bodyZh).toContain('按习俗');
-    expect(chu?.story.bodyZh).toContain('把这份想念寄给先人');
+    expect(chu?.story.bodyZh).toContain('愿心念先人');
     expect(chu?.story.bodyZh).not.toMatch(preachy);
     expect(chu?.story.bodyZh).not.toMatch(/每月被记得/);
     const shi = templeSpecialCatalog(2026).find(e => e.id === 'shi-wu');
-    expect(shi?.story.bodyZh).toContain('把这份想念寄给先人');
+    expect(shi?.story.bodyZh).toContain('愿心念先人');
     expect(shi?.story.bodyZh).not.toMatch(/每月十五仍有一朵莲/);
   });
 
