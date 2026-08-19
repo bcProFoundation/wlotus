@@ -1834,7 +1834,7 @@ export default function App() {
         ? session?.setup && !session.specialId
           ? t('btnSettingUp')
           : specialBtn === 'cung'
-            ? t('btnCung')
+            ? t('btnCunging')
             : t('btnOffering')
         : linkedParentBurnTxid
           ? specialBtn === 'cung'

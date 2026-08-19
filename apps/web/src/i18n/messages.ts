@@ -165,6 +165,7 @@ export type MessageKey =
   | 'searchNoResults'
   | 'searchIndexUnavailable'
   | 'btnCung'
+  | 'btnCunging'
   | 'cungSessionTitle'
   | 'vuLanSessionTitle'
   | 'specialStoryHeading'
@@ -371,6 +372,7 @@ const en: Dict = {
   searchIndexUnavailable:
     'Could not reach the memorial index — showing matches from this device only.',
   btnCung: 'Offer (Cúng)',
+  btnCunging: 'Cúng…',
   cungSessionTitle: 'Cúng Cô Hồn',
   vuLanSessionTitle: 'Vu Lan — Filial Gratitude',
   specialStoryHeading: 'Temple story',
@@ -578,6 +580,7 @@ const vi: Dict = {
   searchIndexUnavailable:
     'Không kết nối được mục lục tưởng niệm — chỉ hiện kết quả trên máy này.',
   btnCung: 'Cúng',
+  btnCunging: 'Đang cúng…',
   cungSessionTitle: 'Cúng Cô Hồn',
   vuLanSessionTitle: 'Vu Lan Báo Hiếu',
   specialStoryHeading: 'Câu chuyện từ chùa',
@@ -779,6 +782,7 @@ const zh: Dict = {
   searchNoResults: '未找到匹配结果。',
   searchIndexUnavailable: '无法连接追思索引 — 仅显示本机记录。',
   btnCung: '供祭',
+  btnCunging: '正在供祭…',
   cungSessionTitle: '祭孤魂',
   vuLanSessionTitle: '盂兰盆 — 报恩',
   specialStoryHeading: '寺院故事',
