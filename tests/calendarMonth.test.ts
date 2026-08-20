@@ -11,6 +11,9 @@ import {
   specialsInMonth,
   specialWindowInYear,
   tabFromHash,
+  calendarYmdFromHash,
+  hashForCalendar,
+  hashForTab,
   ymdKey,
   defaultSelectedYmdForMonth,
 } from '../apps/web/src/lib/calendarMonth.js';
@@ -299,7 +302,17 @@ describe('calendarMonth', () => {
     expect(addMonths(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
     expect(tabFromHash('#/calendar')).toBe('calendar');
     expect(tabFromHash('#calendar')).toBe('calendar');
+    expect(tabFromHash('#/calendar/2026-08-20')).toBe('calendar');
+    expect(tabFromHash('#/calendar/nope')).toBe('calendar');
     expect(tabFromHash('')).toBe('home');
+    expect(calendarYmdFromHash('#/calendar/2026-08-20')).toBe('2026-08-20');
+    expect(calendarYmdFromHash('#calendar/2026-08-20')).toBe('2026-08-20');
+    expect(calendarYmdFromHash('#/calendar')).toBeNull();
+    expect(calendarYmdFromHash('#/calendar/2026-13-01')).toBeNull();
+    expect(hashForCalendar('2026-08-20')).toBe('#/calendar/2026-08-20');
+    expect(hashForCalendar()).toBe('#/calendar');
+    expect(hashForTab('calendar')).toBe('#/calendar');
+    expect(hashForTab('home')).toBe('#/');
     expect(ymdKey(2026, 8, 4)).toBe('2026-08-04');
   });
 

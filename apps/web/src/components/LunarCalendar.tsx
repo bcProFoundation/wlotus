@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useLocale } from '../i18n/LocaleContext.js';
 import {
   addMonths,
@@ -10,6 +10,7 @@ import {
   memorialsInMonth,
   memorialsOnYmd,
   orderMonthSpecials,
+  parseYmd,
   specialCoversYmd,
   specialsInMonth,
   specialsOnYmd,
@@ -27,17 +28,19 @@ import {
 export function LunarCalendar(props: {
   specials: TempleSpecialProfileUi[];
   memorials: CalendarMemorial[];
+  selectedYmd: string;
+  onSelectedYmdChange: (ymd: string) => void;
   onOpenSpecial: (sp: TempleSpecialProfileUi) => void;
   onOpenMemorial: (txid: string) => void;
   disabled?: boolean;
 }) {
   const { locale, t } = useLocale();
   const now = useMemo(() => new Date(), []);
-  const [cursor, setCursor] = useState(() => ({
-    year: now.getFullYear(),
-    month: now.getMonth() + 1,
-  }));
-  const [selectedYmd, setSelectedYmd] = useState(() => todayYmd(now));
+  const parsed = parseYmd(props.selectedYmd);
+  const cursor = parsed
+    ? { year: parsed.y, month: parsed.m }
+    : { year: now.getFullYear(), month: now.getMonth() + 1 };
+  const selectedYmd = props.selectedYmd;
 
   const days = useMemo(
     () => buildSolarMonthGrid(cursor.year, cursor.month, locale, now),
@@ -99,15 +102,14 @@ export function LunarCalendar(props: {
   );
 
   function goToday() {
-    const n = new Date();
-    setCursor({ year: n.getFullYear(), month: n.getMonth() + 1 });
-    setSelectedYmd(todayYmd(n));
+    props.onSelectedYmdChange(todayYmd(new Date()));
   }
 
   function goMonth(delta: number) {
     const next = addMonths(cursor.year, cursor.month, delta);
-    setCursor(next);
-    setSelectedYmd(defaultSelectedYmdForMonth(next.year, next.month, now));
+    props.onSelectedYmdChange(
+      defaultSelectedYmdForMonth(next.year, next.month, new Date()),
+    );
   }
 
   function marksFor(day: CalendarDay): { special: boolean; memorial: boolean } {
@@ -157,10 +159,7 @@ export function LunarCalendar(props: {
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => {
-                if (!day.inMonth) {
-                  setCursor({ year: day.solarY, month: day.solarM });
-                }
-                setSelectedYmd(day.ymd);
+                props.onSelectedYmdChange(day.ymd);
               }}
             >
               <span className="calendar-cell-solar">{day.solarD}</span>
