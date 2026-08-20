@@ -115,6 +115,7 @@ import {
   unhideRecentRoot,
 } from './lib/hiddenRecent.js';
 import { mergeIndexAndLocalOffers, syncIndexMemorialIntoLocal } from './lib/mergeRecentOffers.js';
+import { explorerTx } from './lib/explorer.js';
 import {
   burnTxidFromLocation,
   clearDedicationPath,
@@ -180,7 +181,7 @@ function ExplorerLinkIcon({
   return (
     <a
       className="explorer-link-icon"
-      href={`https://explorer.e.cash/tx/${txid}`}
+      href={explorerTx(txid)}
       target="_blank"
       rel="noreferrer"
       aria-label={label}
@@ -2230,7 +2231,7 @@ export default function App() {
                         label: t('btnSwipeOpen'),
                         onClick: () => {
                           window.open(
-                            `https://explorer.e.cash/tx/${last.burnTxid}`,
+                            explorerTx(last.burnTxid),
                             '_blank',
                             'noopener,noreferrer',
                           );
@@ -3037,7 +3038,7 @@ export default function App() {
           <>
             {' · '}
             <a
-              href={`https://explorer.e.cash/tx/${tokenId}`}
+              href={explorerTx(tokenId)}
               target="_blank"
               rel="noreferrer"
             >

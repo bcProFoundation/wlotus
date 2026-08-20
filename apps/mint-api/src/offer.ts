@@ -41,6 +41,7 @@ import {
 } from '../../../src/miner/remintMooreTipTemple.js';
 import {
   burnOnePrayer,
+  explorerTx,
   memorialPushdata,
   OFFERING_ID_PRAYER,
   OFFERING_ID_WLOTUS,
@@ -1200,7 +1201,7 @@ async function submitChallengeOnce(opts: {
       hashrateHps,
       deskAtomsKept: 1,
       note: ch.note,
-      explorerRemint: `https://explorer.e.cash/tx/${remintTxid}`,
+      explorerRemint: explorerTx(remintTxid, process.env.DANA_EXPLORER_ORIGIN),
       explorerBurn: '',
     };
   }
@@ -1216,8 +1217,8 @@ async function submitChallengeOnce(opts: {
     hashrateHps,
     deskAtomsKept: 1,
     note: ch.note,
-    explorerRemint: `https://explorer.e.cash/tx/${remintTxid}`,
-    explorerBurn: `https://explorer.e.cash/tx/${remintTxid}`,
+    explorerRemint: explorerTx(remintTxid, process.env.DANA_EXPLORER_ORIGIN),
+    explorerBurn: explorerTx(remintTxid, process.env.DANA_EXPLORER_ORIGIN),
   };
 }
 
@@ -1280,8 +1281,8 @@ async function completeBurnOnce(opts: {
     deskAtomsKept: deskKeep < 0 ? 0 : deskKeep,
     burnAtoms: burned.burnAtoms.toString(),
     note: pb.note,
-    explorerRemint: `https://explorer.e.cash/tx/${pb.remintTxid}`,
-    explorerBurn: `https://explorer.e.cash/tx/${burned.txid}`,
+    explorerRemint: explorerTx(pb.remintTxid, process.env.DANA_EXPLORER_ORIGIN),
+    explorerBurn: explorerTx(burned.txid, process.env.DANA_EXPLORER_ORIGIN),
   };
 }
 
