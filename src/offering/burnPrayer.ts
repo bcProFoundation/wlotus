@@ -30,6 +30,8 @@ export {
   type MemorialFields,
 } from './wlbrMemorial.js';
 
+export { explorerTx, danaExplorerOrigin, DEFAULT_DANA_EXPLORER_ORIGIN } from '../explorer.js';
+
 /**
  * Burn `burnAtoms` (default 1) with on-chain memorial (**DANA** LOKAD).
  * Temple specials may burn more than 1 during an active event window.
@@ -163,10 +165,6 @@ export async function burnOnePrayer(opts: {
     burnAtoms,
     inventoryAtoms,
   };
-}
-
-export function explorerTx(txid: string): string {
-  return `https://explorer.e.cash/tx/${txid}`;
 }
 
 export function shortTx(txid: string): string {
