@@ -12,7 +12,7 @@ export function danaExplorerOrigin(origin?: string | null): string {
   return raw.replace(/\/$/, '');
 }
 
-/** `/tx/<txid>` — drop-in for explorer.e.cash tx URLs. */
+/** `/offering/<id>` — Temple ledger word, not a blockchain `/tx/` URL. */
 export function explorerTx(txid: string, origin?: string | null): string {
-  return `${danaExplorerOrigin(origin)}/tx/${txid.trim().toLowerCase()}`;
+  return `${danaExplorerOrigin(origin)}/offering/${txid.trim().toLowerCase()}`;
 }

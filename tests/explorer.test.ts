@@ -10,13 +10,14 @@ describe('explorerTx', () => {
 
   it('points user-facing links at Temple on danaverse.org, not explorer.e.cash', () => {
     expect(DEFAULT_DANA_EXPLORER_ORIGIN).toBe('https://danaverse.org');
-    expect(explorerTx(id)).toBe(`https://danaverse.org/tx/${id}`);
+    expect(explorerTx(id)).toBe(`https://danaverse.org/offering/${id}`);
     expect(explorerTx(id)).not.toContain('explorer.e.cash');
+    expect(explorerTx(id)).not.toContain('/tx/');
   });
 
   it('accepts a custom origin and lowercases the txid', () => {
     expect(explorerTx(id.toUpperCase(), 'https://danaverse.org/')).toBe(
-      `https://danaverse.org/tx/${id}`,
+      `https://danaverse.org/offering/${id}`,
     );
     expect(danaExplorerOrigin(' https://temple.example ')).toBe(
       'https://temple.example',
