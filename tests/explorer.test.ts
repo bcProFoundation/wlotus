@@ -23,4 +23,16 @@ describe('explorerTx', () => {
       'https://temple.example',
     );
   });
+
+  it('forwards the W Lotus locale so Temple can honor it', () => {
+    expect(explorerTx(id, undefined, 'vi')).toBe(
+      `https://danaverse.org/offering/${id}?lang=vi`,
+    );
+    expect(explorerTx(id, 'https://danaverse.org/', 'en-US')).toBe(
+      `https://danaverse.org/offering/${id}?lang=en`,
+    );
+    expect(explorerTx(id, undefined, 'fr')).toBe(
+      `https://danaverse.org/offering/${id}`,
+    );
+  });
 });
