@@ -651,11 +651,31 @@ export function memorialsInMonth(
 
 export type AppTab = 'home' | 'calendar';
 
+function hashPath(hash: string): string {
+  return hash.replace(/^#\/?/, '').trim();
+}
+
 export function tabFromHash(hash: string): AppTab {
-  const h = hash.replace(/^#\/?/, '').trim().toLowerCase();
-  return h === 'calendar' ? 'calendar' : 'home';
+  const h = hashPath(hash).toLowerCase();
+  return h === 'calendar' || h.startsWith('calendar/') ? 'calendar' : 'home';
+}
+
+export function calendarYmdFromHash(hash: string): string | null {
+  const m = /^calendar\/(\d{4}-\d{2}-\d{2})$/i.exec(hashPath(hash));
+  if (!m) return null;
+  const parsed = parseYmd(m[1]);
+  if (!parsed || parsed.m < 1 || parsed.m > 12 || parsed.d < 1 || parsed.d > 31) {
+    return null;
+  }
+  return m[1];
 }
 
 export function hashForTab(tab: AppTab): string {
   return tab === 'calendar' ? '#/calendar' : '#/';
+}
+
+export function hashForCalendar(ymd?: string): string {
+  return calendarYmdFromHash(`#/calendar/${ymd ?? ''}`)
+    ? `#/calendar/${ymd}`
+    : '#/calendar';
 }

@@ -67,7 +67,13 @@ import {
 import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
 import { waitMinPray } from './lib/minPraySeconds.js';
-import { tabFromHash, type AppTab } from './lib/calendarMonth.js';
+import {
+  calendarYmdFromHash,
+  hashForCalendar,
+  tabFromHash,
+  todayYmd,
+  type AppTab,
+} from './lib/calendarMonth.js';
 import {
   findSpecialForParent,
   findSpecialById,
@@ -361,6 +367,11 @@ export default function App() {
   const [tab, setTab] = useState<AppTab>(() =>
     typeof window === 'undefined' ? 'home' : tabFromHash(window.location.hash),
   );
+  const [calendarYmd, setCalendarYmd] = useState(() =>
+    typeof window === 'undefined'
+      ? todayYmd()
+      : calendarYmdFromHash(window.location.hash) ?? todayYmd(),
+  );
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultRow[]>([]);
@@ -396,16 +407,34 @@ export default function App() {
   }, [locale, appearance, busy]);
 
   useEffect(() => {
-    const sync = () => setTab(tabFromHash(window.location.hash));
+    const sync = () => {
+      const hash = window.location.hash;
+      setTab(tabFromHash(hash));
+      const ymd = calendarYmdFromHash(hash);
+      if (ymd) setCalendarYmd(ymd);
+    };
     window.addEventListener('hashchange', sync);
     return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  const writeCalendarHash = useCallback((ymd: string, push: boolean) => {
+    const next = hashForCalendar(ymd);
+    if (window.location.hash === next) return;
+    const url = `${window.location.pathname}${window.location.search}${next}`;
+    if (push) {
+      window.location.hash = next.replace(/^#/, '');
+      return;
+    }
+    history.replaceState(null, '', url);
   }, []);
 
   const selectTab = useCallback((next: AppTab) => {
     setTab(next);
     if (next === 'calendar') {
       if (tabFromHash(window.location.hash) !== 'calendar') {
-        window.location.hash = '/calendar';
+        writeCalendarHash(calendarYmd, true);
+      } else if (!calendarYmdFromHash(window.location.hash)) {
+        writeCalendarHash(calendarYmd, false);
       }
       return;
     }
@@ -416,7 +445,21 @@ export default function App() {
         `${window.location.pathname}${window.location.search}`,
       );
     }
-  }, []);
+  }, [calendarYmd, writeCalendarHash]);
+
+  const onCalendarYmdChange = useCallback(
+    (ymd: string) => {
+      setCalendarYmd(ymd);
+      if (tab === 'calendar') writeCalendarHash(ymd, false);
+    },
+    [tab, writeCalendarHash],
+  );
+
+  useEffect(() => {
+    if (tab !== 'calendar') return;
+    if (calendarYmdFromHash(window.location.hash)) return;
+    writeCalendarHash(calendarYmd, false);
+  }, [tab, calendarYmd, writeCalendarHash]);
 
   const minPrayMs = getMinPrayMs();
   const powEta = estimatePrayerPow({
@@ -2352,13 +2395,13 @@ export default function App() {
         <LunarCalendar
           specials={calendarSpecials}
           memorials={calendarMemorials}
+          selectedYmd={calendarYmd}
+          onSelectedYmdChange={onCalendarYmdChange}
           disabled={busy || apiOnline === false}
           onOpenSpecial={sp => {
-            selectTab('home');
             openHomeEvent(sp);
           }}
           onOpenMemorial={txid => {
-            selectTab('home');
             void openDedicationSheet({
               parentBurnTxid: txid,
               memorialNote: '',
