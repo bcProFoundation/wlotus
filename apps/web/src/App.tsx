@@ -2449,7 +2449,7 @@ export default function App() {
 
       {dedicationSheet && !busy ? (
         <div
-          className="offer-modal"
+          className="offer-modal offer-modal--fill"
           role="dialog"
           aria-modal="true"
           aria-labelledby="altar-detail-title"
@@ -2482,6 +2482,7 @@ export default function App() {
                   : t('profileDetailTitle');
               })()}
             </h2>
+            <div className="altar-detail-body">
             <TempleStory
               special={specialForBurn(
                 dedicationSheet.parentBurnTxid,
@@ -2511,7 +2512,6 @@ export default function App() {
             ) : null}
             {altarHasDeathDate(dedicationSheet.altar) ||
             !dedicationSheet.parentBurnTxid ? (
-              <>
                 <div className="field dedication-extra-note-field">
                   <label htmlFor="dedication-extra-note">
                     {(() => {
@@ -2540,6 +2540,14 @@ export default function App() {
                     placeholder={t('reofferExtraNotePlaceholder')}
                   />
                 </div>
+            ) : dedicationSheet.isCreator &&
+              dedicationSheet.parentBurnTxid ? (
+                <p className="hint">{t('firstOfferDeathHint')}</p>
+            ) : null}
+            </div>
+            {altarHasDeathDate(dedicationSheet.altar) ||
+            !dedicationSheet.parentBurnTxid ? (
+              <div className="altar-detail-footer">
                 <p className="hint eta">
                   {t('etaEstimated', { eta: etaLabel })}
                 </p>
@@ -2615,11 +2623,10 @@ export default function App() {
                     </button>
                   ) : null}
                 </div>
-              </>
+              </div>
             ) : dedicationSheet.isCreator &&
               dedicationSheet.parentBurnTxid ? (
-              <>
-                <p className="hint">{t('firstOfferDeathHint')}</p>
+              <div className="altar-detail-footer">
                 <p className="hint eta">
                   {t('etaEstimated', { eta: etaLabel })}
                 </p>
@@ -2653,7 +2660,7 @@ export default function App() {
                     {t('btnAmendAltar')}
                   </button>
                 </div>
-              </>
+              </div>
             ) : null}
           </div>
         </div>
@@ -2806,7 +2813,7 @@ export default function App() {
 
       {busy && session?.reoffer ? (
         <div
-          className="offer-modal"
+          className="offer-modal offer-modal--fill"
           role="dialog"
           aria-modal="true"
           aria-labelledby="offer-session-title"
@@ -2933,7 +2940,7 @@ export default function App() {
 
       {busy && session && !session.reoffer ? (
         <div
-          className="offer-modal"
+          className="offer-modal offer-modal--fill"
           role="dialog"
           aria-modal="true"
           aria-labelledby="offer-session-title"
