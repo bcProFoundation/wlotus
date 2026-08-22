@@ -103,7 +103,6 @@ import {
 } from './lib/groupOffers.js';
 import {
   fetchIndexMemorial,
-  notifyIndexBurn,
   searchIndexMemorials,
   type IndexMemorialGroup,
 } from './lib/danaIndexApi.js';
@@ -1171,7 +1170,6 @@ export default function App() {
           }
           setNote('');
           setAltar(null);
-          void notifyIndexBurn(burnTxid);
           const specialId = pendingSpecialIdRef.current;
           if (specialId && burnTxid && !parentBurnTxid && !isAmend) {
             try {

@@ -82,7 +82,7 @@ import {
   resolveLiveMintBaton,
   matchCovenantToBaton,
 } from '../../../src/mint/followMintBaton.js';
-import { createDailyCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
+import { createDailyCounter, createRollingWindowCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
 import {
   isKnownRootCreator,
   rememberRootCreator,
@@ -111,6 +111,11 @@ const MAX_OFFERS_PER_DAY_PER_IP = Math.max(
 const MAX_OPEN_CHALLENGES = Math.max(
   1,
   Number(process.env.MINT_MAX_OPEN_CHALLENGES?.trim() || 32) || 32,
+);
+/** Chronik-heavy challenge builds per IP per minute (nginx also rate-limits). */
+const MAX_CHALLENGES_PER_IP_PER_MIN = Math.max(
+  1,
+  Number(process.env.MINT_MAX_CHALLENGES_PER_IP_PER_MIN?.trim() || 8) || 8,
 );
 /**
  * How many baton tips the desk serves.
@@ -279,6 +284,12 @@ const ipDailyCounter = createDailyCounter(
   MAX_OFFERS_PER_DAY_PER_IP,
   (max) => `Daily limit reached (${max} offerings from this network).`,
 );
+const challengeIpWindow = createRollingWindowCounter(
+  MAX_CHALLENGES_PER_IP_PER_MIN,
+  60_000,
+  (max) =>
+    `Too many challenges from this network (${max} per minute). Try again shortly.`,
+);
 const challenges = new Map<string, StoredChallenge>();
 const pendingBurns = new Map<string, PendingBurn>();
 let chainLock: Promise<void> = Promise.resolve();
@@ -404,9 +415,14 @@ function notifyDanaIndex(burnTxid: string): void {
   const base = process.env.DANA_INDEX_URL?.trim();
   if (!base) return;
   const url = `${base.replace(/\/$/, '')}/api/notify`;
+  const secret = process.env.DANA_INDEX_NOTIFY_SECRET?.trim();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (secret) headers.Authorization = `Bearer ${secret}`;
   void fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ burnTxid }),
   }).catch(err => {
     console.warn('dana-index notify failed', err);
@@ -717,6 +733,7 @@ async function createChallengeOnce(opts: {
       `Daily limit reached (${MAX_OFFERS_PER_DAY_PER_IP} offerings from this network).`,
     );
   }
+  challengeIpWindow.consume(normalizeClientIp(opts.ip));
   // Same device replaces its own open job; others may keep racing tips.
   cancelOpenChallengesForInstall(opts.installId);
   expireStaleChallenges();

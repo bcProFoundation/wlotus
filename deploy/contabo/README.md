@@ -216,7 +216,9 @@ from dryrun `tokenId` → enables services. Keeps `/etc/wlotus/mint.env`.
 Then nginx: paste `/index-api/` **and** the `/og/` + `/<txid>` share locations from
 `nginx-api-snippet.conf` into the **443** server block (Certbot’s HTTPS block —
 editing port 80 alone does nothing for messengers). See also
-`nginx-wlotus-test-tls.conf`. Then: `sudo nginx -t && sudo systemctl reload nginx`.
+`nginx-wlotus-test-tls.conf`. Copy `nginx-rate-limit-zone.conf` to
+`/etc/nginx/conf.d/wlotus-rate-limit.conf` so `limit_req zone=wl_challenge`
+is defined. Then: `sudo nginx -t && sudo systemctl reload nginx`.
 
 ### Update `/opt/wlotus` + restart dana-index (test)
 

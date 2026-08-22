@@ -1,4 +1,4 @@
-import { createDailyCounter, normalizeClientIp, utcDay } from '../src/lib/rateLimit.js';
+import { createDailyCounter, createRollingWindowCounter, normalizeClientIp, utcDay } from '../src/lib/rateLimit.js';
 
 describe('normalizeClientIp', () => {
   it('passes through a bare IPv4 address', () => {
@@ -104,5 +104,25 @@ describe('utcDay', () => {
     const d3 = utcDay(Date.UTC(2026, 0, 2, 0, 0, 0));
     expect(d1).toBe(d2);
     expect(d3).toBe(d1 + 1);
+  });
+});
+
+describe('createRollingWindowCounter', () => {
+  it('allows up to max hits inside the window then throws', () => {
+    let now = 1_000;
+    const counter = createRollingWindowCounter(
+      2,
+      60_000,
+      (n) => `Too many challenges from this network (${n} per minute).`,
+      () => now,
+    );
+    counter.consume('ip');
+    counter.consume('ip');
+    expect(counter.used('ip')).toBe(2);
+    expect(() => counter.consume('ip')).toThrow(/Too many challenges/i);
+    now = 1_000 + 60_001;
+    expect(counter.used('ip')).toBe(0);
+    counter.consume('ip');
+    expect(counter.used('ip')).toBe(1);
   });
 });
