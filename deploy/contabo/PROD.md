@@ -387,6 +387,7 @@ That starts **Deploy web (prod)**. The job:
 2. Builds the SPA with production `VITE_*`
 3. Rsyncs to `/var/www/wlotus`
 4. Checks out the same tag under `/opt/wlotus` and restarts mint-api
+5. If secret `DANAVERSE_WLOTUS_TOKEN` is set, snapshots covenant + `apps/web` to public [danaverse/wlotus](https://github.com/danaverse/wlotus) (`scripts/sync-danaverse-wlotus.sh`)
 5. Optional smoke curl
 
 Manual: Actions → **Deploy web (prod)** → Run workflow → set `ref` to `v1.0.0`.
