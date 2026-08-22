@@ -1992,11 +1992,7 @@ a {
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 10px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  max-height: min(40vh, 18rem);
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   background: var(--surface-inset);
 }
 
