@@ -48,6 +48,10 @@ install_wlotus_deploy_sudoers() {
   for bin in /usr/bin/rm /bin/rm; do
     cmds+=("${bin} -rf /opt/wlotus/node_modules")
   done
+  # nginx hardening (apply-nginx-hardening.sh). Full path — sudo matches argv0.
+  for bin in /usr/bin/bash /bin/bash; do
+    cmds+=("${bin} /opt/wlotus/deploy/contabo/apply-nginx-hardening.sh")
+  done
 
   local tmp
   tmp="$(mktemp)"

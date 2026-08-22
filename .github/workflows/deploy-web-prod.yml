@@ -221,6 +221,21 @@ jobs:
             exit 1
           fi
           npm ci
+          apply_nginx() {
+            local script="$REPO/deploy/contabo/apply-nginx-hardening.sh"
+            if [ ! -f "$script" ]; then
+              echo "nginx apply script not in this SHA — skip"
+              return 0
+            fi
+            if sudo -n /usr/bin/bash "$script" || sudo -n /bin/bash "$script"; then
+              echo "nginx hardening applied"
+              return 0
+            fi
+            echo "::warning::nginx hardening skipped (need sudoers). As root:"
+            echo "  sudo bash $REPO/deploy/contabo/install-wlotus-deploy-sudoers.sh"
+            return 0
+          }
+          apply_nginx
           # Prefer /usr/bin (Ubuntu usrmerge). Do not hide a password prompt as success.
           if sudo -n /usr/bin/systemctl try-restart wlotus-mint-api.service \
              || sudo -n /bin/systemctl try-restart wlotus-mint-api.service \
@@ -229,6 +244,14 @@ jobs:
             echo "restarted wlotus-mint-api.service"
           else
             echo "::warning::sudo restart mint-api failed (password required?). As root: sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh"
+          fi
+          if sudo -n /usr/bin/systemctl try-restart wlotus-dana-index.service \
+             || sudo -n /bin/systemctl try-restart wlotus-dana-index.service \
+             || sudo -n /usr/bin/systemctl restart wlotus-dana-index.service \
+             || sudo -n /bin/systemctl restart wlotus-dana-index.service; then
+            echo "restarted wlotus-dana-index.service"
+          else
+            echo "::warning::sudo restart dana-index skipped"
           fi
           echo "mint-api at $(git rev-parse --short HEAD) tag=${TAG:-none}"
           REMOTE
