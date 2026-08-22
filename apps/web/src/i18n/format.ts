@@ -50,6 +50,24 @@ export function formatActualDurationLocale(
   return `${rounded} ${u.h}`;
 }
 
+const DATE_TAGS: Record<Locale, string> = {
+  en: 'en-US',
+  vi: 'vi-VN',
+  zh: 'zh-CN',
+};
+
+/** Local date + time for the home success banner after an offering. */
+export function formatOfferedAtLocale(atMs: number, locale: Locale): string {
+  if (!Number.isFinite(atMs)) return '—';
+  return new Intl.DateTimeFormat(DATE_TAGS[locale], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(atMs));
+}
+
 export function formatElapsedTenthsMinLocale(
   elapsedMs: number,
   locale: Locale,
