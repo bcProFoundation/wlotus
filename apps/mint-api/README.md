@@ -175,6 +175,7 @@ Do not send leftover mint XEC back to the desk during burn.
     scales the real cost of abuse as the token (hopefully) gains value over
     time.
 - `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
+- `MINT_MAX_CHALLENGES_PER_IP_PER_MIN` (default **8**) — Chronik-heavy challenge builds per IP per minute. nginx `limit_req zone=wl_challenge` is the matching edge limit (`POST /api/challenge`).
 - `MINT_SERVING_TIP_COUNT` (default **1**) — tips load-balanced; raise toward **28** if demand warrants
 - Challenges expire after 15 minutes (or when that tip is reminted by someone else)
 - Pending memorial burns expire after 15 minutes if `/api/burn` is never called (desk keeps atom)

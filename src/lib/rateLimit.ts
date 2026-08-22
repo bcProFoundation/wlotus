@@ -56,6 +56,51 @@ export function createDailyCounter(
   return { remaining, consume };
 }
 
+export interface RollingWindowCounter {
+  /** Hits recorded for `key` in the current window (never negative). */
+  used(key: string): number;
+  /** Record one hit; throws once `max` is reached inside `windowMs`. */
+  consume(key: string): void;
+}
+
+/**
+ * Sliding window per key. Used to bound Chronik-heavy `POST /api/challenge`
+ * attempts from one IP without waiting for nginx `limit_req`.
+ */
+export function createRollingWindowCounter(
+  max: number,
+  windowMs: number,
+  message: (max: number) => string = (n) =>
+    `Too many challenges from this network (${n} per minute). Try again shortly.`,
+  now: () => number = Date.now,
+): RollingWindowCounter {
+  const hits = new Map<string, number[]>();
+
+  function prune(key: string, t: number): number[] {
+    const cutoff = t - windowMs;
+    const next = (hits.get(key) ?? []).filter(ts => ts > cutoff);
+    if (next.length === 0) hits.delete(key);
+    else hits.set(key, next);
+    return next;
+  }
+
+  function used(key: string): number {
+    return prune(key, now()).length;
+  }
+
+  function consume(key: string): void {
+    const t = now();
+    const prev = prune(key, t);
+    if (prev.length >= max) {
+      throw new Error(message(max));
+    }
+    prev.push(t);
+    hits.set(key, prev);
+  }
+
+  return { used, consume };
+}
+
 function expandIPv6Groups(addr: string): string[] {
   const zoneIdx = addr.indexOf('%');
   const clean = zoneIdx >= 0 ? addr.slice(0, zoneIdx) : addr;

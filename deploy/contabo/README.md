@@ -213,10 +213,16 @@ at `/opt/wlotus` as `deploy` → restores genesis JSON → `npm ci` → installs
 `wlotus-mint-api` + `wlotus-dana-index` units → writes `/etc/wlotus/dana-index.env`
 from dryrun `tokenId` → enables services. Keeps `/etc/wlotus/mint.env`.
 
-Then nginx: paste `/index-api/` **and** the `/og/` + `/<txid>` share locations from
-`nginx-api-snippet.conf` into the **443** server block (Certbot’s HTTPS block —
-editing port 80 alone does nothing for messengers). See also
-`nginx-wlotus-test-tls.conf`. Then: `sudo nginx -t && sudo systemctl reload nginx`.
+Then nginx: **Deploy mint-api (test)** / **Deploy web (prod)** run
+`apply-nginx-hardening.sh` (rate-limit zone, notify 403, challenge limit).
+First time, refresh sudoers so that script is NOPASSWD:
+
+```bash
+sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh
+```
+
+Manual paste of `nginx-api-snippet.conf` is only needed for a Certbot site that
+does not yet proxy `/api/` or `/index-api/`.
 
 ### Update `/opt/wlotus` + restart dana-index (test)
 
@@ -534,7 +540,7 @@ Steps: `npm ci` → `npm run web:build` → rsync `apps/web/dist/` → `/var/www
 | **Automatic** | Push to `master` that touches `apps/mint-api/**`, `apps/dana-index/**`, `src/**`, or lockfile |
 | **Manual** | Actions → **Deploy mint-api (test)** → **Run workflow** (branch **master**; optional SHA) |
 
-Steps: SSH as `deploy` → `chown` `/opt/wlotus` (so `.git/objects` is writable) → backup live dryrun JSON + claims → `git reset --hard` that SHA → restore JSON → `npm ci` → `systemctl restart wlotus-mint-api` (dana-index too when sudoers allows) → wait until the unit is active and `GET /health` succeeds (tsx needs a few seconds to bind `:8787`).
+Steps: SSH as `deploy` → `chown` `/opt/wlotus` → backup live dryrun JSON + claims → `git reset --hard` that SHA → restore JSON → `npm ci` → `apply-nginx-hardening.sh` → `systemctl restart wlotus-mint-api` (dana-index too) → wait until the unit is active and `GET /health` succeeds.
 
 **`sudo: a password is required`:** CI uses `sudo -n`. Ubuntu usrmerge makes `/bin/systemctl` resolve to `/usr/bin/systemctl`, which does **not** match a sudoers rule that lists only `/bin/systemctl`. Fix once as **root** on the test VM (does not require a full bootstrap):
 
@@ -570,7 +576,9 @@ deploy ALL=(root) NOPASSWD: \
   /usr/bin/chown -R deploy\:deploy /opt/wlotus, \
   /bin/chown -R deploy\:deploy /opt/wlotus, \
   /usr/bin/rm -rf /opt/wlotus/node_modules, \
-  /bin/rm -rf /opt/wlotus/node_modules
+  /bin/rm -rf /opt/wlotus/node_modules, \
+  /usr/bin/bash /opt/wlotus/deploy/contabo/apply-nginx-hardening.sh, \
+  /bin/bash /opt/wlotus/deploy/contabo/apply-nginx-hardening.sh
 EOF
 chmod 440 /etc/sudoers.d/wlotus-deploy
 visudo -c -f /etc/sudoers.d/wlotus-deploy
@@ -649,6 +657,7 @@ Requires the deploy SSH key on your laptop and access to the `deploy` user.
 | Smoke check fails | Site/DNS/TLS not ready | Fix HTTP first; set `CONTABO_SMOKE_URL` after |
 | 403 / blank page | nginx or empty dist | `ls /var/www/wlotus-test`; re-run workflow |
 | Deploy mint-api (test): `sudo: a password is required` | `/etc/sudoers.d/wlotus-deploy` missing, or lists only `/bin/systemctl` while sudo matches `/usr/bin/systemctl` | As root: `sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh` then re-run the workflow. Do not add `NOPASSWD: ALL`. |
+| Deploy mint-api (test): nginx hardening skipped | sudoers lacks `apply-nginx-hardening.sh` | As root: `sudo bash /opt/wlotus/deploy/contabo/install-wlotus-deploy-sudoers.sh` then re-run the workflow |
 | Deploy mint-api (test): `insufficient permission … .git/objects` / unpack-objects failed | Clone was created or fetched as **root**; `git fetch` ran before `chown` | Workflow now chowns first. One-time on the VM: `sudo chown -R deploy:deploy /opt/wlotus`. Re-run after that PR is on master. |
 | Deploy mint-api (test): `curl: (7) Failed to connect … 8787` | `systemctl restart` returns when tsx is spawned (`Type=simple`); HTTP is not listening yet. `curl --retry` does not retry connection refused | Workflow now waits for `is-active` then polls `/health` up to 45s. |
 

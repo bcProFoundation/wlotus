@@ -33,6 +33,10 @@ import {
 } from '../../../src/offering/altarFields.js';
 import { findCatalogEntryById } from '../../../src/params/templeSpecialCatalog.js';
 import { claimSpecialRoot } from '../../../src/params/templeSpecialClaims.js';
+import {
+  PayloadTooLargeError,
+  readJsonBody,
+} from '../../../src/lib/httpJson.js';
 
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
@@ -70,13 +74,7 @@ function json(
 async function readJson(
   req: import('node:http').IncomingMessage,
 ): Promise<Record<string, unknown>> {
-  const chunks: Buffer[] = [];
-  for await (const c of req) chunks.push(c as Buffer);
-  if (chunks.length === 0) return {};
-  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<
-    string,
-    unknown
-  >;
+  return readJsonBody(req);
 }
 
 function requireInstallId(raw: unknown): string {
@@ -377,11 +375,15 @@ const server = createServer(async (req, res) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const status =
-      /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|edit relationships|txid required|already claimed|unknown special|claimant must/i.test(
-        msg,
-      )
-        ? 400
-        : 500;
+      e instanceof PayloadTooLargeError
+        ? 413
+        : /Too many challenges/i.test(msg)
+          ? 429
+          : /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|edit relationships|txid required|already claimed|unknown special|claimant must/i.test(
+                msg,
+              )
+            ? 400
+            : 500;
     json(res, status, { error: msg });
   }
 });

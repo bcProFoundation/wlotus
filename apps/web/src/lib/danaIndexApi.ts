@@ -160,16 +160,3 @@ export async function searchIndexMemorials(
     return fallbackViaRecent();
   }
 }
-
-/** Best-effort: ask index to pull a burn tx now. */
-export async function notifyIndexBurn(burnTxid: string): Promise<void> {
-  try {
-    await fetch(indexUrl('/api/notify'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ burnTxid }),
-    });
-  } catch {
-    /* index may be offline */
-  }
-}

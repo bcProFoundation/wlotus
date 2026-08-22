@@ -53,9 +53,10 @@ Vietnamese. Messengers cache one card per URL — refresh Telegram via
 | `DANA_INDEX_POLL_MS` | `30000` | Mempool/tip poll |
 | `DANA_INDEX_BACKFILL_PAGES` | `30` | Startup history pages |
 | `PUBLIC_SITE_ORIGIN` | from Host / `https://wlotus.org` | Absolute OG URLs |
+| `DANA_INDEX_NOTIFY_SECRET` | unset | Optional bearer for non-loopback `POST /api/notify`. Direct `127.0.0.1` is always allowed. Public `/index-api/api/notify` is 403 in nginx. |
 
 Mint-api optional: `DANA_INDEX_URL=http://127.0.0.1:8788` to `POST /api/notify`
-after each memorial burn.
+after each memorial burn (loopback; no public client notify).
 
 ## Contabo (test / prod)
 

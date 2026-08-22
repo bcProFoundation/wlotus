@@ -11,7 +11,7 @@
 #   CONTABO_REPO_PATH    — clone on VM; default /opt/wlotus
 #
 # Preserves live dryrun baton JSON + first-burn claims, then:
-#   chown deploy → git fetch/reset → npm ci → systemctl restart mint-api → wait /health
+#   chown deploy → git fetch/reset → nginx hardening → npm ci → restart mint-api → wait /health
 #
 # One-time VM setup: deploy/contabo/README.md (install-wlotus-deploy-sudoers.sh)
 
@@ -33,6 +33,7 @@ on:
       - 'src/**'
       - 'package.json'
       - 'package-lock.json'
+      - 'deploy/contabo/**'
       - '.github/workflows/deploy-mint-api-test.yml'
 
 concurrency:
@@ -169,6 +170,22 @@ jobs:
             exit 1
           fi
           npm ci
+          apply_nginx() {
+            local script="$REPO/deploy/contabo/apply-nginx-hardening.sh"
+            if [ ! -f "$script" ]; then
+              echo "nginx apply script not in this SHA — skip"
+              return 0
+            fi
+            if sudo -n /usr/bin/bash "$script" || sudo -n /bin/bash "$script"; then
+              echo "nginx hardening applied"
+              return 0
+            fi
+            echo "::warning::nginx hardening skipped (need sudoers). As root:"
+            echo "  sudo bash $REPO/deploy/contabo/install-wlotus-deploy-sudoers.sh"
+            echo "Then re-run Deploy mint-api (test)."
+            return 0
+          }
+          apply_nginx
           restart_unit() {
             local unit="$1"
             local required="${2:-1}"

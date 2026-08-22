@@ -37,7 +37,8 @@ HTML
   chown www-data:www-data "$DEPLOY_PATH/index.html"
 fi
 
-SITE_SRC="$(cd "$(dirname "$0")" && pwd)/nginx-wlotus-prod.conf"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+SITE_SRC="$HERE/nginx-wlotus-prod.conf"
 SITE_DST="/etc/nginx/sites-available/${SITE_NAME}"
 
 # Never clobber a Certbot-managed site. Re-running bootstrap after TLS used to:
@@ -74,6 +75,14 @@ fi
 
 ln -sfn "$SITE_DST" "/etc/nginx/sites-enabled/${SITE_NAME}"
 rm -f /etc/nginx/sites-enabled/default
+
+mkdir -p /etc/nginx/conf.d /etc/nginx/snippets
+if [[ -f "$HERE/nginx-rate-limit-zone.conf" ]]; then
+  cp "$HERE/nginx-rate-limit-zone.conf" /etc/nginx/conf.d/wlotus-rate-limit.conf
+fi
+if [[ -f "$HERE/nginx-hardening-snippet.conf" ]]; then
+  cp "$HERE/nginx-hardening-snippet.conf" /etc/nginx/snippets/wlotus-hardening.conf
+fi
 
 nginx -t
 systemctl enable nginx

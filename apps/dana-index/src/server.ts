@@ -10,7 +10,7 @@
  *   GET  /api/memorial/:txid
  *   GET  /og/:txid          — Open Graph HTML for social share previews
  *   GET  /:txid             — same OG HTML (bare share URL; nginx may not rewrite)
- *   POST /api/notify { burnTxid }  — mint-api / clients ask to index a tx now
+ *   POST /api/notify { burnTxid }  — mint-api on loopback (or shared secret)
  */
 
 import { createServer } from 'node:http';
@@ -24,6 +24,8 @@ import {
 } from './ingest.js';
 import { buildOgHtml, resolveOgLocale } from './ogPreview.js';
 import { BurnStore } from './store.js';
+import { readJsonBody, PayloadTooLargeError } from '../../../src/lib/httpJson.js';
+import { allowIndexNotify } from '../../../src/lib/indexNotifyAuth.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
@@ -47,6 +49,7 @@ const SITE_ORIGIN = (
   ''
 ).replace(/\/$/, '');
 const STARTED_AT = new Date().toISOString();
+const NOTIFY_SECRET = process.env.DANA_INDEX_NOTIFY_SECRET?.trim() || '';
 
 if (!TOKEN_ID || !/^[0-9a-fA-F]{64}$/.test(TOKEN_ID)) {
   console.error('TOKEN_ID (64 hex) required for dana-index');
@@ -100,13 +103,7 @@ function siteOriginFor(req: import('node:http').IncomingMessage): string {
 async function readJson(
   req: import('node:http').IncomingMessage,
 ): Promise<Record<string, unknown>> {
-  const chunks: Buffer[] = [];
-  for await (const c of req) chunks.push(c as Buffer);
-  if (chunks.length === 0) return {};
-  return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<
-    string,
-    unknown
-  >;
+  return readJsonBody(req);
 }
 
 async function resolveOriginalNote(txid: string): Promise<string> {
@@ -233,6 +230,11 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === 'POST' && path === '/api/notify') {
+      if (!allowIndexNotify(req, NOTIFY_SECRET)) {
+        req.destroy();
+        json(res, 403, { ok: false, error: 'notify is not public' });
+        return;
+      }
       const body = await readJson(req);
       const burnTxid = String(body.burnTxid || body.txid || '')
         .trim()
@@ -257,6 +259,10 @@ const server = createServer(async (req, res) => {
 
     json(res, 404, { ok: false, error: 'Not found' });
   } catch (err) {
+    if (err instanceof PayloadTooLargeError) {
+      json(res, 413, { ok: false, error: err.message });
+      return;
+    }
     console.error(err);
     json(res, 500, {
       ok: false,
