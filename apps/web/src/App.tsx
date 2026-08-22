@@ -21,6 +21,7 @@ import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
   formatEstimateDurationLocale,
+  formatOfferedAtLocale,
 } from './i18n/format.js';
 import { useLocale } from './i18n/LocaleContext.js';
 import { applyDocumentTheme, documentTheme } from './i18n/appearance.js';
@@ -136,7 +137,9 @@ import {
 } from './lib/powEstimate.js';
 import { measureDeviceHashrate } from './lib/powMeasure.js';
 
-type Msg = { kind: 'ok' | 'err' | 'success'; text: string } | null;
+type Msg =
+  | { kind: 'ok' | 'err' | 'success'; text: string; at?: number }
+  | null;
 
 type Phase = 'idle' | 'challenge' | 'mining' | 'submit' | 'holding' | 'burn';
 
@@ -1195,6 +1198,7 @@ export default function App() {
           const firstSpecial = Boolean(specialId) && !isReoffer && !isAmend;
           setMsg({
             kind: 'success',
+            at: Date.now(),
             text: firstSpecial
               ? tRef.current('specialFirstBurnDone', {
                   duration,
@@ -1279,7 +1283,11 @@ export default function App() {
   useEffect(() => {
     if (busy || msg?.kind !== 'success') return;
     const el = document.getElementById('offer-success-msg');
-    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (!el) return;
+    const id = window.requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [busy, msg]);
 
   const canOffer =
@@ -2165,7 +2173,24 @@ export default function App() {
             className={`msg ${msg.kind}`}
             role="status"
           >
-            {msg.text}
+            <div className="msg-success-body">
+              <p className="msg-success-text">{msg.text}</p>
+              {msg.at != null ? (
+                <p className="msg-success-when">
+                  {t('offerSuccessWhen', {
+                    when: formatOfferedAtLocale(msg.at, locale),
+                  })}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="msg-success-dismiss"
+              aria-label={t('btnClose')}
+              onClick={() => setMsg(null)}
+            >
+              ×
+            </button>
           </div>
         ) : null}
 

@@ -1078,7 +1078,10 @@ a {
 
 /** Offer completed — stronger than generic ok status. */
 .msg.success {
-  padding: 0.95rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.95rem 0.7rem 0.95rem 1rem;
   background: var(--msg-success-bg);
   border: 1px solid var(--msg-success-border);
   color: var(--msg-success-ink);
@@ -1086,6 +1089,48 @@ a {
   font-weight: 650;
   letter-spacing: 0.01em;
   box-shadow: inset 0 0 0 1px var(--msg-success-border);
+  scroll-margin-top: 1rem;
+  scroll-margin-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.msg-success-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-success-text {
+  margin: 0;
+}
+
+.msg-success-when {
+  margin: 0.4rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 550;
+  letter-spacing: 0;
+  opacity: 0.88;
+}
+
+.msg-success-dismiss {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  margin: -0.2rem -0.1rem 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.msg-success-dismiss:hover,
+.msg-success-dismiss:focus-visible {
+  opacity: 1;
+  background: color-mix(in srgb, var(--msg-success-ink) 12%, transparent);
+  outline: none;
 }
 
 .msg.err {
@@ -1947,7 +1992,11 @@ a {
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: min(40vh, 18rem);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: var(--surface-inset);
 }
 

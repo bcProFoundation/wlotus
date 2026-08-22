@@ -94,6 +94,7 @@ export type MessageKey =
   | 'memorialCancelled'
   | 'miningOnNewTip'
   | 'offeredIn'
+  | 'offerSuccessWhen'
   | 'setupDoneIn'
   | 'specialFirstBurnDone'
   | 'specialFirstBurnHint'
@@ -291,6 +292,7 @@ const en: Dict = {
     'Memorial cancelled — lotus was minted; dedication burn skipped.',
   miningOnNewTip: 'Searching on a new tip',
   offeredIn: 'Flower offered successfully in {duration} for {name}',
+  offerSuccessWhen: 'Offered at {when}',
   setupDoneIn: 'Profile set up in {duration} for {name}',
   specialFirstBurnDone:
     'You were the first to offer a flower for {name} in {duration}',
@@ -499,6 +501,7 @@ const vi: Dict = {
     'Đã hủy tưởng niệm — sen đã được mint; chưa đốt dâng.',
   miningOnNewTip: 'Tìm kiếm trên tip mới',
   offeredIn: 'Đã dâng hoa thành công trong {duration} cho {name}',
+  offerSuccessWhen: 'Dâng lúc {when}',
   setupDoneIn: 'Đã thiết lập hồ sơ trong {duration} cho {name}',
   specialFirstBurnDone:
     'Bạn là người đầu tiên dâng hoa cho {name} trong {duration}',
@@ -705,6 +708,7 @@ const zh: Dict = {
   memorialCancelled: '已取消献念——莲花已铸造；未完成燃烧献上。',
   miningOnNewTip: '在新 tip 上继续寻找',
   offeredIn: '献花成功，用时 {duration}，献给 {name}',
+  offerSuccessWhen: '献花时间 {when}',
   setupDoneIn: '档案已设置，用时 {duration}，献给 {name}',
   specialFirstBurnDone: '你是第一位为 {name} 献花的人，用时 {duration}',
   specialFirstBurnHint:
