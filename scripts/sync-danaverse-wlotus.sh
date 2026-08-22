@@ -15,7 +15,8 @@
 #
 set -euo pipefail
 
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SRC="${SRC:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SRC="$(cd "$SRC" && pwd)"
 DEST="${1:-}"
 DRY_RUN="${DRY_RUN:-0}"
 STATUS_URL="${STATUS_URL:-https://wlotus.org/api/status}"
