@@ -1,8 +1,10 @@
 import { ALTAR_SEP } from '../src/offering/altarFields.js';
 import {
+  OG_IMAGE_PATH,
   buildOgHtml,
   ogCopy,
   ogDisplayNameFromNote,
+  ogImageAlt,
   resolveOgLocale,
 } from '../apps/dana-index/src/ogPreview.js';
 
@@ -84,7 +86,23 @@ describe('ogPreview', () => {
     expect(html).toContain('og:title');
     expect(html).toContain('Tưởng nhớ Bà A &amp; B');
     expect(html).toContain(`https://wlotus.org/${TX}`);
-    expect(html).toContain('wlotus-icon-512.png');
+    expect(html).toContain(`https://wlotus.org${OG_IMAGE_PATH}`);
+    expect(html).toContain('og:image:width" content="1200"');
+    expect(html).toContain('og:image:height" content="630"');
+    expect(html).toContain(ogImageAlt('vi'));
+    expect(html).not.toContain('wlotus-icon-512.png');
     expect(html).toContain("fetch('/index.html'");
+  });
+
+  it('uses locale-specific image alt on the rosewood OG card', () => {
+    expect(ogImageAlt('en')).toBe('W Lotus — a flower of eternal remembrance');
+    expect(ogImageAlt('vi')).toContain('đoá sen vĩnh hằng');
+    const html = buildOgHtml({
+      siteOrigin: 'https://wlotus.org',
+      pathTxid: TX,
+      locale: 'en',
+    });
+    expect(html).toContain('/og.png');
+    expect(html).toContain('twitter:image:alt');
   });
 });
