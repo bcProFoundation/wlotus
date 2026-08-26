@@ -4,8 +4,9 @@
 Layout matches danaverse.org/og.png: rosewood field, cream brand mark on
 the left, serif wordmark + gold tagline + rule + remembrance line.
 
-The lotus is scaled so its ink matches the text stack: top of the flower
-aligns with the top of “W Lotus”, bottom with the last line.
+The lotus is scaled to the type stack. Outer petal tips (not the
+center spike) align with the top of “W Lotus”; the center spike sits
+a little above the type.
 
 Outputs (product default is Vietnamese). Canonical path is `/images/`
 so messengers never reuse a poisoned `/og.png` cache from when nginx
@@ -80,6 +81,35 @@ CARDS = (
         "cjk": True,
     },
 )
+
+
+def outer_petal_tip_y(glyph: Image.Image) -> int:
+    """Y of the outer petal tips — the pointed left/right rim, not the center spike.
+
+    After bbox-crop the arms reach the left and right edges; their highest
+    ink in the outer fifth of the glyph is the edge the type should meet.
+    """
+    w, h = glyph.size
+    px = glyph.load()
+    assert px is not None
+    band = max(1, w // 5)
+
+    def min_top(x0: int, x1: int) -> int:
+        best = h
+        for x in range(x0, x1):
+            for y in range(h):
+                if px[x, y][3] >= 8:
+                    if y < best:
+                        best = y
+                    break
+        return best
+
+    left = min_top(0, band)
+    right = min_top(w - band, w)
+    tip = min(left, right)
+    if tip >= h:
+        raise SystemExit("could not find outer petal tips on glyph")
+    return tip
 
 
 def extract_cream_glyph(src: Image.Image) -> Image.Image:
@@ -178,14 +208,18 @@ def compose(card: dict, glyph_src: Image.Image) -> None:
             f"{card['locale']} body overflows x={body_ink[2]}: {body!r}"
         )
 
-    flower_top = title_ink[1]
+    # Same scale as the type stack (title top → last line). Shift up so the
+    # outer petal tips — not the center spike — meet “W Lotus”.
+    title_top = title_ink[1]
     flower_bottom = body_ink[3]
-    flower_h = max(1, flower_bottom - flower_top)
+    flower_h = max(1, flower_bottom - title_top)
     scale = flower_h / glyph_src.height
     flower_w = max(1, round(glyph_src.width * scale))
     glyph = glyph_src.resize((flower_w, flower_h), Image.Resampling.LANCZOS)
+    tip = outer_petal_tip_y(glyph)
+    gy = title_top - tip
     gx = max(48, text_x - 56 - glyph.width)
-    canvas.paste(glyph, (gx, flower_top), glyph)
+    canvas.paste(glyph, (gx, gy), glyph)
 
     canonical = IMAGES / card["file"]
     canvas.save(canonical, format="PNG", optimize=True)
