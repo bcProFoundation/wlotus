@@ -20,6 +20,8 @@ export type MessageKey =
   | 'howEternalBody'
   | 'howEcashTitle'
   | 'howEcashBody'
+  | 'howPublicTitle'
+  | 'howPublicBody'
   | 'etaEstimated'
   | 'btnAltarEdit'
   | 'btnAltarDelete'
@@ -211,6 +213,9 @@ const en: Dict = {
   howEcashTitle: 'Why eCash?',
   howEcashBody:
     'eCash is a blockchain network since 2009 — established, with very low fees and fast confirmation, well suited to record each W Lotus flower offering.',
+  howPublicTitle: 'Note',
+  howPublicBody:
+    'All information you create in this app is public on the network. The developer does not store any of it on a server.',
   etaEstimated: 'Estimated time {eta}',
   btnAltarMore: 'More',
   btnAltarEdit: 'Edit',
@@ -421,6 +426,9 @@ const vi: Dict = {
   howEcashTitle: 'Tại sao eCash?',
   howEcashBody:
     'eCash là blockchain từ năm 2009 — uy tín, phí rất thấp và xác nhận nhanh, phù hợp để ghi nhận mỗi lần dâng hoa WLOTUS.',
+  howPublicTitle: 'Lưu ý',
+  howPublicBody:
+    'Tất cả thông tin do người dùng tạo ra trên ứng dụng đều là thông tin công khai trên mạng; nhà phát triển không lưu trữ bất cứ thông tin nào trên máy chủ.',
   etaEstimated: 'Thời gian ước tính {eta}',
   btnAltarMore: 'Thêm',
   btnAltarEdit: 'Sửa',
@@ -630,6 +638,9 @@ const zh: Dict = {
   howEcashTitle: '为什么选择 eCash？',
   howEcashBody:
     'eCash 是始于 2009 年的区块链网络——成熟可靠，手续费极低、确认迅速，适合记录每一次 W Lotus 献花。',
+  howPublicTitle: '注意',
+  howPublicBody:
+    '您在本应用中创建的所有信息都会公开在网络上；开发者不会在服务器上存储任何此类信息。',
 
   etaEstimated: '预计时间 {eta}',
   btnAltarMore: '添加',
