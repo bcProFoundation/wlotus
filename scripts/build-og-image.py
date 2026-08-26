@@ -4,9 +4,9 @@
 Layout matches danaverse.org/og.png: rosewood field, cream brand mark on
 the left, serif wordmark + gold tagline + rule + remembrance line.
 
-The lotus is scaled to the type stack. Outer petal tips (not the
-center spike) align with the top of “W Lotus”; the center spike sits
-a little above the type.
+The lotus body (outer petal tips → base) matches the type stack: those
+tips align with the top of “W Lotus”, the base with the last line. The
+center spike sits a little above the wordmark.
 
 Outputs (product default is Vietnamese). Canonical path is `/images/`
 so messengers never reuse a poisoned `/og.png` cache from when nginx
@@ -157,6 +157,33 @@ def line_h(font: ImageFont.FreeTypeFont) -> int:
     return ascent + descent
 
 
+def visual_ink_bottom(text: str, font: ImageFont.FreeTypeFont, x: int, y: int) -> int:
+    """Lowest y of the letterforms, skipping thin descender tails (g, y, …)."""
+    tmp = Image.new("L", (WIDTH, HEIGHT), 0)
+    ImageDraw.Draw(tmp).text((x, y), text, font=font, anchor="lt", fill=255)
+    bbox = tmp.getbbox()
+    if not bbox:
+        return y
+    left, top, right, bottom = bbox
+    px = tmp.load()
+    assert px is not None
+    rows: list[tuple[int, int]] = []
+    peak = 0
+    for row in range(top, bottom):
+        n = 0
+        for col in range(left, right):
+            if px[col, row] > 128:
+                n += 1
+        rows.append((row, n))
+        if n > peak:
+            peak = n
+    thresh = max(24, peak // 5)
+    for row, n in reversed(rows):
+        if n >= thresh:
+            return row
+    return bottom - 1
+
+
 def compose(card: dict, glyph_src: Image.Image) -> None:
     canvas = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(canvas)
@@ -171,7 +198,6 @@ def compose(card: dict, glyph_src: Image.Image) -> None:
     title = "W Lotus"
     tag = card["tag"]
     body = card["body"]
-    text_x = 560
 
     gap_title_tag = 14
     gap_tag_line = 20
@@ -191,34 +217,41 @@ def compose(card: dict, glyph_src: Image.Image) -> None:
     line_y = tag_y + line_h(tag_font) + gap_tag_line
     body_y = line_y + gap_line_body
 
+    title_ink = draw.textbbox((0, title_y), title, font=title_font, anchor="lt")
+    tag_ink = draw.textbbox((0, tag_y), tag, font=tag_font, anchor="lt")
+    body_ink = draw.textbbox((0, body_y), body, font=body_font, anchor="lt")
+    title_top = title_ink[1]
+    body_vis = visual_ink_bottom(body, body_font, 0, body_y)
+    stack_ink_h = max(1, body_vis - title_top)
+
+    # Scale so outer-petal-tips → base equals the type stack; spike is extra.
+    tip_src = outer_petal_tip_y(glyph_src)
+    scale = stack_ink_h / max(1, glyph_src.height - tip_src)
+    flower_h = max(1, round(glyph_src.height * scale))
+    flower_w = max(1, round(glyph_src.width * scale))
+    glyph = glyph_src.resize((flower_w, flower_h), Image.Resampling.LANCZOS)
+    tip = outer_petal_tip_y(glyph)
+
+    # Flower grows with the type stack; sit it on the left and keep a
+    # shared wordmark x so vi/en/zh cards match.
+    gx = 22
+    text_x = gx + glyph.width + 20
+    text_right = text_x + max(
+        title_ink[2] - title_ink[0],
+        tag_ink[2] - tag_ink[0],
+        body_ink[2] - body_ink[0],
+    )
+    if gx < 0 or text_right > WIDTH - 36:
+        raise SystemExit(
+            f"{card['locale']} overflows: gx={gx} flower_w={glyph.width} "
+            f"text_x={text_x} text_right={text_right}"
+        )
+
+    gy = title_top - tip
     draw.text((text_x, title_y), title, font=title_font, fill=CREAM, anchor="lt")
     draw.text((text_x, tag_y), tag, font=tag_font, fill=GOLD, anchor="lt")
     draw.line((text_x, line_y, text_x + line_w, line_y), fill=GOLD, width=2)
     draw.text((text_x, body_y), body, font=body_font, fill=CREAM, anchor="lt")
-
-    title_ink = draw.textbbox(
-        (text_x, title_y), title, font=title_font, anchor="lt"
-    )
-    body_ink = draw.textbbox(
-        (text_x, body_y), body, font=body_font, anchor="lt"
-    )
-    # Keep long Vietnamese on-canvas.
-    if body_ink[2] > WIDTH - 40:
-        raise SystemExit(
-            f"{card['locale']} body overflows x={body_ink[2]}: {body!r}"
-        )
-
-    # Same scale as the type stack (title top → last line). Shift up so the
-    # outer petal tips — not the center spike — meet “W Lotus”.
-    title_top = title_ink[1]
-    flower_bottom = body_ink[3]
-    flower_h = max(1, flower_bottom - title_top)
-    scale = flower_h / glyph_src.height
-    flower_w = max(1, round(glyph_src.width * scale))
-    glyph = glyph_src.resize((flower_w, flower_h), Image.Resampling.LANCZOS)
-    tip = outer_petal_tip_y(glyph)
-    gy = title_top - tip
-    gx = max(48, text_x - 56 - glyph.width)
     canvas.paste(glyph, (gx, gy), glyph)
 
     canonical = IMAGES / card["file"]
@@ -228,7 +261,8 @@ def compose(card: dict, glyph_src: Image.Image) -> None:
     print(
         f"wrote {canonical.relative_to(ROOT)} "
         f"({canonical.stat().st_size} bytes) "
-        f"locale={card['locale']} body_right={body_ink[2]}"
+        f"locale={card['locale']} text_x={text_x} "
+        f"body_right={text_x + (body_ink[2] - body_ink[0])}"
     )
 
 
