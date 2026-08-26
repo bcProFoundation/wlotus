@@ -1,6 +1,23 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/** Absolute OG URLs for the host this SPA is built for (test vs prod). */
+function ogOriginPlugin(): Plugin {
+  const origin = (process.env.VITE_PUBLIC_SITE_ORIGIN || '').replace(/\/$/, '');
+  return {
+    name: 'wlotus-og-origin',
+    transformIndexHtml(html) {
+      if (!origin) return html;
+      return html
+        .replaceAll('content="/og.png"', `content="${origin}/og.png"`)
+        .replace(
+          '<meta property="og:type" content="website" />',
+          `<meta property="og:type" content="website" />\n    <meta property="og:url" content="${origin}/" />`,
+        );
+    },
+  };
+}
 
 export default defineConfig({
   define: {
@@ -13,6 +30,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    ogOriginPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       // App registers the SW itself (apps/web/src/lib/pwaUpdate.ts) with a
@@ -30,6 +48,7 @@ export default defineConfig({
         'images/wlotus-icon-192.png',
         'images/wlotus-icon-512.png',
         'images/wlotus-icon-maskable-512.png',
+        'og.png',
       ],
       manifest: {
         id: '/',
