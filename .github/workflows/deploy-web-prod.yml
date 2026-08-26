@@ -17,6 +17,7 @@
 #   CONTABO_PROD_REPO_PATH         — mint-api clone on VM; default /opt/wlotus
 #   CONTABO_PROD_SMOKE_URL         — e.g. https://wlotus.org/
 #   MINT_MNEMONIC_PROD             — synced to /etc/wlotus/mint.env on prod VM
+#   DANAVERSE_WLOTUS_TOKEN         — PAT that can push to danaverse/wlotus (public snapshot)
 #
 # Build vars (prefer Environment "production" *variables*):
 #   VITE_PRAYER_TOKEN_ID           — live WLOTUS token id
@@ -268,3 +269,27 @@ jobs:
           curl -fsSL --retry 5 --retry-delay 2 "$URL" | head -c 200
           echo
           echo "Smoke OK: $URL"
+
+      - name: Snapshot public danaverse/wlotus
+        env:
+          DANAVERSE_WLOTUS_TOKEN: ${{ secrets.DANAVERSE_WLOTUS_TOKEN }}
+        run: |
+          if [ -z "$DANAVERSE_WLOTUS_TOKEN" ]; then
+            echo "::warning::DANAVERSE_WLOTUS_TOKEN not set — skip public snapshot"
+            echo "Add a PAT with contents:write on danaverse/wlotus (Environment production)."
+            exit 0
+          fi
+          git clone --depth 1 \
+            "https://x-access-token:${DANAVERSE_WLOTUS_TOKEN}@github.com/danaverse/wlotus.git" \
+            /tmp/danaverse-wlotus
+          bash scripts/sync-danaverse-wlotus.sh /tmp/danaverse-wlotus
+          cd /tmp/danaverse-wlotus
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "public snapshot already up to date"
+            exit 0
+          fi
+          git commit -m "snapshot ${GITHUB_SHA} (${GITHUB_REF_NAME})"
+          git push origin HEAD:main
