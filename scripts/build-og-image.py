@@ -88,20 +88,40 @@ def main() -> None:
     canvas.paste(glyph, (gx, gy), glyph)
 
     draw = ImageDraw.Draw(canvas)
-    title_font = load_font("latin-600-normal", 78)
-    tag_font = load_font("latin-600-italic", 36)
-    body_font = load_font("latin-500-normal", 28)
-    text_x = 560
+    title_font = load_font("latin-600-normal", 110)
+    tag_font = load_font("latin-600-italic", 50)
+    body_font = load_font("latin-500-normal", 38)
+    text_x = 530
+    title = "W Lotus"
+    tag = "Eternal lotus"
+    body = "A flower of eternal remembrance."
 
-    draw.text((text_x, 198), "W Lotus", font=title_font, fill=CREAM)
-    draw.text((text_x, 298), "Eternal lotus", font=tag_font, fill=GOLD)
-    draw.line((text_x, 367, text_x + 300, 367), fill=GOLD, width=2)
-    draw.text(
-        (text_x, 400),
-        "A flower of eternal remembrance.",
-        font=body_font,
-        fill=CREAM,
+    def line_h(font: ImageFont.FreeTypeFont) -> int:
+        ascent, descent = font.getmetrics()
+        return ascent + descent
+
+    gap_title_tag = 14
+    gap_tag_line = 20
+    gap_line_body = 20
+    line_w = 380
+    stack_h = (
+        line_h(title_font)
+        + gap_title_tag
+        + line_h(tag_font)
+        + gap_tag_line
+        + 2
+        + gap_line_body
+        + line_h(body_font)
     )
+    y = (HEIGHT - stack_h) // 2
+
+    draw.text((text_x, y), title, font=title_font, fill=CREAM, anchor="lt")
+    y += line_h(title_font) + gap_title_tag
+    draw.text((text_x, y), tag, font=tag_font, fill=GOLD, anchor="lt")
+    y += line_h(tag_font) + gap_tag_line
+    draw.line((text_x, y, text_x + line_w, y), fill=GOLD, width=2)
+    y += gap_line_body
+    draw.text((text_x, y), body, font=body_font, fill=CREAM, anchor="lt")
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(OUT, format="PNG", optimize=True)
