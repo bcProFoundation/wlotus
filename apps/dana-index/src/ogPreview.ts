@@ -24,6 +24,18 @@ export const OG_IMAGE_PATH = '/og.png';
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
 
+/** Locale-specific cards; Vietnamese is `/og.png` (product default). */
+export function ogImagePath(locale: OgLocale): string {
+  switch (locale) {
+    case 'en':
+      return '/og-en.png';
+    case 'zh':
+      return '/og-zh.png';
+    default:
+      return OG_IMAGE_PATH;
+  }
+}
+
 export function ogImageAlt(locale: OgLocale): string {
   switch (locale) {
     case 'en':
@@ -138,8 +150,8 @@ export function buildOgHtml(opts: {
 }): string {
   const origin = opts.siteOrigin.replace(/\/$/, '');
   const txid = opts.pathTxid.toLowerCase();
-  const pageUrl = `${origin}/${txid}`;
-  const image = `${origin}${opts.imagePath || OG_IMAGE_PATH}`;
+  const pageUrl = `${origin}/${txid}?lang=${opts.locale}`;
+  const image = `${origin}${opts.imagePath || ogImagePath(opts.locale)}`;
   const name = ogDisplayNameFromNote(opts.originalNote, opts.locale);
   const copy = ogCopy(opts.locale, name);
   const remembrance = ogRemembranceLine(opts.originalNote);

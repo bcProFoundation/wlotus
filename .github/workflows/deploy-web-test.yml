@@ -74,6 +74,7 @@ jobs:
           # WebGPU / multi-worker Offer path (launch). Prefer Actions *variable*.
           VITE_EXPERIMENTAL_POW: ${{ vars.VITE_EXPERIMENTAL_POW }}
           VITE_POW_BACKEND: ${{ vars.VITE_POW_BACKEND }}
+          VITE_PUBLIC_SITE_ORIGIN: https://test.wlotus.org
         run: |
           echo "Building test SPA (minPraySeconds=${VITE_MIN_PRAY_SECONDS:-108} experimentalPow=${VITE_EXPERIMENTAL_POW:-0} backend=${VITE_POW_BACKEND:-auto})"
           npm run web:build

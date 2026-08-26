@@ -5,6 +5,7 @@ import {
   ogCopy,
   ogDisplayNameFromNote,
   ogImageAlt,
+  ogImagePath,
   resolveOgLocale,
 } from '../apps/dana-index/src/ogPreview.js';
 
@@ -85,7 +86,7 @@ describe('ogPreview', () => {
     });
     expect(html).toContain('og:title');
     expect(html).toContain('Tưởng nhớ Bà A &amp; B');
-    expect(html).toContain(`https://wlotus.org/${TX}`);
+    expect(html).toContain(`https://wlotus.org/${TX}?lang=vi`);
     expect(html).toContain(`https://wlotus.org${OG_IMAGE_PATH}`);
     expect(html).toContain('og:image:width" content="1200"');
     expect(html).toContain('og:image:height" content="630"');
@@ -102,7 +103,28 @@ describe('ogPreview', () => {
       pathTxid: TX,
       locale: 'en',
     });
-    expect(html).toContain('/og.png');
+    expect(html).toContain('/og-en.png');
     expect(html).toContain('twitter:image:alt');
+  });
+
+  it('points og:image at the locale card (vi default, en, zh)', () => {
+    expect(ogImagePath('vi')).toBe(OG_IMAGE_PATH);
+    expect(ogImagePath('en')).toBe('/og-en.png');
+    expect(ogImagePath('zh')).toBe('/og-zh.png');
+    const en = buildOgHtml({
+      siteOrigin: 'https://test.wlotus.org',
+      pathTxid: TX,
+      locale: 'en',
+    });
+    expect(en).toContain('https://test.wlotus.org/og-en.png');
+    expect(en).toContain('W Lotus - Eternal lotus');
+    expect(en).toContain(`?lang=en`);
+    const zh = buildOgHtml({
+      siteOrigin: 'https://test.wlotus.org',
+      pathTxid: TX,
+      locale: 'zh',
+    });
+    expect(zh).toContain('https://test.wlotus.org/og-zh.png');
+    expect(zh).toContain('永恒莲花');
   });
 });
