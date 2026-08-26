@@ -10,7 +10,10 @@ function ogOriginPlugin(): Plugin {
     transformIndexHtml(html) {
       if (!origin) return html;
       return html
-        .replaceAll('content="/og.png"', `content="${origin}/og.png"`)
+        .replaceAll(
+          'content="/images/og.png"',
+          `content="${origin}/images/og.png"`,
+        )
         .replace(
           '<meta property="og:type" content="website" />',
           `<meta property="og:type" content="website" />\n    <meta property="og:url" content="${origin}/" />`,
@@ -48,9 +51,9 @@ export default defineConfig({
         'images/wlotus-icon-192.png',
         'images/wlotus-icon-512.png',
         'images/wlotus-icon-maskable-512.png',
-        'og.png',
-        'og-en.png',
-        'og-zh.png',
+        'images/og.png',
+        'images/og-en.png',
+        'images/og-zh.png',
       ],
       manifest: {
         id: '/',
