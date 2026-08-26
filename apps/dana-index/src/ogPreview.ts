@@ -19,18 +19,25 @@ export type OgLocale = 'vi' | 'en' | 'zh';
 
 const OG_LOCALES: readonly OgLocale[] = ['vi', 'en', 'zh'];
 
-/** Danaverse-style 1200×630 rosewood card (not the square black logo). */
-export const OG_IMAGE_PATH = '/og.png';
+/**
+ * Danaverse-style 1200×630 rosewood card (not the square black logo).
+ *
+ * Live under `/images/` — never the site root. Nginx `try_files` used to
+ * serve the SPA HTML at `/og.png` on prod before the file existed;
+ * Facebook/Telegram cached that URL as a failed image. `/images/` already
+ * served real PNGs (app icons), so crawlers never poisoned this path.
+ */
+export const OG_IMAGE_PATH = '/images/og.png';
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
 
-/** Locale-specific cards; Vietnamese is `/og.png` (product default). */
+/** Locale-specific cards; Vietnamese is `/images/og.png` (product default). */
 export function ogImagePath(locale: OgLocale): string {
   switch (locale) {
     case 'en':
-      return '/og-en.png';
+      return '/images/og-en.png';
     case 'zh':
-      return '/og-zh.png';
+      return '/images/og-zh.png';
     default:
       return OG_IMAGE_PATH;
   }

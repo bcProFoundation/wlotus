@@ -7,10 +7,13 @@ the left, serif wordmark + gold tagline + rule + remembrance line.
 The lotus is scaled so its ink matches the text stack: top of the flower
 aligns with the top of “W Lotus”, bottom with the last line.
 
-Outputs (product default is Vietnamese):
-  apps/web/public/og.png      vi
-  apps/web/public/og-en.png   en
-  apps/web/public/og-zh.png   zh
+Outputs (product default is Vietnamese). Canonical path is `/images/`
+so messengers never reuse a poisoned `/og.png` cache from when nginx
+served the SPA HTML at that URL:
+  apps/web/public/images/og.png      vi
+  apps/web/public/images/og-en.png   en
+  apps/web/public/images/og-zh.png   zh
+Root copies (`apps/web/public/og*.png`) stay as a fallback for old links.
 
 Requires: pip install pillow
 """
@@ -184,10 +187,13 @@ def compose(card: dict, glyph_src: Image.Image) -> None:
     gx = max(48, text_x - 56 - glyph.width)
     canvas.paste(glyph, (gx, flower_top), glyph)
 
-    out = PUBLIC / card["file"]
-    canvas.save(out, format="PNG", optimize=True)
+    canonical = IMAGES / card["file"]
+    canvas.save(canonical, format="PNG", optimize=True)
+    fallback = PUBLIC / card["file"]
+    canvas.save(fallback, format="PNG", optimize=True)
     print(
-        f"wrote {out.relative_to(ROOT)} ({out.stat().st_size} bytes) "
+        f"wrote {canonical.relative_to(ROOT)} "
+        f"({canonical.stat().st_size} bytes) "
         f"locale={card['locale']} body_right={body_ink[2]}"
     )
 
@@ -197,6 +203,7 @@ def main() -> None:
         sys.exit(f"missing glyph {SOURCE}")
     glyph_src = extract_cream_glyph(Image.open(SOURCE))
     PUBLIC.mkdir(parents=True, exist_ok=True)
+    IMAGES.mkdir(parents=True, exist_ok=True)
     for card in CARDS:
         compose(card, glyph_src)
 
