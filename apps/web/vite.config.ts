@@ -49,6 +49,8 @@ export default defineConfig({
         'images/wlotus-icon-512.png',
         'images/wlotus-icon-maskable-512.png',
         'og.png',
+        'og-en.png',
+        'og-zh.png',
       ],
       manifest: {
         id: '/',
