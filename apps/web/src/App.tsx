@@ -2232,6 +2232,10 @@ export default function App() {
                 title: t('howEcashTitle'),
                 body: t('howEcashBody'),
               },
+              {
+                title: t('howPublicTitle'),
+                body: t('howPublicBody'),
+              },
             ]
               .filter(step => step.title.trim() || step.body.trim())
               .map((step, i) => (
