@@ -79,10 +79,12 @@ def main() -> None:
         sys.exit(f"missing glyph {SOURCE}")
 
     canvas = Image.new("RGB", (WIDTH, HEIGHT), BG)
-    glyph = fit_glyph(extract_cream_glyph(Image.open(SOURCE)), 430, 360)
-    # Danaverse leaf sits around (71, 140) in a ~448×344 box.
-    gx = 80 + (430 - glyph.width) // 2
-    gy = 140 + (344 - glyph.height) // 2
+    # Filled lotus reads heavier than Danaverse's outline leaf. Keep it
+    # clearly smaller than the type stack and centered in the left slot.
+    slot_x, slot_y, slot_w, slot_h = 80, 140, 430, 344
+    glyph = fit_glyph(extract_cream_glyph(Image.open(SOURCE)), 270, 210)
+    gx = slot_x + (slot_w - glyph.width) // 2
+    gy = slot_y + (slot_h - glyph.height) // 2
     canvas.paste(glyph, (gx, gy), glyph)
 
     draw = ImageDraw.Draw(canvas)
