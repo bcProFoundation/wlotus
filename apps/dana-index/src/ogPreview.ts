@@ -19,6 +19,22 @@ export type OgLocale = 'vi' | 'en' | 'zh';
 
 const OG_LOCALES: readonly OgLocale[] = ['vi', 'en', 'zh'];
 
+/** Danaverse-style 1200×630 rosewood card (not the square black logo). */
+export const OG_IMAGE_PATH = '/og.png';
+export const OG_IMAGE_WIDTH = 1200;
+export const OG_IMAGE_HEIGHT = 630;
+
+export function ogImageAlt(locale: OgLocale): string {
+  switch (locale) {
+    case 'en':
+      return 'W Lotus — a flower of eternal remembrance';
+    case 'zh':
+      return 'W Lotus — 永恒追思之花';
+    default:
+      return 'W Lotus — đoá sen vĩnh hằng';
+  }
+}
+
 export function parseOgLocale(
   raw: string | null | undefined,
 ): OgLocale | null {
@@ -123,11 +139,12 @@ export function buildOgHtml(opts: {
   const origin = opts.siteOrigin.replace(/\/$/, '');
   const txid = opts.pathTxid.toLowerCase();
   const pageUrl = `${origin}/${txid}`;
-  const image = `${origin}${opts.imagePath || '/images/wlotus-icon-512.png'}`;
+  const image = `${origin}${opts.imagePath || OG_IMAGE_PATH}`;
   const name = ogDisplayNameFromNote(opts.originalNote, opts.locale);
   const copy = ogCopy(opts.locale, name);
   const remembrance = ogRemembranceLine(opts.originalNote);
   const description = remembrance || copy.description;
+  const imageAlt = escapeHtml(ogImageAlt(opts.locale));
   const localeTag =
     opts.locale === 'zh' ? 'zh_CN' : opts.locale === 'en' ? 'en_US' : 'vi_VN';
   const alternates = OG_LOCALES.filter(l => l !== opts.locale)
@@ -175,12 +192,17 @@ export function buildOgHtml(opts: {
     <meta property="og:description" content="${desc}" />
     <meta property="og:url" content="${url}" />
     <meta property="og:image" content="${img}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="${OG_IMAGE_WIDTH}" />
+    <meta property="og:image:height" content="${OG_IMAGE_HEIGHT}" />
+    <meta property="og:image:alt" content="${imageAlt}" />
     <meta property="og:locale" content="${localeTag}" />
 ${alternates}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${desc}" />
     <meta name="twitter:image" content="${img}" />
+    <meta name="twitter:image:alt" content="${imageAlt}" />
     ${spaBoot}
   </head>
   <body>
