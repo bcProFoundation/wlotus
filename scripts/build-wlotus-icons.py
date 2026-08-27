@@ -28,11 +28,10 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGES = ROOT / "apps/web/public/images"
 SOURCE = IMAGES / "W-bold.png"
 
-# OG card field is #1d130c — correct on a 1200×630 card, black as a 32px
-# tile on cream (and darker than light-theme --brand-ink #2a2118). Same hue,
-# lightness ~25% so the plate reads rosewood. Corners stay transparent;
-# W-white.png stays a transparent glyph for English black.
-PLATE = (92, 59, 36, 255)  # #5c3b24
+# Same rosewood as the OG card (`scripts/build-og-image.py` BG #1d130c).
+# Corners of rounded plates stay transparent; W-white.png stays a transparent
+# glyph for the English black theme.
+PLATE = (29, 19, 12, 255)
 
 # iOS-like rounded square (~22% of edge). Corners are transparent so browser
 # chrome does not paint a sharp black box.
