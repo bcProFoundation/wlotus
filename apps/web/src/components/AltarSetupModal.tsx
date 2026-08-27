@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   altarHasDeathDate,
+  altarIsEvent,
   altarParentRelationshipLabel,
   altarRelationships,
   altarSpouseRelationshipLabel,
@@ -9,18 +10,23 @@ import {
   formatAltarDateInput,
   formatAltarPersonName,
   MAX_PARENT_RELATIONSHIPS,
+  normalizeAltarDateCalendar,
+  normalizeAltarKind,
   normalizeAltarRelatedTxid,
   sortAltarRelationships,
   validateAltarFields,
   validateDeathDateFields,
   validateRelationshipFields,
+  type AltarDateCalendar,
   type AltarFields,
   type AltarHonorific,
+  type AltarKind,
   type AltarRelationshipKind,
   type AltarRelationshipLink,
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
+import { convertAltarDateYmd } from '../lib/calendarMonth.js';
 import {
   specialHidesAltarSectionLabel,
   specialStoryForLocale,
@@ -37,6 +43,10 @@ import { TempleStory } from './TempleStory.js';
 type Step = 'edit' | 'review';
 type ModalVariant = 'setup' | 'relationship' | 'death';
 
+function defaultDateCalendar(locale: string): AltarDateCalendar {
+  return locale.startsWith('en') ? 'solar' : 'lunar';
+}
+
 function normalizeFields(draft: AltarFields): AltarFields {
   return {
     title: draft.title === 'mr' || draft.title === 'mrs' ? draft.title : '',
@@ -50,7 +60,61 @@ function normalizeFields(draft: AltarFields): AltarFields {
     relationshipType: draft.relationshipType,
     relatedTxid: normalizeAltarRelatedTxid(draft.relatedTxid),
     relationships: draft.relationships ?? [],
+    kind: normalizeAltarKind(draft.kind),
+    dateCalendar: normalizeAltarDateCalendar(draft.dateCalendar),
   };
+}
+
+function fieldsForInput(fields: AltarFields, locale: string): AltarFields {
+  const calendar =
+    normalizeAltarDateCalendar(fields.dateCalendar) ||
+    defaultDateCalendar(locale);
+  return {
+    ...fields,
+    dateCalendar: calendar,
+    deathDate: convertAltarDateYmd(fields.deathDate, 'solar', calendar, locale),
+  };
+}
+
+function DateCalendarToggle(props: {
+  value: AltarDateCalendar;
+  onChange: (next: AltarDateCalendar) => void;
+  lunarLabel: string;
+  solarLabel: string;
+}) {
+  const calendar = props.value === 'lunar' ? 'lunar' : 'solar';
+  return (
+    <div
+      className="altar-honorific altar-date-calendar"
+      role="group"
+      aria-label={`${props.lunarLabel} / ${props.solarLabel}`}
+    >
+      <button
+        type="button"
+        className={
+          calendar === 'lunar'
+            ? 'altar-honorific-btn is-selected'
+            : 'altar-honorific-btn'
+        }
+        aria-pressed={calendar === 'lunar'}
+        onClick={() => props.onChange('lunar')}
+      >
+        {props.lunarLabel}
+      </button>
+      <button
+        type="button"
+        className={
+          calendar === 'solar'
+            ? 'altar-honorific-btn is-selected'
+            : 'altar-honorific-btn'
+        }
+        aria-pressed={calendar === 'solar'}
+        onClick={() => props.onChange('solar')}
+      >
+        {props.solarLabel}
+      </button>
+    </div>
+  );
 }
 
 function RelationshipFields(props: {
@@ -230,40 +294,51 @@ export function AltarSetupModal(props: {
     festivalSpecial && !relationshipOnly && !deathOnly ? 'review' : 'edit',
   );
   const [draft, setDraft] = useState<AltarFields>(() => {
+    const calendarFallback = defaultDateCalendar(locale);
     if (relationshipOnly) {
+      const initial = props.initial ?? emptyAltarFields();
       return {
-        ...(props.initial ?? emptyAltarFields()),
+        ...initial,
+        dateCalendar:
+          normalizeAltarDateCalendar(initial.dateCalendar) || calendarFallback,
         relationshipType: '',
         relatedTxid: '',
         relationships: existingLinks,
       };
     }
     if (deathOnly) {
+      const initial = props.initial ?? emptyAltarFields();
       return {
-        ...(props.initial ?? emptyAltarFields()),
+        ...initial,
         deathDate: '',
-        deathPlace: props.initial?.deathPlace || '',
-        funeralPlace: props.initial?.funeralPlace || '',
+        deathPlace: initial.deathPlace || '',
+        funeralPlace: initial.funeralPlace || '',
+        dateCalendar:
+          normalizeAltarDateCalendar(initial.dateCalendar) || calendarFallback,
         relationshipType: '',
         relatedTxid: '',
         relationships: existingLinks,
       };
     }
     if (props.initial) {
+      const input = fieldsForInput(props.initial, locale);
       return {
-        ...props.initial,
-        title: props.initial.title || '',
-        // Setup does not link relationships (extra burn / distraction).
+        ...input,
+        title: input.title || '',
         relationshipType: '',
         relatedTxid: '',
-        relationships: props.initial.relationships ?? [],
+        relationships: input.relationships ?? [],
       };
     }
     const base = emptyAltarFields();
     const name = (props.fallbackName || '').trim();
-    return name
-      ? { ...base, name, relationshipType: '', relatedTxid: '' }
-      : { ...base, relationshipType: '', relatedTxid: '' };
+    return {
+      ...base,
+      name,
+      dateCalendar: calendarFallback,
+      relationshipType: '',
+      relatedTxid: '',
+    };
   });
   const [review, setReview] = useState<AltarFields | null>(() => {
     if (!festivalSpecial || relationshipOnly || deathOnly || !props.initial) {
@@ -294,6 +369,67 @@ export function AltarSetupModal(props: {
 
   function setHonorific(next: AltarHonorific) {
     setField('title', draft.title === next ? '' : next);
+  }
+
+  function changeDateCalendar(next: AltarDateCalendar) {
+    const cur =
+      normalizeAltarDateCalendar(draft.dateCalendar) || 'solar';
+    if (next === cur && draft.dateCalendar === next) return;
+    const converted = convertAltarDateYmd(draft.deathDate, cur, next, locale);
+    setDraft(d => ({ ...d, dateCalendar: next, deathDate: converted }));
+    setErrorKey(null);
+  }
+
+  function setAltarKind(next: AltarKind) {
+    if (next === 'event') {
+      setDraft(d => ({
+        ...d,
+        kind: 'event',
+        title: '',
+        birthPlace: '',
+        birthYear: '',
+        deathPlace: '',
+        funeralPlace: '',
+        relationshipType: '',
+        relatedTxid: '',
+      }));
+    } else {
+      setDraft(d => ({ ...d, kind: '' }));
+    }
+    setErrorKey(null);
+  }
+
+  function toWireFields(raw: AltarFields): AltarFields {
+    const fields = normalizeFields(raw);
+    const calendar = normalizeAltarDateCalendar(fields.dateCalendar);
+    const kind = normalizeAltarKind(fields.kind);
+    const deathDate = convertAltarDateYmd(
+      fields.deathDate,
+      calendar || 'solar',
+      'solar',
+      locale,
+    );
+    if (kind === 'event') {
+      return {
+        ...fields,
+        kind,
+        dateCalendar: calendar,
+        deathDate,
+        title: '',
+        birthPlace: '',
+        birthYear: '',
+        deathPlace: '',
+        funeralPlace: '',
+        relationshipType: '',
+        relatedTxid: '',
+      };
+    }
+    return {
+      ...fields,
+      kind,
+      dateCalendar: calendar,
+      deathDate,
+    };
   }
 
   function setRelationshipType(next: AltarRelationshipType) {
@@ -335,7 +471,7 @@ export function AltarSetupModal(props: {
       setErrorKey(err);
       return;
     }
-    let fields = normalizeFields(draft);
+    let fields = toWireFields(draft);
     if (!relationshipOnly && !deathOnly) {
       fields = {
         ...fields,
@@ -343,19 +479,17 @@ export function AltarSetupModal(props: {
         relatedTxid: '',
       };
     }
-    setDraft(fields);
     setReview(fields);
     props.onSave(fields);
     setStep('review');
   }
 
   function goEdit() {
-    if (review) setDraft(review);
     setStep('edit');
   }
 
   function offer() {
-    let fields = review ?? normalizeFields(draft);
+    let fields = review ?? toWireFields(draft);
     // New profile/altar setup: never attach a relationship link (requires a
     // separate star-fragment burn and distracts from the first dedication).
     if (!relationshipOnly && !deathOnly) {
@@ -400,24 +534,30 @@ export function AltarSetupModal(props: {
     formatAltarPersonName(props.initial ?? draft, locale) ||
     t('offeringFallback');
 
+  const isEvent = !relationshipOnly && !deathOnly && altarIsEvent(draft);
+
   const editTitle = relationshipOnly
     ? t('altarRelationshipTitle')
     : deathOnly
       ? t('firstOfferDeathTitle')
       : festivalSpecial && specialTitle
         ? specialTitle
-        : altarHasDeathDate(draft)
-          ? t('altarTitle')
-          : t('profileTitle');
+        : isEvent
+          ? t('altarEventTitle')
+          : altarHasDeathDate(draft)
+            ? t('altarTitle')
+            : t('profileTitle');
   const editHint = relationshipOnly
     ? t('altarRelationshipHint')
     : deathOnly
       ? t('firstOfferDeathHint')
       : props.setupHint
         ? props.setupHint
-        : altarHasDeathDate(draft)
-          ? t('altarHint')
-          : t('profileHint');
+        : isEvent
+          ? t('altarEventHint')
+          : altarHasDeathDate(draft)
+            ? t('altarHint')
+            : t('profileHint');
   const primaryCta =
     relationshipOnly || deathOnly ? t('btnOffer') : t('btnSetup');
   const reviewTitle = relationshipOnly
@@ -426,9 +566,11 @@ export function AltarSetupModal(props: {
       ? t('firstOfferDeathTitle')
       : festivalSpecial && specialTitle
         ? specialTitle
-        : altarHasDeathDate(review ?? draft)
-          ? t('altarDetailTitle')
-          : t('profileDetailTitle');
+        : altarIsEvent(review ?? draft)
+          ? t('altarEventTitle')
+          : altarHasDeathDate(review ?? draft)
+            ? t('altarDetailTitle')
+            : t('profileDetailTitle');
 
   return (
     <div
@@ -514,6 +656,15 @@ export function AltarSetupModal(props: {
                     }
                     placeholder={t('altarDeathDatePlaceholder')}
                   />
+                  <DateCalendarToggle
+                    value={
+                      normalizeAltarDateCalendar(draft.dateCalendar) ||
+                      'solar'
+                    }
+                    onChange={changeDateCalendar}
+                    lunarLabel={t('altarCalLunar')}
+                    solarLabel={t('altarCalSolar')}
+                  />
                   {errorKey === 'deathDate' ? (
                     <p className="hint altar-field-error">
                       {t('altarErrDeathDate')}
@@ -536,6 +687,47 @@ export function AltarSetupModal(props: {
             ) : (
               <>
                 {festivalSpecial ? null : (
+                <div className="field">
+                  <span
+                    className="altar-honorific-label"
+                    id="altar-kind-label"
+                  >
+                    {t('altarKindLabel')}
+                  </span>
+                  <div
+                    className="altar-honorific"
+                    role="group"
+                    aria-labelledby="altar-kind-label"
+                  >
+                    <button
+                      type="button"
+                      className={
+                        !isEvent
+                          ? 'altar-honorific-btn is-selected'
+                          : 'altar-honorific-btn'
+                      }
+                      aria-pressed={!isEvent}
+                      onClick={() => setAltarKind('')}
+                    >
+                      {t('altarKindPerson')}
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        isEvent
+                          ? 'altar-honorific-btn is-selected'
+                          : 'altar-honorific-btn'
+                      }
+                      aria-pressed={isEvent}
+                      onClick={() => setAltarKind('event')}
+                    >
+                      {t('altarKindEvent')}
+                    </button>
+                  </div>
+                </div>
+                )}
+
+                {festivalSpecial || isEvent ? null : (
                 <div className="field">
                   <span
                     className="altar-honorific-label"
@@ -585,7 +777,11 @@ export function AltarSetupModal(props: {
                     autoComplete="name"
                     value={draft.name}
                     onChange={e => setField('name', e.target.value)}
-                    placeholder={t('altarNamePlaceholder')}
+                    placeholder={
+                      isEvent
+                        ? t('altarEventNamePlaceholder')
+                        : t('altarNamePlaceholder')
+                    }
                   />
                   {errorKey === 'name' ? (
                     <p className="hint altar-field-error">{t('altarErrName')}</p>
@@ -606,7 +802,7 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
-                {festivalSpecial ? null : (
+                {festivalSpecial || isEvent ? null : (
                 <div className="field">
                   <label htmlFor="altar-birth-place">
                     {t('altarBirthPlace')}
@@ -621,7 +817,7 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
-                {festivalSpecial ? null : (
+                {festivalSpecial || isEvent ? null : (
                 <div className="field">
                   <label htmlFor="altar-birth-date">{t('altarBirthDate')}</label>
                   <input
@@ -647,7 +843,7 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
-                {festivalSpecial ? null : (
+                {festivalSpecial || isEvent ? null : (
                 <div className="field">
                   <label htmlFor="altar-death-place">
                     {t('altarDeathPlace')}
@@ -665,8 +861,13 @@ export function AltarSetupModal(props: {
                 {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-death-date">
-                    {t('altarDeathDate')}{' '}
-                    <span className="hint">({t('altarPlaceOptional')})</span>
+                    {isEvent ? t('altarEventDate') : t('altarDeathDate')}
+                    {isEvent ? null : (
+                      <>
+                        {' '}
+                        <span className="hint">({t('altarPlaceOptional')})</span>
+                      </>
+                    )}
                   </label>
                   <input
                     id="altar-death-date"
@@ -683,15 +884,26 @@ export function AltarSetupModal(props: {
                     }
                     placeholder={t('altarDeathDatePlaceholder')}
                   />
+                  <DateCalendarToggle
+                    value={
+                      normalizeAltarDateCalendar(draft.dateCalendar) ||
+                      'solar'
+                    }
+                    onChange={changeDateCalendar}
+                    lunarLabel={t('altarCalLunar')}
+                    solarLabel={t('altarCalSolar')}
+                  />
                   {errorKey === 'deathDate' ? (
                     <p className="hint altar-field-error">
-                      {t('altarErrDeathDate')}
+                      {isEvent
+                        ? t('altarErrEventDate')
+                        : t('altarErrDeathDate')}
                     </p>
                   ) : null}
                 </div>
                 )}
 
-                {festivalSpecial ? null : (
+                {festivalSpecial || isEvent ? null : (
                 <div className="field">
                   <label htmlFor="altar-funeral-place">
                     {t('altarFuneralPlace')}
@@ -756,6 +968,7 @@ export function AltarSetupModal(props: {
                             review.deathPlace || props.initial.deathPlace,
                           funeralPlace:
                             review.funeralPlace || props.initial.funeralPlace,
+                          dateCalendar: review.dateCalendar,
                         }
                       : review
                 }

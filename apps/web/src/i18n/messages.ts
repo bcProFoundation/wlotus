@@ -36,6 +36,12 @@ export type MessageKey =
   | 'altarHonorific'
   | 'altarHonorificMr'
   | 'altarHonorificMrs'
+  | 'altarKindLabel'
+  | 'altarKindPerson'
+  | 'altarKindEvent'
+  | 'altarEventTitle'
+  | 'altarEventHint'
+  | 'altarEventNamePlaceholder'
   | 'altarName'
   | 'altarNamePlaceholder'
   | 'altarNote'
@@ -76,6 +82,7 @@ export type MessageKey =
   | 'altarViewRelated'
   | 'altarErrName'
   | 'altarErrDeathDate'
+  | 'altarErrEventDate'
   | 'altarErrBirthYear'
   | 'altarErrOpreturn'
   | 'btnAltarSave'
@@ -159,6 +166,8 @@ export type MessageKey =
   | 'searchHintSuffix'
   | 'searchCta'
   | 'homeEventsTitle'
+  | 'homeEventsUpcoming'
+  | 'homeEventsTrending'
   | 'homeEventsOfferings'
   | 'homeEventsFirstBurn'
   | 'homeEventsDaysUntil'
@@ -233,6 +242,13 @@ const en: Dict = {
   altarHonorific: 'Title',
   altarHonorificMr: 'Mr.',
   altarHonorificMrs: 'Mrs.',
+  altarKindLabel: 'Kind',
+  altarKindPerson: 'Person',
+  altarKindEvent: 'Event',
+  altarEventTitle: 'Event',
+  altarEventHint:
+    'Create an on-chain memorial for an event. The date is the event day, not a death date.',
+  altarEventNamePlaceholder: 'Event name',
   altarName: 'Name',
   altarNamePlaceholder: 'Full name',
   altarNote: 'Words of remembrance',
@@ -275,6 +291,7 @@ const en: Dict = {
   altarViewRelated: 'View linked altar',
   altarErrName: 'Name is required.',
   altarErrDeathDate: 'Enter date of death as YYYY or YYYY-MM-DD.',
+  altarErrEventDate: 'Enter the event date as YYYY or YYYY-MM-DD.',
   altarErrBirthYear: 'Enter year of birth as YYYY or YYYY-MM-DD.',
   altarErrOpreturn:
     'Altar note is too long for the chain. Shorten places or the remembrance note, then try again.',
@@ -370,6 +387,8 @@ const en: Dict = {
   searchHintSuffix: '.',
   searchCta: 'Search',
   homeEventsTitle: 'Events',
+  homeEventsUpcoming: 'Upcoming',
+  homeEventsTrending: 'Trending',
   homeEventsOfferings: '{n} offerings',
   homeEventsFirstBurn: 'Be the first to offer',
   homeEventsDaysUntil: 'in {n} days',
@@ -447,6 +466,13 @@ const vi: Dict = {
   altarHonorific: 'Danh xưng',
   altarHonorificMr: 'Ông',
   altarHonorificMrs: 'Bà',
+  altarKindLabel: 'Loại',
+  altarKindPerson: 'Người',
+  altarKindEvent: 'Sự kiện',
+  altarEventTitle: 'Sự kiện',
+  altarEventHint:
+    'Tạo ban thờ trên chuỗi cho một sự kiện. Ngày ở đây là ngày sự kiện, không phải ngày mất.',
+  altarEventNamePlaceholder: 'Tên sự kiện',
   altarName: 'Họ tên',
   altarNamePlaceholder: 'Họ và tên',
   altarNote: 'Lời nguyện',
@@ -489,6 +515,7 @@ const vi: Dict = {
   altarViewRelated: 'Xem ban thờ liên quan',
   altarErrName: 'Cần nhập họ tên.',
   altarErrDeathDate: 'Ngày mất dạng YYYY hoặc YYYY-MM-DD.',
+  altarErrEventDate: 'Ngày sự kiện dạng YYYY hoặc YYYY-MM-DD.',
   altarErrBirthYear: 'Năm sinh dạng YYYY hoặc YYYY-MM-DD.',
   altarErrOpreturn:
     'Nội dung ban thờ quá dài cho chuỗi khối. Hãy rút gọn nơi chốn hoặc lời tưởng nhớ rồi thử lại.',
@@ -583,6 +610,8 @@ const vi: Dict = {
   searchHintSuffix: '.',
   searchCta: 'Tìm kiếm',
   homeEventsTitle: 'Sự kiện',
+  homeEventsUpcoming: 'Sắp tới',
+  homeEventsTrending: 'Thịnh hành',
   homeEventsOfferings: '{n} dâng hoa',
   homeEventsFirstBurn: 'Hãy là người dâng đầu tiên',
   homeEventsDaysUntil: 'còn {n} ngày',
@@ -661,6 +690,12 @@ const zh: Dict = {
   altarHonorific: '称谓',
   altarHonorificMr: '先生',
   altarHonorificMrs: '女士',
+  altarKindLabel: '类型',
+  altarKindPerson: '人物',
+  altarKindEvent: '事件',
+  altarEventTitle: '事件',
+  altarEventHint: '在链上为事件设立灵位。日期为事件日，而非忌日。',
+  altarEventNamePlaceholder: '事件名称',
   altarName: '姓名',
   altarNamePlaceholder: '姓名',
   altarNote: '追思寄语',
@@ -702,6 +737,7 @@ const zh: Dict = {
   altarViewRelated: '查看关联灵位',
   altarErrName: '请填写姓名。',
   altarErrDeathDate: '去世日期请用 YYYY 或 YYYY-MM-DD。',
+  altarErrEventDate: '事件日期请用 YYYY 或 YYYY-MM-DD。',
   altarErrBirthYear: '出生年请用 YYYY 或 YYYY-MM-DD。',
   altarErrOpreturn: '灵位内容过长，无法上链。请缩短地点或纪念文字后再试。',
   btnAltarSave: '保存',
@@ -791,6 +827,8 @@ const zh: Dict = {
   searchHintSuffix: '。',
   searchCta: '搜索',
   homeEventsTitle: '活动',
+  homeEventsUpcoming: '即将',
+  homeEventsTrending: '热门',
   homeEventsOfferings: '{n} 次供奉',
   homeEventsFirstBurn: '成为第一位献花者',
   homeEventsDaysUntil: '还有 {n} 天',

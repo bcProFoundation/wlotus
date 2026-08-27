@@ -228,13 +228,27 @@ export interface RankedTempleSpecial extends TempleSpecialProfileUi {
  *
  * Example (before 2/7 lunar): Cô Hồn (starts sooner) above Vu Lan.
  * On 15/7 when both active: higher burn count on top.
+ *
+ * `sort: 'trending'` keeps the same forward-looking pool but ranks by
+ * offerCount first (then the upcoming tie-breaks).
  */
+export type HomeEventsSort = 'upcoming' | 'trending';
+
+export const HOME_EVENTS_SORT_KEY = 'wlotus.homeEventsSort';
+
+export function parseHomeEventsSort(
+  raw: string | null | undefined,
+): HomeEventsSort {
+  return raw === 'trending' ? 'trending' : 'upcoming';
+}
+
 export function rankTempleSpecials(
   profiles: TempleSpecialProfileUi[] | null | undefined,
   offerCountByProfileId: Record<string, number> | Map<string, number>,
   limit = 5,
   now: Date = new Date(),
   locale = 'vi',
+  sort: HomeEventsSort = 'upcoming',
 ): RankedTempleSpecial[] {
   const list = profiles ?? [];
   const hasCount = (id: string): boolean => {
@@ -320,6 +334,11 @@ export function rankTempleSpecials(
   const forward = ranked.filter(p => meta(p).tier !== 2);
 
   forward.sort((a, b) => {
+    if (sort === 'trending') {
+      const ca = sortCount(a.offerCount);
+      const cb = sortCount(b.offerCount);
+      if (ca !== cb) return cb - ca;
+    }
     const ma = meta(a);
     const mb = meta(b);
     if (ma.tier !== mb.tier) return ma.tier - mb.tier;

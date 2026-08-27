@@ -204,16 +204,15 @@ function zhMonthName(month: number, leap: boolean): string {
 }
 
 /**
- * Format a full `YYYY-MM-DD` solar death date as a lunar date string for
- * `vi`/`zh` locales. Returns `null` for any other locale, an incomplete
- * date (`YYYY` / `YYYY-MM` — no single day to convert), or an unparsable
- * string, so callers can fall back to the plain solar display.
+ * Format a full `YYYY-MM-DD` solar death date as a lunar date string.
+ * Returns `null` for an incomplete date (`YYYY` / `YYYY-MM` — no single day
+ * to convert) or an unparsable string, so callers can fall back to the
+ * plain solar display.
  */
 export function formatLunarDeathDate(
   isoDate: string,
   locale: 'vi' | 'zh' | 'en',
 ): string | null {
-  if (locale !== 'vi' && locale !== 'zh') return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate.trim());
   if (!m) return null;
   const year = Number(m[1]);
@@ -223,8 +222,13 @@ export function formatLunarDeathDate(
 
   const timeZone = locale === 'zh' ? 8 : 7;
   const lunar = solarToLunar(day, month, year, timeZone);
-  const cc = canChiYear(lunar.year, locale);
 
+  if (locale === 'en') {
+    const leapNote = lunar.leap ? ' (leap)' : '';
+    return `Lunar ${lunar.day}/${lunar.month}${leapNote}/${lunar.year}`;
+  }
+
+  const cc = canChiYear(lunar.year, locale);
   if (locale === 'zh') {
     return `农历${cc}年${zhMonthName(lunar.month, lunar.leap)}${zhDayName(lunar.day)}`;
   }

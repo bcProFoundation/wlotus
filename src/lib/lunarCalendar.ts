@@ -266,6 +266,21 @@ export function lunarYmdToSolarYmd(
   return formatSolarYmd(solar);
 }
 
+/** Convert solar YYYY-MM-DD to lunar YYYY-MM-DD (leap month is not encoded). */
+export function solarYmdToLunarYmd(
+  solarYmd: string,
+  timeZone = 7,
+): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(solarYmd.trim());
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const lunar = solarToLunar(d, mo, y, timeZone);
+  return `${lunar.year}-${pad2(lunar.month)}-${pad2(lunar.day)}`;
+}
+
 /**
  * Solar YYYY-MM-DD of the last day of a non-leap lunar month
  * (Giao thừa / 除夕: last day of tháng Chạp, 29 or 30).

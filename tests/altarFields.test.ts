@@ -13,6 +13,7 @@ import {
   canAddRelationship,
   altarRelationships,
   altarHasDeathDate,
+  altarIsEvent,
   altarParentRelationshipLabel,
   altarSearchRelevance,
   altarSpouseRelationshipLabel,
@@ -24,6 +25,8 @@ import {
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
+  normalizeAltarKind,
+  normalizeAltarDateCalendar,
   parseAltarNote,
   sortAltarRelationships,
   truncateUtf8Bytes,
@@ -45,6 +48,8 @@ describe('altarFields', () => {
       relationshipType: '',
       relatedTxid: '',
       relationships: [],
+      kind: '',
+      dateCalendar: '',
     };
     const packed = encodeAltarNote(fields);
     expect(isAltarPackedNote(packed)).toBe(true);
@@ -295,6 +300,8 @@ describe('altarFields', () => {
       relationshipType: 'spouse',
       relatedTxid,
       relationships: [],
+      kind: '',
+      dateCalendar: '',
     };
     const packed = encodeAltarNote(fields, {
       maxBytes: MEMORIAL_NOTE_MAX_BYTES,
@@ -351,17 +358,13 @@ describe('altarFields', () => {
   it('merges a relationship fragment with the richer root note', () => {
     const relatedTxid = 'a'.repeat(64);
     const root = encodeAltarNote({
+      ...emptyAltarFields(),
       title: 'mr',
       name: 'Cao Lâm Quả',
-      note: '',
       birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
       birthYear: '1945-09-02',
       deathDate: '2001-12-04',
       deathPlace: 'Hải Cảng, Quy Nhơn, Bình Định',
-      funeralPlace: '',
-      relationshipType: '',
-      relatedTxid: '',
-      relationships: [],
     });
     const fragment = encodeRelationshipNote(
       { relationshipType: 'spouse', relatedTxid },
@@ -491,6 +494,77 @@ describe('altarFields', () => {
     expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
     expect(memorialNoteMaxBytes(false)).toBe(150);
     expect(memorialNoteMaxBytes(true)).toBe(120);
+  });
+
+  it('round-trips an event altar with lunar calendar preference', () => {
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Nepal 26/08',
+      note: 'Tưởng niệm',
+      deathDate: '2026-08-26',
+      kind: 'event',
+      dateCalendar: 'lunar',
+    });
+    expect(packed.includes(`${ALTAR_SEP}e${ALTAR_SEP}l`)).toBe(true);
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.kind).toBe('event');
+    expect(parsed.dateCalendar).toBe('lunar');
+    expect(parsed.deathDate).toBe('2026-08-26');
+    expect(altarIsEvent(parsed)).toBe(true);
+    expect(normalizeAltarKind('e')).toBe('event');
+    expect(normalizeAltarDateCalendar('l')).toBe('lunar');
+    expect(normalizeAltarDateCalendar('s')).toBe('solar');
+  });
+
+  it('requires a date for event altars', () => {
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'Nepal',
+        kind: 'event',
+      }),
+    ).toBe('deathDate');
+    expect(
+      validateAltarFields({
+        ...emptyAltarFields(),
+        name: 'Nepal',
+        kind: 'event',
+        deathDate: '2026-08-26',
+      }),
+    ).toBeNull();
+  });
+
+  it('packs dateCalendar on a death-date fragment without setting event kind', () => {
+    const fragment = encodeDeathDateNote({
+      deathDate: '2020-01-15',
+      deathPlace: '',
+      funeralPlace: '',
+      dateCalendar: 'lunar',
+    });
+    const parsed = parseAltarNote(fragment)!;
+    expect(isDeathDateAmendNote(fragment)).toBe(true);
+    expect(parsed.kind).toBe('');
+    expect(parsed.dateCalendar).toBe('lunar');
+    expect(parsed.deathDate).toBe('2020-01-15');
+  });
+
+  it('merges event kind and calendar from the latest packed note', () => {
+    const root = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Nepal 26/08',
+      deathDate: '2026-08-26',
+      kind: 'event',
+      dateCalendar: 'solar',
+    });
+    const fragment = encodeDeathDateNote({
+      deathDate: '2026-08-26',
+      deathPlace: '',
+      funeralPlace: '',
+      dateCalendar: 'lunar',
+    });
+    const merged = mergeAltarFields([fragment, root]);
+    expect(merged?.kind).toBe('event');
+    expect(merged?.dateCalendar).toBe('lunar');
   });
 });
 

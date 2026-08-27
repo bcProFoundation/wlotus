@@ -88,6 +88,9 @@ import {
   filterSpecialsForViewer,
   isBoundSpecialRoot,
   homeEventOfferHint,
+  HOME_EVENTS_SORT_KEY,
+  parseHomeEventsSort,
+  type HomeEventsSort,
   type TempleSpecialsStatusUi,
   type TempleSpecialProfileUi,
 } from './lib/specialsUi.js';
@@ -252,6 +255,13 @@ export default function App() {
   /** Structured altar fields; packed into the on-chain note when offering. */
   const [altar, setAltar] = useState<AltarFields | null>(null);
   const [altarOpen, setAltarOpen] = useState(false);
+  const [homeEventsSort, setHomeEventsSort] = useState<HomeEventsSort>(() => {
+    try {
+      return parseHomeEventsSort(localStorage.getItem(HOME_EVENTS_SORT_KEY));
+    } catch {
+      return 'upcoming';
+    }
+  });
   /** Read-only Ban thờ sheet (Recent name / Dâng lại) — same screen. */
   const [dedicationSheet, setDedicationSheet] = useState<{
     parentBurnTxid: string;
@@ -765,6 +775,7 @@ export default function App() {
             deathDate: activeAltar.deathDate,
             deathPlace: activeAltar.deathPlace,
             funeralPlace: activeAltar.funeralPlace,
+            dateCalendar: activeAltar.dateCalendar,
           },
           { maxBytes: memorialNoteMaxBytes(true) },
         );
@@ -1561,7 +1572,17 @@ export default function App() {
     8,
     new Date(),
     locale,
+    homeEventsSort,
   );
+
+  function persistHomeEventsSort(next: HomeEventsSort) {
+    setHomeEventsSort(next);
+    try {
+      localStorage.setItem(HOME_EVENTS_SORT_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  }
 
   function altarFromUnboundSpecial(sp: TempleSpecialProfileUi): AltarFields {
     return {
@@ -2052,7 +2073,37 @@ export default function App() {
 
         {rankedHomeEvents.length > 0 ? (
           <div className="home-events" aria-label={t('homeEventsTitle')}>
-            <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
+            <div className="home-events-heading">
+              <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
+              <div className="home-events-sort" role="tablist" aria-label={t('homeEventsTitle')}>
+                <button
+                  type="button"
+                  role="tab"
+                  className={
+                    homeEventsSort === 'upcoming'
+                      ? 'home-events-sort-link is-selected'
+                      : 'home-events-sort-link'
+                  }
+                  aria-selected={homeEventsSort === 'upcoming'}
+                  onClick={() => persistHomeEventsSort('upcoming')}
+                >
+                  {t('homeEventsUpcoming')}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  className={
+                    homeEventsSort === 'trending'
+                      ? 'home-events-sort-link is-selected'
+                      : 'home-events-sort-link'
+                  }
+                  aria-selected={homeEventsSort === 'trending'}
+                  onClick={() => persistHomeEventsSort('trending')}
+                >
+                  {t('homeEventsTrending')}
+                </button>
+              </div>
+            </div>
             <ul className="home-events-list">
               {rankedHomeEvents.map((ev, idx) => {
                 const hint = homeEventOfferHint(ev.profileId, ev.offerCount);
@@ -2730,6 +2781,7 @@ export default function App() {
                   deathDate: fields.deathDate,
                   deathPlace: fields.deathPlace,
                   funeralPlace: fields.funeralPlace,
+                  dateCalendar: fields.dateCalendar,
                 },
                 amend: 'death',
                 relatedOptions: sessionRelatedOptions,
