@@ -38,6 +38,8 @@ export {
   normalizeAltarRelationshipType,
   parseAltarNote,
   relationshipLinkKey,
+  truncateUtf8Bytes,
+  utf8ByteLength,
   validateAltarFields,
   validateDeathDateFields,
   validateRelationshipFields,

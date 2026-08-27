@@ -30,6 +30,7 @@ import {
   parseAltarNote,
   sortAltarRelationships,
   truncateUtf8Bytes,
+  utf8ByteLength,
   validateAltarFields,
   type AltarFields,
 } from '../src/offering/altarFields.js';
@@ -88,6 +89,7 @@ describe('altarFields', () => {
       { relationshipType: 'spouse', relatedTxid },
       { maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT },
     );
+    // type + 64-hex txid + separators is ~74 bytes; fits under the v2 100-byte cap.
     expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
       MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
     );
@@ -284,6 +286,40 @@ describe('altarFields', () => {
     const s = 'á'.repeat(100);
     const out = truncateUtf8Bytes(s, 10);
     expect(new TextEncoder().encode(out).length).toBeLessThanOrEqual(10);
+  });
+
+  it('counts Vietnamese remembrance text in UTF-8 bytes, not characters', () => {
+    const vi = 'Dâng lại hoa sen cho ban thờ. '.repeat(8);
+    expect(utf8ByteLength(vi)).toBeGreaterThan(vi.length);
+    const clipped = truncateUtf8Bytes(vi, MEMORIAL_NOTE_MAX_BYTES);
+    expect(utf8ByteLength(clipped)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+    expect(clipped.length).toBeLessThan(vi.length);
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      note: vi,
+    });
+    expect(utf8ByteLength(packed)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('Cao Lâm Quả');
+    expect(parsed.note.length).toBeGreaterThan(0);
+    expect(utf8ByteLength(parsed.note)).toBeLessThan(utf8ByteLength(vi));
+  });
+
+  it('truncates a long remembrance note instead of dropping it', () => {
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      note: 'n'.repeat(400),
+    });
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('Cao Lâm Quả');
+    expect(parsed.note.length).toBeGreaterThan(20);
+    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
+      MEMORIAL_NOTE_MAX_BYTES,
+    );
   });
 
   it('prefers keeping relationship on the root over long place text', () => {
@@ -491,9 +527,9 @@ describe('altarFields', () => {
 
   it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {
     expect(MEMORIAL_NOTE_MAX_BYTES).toBe(150);
-    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
+    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(100);
     expect(memorialNoteMaxBytes(false)).toBe(150);
-    expect(memorialNoteMaxBytes(true)).toBe(120);
+    expect(memorialNoteMaxBytes(true)).toBe(100);
   });
 
   it('round-trips an event altar with lunar calendar preference', () => {

@@ -49,22 +49,32 @@ export const ALTAR_SEP = '\u001f';
 export const OP_RETURN_SCRIPT_MAX_BYTES = 223;
 
 /**
- * Max UTF-8 bytes for the DANA memorial *note* so the full burn OP_RETURN
- * (ALP BURN + DANA EMPP, offeringId `wlotus`) stays ≤ 223.
+ * Max UTF-8 bytes for the DANA memorial *note* so a **BURN + DATA** OP_RETURN
+ * (offeringId `wlotus`) stays ≤ 223. Temple burns also try to SEND leftover
+ * miner inventory in the same tx; if that overflows, `burnOnePrayer` retries
+ * without leftover SEND so the flower still lands.
  *
- * Empirically measured with ecash-lib `emppScript([alpBurn, memorial])`:
- *   - DANA v1 (root, no parent): note ≤ 157
- *   - DANA v2 (re-offer / relationship with 32-byte parent): note ≤ 124
+ * Caps are UTF-8 **bytes**, not characters. Vietnamese (and other) accented
+ * letters are typically 2–3 bytes each — a “short” memorial still fills this.
  *
- * Soft caps leave a small margin under those ceilings.
- * EMPP `noteLen` is still a u8 (max 255) — the OP_RETURN limit binds first.
+ * Measured with `emppScript([alpSend, alpBurn, memorial])` / without SEND:
+ *   - DANA v1 (root): note ≤ 157 without SEND (150 → ~216). With leftover
+ *     SEND, 100 still fits; 140 + SEND is **262** (the production error).
+ *   - DANA v2 (parent txid): note ≤ 101 without SEND (100 → ~222).
+ *
+ * Older 150 / 120 caps were treated as always-safe including leftover SEND.
+ * They are not. EMPP `noteLen` is still a u8 (max 255) — 223 binds first.
  */
 export const MEMORIAL_NOTE_MAX_BYTES = 150;
-/** Stricter note budget when DANA v2 embeds a parent burn txid. */
-export const MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT = 120;
+/**
+ * Packed-note cap when DANA v2 embeds a 32-byte parent (re-offer / amend).
+ * Relationship-only fragments are ~74 bytes and stay whole under 100.
+ * Extra remembrance *text* in the UI uses this same UTF-8 byte budget.
+ */
+export const MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT = 100;
 
-/** Soft UI cap for the free-text quick-offer note (characters). */
-export const MEMORIAL_NOTE_MAX_CHARS = 200;
+/** Soft UI cap for the free-text quick-offer note (characters). Prefer bytes. */
+export const MEMORIAL_NOTE_MAX_CHARS = 100;
 
 /** On-chain honorific codes (render via locale in the UI / OG). */
 export type AltarHonorific = '' | 'mr' | 'mrs';
@@ -223,11 +233,15 @@ function scrub(raw: string): string {
   return raw.replaceAll(ALTAR_SEP, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function utf8ByteLength(raw: string): number {
+export function utf8ByteLength(raw: string): number {
   return new TextEncoder().encode(raw).length;
 }
 
-export function memorialNoteMaxBytes(hasParentBurnTxid: boolean): number {
+/**
+ * Packed-note cap on the wire: 150 (v1) or 100 (v2 parent).
+ * Extra v2 *text* in the UI uses the v2 cap. Caps are UTF-8 bytes.
+ */
+export function memorialNoteMaxBytes(hasParentBurnTxid?: boolean): number {
   return hasParentBurnTxid
     ? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT
     : MEMORIAL_NOTE_MAX_BYTES;
@@ -798,12 +812,15 @@ export function encodeAltarNote(
       dateCalendar,
     ]);
 
+  const originalNote = note;
   const dropOrder: Array<() => void> = [
     () => {
       funeralPlace = '';
     },
     () => {
       note = '';
+      const overhead = utf8ByteLength(pack());
+      note = truncateUtf8Bytes(originalNote, Math.max(0, maxBytes - overhead));
     },
     () => {
       deathPlace = '';
@@ -855,7 +872,12 @@ export function encodeRelationshipNote(
     );
   }
 
-  const maxBytes = opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT;
+  const maxBytes = Math.max(
+    opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+    // type + 64-hex txid + separators is ~74 bytes; leftover SEND is retried
+    // without DATA overflow in burnOnePrayer.
+    80,
+  );
   let note = scrub(fields.note || '');
 
   const pack = (): string =>

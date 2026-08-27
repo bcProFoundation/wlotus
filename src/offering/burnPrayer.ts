@@ -94,36 +94,6 @@ export async function burnOnePrayer(opts: {
   }
   const inventoryAtoms = totalAtoms - burnAtoms;
 
-  const outputs: payment.PaymentOutput[] = [{ sats: 0n }];
-  const tokenActions: payment.TokenAction[] = [];
-
-  if (inventoryAtoms > 0n && opts.inventoryScript) {
-    // Explicit SEND leftover → inventory (temple); BURN the flower atoms.
-    tokenActions.push({
-      type: 'SEND',
-      tokenId: opts.tokenId,
-      tokenType: ALP_TOKEN_TYPE_STANDARD,
-    });
-    outputs.push({
-      sats: DEFAULT_DUST_SATS,
-      script: opts.inventoryScript,
-      tokenId: opts.tokenId,
-      atoms: inventoryAtoms,
-      isMintBaton: false,
-    });
-  }
-
-  tokenActions.push({
-    type: 'BURN',
-    tokenId: opts.tokenId,
-    tokenType: ALP_TOKEN_TYPE_STANDARD,
-    burnAtoms,
-  });
-  tokenActions.push({
-    type: 'DATA',
-    data: memorialPushdata(note, offeringId, parentBurnTxid),
-  });
-
   // Token UTXOs + the smallest extra pure-XEC coin (fee). Prefer leftover
   // dust (< remint fuel size) so sized ~40 XEC fuels stay for the next mint.
   const extraPure = opts.wallet.utxos
@@ -136,21 +106,53 @@ export async function burnOnePrayer(opts: {
     ...(feeUtxo ? [feeUtxo.outpoint] : []),
   ];
 
-  const action: payment.Action = {
-    outputs,
-    tokenActions,
-    requiredUtxos,
-  };
-
-  // Always pin change to mint receive (or caller override) — never BIP44 …/1/i.
   const changeScript = opts.changeScript ?? opts.wallet.script;
   const previous = opts.wallet.getChangeScript.bind(opts.wallet);
   (opts.wallet as { getChangeScript: () => Script }).getChangeScript = () =>
     changeScript;
 
+  const buildWithInventory = (includeInventory: boolean) => {
+    const outputs: payment.PaymentOutput[] = [{ sats: 0n }];
+    const tokenActions: payment.TokenAction[] = [];
+    if (includeInventory && inventoryAtoms > 0n && opts.inventoryScript) {
+      tokenActions.push({
+        type: 'SEND',
+        tokenId: opts.tokenId,
+        tokenType: ALP_TOKEN_TYPE_STANDARD,
+      });
+      outputs.push({
+        sats: DEFAULT_DUST_SATS,
+        script: opts.inventoryScript,
+        tokenId: opts.tokenId,
+        atoms: inventoryAtoms,
+        isMintBaton: false,
+      });
+    }
+    tokenActions.push({
+      type: 'BURN',
+      tokenId: opts.tokenId,
+      tokenType: ALP_TOKEN_TYPE_STANDARD,
+      burnAtoms,
+    });
+    tokenActions.push({
+      type: 'DATA',
+      data: memorialPushdata(note, offeringId, parentBurnTxid),
+    });
+    return opts.wallet.action({ outputs, tokenActions, requiredUtxos }).build();
+  };
+
   let resp: { success: boolean; broadcasted?: string[] };
   try {
-    const built = opts.wallet.action(action).build();
+    let built;
+    try {
+      built = buildWithInventory(true);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!msg.includes('OP_RETURN of') || !opts.inventoryScript) throw e;
+      // Leftover ALP SEND + a long DANA note can exceed 223. Burn the
+      // memorial without the inventory SEND so the flower still lands.
+      built = buildWithInventory(false);
+    }
     resp = await built.broadcast();
   } finally {
     (opts.wallet as { getChangeScript: () => Script }).getChangeScript =

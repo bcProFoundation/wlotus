@@ -172,12 +172,21 @@ Trailing empty fields may be omitted. Readers split on `\x1f` and take positions
 
 **Note size:** EMPP `noteLen` is one byte (max **255** UTF-8 bytes), but the
 binding limit is eCash’s **OP_RETURN script ≤ 223 bytes** for the full burn
-(`ALP BURN` + DANA memorial EMPP). Measured soft caps in `altarFields.ts`:
+(`ALP SEND` leftover + `ALP BURN` + DANA memorial EMPP). Measured soft caps
+in `altarFields.ts` (leftover miner inventory is sent in the same tx):
 
-| Burn kind | DANA | Note soft-cap |
+| Burn kind | DANA | Note soft-cap (UTF-8 **bytes**, not characters) |
 |-----------|------|---------------|
-| Root dedication | v1 | `MEMORIAL_NOTE_MAX_BYTES` (**150**) |
-| Amend / re-offer (parent txid) | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**120**) |
+| Root dedication | v1 | `MEMORIAL_NOTE_MAX_BYTES` (**150**) — leftover SEND retried if needed |
+| Re-offer extra text / v2 amend | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**100**) |
+| Relationship fragment | v2 | packed ~74 bytes (txid kept whole; leftover SEND may be omitted) |
+
+Vietnamese and other accented letters are typically **2–3 bytes each**, so a
+full-looking “Lời nguyện” still hits this ceiling well before 150 characters.
+Leftover miner inventory is sent in the same burn when it fits; if the
+combined script would exceed 223, the flower burns without that SEND so the
+offering still lands. Older code measured 150 as BURN+DATA only; a 140-byte
+v1 note with leftover SEND is **262** bytes and the burn failed after mint.
 
 `encodeAltarNote` packs the **root** dedication. Fit order prefers keeping the
 relationship link on the root (living setups often fill long place text): drop

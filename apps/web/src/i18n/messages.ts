@@ -46,6 +46,8 @@ export type MessageKey =
   | 'altarNamePlaceholder'
   | 'altarNote'
   | 'altarNotePlaceholder'
+  | 'altarNoteBudget'
+  | 'altarNoteByteHint'
   | 'altarBirthPlace'
   | 'altarBirthYear'
   | 'altarBirthYearPlaceholder'
@@ -257,6 +259,8 @@ const en: Dict = {
   altarNamePlaceholder: 'Full name',
   altarNote: 'Words of remembrance',
   altarNotePlaceholder: 'Optional short message',
+  altarNoteBudget: '{used} / {max} UTF-8 bytes',
+  altarNoteByteHint: 'Accented letters use 2–3 bytes each, not 1.',
   altarBirthPlace: 'Hometown',
   altarBirthYear: 'Year of birth',
   altarBirthYearPlaceholder: 'YYYY or YYYY-MM-DD',
@@ -485,6 +489,8 @@ const vi: Dict = {
   altarNamePlaceholder: 'Họ và tên',
   altarNote: 'Lời nguyện',
   altarNotePlaceholder: 'Tuỳ chọn — lời ngắn',
+  altarNoteBudget: '{used} / {max} byte UTF-8',
+  altarNoteByteHint: 'Chữ có dấu chiếm 2–3 byte mỗi chữ, không phải mỗi ký tự.',
   altarBirthPlace: 'Quê quán',
   altarBirthYear: 'Năm sinh',
   altarBirthYearPlaceholder: 'YYYY hoặc YYYY-MM-DD',
@@ -712,6 +718,8 @@ const zh: Dict = {
   altarNamePlaceholder: '姓名',
   altarNote: '追思寄语',
   altarNotePlaceholder: '可选短句',
+  altarNoteBudget: '{used} / {max} UTF-8 字节',
+  altarNoteByteHint: '带声调的字每个占 2–3 字节，不是按字数计算。',
   altarBirthPlace: '籍贯',
   altarBirthYear: '出生年',
   altarBirthYearPlaceholder: 'YYYY 或 YYYY-MM-DD',
