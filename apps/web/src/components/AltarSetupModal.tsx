@@ -10,10 +10,13 @@ import {
   formatAltarDateInput,
   formatAltarPersonName,
   MAX_PARENT_RELATIONSHIPS,
+  MEMORIAL_NOTE_MAX_BYTES,
   normalizeAltarDateCalendar,
   normalizeAltarKind,
   normalizeAltarRelatedTxid,
   sortAltarRelationships,
+  truncateUtf8Bytes,
+  utf8ByteLength,
   validateAltarFields,
   validateDeathDateFields,
   validateRelationshipFields,
@@ -797,9 +800,24 @@ export function AltarSetupModal(props: {
                     id="altar-note"
                     rows={2}
                     value={draft.note}
-                    onChange={e => setField('note', e.target.value)}
+                    onChange={e =>
+                      setField(
+                        'note',
+                        truncateUtf8Bytes(
+                          e.target.value,
+                          MEMORIAL_NOTE_MAX_BYTES,
+                        ),
+                      )
+                    }
                     placeholder={t('altarNotePlaceholder')}
                   />
+                  <p className="hint">
+                    {t('altarNoteBudget', {
+                      used: utf8ByteLength(draft.note),
+                      max: MEMORIAL_NOTE_MAX_BYTES,
+                    })}
+                  </p>
+                  <p className="hint">{t('altarNoteByteHint')}</p>
                 </div>
                 )}
 

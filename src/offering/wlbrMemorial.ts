@@ -15,7 +15,10 @@
  * Tip-state layout (ver=4, 15 bytes) lives in `src/covenant/mooreTip.ts`.
  */
 
-import { MEMORIAL_NOTE_MAX_BYTES, truncateUtf8Bytes } from './altarFields.js';
+import {
+  memorialNoteMaxBytes,
+  truncateUtf8Bytes,
+} from './altarFields.js';
 
 export const DANA_LOKAD = new TextEncoder().encode('DANA');
 
@@ -84,7 +87,8 @@ export function memorialPushdata(
 ): Uint8Array {
   const idBytes = new TextEncoder().encode(offeringId);
   const noteBytes = new TextEncoder().encode(
-    truncateUtf8Bytes(note, MEMORIAL_NOTE_MAX_BYTES),
+    // UTF-8 byte cap (150 v1 / 120 v2). Vietnamese letters are 2–3 bytes each.
+    truncateUtf8Bytes(note, memorialNoteMaxBytes(Boolean(parentBurnTxidHex))),
   );
   if (idBytes.length > 255 || noteBytes.length > 255) {
     throw new Error('memorial fields too long');

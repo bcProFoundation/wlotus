@@ -49,22 +49,37 @@ export const ALTAR_SEP = '\u001f';
 export const OP_RETURN_SCRIPT_MAX_BYTES = 223;
 
 /**
- * Max UTF-8 bytes for the DANA memorial *note* so the full burn OP_RETURN
- * (ALP BURN + DANA EMPP, offeringId `wlotus`) stays ≤ 223.
+ * Max UTF-8 bytes for the DANA memorial *note* so a **BURN + DATA** OP_RETURN
+ * (offeringId `wlotus`) stays ≤ 223. Temple burns also try to SEND leftover
+ * miner inventory in the same tx; if that overflows, `burnOnePrayer` retries
+ * without leftover SEND so the flower still lands.
  *
- * Empirically measured with ecash-lib `emppScript([alpBurn, memorial])`:
- *   - DANA v1 (root, no parent): note ≤ 157
- *   - DANA v2 (re-offer / relationship with 32-byte parent): note ≤ 124
+ * Caps are UTF-8 **bytes**, not characters. Vietnamese accented letters are
+ * typically 2–3 bytes each; Chinese/Japanese (han/kana) are typically 3.
+ * A “short” memorial still fills this. Truncation is per code point so a
+ * CJK glyph is never split mid-character.
  *
- * Soft caps leave a small margin under those ceilings.
- * EMPP `noteLen` is still a u8 (max 255) — the OP_RETURN limit binds first.
+ * Measured with `emppScript([alpSend, alpBurn, memorial])` / without SEND:
+ *   - DANA v1 (root): note ≤ 157 without SEND (150 → ~216). With leftover
+ *     SEND, 140 + SEND is **262** (the production error).
+ *   - DANA v2 (32-byte parent txid): note ≤ 124 without SEND (120 → ~219).
+ *     Leftover SEND still fits for extras ≲ 69 bytes; larger extras retry
+ *     without SEND. Re-offers do **not** re-pack the root altar — only the
+ *     parent txid plus optional extra remembrance text.
+ *
+ * Older 150 / 120 caps were treated as always-safe including leftover SEND.
+ * They are not. EMPP `noteLen` is still a u8 (max 255) — 223 binds first.
  */
 export const MEMORIAL_NOTE_MAX_BYTES = 150;
-/** Stricter note budget when DANA v2 embeds a parent burn txid. */
+/**
+ * Extra remembrance *text* on DANA v2 (re-offer / amend). The 32-byte parent
+ * txid is the only root pointer. Relationship fragments (~74 bytes) fit.
+ * Measured: 120-byte note + BURN + DATA = 219 (limit 223).
+ */
 export const MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT = 120;
 
-/** Soft UI cap for the free-text quick-offer note (characters). */
-export const MEMORIAL_NOTE_MAX_CHARS = 200;
+/** Soft UI cap for the free-text quick-offer note (characters). Prefer bytes. */
+export const MEMORIAL_NOTE_MAX_CHARS = 100;
 
 /** On-chain honorific codes (render via locale in the UI / OG). */
 export type AltarHonorific = '' | 'mr' | 'mrs';
@@ -223,11 +238,15 @@ function scrub(raw: string): string {
   return raw.replaceAll(ALTAR_SEP, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function utf8ByteLength(raw: string): number {
+export function utf8ByteLength(raw: string): number {
   return new TextEncoder().encode(raw).length;
 }
 
-export function memorialNoteMaxBytes(hasParentBurnTxid: boolean): number {
+/**
+ * Packed-note cap on the wire: 150 (v1) or 100 (v2 parent).
+ * Extra v2 *text* in the UI uses the v2 cap. Caps are UTF-8 bytes.
+ */
+export function memorialNoteMaxBytes(hasParentBurnTxid?: boolean): number {
   return hasParentBurnTxid
     ? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT
     : MEMORIAL_NOTE_MAX_BYTES;
@@ -703,6 +722,33 @@ export function isRelationshipAmendNote(
   return true;
 }
 
+/**
+ * Re-offer extras are **plain remembrance text** plus DANA v2 `parentBurnTxid`.
+ * If a packed altar note is supplied by mistake, keep only the remembrance
+ * slot so name / places / dates / links are not rewritten on the flower burn.
+ */
+export function reofferExtraNote(raw: string | null | undefined): string {
+  const t = (raw || '').trim();
+  if (!t) return '';
+  const packed = parseAltarNote(t);
+  if (!packed) return t;
+  return scrub(packed.note);
+}
+
+/**
+ * Note that goes in the DANA EMPP push. Star fragments (death / relationship)
+ * stay packed; every other parent burn is a re-offer extra.
+ */
+export function prepareDanaNote(
+  raw: string | null | undefined,
+  hasParentBurnTxid: boolean,
+): string {
+  const t = (raw || '').trim();
+  if (!hasParentBurnTxid) return t;
+  if (isDeathDateAmendNote(t) || isRelationshipAmendNote(t)) return t;
+  return reofferExtraNote(t);
+}
+
 /** Relationship pair only (for relationship star-fragment burns). */
 export function validateRelationshipFields(
   a: Pick<AltarFields, 'relationshipType' | 'relatedTxid'>,
@@ -798,12 +844,15 @@ export function encodeAltarNote(
       dateCalendar,
     ]);
 
+  const originalNote = note;
   const dropOrder: Array<() => void> = [
     () => {
       funeralPlace = '';
     },
     () => {
       note = '';
+      const overhead = utf8ByteLength(pack());
+      note = truncateUtf8Bytes(originalNote, Math.max(0, maxBytes - overhead));
     },
     () => {
       deathPlace = '';
@@ -855,7 +904,12 @@ export function encodeRelationshipNote(
     );
   }
 
-  const maxBytes = opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT;
+  const maxBytes = Math.max(
+    opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+    // type + 64-hex txid + separators is ~74 bytes; leftover SEND is retried
+    // without DATA overflow in burnOnePrayer.
+    80,
+  );
   let note = scrub(fields.note || '');
 
   const pack = (): string =>

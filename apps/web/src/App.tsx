@@ -41,12 +41,16 @@ import {
   isAltarPackedNote,
   memorialDisplayName,
   memorialNoteMaxBytes,
+  MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   mergeAltarFields,
   altarHasDeathDate,
   altarRelationships,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
   parseAltarNote,
+  prepareDanaNote,
+  truncateUtf8Bytes,
+  utf8ByteLength,
   type AltarFields,
   type AltarRelationshipType,
 } from './lib/altarFields.js';
@@ -772,7 +776,8 @@ export default function App() {
         return;
       }
       // Re-offer: parent txid only + optional extra memorial message.
-      challengeNote = extraNote ?? '';
+      // Never re-pack the root altar (name / places / dates stay on ★).
+      challengeNote = prepareDanaNote(extraNote ?? '', true);
       historyNote = (opts?.displayNote ?? '').trim();
     } else if (isAmend && amendKind === 'death' && activeAltar) {
       try {
@@ -1245,7 +1250,14 @@ export default function App() {
           if (e instanceof DOMException && e.name === 'AbortError') {
             return;
           }
-          setMsg({ kind: 'err', text: errMsg });
+          setMsg({
+            kind: 'err',
+            text:
+              errMsg.includes('OP_RETURN of') ||
+              errMsg.includes('OP_RETURN budget')
+                ? tRef.current('altarErrOpreturn')
+                : errMsg,
+          });
           if (!pendingRelationshipFollowUpRef.current?.parentBurnTxid) {
             pendingRelationshipFollowUpRef.current = null;
           }
@@ -2660,6 +2672,7 @@ export default function App() {
                   dedicationSheet.specialId,
                 )?.kind ?? null
               }
+              hideNote
               onViewRelated={txid => void viewRelatedAltar(txid)}
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />
@@ -2682,17 +2695,29 @@ export default function App() {
                   <textarea
                     id="dedication-extra-note"
                     rows={2}
-                    maxLength={80}
                     value={dedicationSheet.extraNote}
                     onChange={e =>
                       setDedicationSheet(d =>
                         d
-                          ? { ...d, extraNote: e.target.value.slice(0, 80) }
+                          ? {
+                              ...d,
+                              extraNote: truncateUtf8Bytes(
+                                e.target.value,
+                                MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+                              ),
+                            }
                           : d,
                       )
                     }
                     placeholder={t('reofferExtraNotePlaceholder')}
                   />
+                  <p className="hint">
+                    {t('altarNoteBudget', {
+                      used: utf8ByteLength(dedicationSheet.extraNote),
+                      max: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+                    })}
+                  </p>
+                  <p className="hint">{t('altarNoteByteHint')}</p>
                 </div>
             ) : dedicationSheet.isCreator &&
               dedicationSheet.parentBurnTxid ? (
@@ -3028,6 +3053,7 @@ export default function App() {
                         <AltarDetails
                           altar={session.altar}
                           specialKind={sp?.kind ?? null}
+                          hideNote={Boolean(session.parentBurnTxid)}
                           relatedAltarOptions={
                             session.relatedOptions ?? relatedAltarOptions
                           }
@@ -3174,6 +3200,7 @@ export default function App() {
                         <AltarDetails
                           altar={session.altar}
                           specialKind={sp?.kind ?? null}
+                          hideNote={Boolean(session.parentBurnTxid)}
                           relatedAltarOptions={
                             session.relatedOptions ?? relatedAltarOptions
                           }

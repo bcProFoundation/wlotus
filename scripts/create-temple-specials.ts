@@ -60,6 +60,7 @@ import {
 import {
   encodeAltarNote,
   emptyAltarFields,
+  MEMORIAL_NOTE_MAX_BYTES,
   type AltarFields,
 } from '../src/offering/altarFields.js';
 import { lunarYmdToSolarYmd } from '../src/lib/lunarCalendar.js';
@@ -387,10 +388,10 @@ function buildAltarNote(spec: SpecialSpec): string {
     deathDate: deathDateForSpec(spec),
     birthPlace: spec.birthPlace ?? '',
   };
-  // Root DANA v1 (no parent). Soft cap leaves room for ALP BURN in the same
-  // OP_RETURN (≤ 223). Empirical headroom is tighter than the 150 constant when
-  // Vietnamese multi-byte text is present — stay well under.
-  return encodeAltarNote(fields, { maxBytes: 100 });
+  // Root DANA v1 (no parent). Packed note ≤ 150 UTF-8 bytes (Vietnamese
+  // letters are 2–3 bytes each). Leftover ALP SEND is retried off if the
+  // combined OP_RETURN would exceed 223.
+  return encodeAltarNote(fields, { maxBytes: MEMORIAL_NOTE_MAX_BYTES });
 }
 
 function registryEntry(

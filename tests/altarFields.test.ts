@@ -28,8 +28,11 @@ import {
   normalizeAltarKind,
   normalizeAltarDateCalendar,
   parseAltarNote,
+  prepareDanaNote,
+  reofferExtraNote,
   sortAltarRelationships,
   truncateUtf8Bytes,
+  utf8ByteLength,
   validateAltarFields,
   type AltarFields,
 } from '../src/offering/altarFields.js';
@@ -88,6 +91,7 @@ describe('altarFields', () => {
       { relationshipType: 'spouse', relatedTxid },
       { maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT },
     );
+    // type + 64-hex txid + separators is ~74 bytes; fits under the v2 120-byte cap.
     expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
       MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
     );
@@ -284,6 +288,63 @@ describe('altarFields', () => {
     const s = 'á'.repeat(100);
     const out = truncateUtf8Bytes(s, 10);
     expect(new TextEncoder().encode(out).length).toBeLessThanOrEqual(10);
+  });
+
+  it('counts Vietnamese remembrance text in UTF-8 bytes, not characters', () => {
+    const vi = 'Dâng lại hoa sen cho ban thờ. '.repeat(8);
+    expect(utf8ByteLength(vi)).toBeGreaterThan(vi.length);
+    const clipped = truncateUtf8Bytes(vi, MEMORIAL_NOTE_MAX_BYTES);
+    expect(utf8ByteLength(clipped)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+    expect(clipped.length).toBeLessThan(vi.length);
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      note: vi,
+    });
+    expect(utf8ByteLength(packed)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('Cao Lâm Quả');
+    expect(parsed.note.length).toBeGreaterThan(0);
+    expect(utf8ByteLength(parsed.note)).toBeLessThan(utf8ByteLength(vi));
+  });
+
+  it('does not split Chinese or Japanese characters at the UTF-8 byte cap', () => {
+    const zh = '追思寄语'.repeat(40);
+    const ja = 'ありがとう'.repeat(40);
+    expect(utf8ByteLength('追')).toBe(3);
+    expect(utf8ByteLength('あ')).toBe(3);
+    for (const s of [zh, ja]) {
+      expect(utf8ByteLength(s)).toBeGreaterThan(MEMORIAL_NOTE_MAX_BYTES);
+      const clipped = truncateUtf8Bytes(s, MEMORIAL_NOTE_MAX_BYTES);
+      expect(utf8ByteLength(clipped)).toBe(MEMORIAL_NOTE_MAX_BYTES);
+      expect(utf8ByteLength(clipped) % 3).toBe(0);
+      expect([...clipped].every(ch => utf8ByteLength(ch) === 3)).toBe(true);
+    }
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: '中村花子',
+      deathDate: '2001-12-04',
+      note: zh,
+    });
+    expect(utf8ByteLength(packed)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('中村花子');
+  });
+
+  it('truncates a long remembrance note instead of dropping it', () => {
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      note: 'n'.repeat(400),
+    });
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('Cao Lâm Quả');
+    expect(parsed.note.length).toBeGreaterThan(20);
+    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
+      MEMORIAL_NOTE_MAX_BYTES,
+    );
   });
 
   it('prefers keeping relationship on the root over long place text', () => {
@@ -494,6 +555,32 @@ describe('altarFields', () => {
     expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
     expect(memorialNoteMaxBytes(false)).toBe(150);
     expect(memorialNoteMaxBytes(true)).toBe(120);
+  });
+
+  it('strips packed root fields from a re-offer extra, keeps death/relationship fragments', () => {
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      note: 'Nhớ mãi',
+      deathDate: '2001-12-04',
+      deathPlace: 'Quy Nhơn',
+    });
+    expect(reofferExtraNote(packed)).toBe('Nhớ mãi');
+    expect(reofferExtraNote('Dâng hoa sen')).toBe('Dâng hoa sen');
+    expect(prepareDanaNote(packed, true)).toBe('Nhớ mãi');
+    expect(prepareDanaNote(packed, false)).toBe(packed);
+    const rel = encodeRelationshipNote({
+      relationshipType: 'spouse',
+      relatedTxid: 'a'.repeat(64),
+    });
+    expect(prepareDanaNote(rel, true)).toBe(rel);
+    const death = encodeDeathDateNote({
+      deathDate: '2020-01-15',
+      deathPlace: 'Hà Nội',
+      funeralPlace: '',
+    });
+    expect(prepareDanaNote(death, true)).toBe(death);
   });
 
   it('round-trips an event altar with lunar calendar preference', () => {

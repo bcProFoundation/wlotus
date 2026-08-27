@@ -70,11 +70,16 @@ export function AltarDetails(props: {
    * Users offer only; a personal altar for the same person is a separate flow.
    */
   specialKind?: AltarDetailsSpecialKind | null;
+  /**
+   * Re-offer sheet: hide the root Lời nguyện. New words go in the extra
+   * field and on-chain as DANA v2 extra text only (parent txid is the link).
+   */
+  hideNote?: boolean;
   onViewRelated?: (relatedTxid: string) => void;
   relatedAltarOptions?: RelatedAltarOption[];
 }) {
   const { locale, t } = useLocale();
-  const { altar, specialKind } = props;
+  const { altar, specialKind, hideNote } = props;
   const hideCatalogFields = Boolean(specialKind);
   const userEvent = !hideCatalogFields && altarIsEvent(altar);
   const hidePersonOnly = hideCatalogFields || userEvent;
@@ -125,7 +130,7 @@ export function AltarDetails(props: {
     ...(hidePersonOnly
       ? []
       : [{ key: 'honorific', label: t('altarHonorific'), value: honorific }]),
-    ...(hideCatalogFields
+    ...(hideCatalogFields || hideNote
       ? []
       : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
     ...(hidePersonOnly
