@@ -381,9 +381,9 @@ function buildAltarNote(spec: SpecialSpec): string {
     ...emptyAltarFields(),
     name: spec.altarName,
     note: spec.note,
-    // Solar civil day of the festival peak — required so the root is re-offerable
-    // (living profiles cannot take flower re-offers). Same calendar day the
-    // special window uses after lunar→solar conversion.
+    // Solar civil day of the festival peak — used as the altar deathDate so
+    // the special shows on the calendar. Same calendar day the special window
+    // uses after lunar→solar conversion.
     deathDate: deathDateForSpec(spec),
     birthPlace: spec.birthPlace ?? '',
   };

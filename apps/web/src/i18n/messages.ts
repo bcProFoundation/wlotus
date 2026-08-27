@@ -122,6 +122,7 @@ export type MessageKey =
   | 'reofferExtraNotePlaceholder'
   | 'specialPrayerNoteLabel'
   | 'btnAmendAltar'
+  | 'btnAddDeathDate'
   | 'amendRelationshipCreatorOnly'
   | 'firstOfferDeathTitle'
   | 'firstOfferDeathHint'
@@ -227,9 +228,9 @@ const en: Dict = {
   altarTitle: 'Altar',
   profileTitle: 'Profile',
   altarHint:
-    'Create a memorial on-chain. Date of death is optional at setup — living profiles use Profile until the creator offers a flower with a death date.',
+    'Create a memorial on-chain. Date of death is optional — living profiles use Profile until a date of death is added. Flowers can be offered either way.',
   profileHint:
-    'Create a living profile on-chain. Flower offerings unlock after you (the creator) offer a flower with a date of death.',
+    'Create a living profile on-chain. Flowers can be offered now. You (the creator) can add a date of death later.',
   altarHonorific: 'Title',
   altarHonorificMr: 'Mr.',
   altarHonorificMrs: 'Mrs.',
@@ -327,6 +328,7 @@ const en: Dict = {
   reofferExtraNotePlaceholder: 'Optional…',
   specialPrayerNoteLabel: 'Wish',
   btnAmendAltar: 'Add relationship',
+  btnAddDeathDate: 'Add date of death',
   amendRelationshipCreatorOnly:
     'Only the creator of this altar can add relationships.',
   firstOfferDeathTitle: 'Offer a flower',
@@ -441,9 +443,9 @@ const vi: Dict = {
   altarTitle: 'Ban thờ',
   profileTitle: 'Hồ sơ',
   altarHint:
-    'Tạo ban thờ trên chuỗi. Ngày mất tuỳ chọn khi thiết lập — hồ sơ còn sống dùng Hồ sơ cho đến khi người tạo dâng hoa kèm ngày mất.',
+    'Tạo ban thờ trên chuỗi. Ngày mất tuỳ chọn — hồ sơ còn sống dùng Hồ sơ cho đến khi có ngày mất. Vẫn có thể dâng hoa.',
   profileHint:
-    'Tạo hồ sơ người còn sống trên chuỗi. Dâng hoa mở lại sau khi bạn (người tạo) dâng hoa kèm ngày mất.',
+    'Tạo hồ sơ người còn sống trên chuỗi. Có thể dâng hoa ngay. Bạn (người tạo) có thể thêm ngày mất sau.',
   altarHonorific: 'Danh xưng',
   altarHonorificMr: 'Ông',
   altarHonorificMrs: 'Bà',
@@ -540,6 +542,7 @@ const vi: Dict = {
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   specialPrayerNoteLabel: 'Lời nguyện',
   btnAmendAltar: 'Thêm mối quan hệ',
+  btnAddDeathDate: 'Thêm ngày mất',
   amendRelationshipCreatorOnly:
     'Chỉ người tạo ban thờ mới có thể thêm mối quan hệ.',
   firstOfferDeathTitle: 'Dâng hoa',
@@ -655,9 +658,9 @@ const zh: Dict = {
   altarTitle: '灵位',
   profileTitle: '档案',
   altarHint:
-    '在链上创建灵位。设置时可留空去世日期——在世档案显示为档案，直到创建者献花并填写去世日期。',
+    '在链上创建灵位。去世日期可选——在世档案显示为档案，直到填写去世日期。无论是否填写都可以献花。',
   profileHint:
-    '在链上创建在世档案。创建者献花并填写去世日期后即可再次献花。',
+    '在链上创建在世档案。现在即可献花。创建者之后可以补上去世日期。',
   altarHonorific: '称谓',
   altarHonorificMr: '先生',
   altarHonorificMrs: '女士',
@@ -750,6 +753,7 @@ const zh: Dict = {
   reofferExtraNotePlaceholder: '可选…',
   specialPrayerNoteLabel: '心愿',
   btnAmendAltar: '添加关系',
+  btnAddDeathDate: '添加忌日',
   amendRelationshipCreatorOnly: '仅档案创建者可添加关系。',
   firstOfferDeathTitle: '献花',
   firstOfferDeathHint:

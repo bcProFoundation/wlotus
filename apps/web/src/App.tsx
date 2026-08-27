@@ -751,10 +751,6 @@ export default function App() {
     }
 
     if (isReoffer) {
-      if (opts?.altar && !altarHasDeathDate(opts.altar)) {
-        setMsg({ kind: 'err', text: t('firstOfferDeathHint') });
-        return;
-      }
       // Re-offer: parent txid only + optional extra memorial message.
       challengeNote = extraNote ?? '';
       historyNote = (opts?.displayNote ?? '').trim();
@@ -2282,12 +2278,7 @@ export default function App() {
               const lastWhen = new Date(last.at).toLocaleString(locale);
               const rootId = g.original.burnTxid;
               const groupAltar = altarFromOfferGroup(g);
-              const canReoffer = altarHasDeathDate(groupAltar);
-              const rootKey = rootId.trim().toLowerCase();
-              const isCreator =
-                creatorByRoot.get(rootKey) === true ||
-                isLocalCreatedRoot(rootKey);
-              const showFirstOffer = !canReoffer && isCreator;
+              const deceased = altarHasDeathDate(groupAltar);
               return (
                 <li key={rootId}>
                   <SwipeReveal
@@ -2364,42 +2355,25 @@ export default function App() {
                           disabled={busy}
                           onClick={() => void openMemorialHistory(g)}
                         >
-                          {canReoffer
+                          {deceased
                             ? t('burnTotal', { n: g.totalBurns })
                             : t('activityTotal', { n: g.totalBurns })}
                         </button>
                         <div className="history-row-actions">
-                          {canReoffer ? (
-                            <button
-                              type="button"
-                              className="btn btn-reoffer-lotus"
-                              disabled={!canOffer}
-                              onClick={() =>
-                                void openDedicationSheet({
-                                  parentBurnTxid: rootId,
-                                  memorialNote: g.note,
-                                })
-                              }
-                            >
-                              <BrandMark badge width={28} height={28} />
-                              <span>{t('btnReoffer')}</span>
-                            </button>
-                          ) : showFirstOffer ? (
-                            <button
-                              type="button"
-                              className="btn btn-reoffer-lotus"
-                              disabled={!canOffer}
-                              onClick={() =>
-                                void openDedicationSheet({
-                                  parentBurnTxid: rootId,
-                                  memorialNote: g.note,
-                                })
-                              }
-                            >
-                              <BrandMark badge width={28} height={28} />
-                              <span>{t('btnOffer')}</span>
-                            </button>
-                          ) : null}
+                          <button
+                            type="button"
+                            className="btn btn-reoffer-lotus"
+                            disabled={!canOffer}
+                            onClick={() =>
+                              void openDedicationSheet({
+                                parentBurnTxid: rootId,
+                                memorialNote: g.note,
+                              })
+                            }
+                          >
+                            <BrandMark badge width={28} height={28} />
+                            <span>{t('btnReoffer')}</span>
+                          </button>
                         </div>
                       </div>
                       <span className="history-meta">
@@ -2538,9 +2512,7 @@ export default function App() {
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />
             ) : null}
-            {altarHasDeathDate(dedicationSheet.altar) ||
-            !dedicationSheet.parentBurnTxid ? (
-                <div className="field dedication-extra-note-field">
+            <div className="field dedication-extra-note-field">
                   <label htmlFor="dedication-extra-note">
                     {(() => {
                       const sp = specialForBurn(
@@ -2568,14 +2540,8 @@ export default function App() {
                     placeholder={t('reofferExtraNotePlaceholder')}
                   />
                 </div>
-            ) : dedicationSheet.isCreator &&
-              dedicationSheet.parentBurnTxid ? (
-                <p className="hint">{t('firstOfferDeathHint')}</p>
-            ) : null}
             </div>
-            {altarHasDeathDate(dedicationSheet.altar) ||
-            !dedicationSheet.parentBurnTxid ? (
-              <div className="altar-detail-footer">
+            <div className="altar-detail-footer">
                 <p className="hint eta">
                   {t('etaEstimated', { eta: etaLabel })}
                 </p>
@@ -2624,9 +2590,35 @@ export default function App() {
                       if (sp?.kind === 'ghost' && sp.active) {
                         return t('btnCung');
                       }
-                      return t('btnOffer');
+                      return dedicationSheet.parentBurnTxid
+                        ? t('btnReoffer')
+                        : t('btnOffer');
                     })()}
                   </button>
+                  {dedicationSheet.isCreator &&
+                  dedicationSheet.parentBurnTxid &&
+                  !altarHasDeathDate(dedicationSheet.altar) &&
+                  !specialHidesAltarSectionLabel(
+                    specialForBurn(
+                      dedicationSheet.parentBurnTxid,
+                      dedicationSheet.specialId,
+                    ),
+                  ) ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        setAmendSheet({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          altar: dedicationSheet.altar,
+                          kind: 'death',
+                        })
+                      }
+                    >
+                      {t('btnAddDeathDate')}
+                    </button>
+                  ) : null}
                   {dedicationSheet.isCreator &&
                   dedicationSheet.parentBurnTxid &&
                   !specialHidesAltarSectionLabel(
@@ -2652,44 +2644,6 @@ export default function App() {
                   ) : null}
                 </div>
               </div>
-            ) : dedicationSheet.isCreator &&
-              dedicationSheet.parentBurnTxid ? (
-              <div className="altar-detail-footer">
-                <p className="hint eta">
-                  {t('etaEstimated', { eta: etaLabel })}
-                </p>
-                <div className="offer-actions offer-session-actions">
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-offer"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      setAmendSheet({
-                        parentBurnTxid: dedicationSheet.parentBurnTxid,
-                        altar: dedicationSheet.altar,
-                        kind: 'death',
-                      })
-                    }
-                  >
-                    {t('btnOffer')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    disabled={!canOffer}
-                    onClick={() =>
-                      setAmendSheet({
-                        parentBurnTxid: dedicationSheet.parentBurnTxid,
-                        altar: dedicationSheet.altar,
-                        kind: 'relationship',
-                      })
-                    }
-                  >
-                    {t('btnAmendAltar')}
-                  </button>
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
       ) : null}

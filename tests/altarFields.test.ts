@@ -247,6 +247,17 @@ describe('altarFields', () => {
     expect(parseAltarNote('plain')).toBeNull();
   });
 
+  it('parses a name-only event altar (Nepal 26/08) as having no death date', () => {
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Nepal 26/08',
+    });
+    expect(packed).toBe(`${ALTAR_SEP}Nepal 26/08`);
+    const parsed = parseAltarNote('\u001fNepal 26/08');
+    expect(parsed?.name).toBe('Nepal 26/08');
+    expect(altarHasDeathDate(parsed)).toBe(false);
+  });
+
   it('accepts birth date like death date (YYYY / YYYY-MM / YYYY-MM-DD)', () => {
     expect(
       validateAltarFields({

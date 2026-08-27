@@ -8,10 +8,10 @@
  *
  * Star-fragment burns under a root do **not** re-pack the full altar:
  *   - Re-offer: DANA v2 parent = root + optional free-text memorial message
- *     (only after a death date exists — living profiles cannot re-offer)
+ *     (any existing root — event memorials and living profiles included)
  *   - Relationship: DANA v2 parent = root + relationship slots only
  *   - Death date: DANA v2 parent = root + deathDate (+ optional places)
- *     when the root was created as a living profile (empty death date)
+ *     when the root was created without one (empty death date)
  * Root identity (name / honorific / birth) is written once; death date may be
  * added later via a star fragment. Clients merge burns under a star for display.
  *
@@ -96,8 +96,8 @@ export interface AltarFields {
    */
   birthYear: string;
   /**
-   * Date of death — optional. Empty = living profile (Setup only; no
-   * flower re-offer until a death-date star fragment is added).
+   * Date of death — optional. Empty = living profile / event memorial
+   * (still accepts flower re-offers; creator may add a date later).
    * Same shapes as birthYear: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
    */
   deathDate: string;
