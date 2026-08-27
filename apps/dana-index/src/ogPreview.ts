@@ -114,7 +114,7 @@ export function ogCopy(
       };
     default:
       return {
-        title: 'W Lotus - Sự kết nối các thế hệ',
+        title: 'W Lotus - Kết nối các thế hệ',
         description: 'Đoá sen của sự tưởng nhớ.',
       };
   }

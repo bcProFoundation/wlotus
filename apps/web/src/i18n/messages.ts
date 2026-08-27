@@ -434,7 +434,7 @@ const en: Dict = {
 const vi: Dict = {
   brand: 'W Lotus',
   brandWithLogo: 'Lotus',
-  headline: 'Sự kết nối các thế hệ',
+  headline: 'Kết nối các thế hệ',
   tagline: 'Đoá sen của sự tưởng nhớ.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
