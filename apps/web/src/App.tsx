@@ -48,6 +48,7 @@ import {
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
   parseAltarNote,
+  prepareDanaNote,
   truncateUtf8Bytes,
   utf8ByteLength,
   type AltarFields,
@@ -775,7 +776,8 @@ export default function App() {
         return;
       }
       // Re-offer: parent txid only + optional extra memorial message.
-      challengeNote = extraNote ?? '';
+      // Never re-pack the root altar (name / places / dates stay on ★).
+      challengeNote = prepareDanaNote(extraNote ?? '', true);
       historyNote = (opts?.displayNote ?? '').trim();
     } else if (isAmend && amendKind === 'death' && activeAltar) {
       try {
@@ -2670,6 +2672,7 @@ export default function App() {
                   dedicationSheet.specialId,
                 )?.kind ?? null
               }
+              hideNote
               onViewRelated={txid => void viewRelatedAltar(txid)}
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />
@@ -3050,6 +3053,7 @@ export default function App() {
                         <AltarDetails
                           altar={session.altar}
                           specialKind={sp?.kind ?? null}
+                          hideNote={Boolean(session.parentBurnTxid)}
                           relatedAltarOptions={
                             session.relatedOptions ?? relatedAltarOptions
                           }
@@ -3196,6 +3200,7 @@ export default function App() {
                         <AltarDetails
                           altar={session.altar}
                           specialKind={sp?.kind ?? null}
+                          hideNote={Boolean(session.parentBurnTxid)}
                           relatedAltarOptions={
                             session.relatedOptions ?? relatedAltarOptions
                           }

@@ -49,6 +49,7 @@ import {
 } from '../../../src/offering/burnPrayer.js';
 import {
   memorialNoteMaxBytes,
+  prepareDanaNote,
   truncateUtf8Bytes,
   isDeathDateAmendNote,
   isRelationshipAmendNote,
@@ -788,9 +789,10 @@ async function createChallengeOnce(opts: {
       );
     }
   }
-  // Re-offer: DANA v2 — optional on-chain note + parent → original dedication.
+  // Re-offer: DANA v2 — optional extra text + parent → original dedication.
+  // Packed root altars are stripped to the remembrance slot only.
   const note = truncateUtf8Bytes(
-    opts.note.trim(),
+    prepareDanaNote(opts.note, Boolean(parentBurnTxid)),
     memorialNoteMaxBytes(Boolean(parentBurnTxid)),
   );
   if (parentBurnTxid && !temple) {

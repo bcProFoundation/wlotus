@@ -29,6 +29,7 @@ import {
 } from './offer.js';
 import {
   memorialNoteMaxBytes,
+  prepareDanaNote,
   truncateUtf8Bytes,
 } from '../../../src/offering/altarFields.js';
 import { findCatalogEntryById } from '../../../src/params/templeSpecialCatalog.js';
@@ -232,7 +233,10 @@ const server = createServer(async (req, res) => {
           ? String(parentRaw).trim()
           : undefined;
       const note = truncateUtf8Bytes(
-        String(body.note || '').trim(),
+        prepareDanaNote(
+          String(body.note || ''),
+          Boolean(parentBurnTxid),
+        ),
         memorialNoteMaxBytes(Boolean(parentBurnTxid)),
       );
       const challenge = await enqueueChallenge({

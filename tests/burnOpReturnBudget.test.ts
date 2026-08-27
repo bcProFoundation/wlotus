@@ -25,13 +25,13 @@ describe('burn OP_RETURN budget', () => {
     // bytes (max 223). burnOnePrayer retries without that SEND.
   });
 
-  it('truncates a v2 note to 100 UTF-8 bytes', () => {
+  it('truncates a v2 note to 120 UTF-8 bytes', () => {
     const note = 'n'.repeat(200);
     const parsed = parseMemorialPushdata(
       memorialPushdata(note, OFFERING_ID_WLOTUS, PARENT),
     );
     expect(utf8ByteLength(parsed.note)).toBe(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT);
-    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(100);
+    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
   });
 
   it('counts Vietnamese remembrance text in UTF-8 bytes, not characters', () => {

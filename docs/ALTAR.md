@@ -178,13 +178,15 @@ in `altarFields.ts` (leftover miner inventory is sent in the same tx):
 | Burn kind | DANA | Note soft-cap (UTF-8 **bytes**, not characters) |
 |-----------|------|---------------|
 | Root dedication | v1 | `MEMORIAL_NOTE_MAX_BYTES` (**150**) — leftover SEND retried if needed |
-| Re-offer extra text / v2 amend | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**100**) |
+| Re-offer extra text / v2 amend | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**120**) |
 | Relationship fragment | v2 | packed ~74 bytes (txid kept whole; leftover SEND may be omitted) |
 
 Vietnamese accented letters are typically **2–3 UTF-8 bytes each**; Chinese
 and Japanese (han/kana) are typically **3 bytes each**. A full-looking
 memorial still hits this ceiling well before 150 characters (~50 CJK glyphs
-on a root note).
+on a root note; ~40 on a re-offer extra). The re-offer burn does **not**
+copy the packed root — only DANA v2 `parentBurnTxid` (32 raw bytes) plus
+optional extra text.
 Leftover miner inventory is sent in the same burn when it fits; if the
 combined script would exceed 223, the flower burns without that SEND so the
 offering still lands. Older code measured 150 as BURN+DATA only; a 140-byte
@@ -201,7 +203,7 @@ Star fragments under a root:
 
 | Kind | Note contents |
 |------|----------------|
-| Re-offer | Optional free-text memorial message only |
+| Re-offer | Optional free-text memorial message only (never re-packs name / places / dates; parent txid is the root pointer) |
 | Relationship | Relationship slots only (`encodeRelationshipNote`); optional message truncated/dropped first |
 
 Clients merge altar-packed burns under a star (latest-first, first non-empty

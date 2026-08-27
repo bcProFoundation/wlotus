@@ -28,6 +28,8 @@ import {
   normalizeAltarKind,
   normalizeAltarDateCalendar,
   parseAltarNote,
+  prepareDanaNote,
+  reofferExtraNote,
   sortAltarRelationships,
   truncateUtf8Bytes,
   utf8ByteLength,
@@ -89,7 +91,7 @@ describe('altarFields', () => {
       { relationshipType: 'spouse', relatedTxid },
       { maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT },
     );
-    // type + 64-hex txid + separators is ~74 bytes; fits under the v2 100-byte cap.
+    // type + 64-hex txid + separators is ~74 bytes; fits under the v2 120-byte cap.
     expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
       MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
     );
@@ -550,9 +552,35 @@ describe('altarFields', () => {
 
   it('exposes parent-aware note budgets under the OP_RETURN ceiling', () => {
     expect(MEMORIAL_NOTE_MAX_BYTES).toBe(150);
-    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(100);
+    expect(MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT).toBe(120);
     expect(memorialNoteMaxBytes(false)).toBe(150);
-    expect(memorialNoteMaxBytes(true)).toBe(100);
+    expect(memorialNoteMaxBytes(true)).toBe(120);
+  });
+
+  it('strips packed root fields from a re-offer extra, keeps death/relationship fragments', () => {
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      note: 'Nhớ mãi',
+      deathDate: '2001-12-04',
+      deathPlace: 'Quy Nhơn',
+    });
+    expect(reofferExtraNote(packed)).toBe('Nhớ mãi');
+    expect(reofferExtraNote('Dâng hoa sen')).toBe('Dâng hoa sen');
+    expect(prepareDanaNote(packed, true)).toBe('Nhớ mãi');
+    expect(prepareDanaNote(packed, false)).toBe(packed);
+    const rel = encodeRelationshipNote({
+      relationshipType: 'spouse',
+      relatedTxid: 'a'.repeat(64),
+    });
+    expect(prepareDanaNote(rel, true)).toBe(rel);
+    const death = encodeDeathDateNote({
+      deathDate: '2020-01-15',
+      deathPlace: 'Hà Nội',
+      funeralPlace: '',
+    });
+    expect(prepareDanaNote(death, true)).toBe(death);
   });
 
   it('round-trips an event altar with lunar calendar preference', () => {

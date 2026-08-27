@@ -61,19 +61,22 @@ export const OP_RETURN_SCRIPT_MAX_BYTES = 223;
  *
  * Measured with `emppScript([alpSend, alpBurn, memorial])` / without SEND:
  *   - DANA v1 (root): note ≤ 157 without SEND (150 → ~216). With leftover
- *     SEND, 100 still fits; 140 + SEND is **262** (the production error).
- *   - DANA v2 (parent txid): note ≤ 101 without SEND (100 → ~222).
+ *     SEND, 140 + SEND is **262** (the production error).
+ *   - DANA v2 (32-byte parent txid): note ≤ 124 without SEND (120 → ~219).
+ *     Leftover SEND still fits for extras ≲ 69 bytes; larger extras retry
+ *     without SEND. Re-offers do **not** re-pack the root altar — only the
+ *     parent txid plus optional extra remembrance text.
  *
  * Older 150 / 120 caps were treated as always-safe including leftover SEND.
  * They are not. EMPP `noteLen` is still a u8 (max 255) — 223 binds first.
  */
 export const MEMORIAL_NOTE_MAX_BYTES = 150;
 /**
- * Packed-note cap when DANA v2 embeds a 32-byte parent (re-offer / amend).
- * Relationship-only fragments are ~74 bytes and stay whole under 100.
- * Extra remembrance *text* in the UI uses this same UTF-8 byte budget.
+ * Extra remembrance *text* on DANA v2 (re-offer / amend). The 32-byte parent
+ * txid is the only root pointer. Relationship fragments (~74 bytes) fit.
+ * Measured: 120-byte note + BURN + DATA = 219 (limit 223).
  */
-export const MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT = 100;
+export const MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT = 120;
 
 /** Soft UI cap for the free-text quick-offer note (characters). Prefer bytes. */
 export const MEMORIAL_NOTE_MAX_CHARS = 100;
@@ -717,6 +720,33 @@ export function isRelationshipAmendNote(
   if (!normalizeAltarRelationshipType(parsed.relationshipType)) return false;
   if (!normalizeAltarRelatedTxid(parsed.relatedTxid)) return false;
   return true;
+}
+
+/**
+ * Re-offer extras are **plain remembrance text** plus DANA v2 `parentBurnTxid`.
+ * If a packed altar note is supplied by mistake, keep only the remembrance
+ * slot so name / places / dates / links are not rewritten on the flower burn.
+ */
+export function reofferExtraNote(raw: string | null | undefined): string {
+  const t = (raw || '').trim();
+  if (!t) return '';
+  const packed = parseAltarNote(t);
+  if (!packed) return t;
+  return scrub(packed.note);
+}
+
+/**
+ * Note that goes in the DANA EMPP push. Star fragments (death / relationship)
+ * stay packed; every other parent burn is a re-offer extra.
+ */
+export function prepareDanaNote(
+  raw: string | null | undefined,
+  hasParentBurnTxid: boolean,
+): string {
+  const t = (raw || '').trim();
+  if (!hasParentBurnTxid) return t;
+  if (isDeathDateAmendNote(t) || isRelationshipAmendNote(t)) return t;
+  return reofferExtraNote(t);
 }
 
 /** Relationship pair only (for relationship star-fragment burns). */
