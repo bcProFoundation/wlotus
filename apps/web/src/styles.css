@@ -2042,6 +2042,14 @@ a {
   color: var(--accent, #c4a574);
 }
 
+.home-events-empty {
+  margin: 0;
+  padding: 0.55rem 0.15rem 0.25rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .home-events-list {
   list-style: none;
   margin: 0;

@@ -36,6 +36,14 @@ export interface MemorialGroup {
   burns: IndexedBurn[];
 }
 
+/** Rolling 24-hour window used by home Trending. */
+export const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export interface TrendingGroup extends MemorialGroup {
+  /** Burns whose activity time falls in the trending window. */
+  dayBurns: number;
+}
+
 interface StoreFile {
   version: 1;
   burns: IndexedBurn[];
@@ -138,6 +146,34 @@ export class BurnStore {
     const groups = this.buildGroups();
     groups.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
     return groups.slice(0, Math.max(1, Math.min(200, limit)));
+  }
+
+  /**
+   * Named star roots (person memorials and events) ranked by burns in
+   * the last `windowMs` (default 24 hours). Lifetime `totalBurns` is
+   * unchanged. Groups with zero window burns are omitted.
+   */
+  trendingGroups(
+    limit: number,
+    nowMs = Date.now(),
+    windowMs = TRENDING_WINDOW_MS,
+  ): TrendingGroup[] {
+    const cutoff = nowMs - windowMs;
+    const scored: TrendingGroup[] = [];
+    for (const g of this.buildGroups()) {
+      let dayBurns = 0;
+      for (const b of g.burns) {
+        const t = activityMs(b);
+        if (t >= cutoff && t <= nowMs) dayBurns++;
+      }
+      if (dayBurns <= 0) continue;
+      scored.push({ ...g, burns: [], dayBurns });
+    }
+    scored.sort((a, b) => {
+      if (a.dayBurns !== b.dayBurns) return b.dayBurns - a.dayBurns;
+      return Date.parse(b.at) - Date.parse(a.at);
+    });
+    return scored.slice(0, Math.max(1, Math.min(50, limit)));
   }
 
   /**

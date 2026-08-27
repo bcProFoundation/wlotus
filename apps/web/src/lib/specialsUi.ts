@@ -215,23 +215,7 @@ export interface RankedTempleSpecial extends TempleSpecialProfileUi {
   offerCount: number | null;
 }
 
-/**
- * Top specials for the home ranking list — what’s next / what’s now.
- * Past windows are omitted (forward-looking only).
- *
- * Order:
- *   1. Happening now (active / in window) before upcoming
- *   2. Within a tier: closer in time first
- *        - upcoming → soonest start first
- *        - active   → most offerings first (same day competition, e.g. 15/7)
- *   3. Tie-break: offerCount desc, then name
- *
- * Example (before 2/7 lunar): Cô Hồn (starts sooner) above Vu Lan.
- * On 15/7 when both active: higher burn count on top.
- *
- * `sort: 'trending'` keeps the same forward-looking pool but ranks by
- * offerCount first (then the upcoming tie-breaks).
- */
+/** Home list tabs: temple specials vs all altars ranked by burns in 24 hours. */
 export type HomeEventsSort = 'upcoming' | 'trending';
 
 export const HOME_EVENTS_SORT_KEY = 'wlotus.homeEventsSort';
@@ -242,13 +226,29 @@ export function parseHomeEventsSort(
   return raw === 'trending' ? 'trending' : 'upcoming';
 }
 
+/**
+ * Top specials for the home **Upcoming** list — what’s next / what’s now.
+ * Past windows are omitted (forward-looking only).
+ *
+ * Home **Trending** is a separate dana-index list (all named altars,
+ * ranked by burns in the last 24 hours) — not this pool.
+ *
+ * Order:
+ *   1. Happening now (active / in window) before upcoming
+ *   2. Within a tier: closer in time first
+ *        - upcoming → soonest start first
+ *        - active   → most offerings first (same day competition, e.g. 15/7)
+ *   3. Tie-break: offerCount desc, then name
+ *
+ * Example (before 2/7 lunar): Cô Hồn (starts sooner) above Vu Lan.
+ * On 15/7 when both active: higher burn count on top.
+ */
 export function rankTempleSpecials(
   profiles: TempleSpecialProfileUi[] | null | undefined,
   offerCountByProfileId: Record<string, number> | Map<string, number>,
   limit = 5,
   now: Date = new Date(),
   locale = 'vi',
-  sort: HomeEventsSort = 'upcoming',
 ): RankedTempleSpecial[] {
   const list = profiles ?? [];
   const hasCount = (id: string): boolean => {
@@ -334,11 +334,6 @@ export function rankTempleSpecials(
   const forward = ranked.filter(p => meta(p).tier !== 2);
 
   forward.sort((a, b) => {
-    if (sort === 'trending') {
-      const ca = sortCount(a.offerCount);
-      const cb = sortCount(b.offerCount);
-      if (ca !== cb) return cb - ca;
-    }
     const ma = meta(a);
     const mb = meta(b);
     if (ma.tier !== mb.tier) return ma.tier - mb.tier;
