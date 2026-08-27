@@ -66,7 +66,7 @@ const recentPayload = {
 };
 
 describe('rankGroupsByDayBurns', () => {
-  it('counts only burns in the last day and includes person altars', () => {
+  it('counts only burns in the last 24 hours and includes person altars', () => {
     const ranked = rankGroupsByDayBurns(recentPayload.items, 8, nowMs);
     expect(ranked.map(r => r.originalBurnTxid)).toEqual([event, person]);
     expect(ranked.map(r => r.dayBurns)).toEqual([3, 1]);

@@ -36,7 +36,7 @@ export interface MemorialGroup {
   burns: IndexedBurn[];
 }
 
-/** Rolling window used by home Trending (burns in one day). */
+/** Rolling 24-hour window used by home Trending. */
 export const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface TrendingGroup extends MemorialGroup {
@@ -150,7 +150,7 @@ export class BurnStore {
 
   /**
    * Named star roots (person memorials and events) ranked by burns in
-   * the last `windowMs` (default one day). Lifetime `totalBurns` is
+   * the last `windowMs` (default 24 hours). Lifetime `totalBurns` is
    * unchanged. Groups with zero window burns are omitted.
    */
   trendingGroups(

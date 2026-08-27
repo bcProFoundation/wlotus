@@ -116,7 +116,7 @@ export function countBurnsInWindow(
   return n;
 }
 
-/** Rank named altars by burns in the last day (client fallback). */
+/** Rank named altars by burns in the last 24 hours (client fallback). */
 export function rankGroupsByDayBurns(
   groups: IndexMemorialGroup[],
   limit: number,
@@ -137,7 +137,7 @@ export function rankGroupsByDayBurns(
 }
 
 /**
- * Home Trending: all named star-root altars, ranked by burns in one day.
+ * Home Trending: all named star-root altars, ranked by burns in 24 hours.
  * Falls back to ranking `/api/recent` when `/api/trending` is not deployed.
  */
 export async function fetchIndexTrending(

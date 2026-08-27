@@ -196,7 +196,7 @@ describe('BurnStore', () => {
     expect(results.map(r => r.totalBurns)).toEqual([9, 4, 3]);
   });
 
-  it('ranks trending by burns in one day across person and event altars', () => {
+  it('ranks trending by burns in 24 hours across person and event altars', () => {
     const person =
       '638825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const event =

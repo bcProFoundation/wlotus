@@ -215,7 +215,7 @@ export interface RankedTempleSpecial extends TempleSpecialProfileUi {
   offerCount: number | null;
 }
 
-/** Home list tabs: temple specials vs all altars ranked by burns today. */
+/** Home list tabs: temple specials vs all altars ranked by burns in 24 hours. */
 export type HomeEventsSort = 'upcoming' | 'trending';
 
 export const HOME_EVENTS_SORT_KEY = 'wlotus.homeEventsSort';
@@ -231,7 +231,7 @@ export function parseHomeEventsSort(
  * Past windows are omitted (forward-looking only).
  *
  * Home **Trending** is a separate dana-index list (all named altars,
- * ranked by burns in the last day) — not this pool.
+ * ranked by burns in the last 24 hours) — not this pool.
  *
  * Order:
  *   1. Happening now (active / in window) before upcoming

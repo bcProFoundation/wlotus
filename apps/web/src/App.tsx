@@ -2158,9 +2158,6 @@ export default function App() {
                           <span className="home-events-rank">{idx + 1}</span>
                           <span className="home-events-main">
                             <span className="home-events-name">{name}</span>
-                            <span className="home-events-date">
-                              {t('homeEventsToday')}
-                            </span>
                           </span>
                           <span
                             className="home-events-count home-events-count--offers"
