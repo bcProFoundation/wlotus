@@ -3,6 +3,7 @@ import {
   homeEventOfferHint,
   omitLotusPrayerParagraph,
   rankTempleSpecials,
+  specialCountdown,
   specialStoryForLocale,
 } from '../apps/web/src/lib/specialsUi.js';
 import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
@@ -99,6 +100,38 @@ describe('rankTempleSpecials', () => {
       now,
     );
     expect(withCount[0]!.offerCount).toBe(4);
+  });
+});
+
+describe('specialCountdown', () => {
+  const vuLanDay = new Date(2026, 7, 27); // 27 Aug 2026 — lunar 15/7
+
+  it('treats Vu Lan on rằm as happening, not merely today', () => {
+    const vuLan = spec('vu-lan', '2026-08-27', { active: true });
+    expect(specialCountdown(vuLan, vuLanDay)).toEqual({ kind: 'ongoing' });
+  });
+
+  it('treats a multi-day window that includes today as happening', () => {
+    const coHon = spec('co-hon', '2026-08-27', {
+      effectiveStartDate: '2026-08-14',
+      effectiveEndDate: '2026-08-27',
+      active: true,
+    });
+    expect(specialCountdown(coHon, vuLanDay)).toEqual({ kind: 'ongoing' });
+    expect(specialCountdown(coHon, new Date(2026, 7, 14))).toEqual({
+      kind: 'ongoing',
+    });
+  });
+
+  it('counts down to an upcoming festival and marks a past window', () => {
+    const halloween = spec('halloween', '2026-10-31');
+    expect(specialCountdown(halloween, vuLanDay)).toEqual({
+      kind: 'days',
+      days: 65,
+    });
+    expect(
+      specialCountdown(halloween, new Date(2026, 10, 2)),
+    ).toEqual({ kind: 'past', days: 2 });
   });
 });
 

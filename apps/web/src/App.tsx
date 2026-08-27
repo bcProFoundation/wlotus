@@ -2074,7 +2074,7 @@ export default function App() {
                       </span>
                       {(() => {
                         const cd = specialCountdown(ev);
-                        // Active window: only status (“happening” / today)
+                        // In-window festivals (one day or many) share one status.
                         if (cd.kind === 'ongoing') {
                           return (
                             <span className="home-events-date">
