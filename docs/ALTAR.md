@@ -147,8 +147,10 @@ Fields 11–12 (`kind` / `dateCalendar`) mark a **user event** memorial (`e`)
 and whether the date slot should display as lunar (`l`) or solar (`s`).
 Empty kind is a person (living profile or deceased altar). The date itself
 stays the solar civil day in field 6 so calendar matching and
-`altarHasDeathDate` keep working; the setup UI converts lunar input before
-encode. Old clients ignore the extra trailing parts.
+`altarHasDeathDate` keep working — same as temple specials. Lunar vs solar
+is a display preference (`l` / `s`); the setup field is always solar and
+the lunar line is calculated from it. Old clients ignore the extra trailing
+parts.
 
 ### Living profiles
 

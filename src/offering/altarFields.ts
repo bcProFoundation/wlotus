@@ -35,10 +35,9 @@
  *
  * `kind` / `dateCalendar` (fields 11–12) mark a user altar as an **event**
  * (`e`) and whether the date slot should display as lunar (`l`) or solar
- * (`s`). Empty kind = person / memorial. The civil `deathDate` slot stays
- * solar YYYY-MM-DD on the wire (lunar input is converted at encode) so
- * calendar matching and `altarHasDeathDate` keep working. Old clients
- * ignore trailing extra parts.
+ * (`s`). Empty kind = person / memorial. The civil `deathDate` slot is
+ * always solar YYYY-MM-DD (same as temple specials); lunar is a display
+ * conversion from that day. Old clients ignore trailing extra parts.
  */
 
 export const ALTAR_SEP = '\u001f';

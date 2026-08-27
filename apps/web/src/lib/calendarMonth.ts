@@ -8,7 +8,6 @@ import {
   lunarYmdToSolarYmd,
   nextMonthlyLunarWindow,
   solarYmdInMonthlyLunar,
-  solarYmdToLunarYmd,
   type MonthlyLunarSpec,
 } from '../../../../src/lib/lunarCalendar.js';
 import { solarToLunar, type LunarDate } from './lunarCalendar.js';
@@ -16,29 +15,6 @@ import type { TempleSpecialProfileUi } from './specialsUi.js';
 
 export function lunarTimeZone(locale: string): 7 | 8 {
   return locale.startsWith('zh') ? 8 : 7;
-}
-
-/**
- * Convert a full YYYY-MM-DD between lunar and solar for altar date input.
- * Year/month-only values and failed conversions are returned unchanged.
- * Empty `from` is treated as solar (on-chain civil day).
- */
-export function convertAltarDateYmd(
-  ymd: string,
-  from: 'lunar' | 'solar' | '',
-  to: 'lunar' | 'solar' | '',
-  locale: string,
-): string {
-  const t = ymd.trim();
-  const src = from === 'lunar' ? 'lunar' : 'solar';
-  const dst = to === 'lunar' ? 'lunar' : 'solar';
-  if (!t || src === dst) return t;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-  const tz = lunarTimeZone(locale);
-  if (src === 'lunar' && dst === 'solar') {
-    return lunarYmdToSolarYmd(t, tz) ?? t;
-  }
-  return solarYmdToLunarYmd(t, tz) ?? t;
 }
 
 export function pad2(n: number): string {

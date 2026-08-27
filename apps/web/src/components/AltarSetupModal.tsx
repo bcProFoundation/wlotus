@@ -26,7 +26,7 @@ import {
   type AltarRelationshipType,
 } from '../lib/altarFields.js';
 import { useLocale } from '../i18n/LocaleContext.js';
-import { convertAltarDateYmd } from '../lib/calendarMonth.js';
+import { formatLunarDeathDate } from '../lib/lunarCalendar.js';
 import {
   specialHidesAltarSectionLabel,
   specialStoryForLocale,
@@ -72,7 +72,6 @@ function fieldsForInput(fields: AltarFields, locale: string): AltarFields {
   return {
     ...fields,
     dateCalendar: calendar,
-    deathDate: convertAltarDateYmd(fields.deathDate, 'solar', calendar, locale),
   };
 }
 
@@ -81,39 +80,50 @@ function DateCalendarToggle(props: {
   onChange: (next: AltarDateCalendar) => void;
   lunarLabel: string;
   solarLabel: string;
+  solarYmd: string;
+  locale: 'vi' | 'en' | 'zh';
 }) {
   const calendar = props.value === 'lunar' ? 'lunar' : 'solar';
+  const lunarPreview =
+    calendar === 'lunar'
+      ? formatLunarDeathDate(props.solarYmd.trim(), props.locale)
+      : null;
   return (
-    <div
-      className="altar-honorific altar-date-calendar"
-      role="group"
-      aria-label={`${props.lunarLabel} / ${props.solarLabel}`}
-    >
-      <button
-        type="button"
-        className={
-          calendar === 'lunar'
-            ? 'altar-honorific-btn is-selected'
-            : 'altar-honorific-btn'
-        }
-        aria-pressed={calendar === 'lunar'}
-        onClick={() => props.onChange('lunar')}
+    <>
+      <div
+        className="altar-honorific altar-date-calendar"
+        role="group"
+        aria-label={`${props.lunarLabel} / ${props.solarLabel}`}
       >
-        {props.lunarLabel}
-      </button>
-      <button
-        type="button"
-        className={
-          calendar === 'solar'
-            ? 'altar-honorific-btn is-selected'
-            : 'altar-honorific-btn'
-        }
-        aria-pressed={calendar === 'solar'}
-        onClick={() => props.onChange('solar')}
-      >
-        {props.solarLabel}
-      </button>
-    </div>
+        <button
+          type="button"
+          className={
+            calendar === 'lunar'
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={calendar === 'lunar'}
+          onClick={() => props.onChange('lunar')}
+        >
+          {props.lunarLabel}
+        </button>
+        <button
+          type="button"
+          className={
+            calendar === 'solar'
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={calendar === 'solar'}
+          onClick={() => props.onChange('solar')}
+        >
+          {props.solarLabel}
+        </button>
+      </div>
+      {lunarPreview ? (
+        <p className="hint altar-date-lunar-preview">{lunarPreview}</p>
+      ) : null}
+    </>
   );
 }
 
@@ -375,8 +385,7 @@ export function AltarSetupModal(props: {
     const cur =
       normalizeAltarDateCalendar(draft.dateCalendar) || 'solar';
     if (next === cur && draft.dateCalendar === next) return;
-    const converted = convertAltarDateYmd(draft.deathDate, cur, next, locale);
-    setDraft(d => ({ ...d, dateCalendar: next, deathDate: converted }));
+    setDraft(d => ({ ...d, dateCalendar: next }));
     setErrorKey(null);
   }
 
@@ -403,18 +412,11 @@ export function AltarSetupModal(props: {
     const fields = normalizeFields(raw);
     const calendar = normalizeAltarDateCalendar(fields.dateCalendar);
     const kind = normalizeAltarKind(fields.kind);
-    const deathDate = convertAltarDateYmd(
-      fields.deathDate,
-      calendar || 'solar',
-      'solar',
-      locale,
-    );
     if (kind === 'event') {
       return {
         ...fields,
         kind,
         dateCalendar: calendar,
-        deathDate,
         title: '',
         birthPlace: '',
         birthYear: '',
@@ -428,7 +430,6 @@ export function AltarSetupModal(props: {
       ...fields,
       kind,
       dateCalendar: calendar,
-      deathDate,
     };
   }
 
@@ -664,6 +665,8 @@ export function AltarSetupModal(props: {
                     onChange={changeDateCalendar}
                     lunarLabel={t('altarCalLunar')}
                     solarLabel={t('altarCalSolar')}
+                    solarYmd={draft.deathDate}
+                    locale={locale}
                   />
                   {errorKey === 'deathDate' ? (
                     <p className="hint altar-field-error">
@@ -892,6 +895,8 @@ export function AltarSetupModal(props: {
                     onChange={changeDateCalendar}
                     lunarLabel={t('altarCalLunar')}
                     solarLabel={t('altarCalSolar')}
+                    solarYmd={draft.deathDate}
+                    locale={locale}
                   />
                   {errorKey === 'deathDate' ? (
                     <p className="hint altar-field-error">

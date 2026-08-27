@@ -906,6 +906,10 @@ a {
   margin-top: 0.5rem;
 }
 
+.altar-date-lunar-preview {
+  margin-top: 0.4rem;
+}
+
 .altar-related-link {
   appearance: none;
   border: 0;
