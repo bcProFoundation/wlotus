@@ -181,8 +181,10 @@ in `altarFields.ts` (leftover miner inventory is sent in the same tx):
 | Re-offer extra text / v2 amend | v2 | `MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT` (**100**) |
 | Relationship fragment | v2 | packed ~74 bytes (txid kept whole; leftover SEND may be omitted) |
 
-Vietnamese and other accented letters are typically **2–3 bytes each**, so a
-full-looking “Lời nguyện” still hits this ceiling well before 150 characters.
+Vietnamese accented letters are typically **2–3 UTF-8 bytes each**; Chinese
+and Japanese (han/kana) are typically **3 bytes each**. A full-looking
+memorial still hits this ceiling well before 150 characters (~50 CJK glyphs
+on a root note).
 Leftover miner inventory is sent in the same burn when it fits; if the
 combined script would exceed 223, the flower burns without that SEND so the
 offering still lands. Older code measured 150 as BURN+DATA only; a 140-byte

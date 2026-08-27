@@ -50,6 +50,20 @@ describe('burn OP_RETURN budget', () => {
     expect(parsed.note.length).toBeLessThan(vi.length);
   });
 
+  it('truncates Chinese and Japanese notes to whole UTF-8 characters', () => {
+    const zh = '追思寄语'.repeat(40);
+    const ja = 'ありがとう'.repeat(40);
+    for (const s of [zh, ja]) {
+      const parsed = parseMemorialPushdata(
+        memorialPushdata(s, OFFERING_ID_WLOTUS),
+      );
+      expect(utf8ByteLength(parsed.note)).toBeLessThanOrEqual(
+        MEMORIAL_NOTE_MAX_BYTES,
+      );
+      expect(utf8ByteLength(parsed.note) % 3).toBe(0);
+    }
+  });
+
   it('keeps a relationship fragment whole through memorialPushdata', () => {
     const relatedTxid = 'f'.repeat(64);
     const packed = encodeRelationshipNote({

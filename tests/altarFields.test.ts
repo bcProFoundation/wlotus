@@ -307,6 +307,29 @@ describe('altarFields', () => {
     expect(utf8ByteLength(parsed.note)).toBeLessThan(utf8ByteLength(vi));
   });
 
+  it('does not split Chinese or Japanese characters at the UTF-8 byte cap', () => {
+    const zh = '追思寄语'.repeat(40);
+    const ja = 'ありがとう'.repeat(40);
+    expect(utf8ByteLength('追')).toBe(3);
+    expect(utf8ByteLength('あ')).toBe(3);
+    for (const s of [zh, ja]) {
+      expect(utf8ByteLength(s)).toBeGreaterThan(MEMORIAL_NOTE_MAX_BYTES);
+      const clipped = truncateUtf8Bytes(s, MEMORIAL_NOTE_MAX_BYTES);
+      expect(utf8ByteLength(clipped)).toBe(MEMORIAL_NOTE_MAX_BYTES);
+      expect(utf8ByteLength(clipped) % 3).toBe(0);
+      expect([...clipped].every(ch => utf8ByteLength(ch) === 3)).toBe(true);
+    }
+    const packed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: '中村花子',
+      deathDate: '2001-12-04',
+      note: zh,
+    });
+    expect(utf8ByteLength(packed)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+    const parsed = parseAltarNote(packed)!;
+    expect(parsed.name).toBe('中村花子');
+  });
+
   it('truncates a long remembrance note instead of dropping it', () => {
     const packed = encodeAltarNote({
       ...emptyAltarFields(),

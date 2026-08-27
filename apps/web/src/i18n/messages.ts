@@ -260,7 +260,8 @@ const en: Dict = {
   altarNote: 'Words of remembrance',
   altarNotePlaceholder: 'Optional short message',
   altarNoteBudget: '{used} / {max} UTF-8 bytes',
-  altarNoteByteHint: 'Accented letters use 2–3 bytes each, not 1.',
+  altarNoteByteHint:
+    'Counted in UTF-8 bytes — accents use 2–3 each, Chinese and Japanese about 3.',
   altarBirthPlace: 'Hometown',
   altarBirthYear: 'Year of birth',
   altarBirthYearPlaceholder: 'YYYY or YYYY-MM-DD',
@@ -490,7 +491,8 @@ const vi: Dict = {
   altarNote: 'Lời nguyện',
   altarNotePlaceholder: 'Tuỳ chọn — lời ngắn',
   altarNoteBudget: '{used} / {max} byte UTF-8',
-  altarNoteByteHint: 'Chữ có dấu chiếm 2–3 byte mỗi chữ, không phải mỗi ký tự.',
+  altarNoteByteHint:
+    'Tính theo byte UTF-8 — chữ có dấu 2–3 byte; chữ Hán/Nhật khoảng 3 byte.',
   altarBirthPlace: 'Quê quán',
   altarBirthYear: 'Năm sinh',
   altarBirthYearPlaceholder: 'YYYY hoặc YYYY-MM-DD',
@@ -719,7 +721,8 @@ const zh: Dict = {
   altarNote: '追思寄语',
   altarNotePlaceholder: '可选短句',
   altarNoteBudget: '{used} / {max} UTF-8 字节',
-  altarNoteByteHint: '带声调的字每个占 2–3 字节，不是按字数计算。',
+  altarNoteByteHint:
+    '按 UTF-8 字节计：汉字、假名每个约 3 字节，不是按字数。',
   altarBirthPlace: '籍贯',
   altarBirthYear: '出生年',
   altarBirthYearPlaceholder: 'YYYY 或 YYYY-MM-DD',

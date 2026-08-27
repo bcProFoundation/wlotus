@@ -54,8 +54,10 @@ export const OP_RETURN_SCRIPT_MAX_BYTES = 223;
  * miner inventory in the same tx; if that overflows, `burnOnePrayer` retries
  * without leftover SEND so the flower still lands.
  *
- * Caps are UTF-8 **bytes**, not characters. Vietnamese (and other) accented
- * letters are typically 2–3 bytes each — a “short” memorial still fills this.
+ * Caps are UTF-8 **bytes**, not characters. Vietnamese accented letters are
+ * typically 2–3 bytes each; Chinese/Japanese (han/kana) are typically 3.
+ * A “short” memorial still fills this. Truncation is per code point so a
+ * CJK glyph is never split mid-character.
  *
  * Measured with `emppScript([alpSend, alpBurn, memorial])` / without SEND:
  *   - DANA v1 (root): note ≤ 157 without SEND (150 → ~216). With leftover
