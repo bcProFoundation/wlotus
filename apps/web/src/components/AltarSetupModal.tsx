@@ -816,9 +816,8 @@ export function AltarSetupModal(props: {
                       used: utf8ByteLength(draft.note),
                       max: MEMORIAL_NOTE_MAX_BYTES,
                     })}
-                    {' · '}
-                    {t('altarNoteByteHint')}
                   </p>
+                  <p className="hint">{t('altarNoteByteHint')}</p>
                 </div>
                 )}
 

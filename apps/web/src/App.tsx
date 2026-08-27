@@ -2713,9 +2713,8 @@ export default function App() {
                       used: utf8ByteLength(dedicationSheet.extraNote),
                       max: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
                     })}
-                    {' · '}
-                    {t('altarNoteByteHint')}
                   </p>
+                  <p className="hint">{t('altarNoteByteHint')}</p>
                 </div>
             ) : dedicationSheet.isCreator &&
               dedicationSheet.parentBurnTxid ? (
