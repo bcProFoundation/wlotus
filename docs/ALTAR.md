@@ -119,16 +119,18 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 | 3 | Short remembrance note | yes | yes |
 | 4 | Birth place (coarse text) | optional | same, then geohash |
 | 5 | Birth year (`YYYY`) | optional | optional |
-| 6 | Date of death (`YYYY` or `YYYY-MM-DD`) | **optional** (empty = living) | yes |
+| 6 | Date of death / event date (`YYYY` or `YYYY-MM-DD`, **solar** on the wire) | **optional** for a person (empty = living); **required** for events | yes |
 | 7 | Place of death | optional | same, then geohash |
 | 8 | Funeral / resting place | optional | same, then geohash |
 | 9 | Relationship type (wire `s`/`p`/`c`; long forms still parse) | optional | yes |
 | 10 | Related altar txid (64-hex original burn, or empty) | optional | yes |
+| 11 | Kind (wire `e` = event; empty = person) | optional | yes |
+| 12 | Date calendar (wire `l` = lunar, `s` = solar; empty = legacy) | optional | yes |
 
 Wire sketch (UTF-8):
 
 ```
-title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid
+title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid \x1f kind \x1f dateCalendar
 ```
 
 Fields 9–10 (`relationshipType` / `relatedTxid`, see `src/offering/altarFields.ts`)
@@ -141,12 +143,23 @@ as a one-letter code (`s` / `p` / `c`); readers still accept the long forms
 omit the slots — readers default missing/invalid values to empty, so old
 altars parse unchanged.
 
+Fields 11–12 (`kind` / `dateCalendar`) mark a **user event** memorial (`e`)
+and whether the date slot should display as lunar (`l`) or solar (`s`).
+Empty kind is a person (living profile or deceased altar). The date itself
+stays the solar civil day in field 6 so calendar matching and
+`altarHasDeathDate` keep working — same as temple specials. Lunar vs solar
+is a display preference (`l` / `s`); the setup field is always solar and
+the lunar line is calculated from it. Old clients ignore the extra trailing
+parts.
+
 ### Living profiles
 
 Death date (field 6) is **optional**. Empty = a living **profile** (UI: Hồ sơ /
 Profile) created via **Setup / Thiết lập**. Flower re-offers stay locked until
 the **creator** offers a flower with a mandatory death date (death-date star
-fragment via `encodeDeathDateNote`). Soft ownership is cached in mint-api as
+fragment via `encodeDeathDateNote`). A user **event** altar (`kind` = `e`)
+uses that same date slot as the event day and **requires** it at setup, so
+re-offers are unlocked immediately. Soft ownership is cached in mint-api as
 `rootBurnTxid → installId` (`data/root-creators.json`, `GET /api/root-creator`);
 non-creators do not see first-offer / death UI. A future desk ownership
 transaction will replace installId. Name / honorific / birth stay on the root;

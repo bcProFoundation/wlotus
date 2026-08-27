@@ -5,6 +5,7 @@
  * Wire (UTF-8), Unit Separator U+001F between fields:
  *   title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate
  *     \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid
+ *     \x1f kind \x1f dateCalendar
  *
  * Star-fragment burns under a root do **not** re-pack the full altar:
  *   - Re-offer: DANA v2 parent = root + optional free-text memorial message
@@ -31,6 +32,12 @@
  * Writing relationship links is intentionally left OPEN (any device, at
  * setup or later via a relationship star-fragment) — see docs/ALTAR.md
  * § "Relationships — open for now, restrict later".
+ *
+ * `kind` / `dateCalendar` (fields 11–12) mark a user altar as an **event**
+ * (`e`) and whether the date slot should display as lunar (`l`) or solar
+ * (`s`). Empty kind = person / memorial. The civil `deathDate` slot is
+ * always solar YYYY-MM-DD (same as temple specials); lunar is a display
+ * conversion from that day. Old clients ignore trailing extra parts.
  */
 
 export const ALTAR_SEP = '\u001f';
@@ -71,6 +78,12 @@ export type AltarRelationshipType = '' | 'spouse' | 'parent' | 'child';
 /** Non-empty relationship kinds used in link lists. */
 export type AltarRelationshipKind = Exclude<AltarRelationshipType, ''>;
 
+/** Person memorial (empty) or a dated event (`event`). */
+export type AltarKind = '' | 'event';
+
+/** Preferred display/input calendar for the death / event date slot. */
+export type AltarDateCalendar = '' | 'lunar' | 'solar';
+
 export type AltarLocale = 'vi' | 'en' | 'zh';
 
 /** One on-chain relationship link (spouse / parent / child → related altar). */
@@ -96,13 +109,26 @@ export interface AltarFields {
    */
   birthYear: string;
   /**
-   * Date of death — optional. Empty = living profile (Setup only; no
-   * flower re-offer until a death-date star fragment is added).
+   * Date of death, or **event date** when {@link kind} is `event`.
+   * Optional for a living person (Setup only; no flower re-offer until a
+   * death-date star fragment is added). Required for events.
    * Same shapes as birthYear: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
+   * On the wire this is the **solar** civil day; {@link dateCalendar} says
+   * whether the UI should show lunar or solar.
    */
   deathDate: string;
   deathPlace: string;
   funeralPlace: string;
+  /**
+   * Empty = person / living profile. `event` = the date slot is an event
+   * day (not a death date) and person-only fields stay empty.
+   */
+  kind: AltarKind;
+  /**
+   * How the date slot should display: `lunar` | `solar`. Empty = legacy
+   * (clients default the details toggle).
+   */
+  dateCalendar: AltarDateCalendar;
   /**
    * Draft / single-note wire slots (one link per packed note). Prefer
    * {@link relationships} after merging star burns for display.
@@ -129,6 +155,8 @@ export function emptyAltarFields(): AltarFields {
     relationshipType: '',
     relatedTxid: '',
     relationships: [],
+    kind: '',
+    dateCalendar: '',
   };
 }
 
@@ -228,6 +256,39 @@ function wireRelationshipType(t: AltarRelationshipType): string {
   if (t === 'spouse') return 's';
   if (t === 'parent') return 'p';
   if (t === 'child') return 'c';
+  return '';
+}
+
+export function normalizeAltarKind(
+  raw: string | null | undefined,
+): AltarKind {
+  const t = (raw || '').trim().toLowerCase();
+  if (t === 'event' || t === 'e') return 'event';
+  return '';
+}
+
+export function normalizeAltarDateCalendar(
+  raw: string | null | undefined,
+): AltarDateCalendar {
+  const t = (raw || '').trim().toLowerCase();
+  if (t === 'lunar' || t === 'l') return 'lunar';
+  if (t === 'solar' || t === 's') return 'solar';
+  return '';
+}
+
+export function altarIsEvent(
+  a: Pick<AltarFields, 'kind'> | null | undefined,
+): boolean {
+  return normalizeAltarKind(a?.kind) === 'event';
+}
+
+function wireAltarKind(k: AltarKind): string {
+  return k === 'event' ? 'e' : '';
+}
+
+function wireAltarDateCalendar(c: AltarDateCalendar): string {
+  if (c === 'lunar') return 'l';
+  if (c === 'solar') return 's';
   return '';
 }
 
@@ -398,6 +459,8 @@ export function parseAltarNote(raw: string): AltarFields | null {
       funeralPlace: (parts[7] ?? '').trim(),
       relationshipType: normalizeAltarRelationshipType(parts[8]),
       relatedTxid: normalizeAltarRelatedTxid(parts[9]),
+      kind: normalizeAltarKind(parts[10]),
+      dateCalendar: normalizeAltarDateCalendar(parts[11]),
       relationships: [],
     };
   } else {
@@ -413,6 +476,8 @@ export function parseAltarNote(raw: string): AltarFields | null {
       funeralPlace: (parts[6] ?? '').trim(),
       relationshipType: normalizeAltarRelationshipType(parts[7]),
       relatedTxid: normalizeAltarRelatedTxid(parts[8]),
+      kind: '',
+      dateCalendar: '',
       relationships: [],
     };
   }
@@ -454,6 +519,8 @@ export function mergeAltarFields(
       deathDate: merged.deathDate || parsed.deathDate,
       deathPlace: merged.deathPlace || parsed.deathPlace,
       funeralPlace: merged.funeralPlace || parsed.funeralPlace,
+      kind: merged.kind || parsed.kind,
+      dateCalendar: merged.dateCalendar || parsed.dateCalendar,
       relationshipType: '',
       relatedTxid: '',
       relationships: [],
@@ -587,7 +654,9 @@ export function validateAltarFields(a: AltarFields): string | null {
   if (titleRaw && !normalizeAltarHonorific(titleRaw)) return 'title';
   if (!scrub(a.name)) return 'name';
   const death = scrub(a.deathDate);
-  // Empty = living profile; non-empty must be a valid date shape.
+  const isEvent = altarIsEvent(a);
+  // Events require a date (the event day). Living people may omit it.
+  if (isEvent && !death) return 'deathDate';
   if (death && !ALTAR_DATE_RE.test(death)) return 'deathDate';
   const birth = scrub(a.birthYear);
   if (birth && !ALTAR_DATE_RE.test(birth)) return 'birthYear';
@@ -708,6 +777,10 @@ export function encodeAltarNote(
   let birthYear = scrub(fields.birthYear);
   let deathPlace = scrub(fields.deathPlace);
   let funeralPlace = scrub(fields.funeralPlace);
+  const kind = wireAltarKind(normalizeAltarKind(fields.kind));
+  const dateCalendar = wireAltarDateCalendar(
+    normalizeAltarDateCalendar(fields.dateCalendar),
+  );
 
   const pack = (): string =>
     joinAltarParts([
@@ -721,6 +794,8 @@ export function encodeAltarNote(
       funeralPlace,
       wireRelationshipType(relType),
       relTxid,
+      kind,
+      dateCalendar,
     ]);
 
   const dropOrder: Array<() => void> = [
@@ -835,7 +910,8 @@ export function encodeRelationshipNote(
  * does not re-state name / birth / relationships.
  */
 export function encodeDeathDateNote(
-  fields: Pick<AltarFields, 'deathDate' | 'deathPlace' | 'funeralPlace'>,
+  fields: Pick<AltarFields, 'deathDate' | 'deathPlace' | 'funeralPlace'> &
+    Partial<Pick<AltarFields, 'dateCalendar'>>,
   opts?: EncodeAltarNoteOptions,
 ): string {
   const err = validateDeathDateFields(fields);
@@ -845,6 +921,9 @@ export function encodeDeathDateNote(
   const deathDate = scrub(fields.deathDate);
   let deathPlace = scrub(fields.deathPlace);
   let funeralPlace = scrub(fields.funeralPlace);
+  const dateCalendar = wireAltarDateCalendar(
+    normalizeAltarDateCalendar(fields.dateCalendar),
+  );
 
   const pack = (): string =>
     joinAltarParts([
@@ -856,6 +935,10 @@ export function encodeDeathDateNote(
       deathDate,
       deathPlace,
       funeralPlace,
+      '',
+      '',
+      '',
+      dateCalendar,
     ]);
 
   let packed = pack();

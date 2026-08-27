@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import {
   altarHonorificLabel,
+  altarIsEvent,
   altarParentRelationshipLabel,
   altarRelationships,
   altarSpouseRelationshipLabel,
@@ -75,12 +76,18 @@ export function AltarDetails(props: {
   const { locale, t } = useLocale();
   const { altar, specialKind } = props;
   const hideCatalogFields = Boolean(specialKind);
+  const userEvent = !hideCatalogFields && altarIsEvent(altar);
+  const hidePersonOnly = hideCatalogFields || userEvent;
+  const useEventDateLabel = hideCatalogFields || userEvent;
   const honorific = altarHonorificLabel(altar.title, locale);
   const solarDeath = displayAltarDate(altar.deathDate);
   const lunarDeathDate = formatLunarDeathDate(altar.deathDate.trim(), locale);
-  const [showLunarDeath, setShowLunarDeath] = useState(() =>
-    Boolean(lunarDeathDate),
-  );
+  const [showLunarDeath, setShowLunarDeath] = useState(() => {
+    if (!lunarDeathDate) return false;
+    if (altar.dateCalendar === 'solar') return false;
+    if (altar.dateCalendar === 'lunar') return true;
+    return true;
+  });
   const deathValue =
     showLunarDeath && lunarDeathDate ? lunarDeathDate : solarDeath;
   const canToggleDeath = Boolean(lunarDeathDate && solarDeath);
@@ -99,14 +106,14 @@ export function AltarDetails(props: {
       onClick={() => setShowLunarDeath(v => !v)}
     >
       {showLunarDeath
-        ? hideCatalogFields
+        ? useEventDateLabel
           ? t('altarEventDateLunar')
           : t('altarDeathDateLunar')
-        : hideCatalogFields
+        : useEventDateLabel
           ? t('altarEventDateSolar')
           : t('altarDeathDateSolar')}
     </button>
-  ) : hideCatalogFields ? (
+  ) : useEventDateLabel ? (
     t('altarEventDate')
   ) : (
     t('altarDeathDate')
@@ -115,13 +122,13 @@ export function AltarDetails(props: {
   const nameText = hideCatalogFields ? '' : altar.name.trim();
 
   const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
-    ...(hideCatalogFields
+    ...(hidePersonOnly
       ? []
       : [{ key: 'honorific', label: t('altarHonorific'), value: honorific }]),
     ...(hideCatalogFields
       ? []
       : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
-    ...(hideCatalogFields
+    ...(hidePersonOnly
       ? []
       : [
           {
@@ -130,10 +137,10 @@ export function AltarDetails(props: {
             value: altar.birthPlace.trim(),
           },
         ]),
-    ...(hideCatalogFields
+    ...(hidePersonOnly
       ? []
       : [{ key: 'birthDate', label: t('altarBirthDate'), value: birthValue }]),
-    ...(hideCatalogFields
+    ...(hidePersonOnly
       ? []
       : [
           {
@@ -151,7 +158,7 @@ export function AltarDetails(props: {
             value: deathValue,
           },
         ]),
-    ...(hideCatalogFields
+    ...(hidePersonOnly
       ? []
       : [
           {

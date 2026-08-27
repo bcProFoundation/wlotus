@@ -2,6 +2,7 @@ import {
   findSpecialById,
   homeEventOfferHint,
   omitLotusPrayerParagraph,
+  parseHomeEventsSort,
   rankTempleSpecials,
   specialCountdown,
   specialStoryForLocale,
@@ -100,6 +101,55 @@ describe('rankTempleSpecials', () => {
       now,
     );
     expect(withCount[0]!.offerCount).toBe(4);
+  });
+
+  it('ranks trending by offer count while keeping the forward-looking pool', () => {
+    const halloweenId = 'ab'.repeat(32);
+    const coHonId = 'cd'.repeat(32);
+    const profiles = [
+      spec('halloween', '2026-10-31', { profileId: halloweenId }),
+      spec('all-souls', '2026-11-02'),
+      spec('co-hon', '2026-08-27', {
+        effectiveStartDate: '2026-08-14',
+        effectiveEndDate: '2026-08-27',
+        active: true,
+        profileId: coHonId,
+      }),
+    ];
+    const counts = { [halloweenId]: 20, [coHonId]: 5 };
+    const trending = rankTempleSpecials(
+      profiles,
+      counts,
+      8,
+      now,
+      'vi',
+      'trending',
+    );
+    expect(trending.map(r => r.id)).toEqual([
+      'halloween',
+      'co-hon',
+      'all-souls',
+    ]);
+    const upcoming = rankTempleSpecials(
+      profiles,
+      counts,
+      8,
+      now,
+      'vi',
+      'upcoming',
+    );
+    expect(upcoming.map(r => r.id)).toEqual([
+      'co-hon',
+      'halloween',
+      'all-souls',
+    ]);
+  });
+
+  it('defaults the home list to trending unless upcoming was saved', () => {
+    expect(parseHomeEventsSort(null)).toBe('trending');
+    expect(parseHomeEventsSort('')).toBe('trending');
+    expect(parseHomeEventsSort('trending')).toBe('trending');
+    expect(parseHomeEventsSort('upcoming')).toBe('upcoming');
   });
 });
 

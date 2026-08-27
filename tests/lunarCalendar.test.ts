@@ -8,6 +8,8 @@ import {
 import {
   nextMonthlyLunarWindow,
   solarYmdInMonthlyLunar,
+  lunarYmdToSolarYmd,
+  solarYmdToLunarYmd,
 } from '../src/lib/lunarCalendar.js';
 
 describe('lunarCalendar', () => {
@@ -51,12 +53,12 @@ describe('lunarCalendar', () => {
     expect(canChiYear(1984, 'zh')).toBe('甲子');
   });
 
-  it('formats a full death date as lunar text for vi/zh only', () => {
+  it('formats a full death date as lunar text', () => {
     expect(formatLunarDeathDate('2001-12-04', 'vi')).toBe(
       'Ngày 20 tháng 10 năm Tân Tỵ',
     );
     expect(formatLunarDeathDate('2001-12-04', 'zh')).toBe('农历辛巳年十月二十');
-    expect(formatLunarDeathDate('2001-12-04', 'en')).toBeNull();
+    expect(formatLunarDeathDate('2001-12-04', 'en')).toBe('Lunar 20/10/2001');
   });
 
   it('returns null for incomplete or malformed dates', () => {
@@ -94,6 +96,11 @@ describe('lunarCalendar', () => {
     );
     expect(formatLunarBirthYear('1926', 'en')).toBeNull();
     expect(formatLunarBirthYear('', 'vi')).toBeNull();
+  });
+
+  it('round-trips Vu Lan lunar 15/7 2026 to solar 27 Aug', () => {
+    expect(lunarYmdToSolarYmd('2026-07-15', 7)).toBe('2026-08-27');
+    expect(solarYmdToLunarYmd('2026-08-27', 7)).toBe('2026-07-15');
   });
 });
 
