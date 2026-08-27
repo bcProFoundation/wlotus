@@ -145,11 +145,11 @@ describe('rankTempleSpecials', () => {
     ]);
   });
 
-  it('defaults the home list to trending unless upcoming was saved', () => {
-    expect(parseHomeEventsSort(null)).toBe('trending');
-    expect(parseHomeEventsSort('')).toBe('trending');
-    expect(parseHomeEventsSort('trending')).toBe('trending');
+  it('defaults the home list to upcoming unless trending was saved', () => {
+    expect(parseHomeEventsSort(null)).toBe('upcoming');
+    expect(parseHomeEventsSort('')).toBe('upcoming');
     expect(parseHomeEventsSort('upcoming')).toBe('upcoming');
+    expect(parseHomeEventsSort('trending')).toBe('trending');
   });
 });
 

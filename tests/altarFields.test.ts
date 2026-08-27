@@ -502,6 +502,7 @@ describe('altarFields', () => {
       name: 'Nepal 26/08',
       note: 'Tưởng niệm',
       deathDate: '2026-08-26',
+      deathPlace: 'Kathmandu',
       kind: 'event',
       dateCalendar: 'lunar',
     });
@@ -510,6 +511,7 @@ describe('altarFields', () => {
     expect(parsed.kind).toBe('event');
     expect(parsed.dateCalendar).toBe('lunar');
     expect(parsed.deathDate).toBe('2026-08-26');
+    expect(parsed.deathPlace).toBe('Kathmandu');
     expect(altarIsEvent(parsed)).toBe(true);
     expect(normalizeAltarKind('e')).toBe('event');
     expect(normalizeAltarDateCalendar('l')).toBe('lunar');

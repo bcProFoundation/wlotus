@@ -62,6 +62,7 @@ export type MessageKey =
   | 'altarCalLunar'
   | 'altarCalSolar'
   | 'altarDeathPlace'
+  | 'altarEventLocation'
   | 'altarFuneralPlace'
   | 'altarPlaceOptional'
   | 'altarRelationship'
@@ -269,6 +270,7 @@ const en: Dict = {
   altarCalLunar: 'Lunar',
   altarCalSolar: 'Solar',
   altarDeathPlace: 'Place of residence',
+  altarEventLocation: 'Location',
   altarFuneralPlace: 'Burial place',
   altarPlaceOptional: 'Optional',
   altarRelationship: 'Relationship',
@@ -493,6 +495,7 @@ const vi: Dict = {
   altarCalLunar: 'Âm lịch',
   altarCalSolar: 'Dương lịch',
   altarDeathPlace: 'Nơi sinh sống',
+  altarEventLocation: 'Địa điểm',
   altarFuneralPlace: 'Nơi an táng',
   altarPlaceOptional: 'Tuỳ chọn',
   altarRelationship: 'Mối quan hệ',
@@ -716,6 +719,7 @@ const zh: Dict = {
   altarCalLunar: '农历',
   altarCalSolar: '阳历',
   altarDeathPlace: '居住地',
+  altarEventLocation: '地点',
   altarFuneralPlace: '安葬地',
   altarPlaceOptional: '可选',
   altarRelationship: '关系',
