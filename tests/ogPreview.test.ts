@@ -67,7 +67,7 @@ describe('ogPreview', () => {
   });
 
   it('uses brand fallback without a name', () => {
-    expect(ogCopy('vi', '').title).toBe('W Lotus - Sự kết nối các thế hệ');
+    expect(ogCopy('vi', '').title).toBe('W Lotus - Kết nối các thế hệ');
     expect(ogCopy('vi', '').description).toBe('Đoá sen của sự tưởng nhớ.');
     expect(ogCopy('en', '').title).toBe('W Lotus - Connecting generations');
   });
