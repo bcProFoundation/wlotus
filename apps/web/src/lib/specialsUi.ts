@@ -544,7 +544,8 @@ export type SpecialCountdown =
  * Days from local today to the special window.
  * Uses effectiveStartDate when present (range events like Cô Hồn),
  * else effectiveEventDate / eventDate.
- * Inside [start, end] → ongoing; on start day before end → today if single day.
+ * Any civil day inside [start, end] is happening — including a one-day
+ * festival such as Vu Lan on rằm tháng Bảy.
  */
 export function specialCountdown(
   special: TempleSpecialProfileUi,
@@ -585,7 +586,5 @@ export function specialCountdown(
       days: Math.round((todayUtc - endMs) / 86_400_000),
     };
   }
-  // Inside window
-  if (startMs === endMs) return { kind: 'today' };
   return { kind: 'ongoing' };
 }
