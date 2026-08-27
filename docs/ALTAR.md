@@ -159,7 +159,8 @@ Profile) created via **Setup / Thiết lập**. Flower re-offers stay locked unt
 the **creator** offers a flower with a mandatory death date (death-date star
 fragment via `encodeDeathDateNote`). A user **event** altar (`kind` = `e`)
 uses that same date slot as the event day and **requires** it at setup, so
-re-offers are unlocked immediately. Soft ownership is cached in mint-api as
+re-offers are unlocked immediately. Event **location** reuses field 7
+(`deathPlace`). Soft ownership is cached in mint-api as
 `rootBurnTxid → installId` (`data/root-creators.json`, `GET /api/root-creator`);
 non-creators do not see first-offer / death UI. A future desk ownership
 transaction will replace installId. Name / honorific / birth stay on the root;

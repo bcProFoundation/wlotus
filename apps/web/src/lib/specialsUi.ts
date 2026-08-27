@@ -239,7 +239,7 @@ export const HOME_EVENTS_SORT_KEY = 'wlotus.homeEventsSort';
 export function parseHomeEventsSort(
   raw: string | null | undefined,
 ): HomeEventsSort {
-  return raw === 'upcoming' ? 'upcoming' : 'trending';
+  return raw === 'trending' ? 'trending' : 'upcoming';
 }
 
 export function rankTempleSpecials(

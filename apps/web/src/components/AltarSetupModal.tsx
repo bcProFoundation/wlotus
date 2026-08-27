@@ -397,7 +397,6 @@ export function AltarSetupModal(props: {
         title: '',
         birthPlace: '',
         birthYear: '',
-        deathPlace: '',
         funeralPlace: '',
         relationshipType: '',
         relatedTxid: '',
@@ -420,7 +419,6 @@ export function AltarSetupModal(props: {
         title: '',
         birthPlace: '',
         birthYear: '',
-        deathPlace: '',
         funeralPlace: '',
         relationshipType: '',
         relatedTxid: '',
@@ -846,10 +844,12 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
-                {festivalSpecial || isEvent ? null : (
+                {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-death-place">
-                    {t('altarDeathPlace')}
+                    {isEvent
+                      ? t('altarEventLocation')
+                      : t('altarDeathPlace')}
                   </label>
                   <input
                     id="altar-death-place"

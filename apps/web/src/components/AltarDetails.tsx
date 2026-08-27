@@ -140,12 +140,14 @@ export function AltarDetails(props: {
     ...(hidePersonOnly
       ? []
       : [{ key: 'birthDate', label: t('altarBirthDate'), value: birthValue }]),
-    ...(hidePersonOnly
+    ...(hidePersonOnly && !userEvent
       ? []
       : [
           {
             key: 'deathPlace',
-            label: t('altarDeathPlace'),
+            label: userEvent
+              ? t('altarEventLocation')
+              : t('altarDeathPlace'),
             value: altar.deathPlace.trim(),
           },
         ]),
