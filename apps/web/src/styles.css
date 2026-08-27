@@ -59,7 +59,7 @@
   --btn-primary-bg: #7a2e22;
   --btn-primary-ink: #fff8ef;
   --btn-primary-hover: #63251c;
-  --brand-ink: #2a2118;
+  --brand-ink: #24140a;
   --brand-mark-filter: none;
   --body-glow: rgba(180, 120, 60, 0.2);
   --modal-scrim: rgba(42, 33, 24, 0.42);
@@ -2253,7 +2253,7 @@ a {
   --glass-shine: color-mix(in srgb, #ffffff 72%, transparent);
   --glass-blob: color-mix(in srgb, #ffffff 62%, transparent);
   --glass-ink: color-mix(in srgb, #5c4030 70%, transparent);
-  --glass-ink-active: #2a2118;
+  --glass-ink-active: #24140a;
   --glass-shadow: 0 10px 26px rgba(42, 33, 24, 0.16),
     0 2px 8px rgba(42, 33, 24, 0.08);
 }
