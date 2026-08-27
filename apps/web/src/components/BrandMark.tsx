@@ -1,6 +1,6 @@
 /**
  * White W glyph. Dark UI (EN black, VI/ZH rosewood, offering) shows it with no plate.
- * Light cream uses a baked rounded rosewood square (white W in the PNG)
+ * Light cream uses a baked rounded rosewood square (#24140a, white W in the PNG)
  * so the mark cannot collapse to an empty black tile.
  * Dark (EN black, VI/ZH rosewood) shows the transparent white glyph.
  * `badge` is the compact square for history / re-offer rows.

@@ -28,10 +28,10 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGES = ROOT / "apps/web/public/images"
 SOURCE = IMAGES / "W-bold.png"
 
-# Same rosewood as the OG card (`scripts/build-og-image.py` BG #1d130c).
+# Boxed W plate — matches the light-theme "Lotus" wordmark (#24140a).
 # Corners of rounded plates stay transparent; W-white.png stays a transparent
 # glyph for the English black theme.
-PLATE = (29, 19, 12, 255)
+PLATE = (36, 20, 10, 255)
 
 # iOS-like rounded square (~22% of edge). Corners are transparent so browser
 # chrome does not paint a sharp black box.
