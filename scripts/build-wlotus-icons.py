@@ -28,10 +28,11 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGES = ROOT / "apps/web/public/images"
 SOURCE = IMAGES / "W-bold.png"
 
-# OG card field is #1d130c. At 16–192px on cream that reads as black, so the
-# plate keeps the same hue and lifts lightness. Corners of rounded plates stay
-# transparent; W-white.png stays a transparent glyph for English black.
-PLATE = (66, 42, 26, 255)  # #422a1a
+# OG card field is #1d130c — correct on a 1200×630 card, black as a 32px
+# tile on cream (and darker than light-theme --brand-ink #2a2118). Same hue,
+# lightness ~25% so the plate reads rosewood. Corners stay transparent;
+# W-white.png stays a transparent glyph for English black.
+PLATE = (92, 59, 36, 255)  # #5c3b24
 
 # iOS-like rounded square (~22% of edge). Corners are transparent so browser
 # chrome does not paint a sharp black box.
