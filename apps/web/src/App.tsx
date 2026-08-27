@@ -1943,6 +1943,7 @@ export default function App() {
             <LangSwitch />
           </div>
         </div>
+        <p className="headline">{t('headline')}</p>
         <p className="tagline">{t('tagline')}</p>
       </header>
 

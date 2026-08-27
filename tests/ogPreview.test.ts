@@ -67,11 +67,9 @@ describe('ogPreview', () => {
   });
 
   it('uses brand fallback without a name', () => {
-    expect(ogCopy('vi', '').title).toBe('W Lotus - Đoá sen vĩnh hằng');
-    expect(ogCopy('vi', '').description).toBe(
-      'Gửi lời tưởng nhớ vĩnh hằng trên W Lotus.',
-    );
-    expect(ogCopy('en', '').title).toBe('W Lotus - Eternal lotus');
+    expect(ogCopy('vi', '').title).toBe('W Lotus - Sự kết nối các thế hệ');
+    expect(ogCopy('vi', '').description).toBe('Đoá sen của sự tưởng nhớ.');
+    expect(ogCopy('en', '').title).toBe('W Lotus - Connecting generations');
   });
 
   it('renders escaped OG HTML with SPA boot for browsers', () => {
@@ -96,8 +94,8 @@ describe('ogPreview', () => {
   });
 
   it('uses locale-specific image alt on the rosewood OG card', () => {
-    expect(ogImageAlt('en')).toBe('W Lotus — a flower of eternal remembrance');
-    expect(ogImageAlt('vi')).toContain('đoá sen vĩnh hằng');
+    expect(ogImageAlt('en')).toBe('W Lotus — a flower of remembrance');
+    expect(ogImageAlt('vi')).toContain('đoá sen của sự tưởng nhớ');
     const html = buildOgHtml({
       siteOrigin: 'https://wlotus.org',
       pathTxid: TX,
@@ -117,7 +115,7 @@ describe('ogPreview', () => {
       locale: 'en',
     });
     expect(en).toContain('https://test.wlotus.org/images/og-en.png');
-    expect(en).toContain('W Lotus - Eternal lotus');
+    expect(en).toContain('W Lotus - Connecting generations');
     expect(en).toContain(`?lang=en`);
     const zh = buildOgHtml({
       siteOrigin: 'https://test.wlotus.org',
@@ -125,6 +123,6 @@ describe('ogPreview', () => {
       locale: 'zh',
     });
     expect(zh).toContain('https://test.wlotus.org/images/og-zh.png');
-    expect(zh).toContain('永恒莲花');
+    expect(zh).toContain('连接世代');
   });
 });

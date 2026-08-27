@@ -62,22 +62,22 @@ CARDS = (
     {
         "locale": "vi",
         "file": "og.png",
-        "tag": "Đoá sen vĩnh hằng",
-        "body": "Bông hoa của sự tưởng nhớ vĩnh hằng.",
+        "tag": "Sự kết nối các thế hệ",
+        "body": "Đoá sen của sự tưởng nhớ.",
         "cjk": False,
     },
     {
         "locale": "en",
         "file": "og-en.png",
-        "tag": "Eternal lotus",
-        "body": "A flower of eternal remembrance.",
+        "tag": "Connecting generations",
+        "body": "A flower of remembrance.",
         "cjk": False,
     },
     {
         "locale": "zh",
         "file": "og-zh.png",
-        "tag": "永恒莲花",
-        "body": "永恒追思之花。",
+        "tag": "连接世代",
+        "body": "追思之花。",
         "cjk": True,
     },
 )

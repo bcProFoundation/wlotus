@@ -46,11 +46,11 @@ export function ogImagePath(locale: OgLocale): string {
 export function ogImageAlt(locale: OgLocale): string {
   switch (locale) {
     case 'en':
-      return 'W Lotus — a flower of eternal remembrance';
+      return 'W Lotus — a flower of remembrance';
     case 'zh':
-      return 'W Lotus — 永恒追思之花';
+      return 'W Lotus — 追思之花';
     default:
-      return 'W Lotus — đoá sen vĩnh hằng';
+      return 'W Lotus — đoá sen của sự tưởng nhớ';
   }
 }
 
@@ -104,18 +104,18 @@ export function ogCopy(
   switch (locale) {
     case 'en':
       return {
-        title: 'W Lotus - Eternal lotus',
-        description: 'Send eternal remembrance on W Lotus.',
+        title: 'W Lotus - Connecting generations',
+        description: 'A flower of remembrance.',
       };
     case 'zh':
       return {
-        title: 'W Lotus - 永恒莲花',
-        description: '在 W Lotus 上寄托永恒的追思。',
+        title: 'W Lotus - 连接世代',
+        description: '追思之花。',
       };
     default:
       return {
-        title: 'W Lotus - Đoá sen vĩnh hằng',
-        description: 'Gửi lời tưởng nhớ vĩnh hằng trên W Lotus.',
+        title: 'W Lotus - Sự kết nối các thế hệ',
+        description: 'Đoá sen của sự tưởng nhớ.',
       };
   }
 }
