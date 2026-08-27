@@ -33,7 +33,7 @@ The OG page boots the SPA in browsers; crawlers keep the meta tags.
 | Case | `og:title` (default VI) |
 |------|-------------------------|
 | Altar / named dedication | `Tưởng nhớ {name}` |
-| No name | `W Lotus - Sự kết nối các thế hệ` |
+| No name | `W Lotus - Kết nối các thế hệ` |
 
 `og:description` (no name): `Đoá sen của sự tưởng nhớ.`
 
