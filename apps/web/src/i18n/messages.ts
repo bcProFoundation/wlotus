@@ -5,6 +5,7 @@ export type MessageKey =
   | 'brand'
   /** Wordmark next to the W logo — omit the leading W (it is in the mark). */
   | 'brandWithLogo'
+  | 'headline'
   | 'tagline'
   | 'offerTitle'
   | 'hintPrayMine'
@@ -192,7 +193,8 @@ type Dict = Record<MessageKey, string>;
 const en: Dict = {
   brand: 'W Lotus',
   brandWithLogo: 'Lotus',
-  tagline: 'A flower of eternal remembrance.',
+  headline: 'Connecting generations',
+  tagline: 'A flower of remembrance.',
   offerTitle: 'Offer a Flower',
   hintPrayMine:
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
@@ -405,7 +407,8 @@ const en: Dict = {
 const vi: Dict = {
   brand: 'W Lotus',
   brandWithLogo: 'Lotus',
-  tagline: 'Bông hoa của sự tưởng nhớ vĩnh hằng.',
+  headline: 'Sự kết nối các thế hệ',
+  tagline: 'Đoá sen của sự tưởng nhớ.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
@@ -617,7 +620,8 @@ const vi: Dict = {
 const zh: Dict = {
   brand: 'W Lotus',
   brandWithLogo: 'Lotus',
-  tagline: '永恒追思之花。',
+  headline: '连接世代',
+  tagline: '追思之花。',
   offerTitle: '献花',
   hintPrayMine:
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',

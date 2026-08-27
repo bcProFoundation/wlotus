@@ -264,7 +264,7 @@ a {
   transform: translateY(-8%);
 }
 
-/* Light cream uses a baked rounded PNG; dark/wood use the transparent white W. */
+/* Light cream uses a baked rounded rosewood PNG; dark/wood use the transparent white W. */
 .brand-mark--on-light {
   display: none;
 }
@@ -477,6 +477,16 @@ a {
   border-color: var(--ink);
   background: var(--surface-strong);
   color: var(--ink);
+}
+
+.headline {
+  margin: 0 0 0.15rem;
+  color: var(--brand-ink);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-style: italic;
+  max-width: 36rem;
 }
 
 .tagline {

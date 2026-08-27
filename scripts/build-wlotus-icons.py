@@ -6,10 +6,10 @@ Source: apps/web/public/images/W-bold.png (white glyph, already transparent).
 Outputs:
   W-white.png                  white glyph, transparent background, optically centered
   wlotus-icon-{16,32}          browser favicons — W close to the rounded edge
-  wlotus-icon-{192,512}        PWA any-purpose rounded black square
-  wlotus-icon-180.png          full-bleed black (iOS apple-touch; OS applies mask)
+  wlotus-icon-{192,512}        PWA any-purpose rounded rosewood square
+  wlotus-icon-180.png          full-bleed rosewood (iOS apple-touch; OS applies mask)
   apple-touch-icon.png         same as 180
-  wlotus-icon-maskable-512.png full-bleed black, glyph in the 80% safe zone
+  wlotus-icon-maskable-512.png full-bleed rosewood, glyph in the 80% safe zone
   favicon.ico                  16/32/48 rounded
 
 `--white-only` rewrites W-white.png and leaves the boxed plates alone.
@@ -27,6 +27,11 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[1]
 IMAGES = ROOT / "apps/web/public/images"
 SOURCE = IMAGES / "W-bold.png"
+
+# Same rosewood as the OG card (`scripts/build-og-image.py` BG). Corners of
+# rounded plates stay transparent; W-white.png stays a transparent glyph for
+# the English black theme.
+PLATE = (29, 19, 12, 255)
 
 # iOS-like rounded square (~22% of edge). Corners are transparent so browser
 # chrome does not paint a sharp black box.
@@ -125,7 +130,7 @@ def rounded_plate(size: int, radius_ratio: float, supersample: int = 4) -> Image
     radius = max(1, int(s * radius_ratio))
     mask = Image.new("L", (s, s), 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, s - 1, s - 1), radius=radius, fill=255)
-    plate = Image.new("RGBA", (s, s), (0, 0, 0, 255))
+    plate = Image.new("RGBA", (s, s), PLATE)
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     img.paste(plate, (0, 0), mask)
     return img.resize((size, size), Image.Resampling.LANCZOS)
@@ -134,7 +139,7 @@ def rounded_plate(size: int, radius_ratio: float, supersample: int = 4) -> Image
 def compose_any_icon(
     glyph: Image.Image, size: int, pad_ratio: float = ANY_PAD_RATIO
 ) -> Image.Image:
-    """White W on a rounded black square; corners stay transparent."""
+    """White W on a rounded rosewood square; corners stay transparent."""
     plate = rounded_plate(size, RADIUS_RATIO)
     inner = max(1, int(size * (1 - 2 * pad_ratio)))
     paste_centered(plate, fit_glyph(glyph, inner))
@@ -142,8 +147,8 @@ def compose_any_icon(
 
 
 def compose_full_bleed(glyph: Image.Image, size: int, pad_ratio: float) -> Image.Image:
-    """Opaque black square (iOS apple-touch / Android maskable)."""
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 255))
+    """Opaque rosewood square (iOS apple-touch / Android maskable)."""
+    img = Image.new("RGBA", (size, size), PLATE)
     inner = max(1, int(size * (1 - 2 * pad_ratio)))
     paste_centered(img, fit_glyph(glyph, inner))
     return img
