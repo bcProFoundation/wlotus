@@ -2717,7 +2717,6 @@ export default function App() {
                       max: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
                     })}
                   </p>
-                  <p className="hint">{t('altarNoteByteHint')}</p>
                 </div>
             ) : dedicationSheet.isCreator &&
               dedicationSheet.parentBurnTxid ? (
