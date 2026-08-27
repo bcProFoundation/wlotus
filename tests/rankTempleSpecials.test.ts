@@ -2,6 +2,7 @@ import {
   findSpecialById,
   homeEventOfferHint,
   omitLotusPrayerParagraph,
+  parseHomeEventsSort,
   rankTempleSpecials,
   specialCountdown,
   specialStoryForLocale,
@@ -142,6 +143,13 @@ describe('rankTempleSpecials', () => {
       'halloween',
       'all-souls',
     ]);
+  });
+
+  it('defaults the home list to trending unless upcoming was saved', () => {
+    expect(parseHomeEventsSort(null)).toBe('trending');
+    expect(parseHomeEventsSort('')).toBe('trending');
+    expect(parseHomeEventsSort('trending')).toBe('trending');
+    expect(parseHomeEventsSort('upcoming')).toBe('upcoming');
   });
 });
 

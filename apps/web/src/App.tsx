@@ -259,7 +259,7 @@ export default function App() {
     try {
       return parseHomeEventsSort(localStorage.getItem(HOME_EVENTS_SORT_KEY));
     } catch {
-      return 'upcoming';
+      return 'trending';
     }
   });
   /** Read-only Ban thờ sheet (Recent name / Dâng lại) — same screen. */
@@ -2080,19 +2080,6 @@ export default function App() {
                   type="button"
                   role="tab"
                   className={
-                    homeEventsSort === 'upcoming'
-                      ? 'home-events-sort-link is-selected'
-                      : 'home-events-sort-link'
-                  }
-                  aria-selected={homeEventsSort === 'upcoming'}
-                  onClick={() => persistHomeEventsSort('upcoming')}
-                >
-                  {t('homeEventsUpcoming')}
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  className={
                     homeEventsSort === 'trending'
                       ? 'home-events-sort-link is-selected'
                       : 'home-events-sort-link'
@@ -2101,6 +2088,19 @@ export default function App() {
                   onClick={() => persistHomeEventsSort('trending')}
                 >
                   {t('homeEventsTrending')}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  className={
+                    homeEventsSort === 'upcoming'
+                      ? 'home-events-sort-link is-selected'
+                      : 'home-events-sort-link'
+                  }
+                  aria-selected={homeEventsSort === 'upcoming'}
+                  onClick={() => persistHomeEventsSort('upcoming')}
+                >
+                  {t('homeEventsUpcoming')}
                 </button>
               </div>
             </div>
