@@ -14,6 +14,7 @@ TOKEN_ID=<64-hex> npm run dana-index
 # listens :8788
 curl -sS http://127.0.0.1:8788/health | jq .
 curl -sS 'http://127.0.0.1:8788/api/recent?limit=20' | jq .
+curl -sS 'http://127.0.0.1:8788/api/trending?limit=8' | jq .
 curl -sS 'http://127.0.0.1:8788/api/search?q=quả&limit=20' | jq .
 curl -sS http://127.0.0.1:8788/api/memorial/<txid> | jq .
 # Social preview HTML (nginx proxies every /<txid> share URL here):
@@ -77,3 +78,5 @@ curl -sS "http://127.0.0.1:8788/og/<txid>?lang=vi" | grep og:title
 
 If `/api/search` returns 404, the web app falls back to ranking `/api/recent`
 client-side (works for small indexes; restart dana-index after pulling search support).
+If `/api/trending` returns 404, home Trending likewise ranks `/api/recent` by
+burns in the last 24 hours.

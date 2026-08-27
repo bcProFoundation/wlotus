@@ -103,7 +103,7 @@ describe('rankTempleSpecials', () => {
     expect(withCount[0]!.offerCount).toBe(4);
   });
 
-  it('ranks trending by offer count while keeping the forward-looking pool', () => {
+  it('ranks upcoming by soonest window, not lifetime offer count', () => {
     const halloweenId = 'ab'.repeat(32);
     const coHonId = 'cd'.repeat(32);
     const profiles = [
@@ -117,26 +117,12 @@ describe('rankTempleSpecials', () => {
       }),
     ];
     const counts = { [halloweenId]: 20, [coHonId]: 5 };
-    const trending = rankTempleSpecials(
-      profiles,
-      counts,
-      8,
-      now,
-      'vi',
-      'trending',
-    );
-    expect(trending.map(r => r.id)).toEqual([
-      'halloween',
-      'co-hon',
-      'all-souls',
-    ]);
     const upcoming = rankTempleSpecials(
       profiles,
       counts,
       8,
       now,
       'vi',
-      'upcoming',
     );
     expect(upcoming.map(r => r.id)).toEqual([
       'co-hon',

@@ -175,6 +175,9 @@ export type MessageKey =
   | 'homeEventsToday'
   | 'homeEventsOngoing'
   | 'homeEventsDaysPast'
+  | 'homeEventsEmptyUpcoming'
+  | 'homeEventsEmptyTrending'
+  | 'homeEventsLoadingTrending'
   | 'searchLoading'
   | 'searchNoResults'
   | 'searchIndexUnavailable'
@@ -397,6 +400,9 @@ const en: Dict = {
   homeEventsToday: 'Today',
   homeEventsOngoing: 'Ongoing',
   homeEventsDaysPast: '{n} days ago',
+  homeEventsEmptyUpcoming: 'No upcoming events.',
+  homeEventsEmptyTrending: 'No offerings in the last day.',
+  homeEventsLoadingTrending: 'Loading altars…',
   searchLoading: 'Searching…',
   searchNoResults: 'No matches found.',
   searchIndexUnavailable:
@@ -621,6 +627,9 @@ const vi: Dict = {
   homeEventsToday: 'Hôm nay',
   homeEventsOngoing: 'Đang diễn ra',
   homeEventsDaysPast: '{n} ngày trước',
+  homeEventsEmptyUpcoming: 'Chưa có sự kiện sắp tới.',
+  homeEventsEmptyTrending: 'Chưa có lễ nào trong ngày.',
+  homeEventsLoadingTrending: 'Đang tải ban thờ…',
   searchLoading: 'Đang tìm…',
   searchNoResults: 'Không tìm thấy kết quả.',
   searchIndexUnavailable:
@@ -839,6 +848,9 @@ const zh: Dict = {
   homeEventsToday: '今天',
   homeEventsOngoing: '进行中',
   homeEventsDaysPast: '{n} 天前',
+  homeEventsEmptyUpcoming: '暂无即将到来的活动。',
+  homeEventsEmptyTrending: '过去一天暂无供奉。',
+  homeEventsLoadingTrending: '正在加载祭坛…',
   searchLoading: '搜索中…',
   searchNoResults: '未找到匹配结果。',
   searchIndexUnavailable: '无法连接追思索引 — 仅显示本机记录。',

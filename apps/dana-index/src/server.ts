@@ -6,6 +6,7 @@
  *
  *   GET  /health
  *   GET  /api/recent?limit=40
+ *   GET  /api/trending?limit=8
  *   GET  /api/search?q=&limit=20
  *   GET  /api/memorial/:txid
  *   GET  /og/:txid          — Open Graph HTML for social share previews
@@ -23,7 +24,7 @@ import {
   ingestUnconfirmed,
 } from './ingest.js';
 import { buildOgHtml, resolveOgLocale } from './ogPreview.js';
-import { BurnStore } from './store.js';
+import { BurnStore, TRENDING_WINDOW_MS } from './store.js';
 import { readJsonBody, PayloadTooLargeError } from '../../../src/lib/httpJson.js';
 import { allowIndexNotify } from '../../../src/lib/indexNotifyAuth.js';
 
@@ -169,6 +170,17 @@ const server = createServer(async (req, res) => {
         ok: true,
         tokenId: TOKEN_ID,
         items: store.recentGroups(limit),
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && path === '/api/trending') {
+      const limit = Number(url.searchParams.get('limit') || 8);
+      json(res, 200, {
+        ok: true,
+        tokenId: TOKEN_ID,
+        windowMs: TRENDING_WINDOW_MS,
+        items: store.trendingGroups(limit),
       });
       return;
     }

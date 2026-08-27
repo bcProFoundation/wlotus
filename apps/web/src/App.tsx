@@ -107,8 +107,10 @@ import {
 } from './lib/groupOffers.js';
 import {
   fetchIndexMemorial,
+  fetchIndexTrending,
   searchIndexMemorials,
   type IndexMemorialGroup,
+  type IndexTrendingGroup,
 } from './lib/danaIndexApi.js';
 import {
   mergeSearchResults,
@@ -295,6 +297,10 @@ export default function App() {
   const [specialOfferCounts, setSpecialOfferCounts] = useState<
     Record<string, number>
   >({});
+  const [indexTrending, setIndexTrending] = useState<IndexTrendingGroup[]>(
+    [],
+  );
+  const [indexTrendingLoading, setIndexTrendingLoading] = useState(false);
   const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [ticker, setTicker] = useState(PRAYER_TICKER);
@@ -1572,8 +1578,26 @@ export default function App() {
     8,
     new Date(),
     locale,
-    homeEventsSort,
   );
+
+  useEffect(() => {
+    if (homeEventsSort !== 'trending') return;
+    let cancelled = false;
+    setIndexTrendingLoading(true);
+    void (async () => {
+      try {
+        const items = await fetchIndexTrending(8);
+        if (!cancelled) setIndexTrending(items);
+      } catch {
+        if (!cancelled) setIndexTrending([]);
+      } finally {
+        if (!cancelled) setIndexTrendingLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [homeEventsSort]);
 
   function persistHomeEventsSort(next: HomeEventsSort) {
     setHomeEventsSort(next);
@@ -2071,8 +2095,7 @@ export default function App() {
           )}
         </div>
 
-        {rankedHomeEvents.length > 0 ? (
-          <div className="home-events" aria-label={t('homeEventsTitle')}>
+        <div className="home-events" aria-label={t('homeEventsTitle')}>
             <div className="home-events-heading">
               <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
               <div className="home-events-sort" role="tablist" aria-label={t('homeEventsTitle')}>
@@ -2104,6 +2127,61 @@ export default function App() {
                 </button>
               </div>
             </div>
+            {homeEventsSort === 'trending' ? (
+              indexTrendingLoading && indexTrending.length === 0 ? (
+                <p className="home-events-empty">{t('homeEventsLoadingTrending')}</p>
+              ) : indexTrending.length === 0 ? (
+                <p className="home-events-empty">{t('homeEventsEmptyTrending')}</p>
+              ) : (
+                <ul className="home-events-list">
+                  {indexTrending.map((g, idx) => {
+                    const name =
+                      memorialDisplayName(g.originalNote, locale) ||
+                      g.originalNote.trim() ||
+                      g.originalBurnTxid.slice(0, 8);
+                    return (
+                      <li
+                        key={g.originalBurnTxid}
+                        className="home-events-item"
+                      >
+                        <button
+                          type="button"
+                          className="home-events-btn"
+                          disabled={busy || apiOnline === false}
+                          onClick={() => {
+                            void openDedicationSheet({
+                              parentBurnTxid: g.originalBurnTxid,
+                              memorialNote: g.originalNote,
+                            });
+                          }}
+                        >
+                          <span className="home-events-rank">{idx + 1}</span>
+                          <span className="home-events-main">
+                            <span className="home-events-name">{name}</span>
+                            <span className="home-events-date">
+                              {t('homeEventsToday')}
+                            </span>
+                          </span>
+                          <span
+                            className="home-events-count home-events-count--offers"
+                            aria-label={t('homeEventsOfferings', {
+                              n: g.dayBurns,
+                            })}
+                          >
+                            <span className="home-events-count-n">
+                              {g.dayBurns}
+                            </span>
+                            <BrandMark badge width={24} height={24} />
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )
+            ) : rankedHomeEvents.length === 0 ? (
+              <p className="home-events-empty">{t('homeEventsEmptyUpcoming')}</p>
+            ) : (
             <ul className="home-events-list">
               {rankedHomeEvents.map((ev, idx) => {
                 const hint = homeEventOfferHint(ev.profileId, ev.offerCount);
@@ -2188,8 +2266,8 @@ export default function App() {
                 );
               })}
             </ul>
+            )}
           </div>
-        ) : null}
 
         {altar ? (
           <div className="offer-actions">

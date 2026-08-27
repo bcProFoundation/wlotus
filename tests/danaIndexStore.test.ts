@@ -195,4 +195,63 @@ describe('BurnStore', () => {
     ]);
     expect(results.map(r => r.totalBurns)).toEqual([9, 4, 3]);
   });
+
+  it('ranks trending by burns in one day across person and event altars', () => {
+    const person =
+      '638825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const event =
+      '738825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const quiet =
+      '838825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const nowSec = 1_800_000_000;
+    const nowMs = nowSec * 1000;
+
+    store.upsert(
+      burn({
+        burnTxid: person,
+        note: 'Cao Lâm Quả',
+        blockTimestamp: nowSec - 3600,
+      }),
+    );
+    for (let i = 0; i < 8; i++) {
+      store.upsert(
+        burn({
+          burnTxid: `${person.slice(0, 62)}${i}${i}`,
+          note: '',
+          parentBurnTxid: person,
+          blockTimestamp: nowSec - 3 * 86_400 - i,
+        }),
+      );
+    }
+    store.upsert(
+      burn({
+        burnTxid: event,
+        note: `e${ALTAR_SEP}Vu Lan hội${ALTAR_SEP}`,
+        blockTimestamp: nowSec - 100,
+      }),
+    );
+    for (let i = 0; i < 3; i++) {
+      store.upsert(
+        burn({
+          burnTxid: `${event.slice(0, 62)}${i}${i}`,
+          note: '',
+          parentBurnTxid: event,
+          blockTimestamp: nowSec - 200 - i,
+        }),
+      );
+    }
+    store.upsert(
+      burn({
+        burnTxid: quiet,
+        note: 'Old altar',
+        blockTimestamp: nowSec - 5 * 86_400,
+      }),
+    );
+
+    const trending = store.trendingGroups(8, nowMs);
+    expect(trending.map(r => r.originalBurnTxid)).toEqual([event, person]);
+    expect(trending.map(r => r.dayBurns)).toEqual([4, 1]);
+    expect(trending.map(r => r.totalBurns)).toEqual([4, 9]);
+    expect(trending.every(r => r.burns.length === 0)).toBe(true);
+  });
 });
