@@ -254,4 +254,34 @@ describe('BurnStore', () => {
     expect(trending.map(r => r.totalBurns)).toEqual([4, 9]);
     expect(trending.every(r => r.burns.length === 0)).toBe(true);
   });
+
+  it('counts a previous-calendar-day burn that is still within 24 hours', () => {
+    const recent =
+      '938825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const stale =
+      'a48825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    // 01:00 UTC on 27 Aug — calendar "today" would drop 26 Aug entirely.
+    const nowMs = Date.parse('2026-08-27T01:00:00.000Z');
+    const withinSec = Math.floor(Date.parse('2026-08-26T02:00:00.000Z') / 1000);
+    const outsideSec = Math.floor(Date.parse('2026-08-26T00:30:00.000Z') / 1000);
+
+    store.upsert(
+      burn({
+        burnTxid: recent,
+        note: 'Within window',
+        blockTimestamp: withinSec,
+      }),
+    );
+    store.upsert(
+      burn({
+        burnTxid: stale,
+        note: 'Outside window',
+        blockTimestamp: outsideSec,
+      }),
+    );
+
+    const trending = store.trendingGroups(8, nowMs);
+    expect(trending.map(r => r.originalBurnTxid)).toEqual([recent]);
+    expect(trending[0]!.dayBurns).toBe(1);
+  });
 });
