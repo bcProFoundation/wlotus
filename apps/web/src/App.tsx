@@ -2621,19 +2621,60 @@ export default function App() {
           aria-labelledby="altar-detail-title"
         >
           <div className="offer-modal-card altar-setup-card altar-detail-card">
-            <button
-              type="button"
-              className="offer-modal-close"
-              aria-label={t('btnClose')}
-              onClick={() => {
-                if (!dedicationSheet.parentBurnTxid) {
-                  pendingSpecialIdRef.current = null;
-                }
-                setDedicationSheet(null);
-              }}
-            >
-              ×
-            </button>
+            <div className="offer-modal-header-actions">
+              {dedicationSheet.parentBurnTxid ? (
+                <button
+                  type="button"
+                  className="offer-modal-share"
+                  aria-label={t('btnShare')}
+                  title={t('btnShare')}
+                  onClick={() => {
+                    const sp = specialForBurn(
+                      dedicationSheet.parentBurnTxid,
+                      dedicationSheet.specialId,
+                    );
+                    const label =
+                      (sp?.name || '').trim() ||
+                      formatAltarPersonName(
+                        dedicationSheet.altar,
+                        locale,
+                      ) ||
+                      t('offeringFallback');
+                    void shareDedication(
+                      dedicationSheet.parentBurnTxid,
+                      label,
+                    );
+                  }}
+                >
+                  <svg
+                    className="btn-icon-svg"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+                    />
+                  </svg>
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="offer-modal-close"
+                aria-label={t('btnClose')}
+                onClick={() => {
+                  if (!dedicationSheet.parentBurnTxid) {
+                    pendingSpecialIdRef.current = null;
+                  }
+                  setDedicationSheet(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
             <h2 id="altar-detail-title">
               {(() => {
                 const sp = specialForBurn(
@@ -2680,18 +2721,26 @@ export default function App() {
             {altarHasDeathDate(dedicationSheet.altar) ||
             !dedicationSheet.parentBurnTxid ? (
                 <div className="field dedication-extra-note-field">
-                  <label htmlFor="dedication-extra-note">
-                    {(() => {
-                      const sp = specialForBurn(
-                        dedicationSheet.parentBurnTxid,
-                        dedicationSheet.specialId,
-                      );
-                      if (sp) {
-                        return t('specialPrayerNoteLabel');
-                      }
-                      return t('reofferExtraNoteLabel');
-                    })()}
-                  </label>
+                  <div className="field-label-row">
+                    <label htmlFor="dedication-extra-note">
+                      {(() => {
+                        const sp = specialForBurn(
+                          dedicationSheet.parentBurnTxid,
+                          dedicationSheet.specialId,
+                        );
+                        if (sp) {
+                          return t('specialPrayerNoteLabel');
+                        }
+                        return t('reofferExtraNoteLabel');
+                      })()}
+                    </label>
+                    <span className="field-label-budget">
+                      {t('altarNoteBudget', {
+                        used: utf8ByteLength(dedicationSheet.extraNote),
+                        max: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
+                      })}
+                    </span>
+                  </div>
                   <textarea
                     id="dedication-extra-note"
                     rows={2}
@@ -2711,12 +2760,6 @@ export default function App() {
                     }
                     placeholder={t('reofferExtraNotePlaceholder')}
                   />
-                  <p className="hint">
-                    {t('altarNoteBudget', {
-                      used: utf8ByteLength(dedicationSheet.extraNote),
-                      max: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
-                    })}
-                  </p>
                 </div>
             ) : dedicationSheet.isCreator &&
               dedicationSheet.parentBurnTxid ? (
