@@ -47,7 +47,6 @@ export type MessageKey =
   | 'altarNote'
   | 'altarNotePlaceholder'
   | 'altarNoteBudget'
-  | 'altarNoteByteHint'
   | 'altarBirthPlace'
   | 'altarBirthYear'
   | 'altarBirthYearPlaceholder'
@@ -259,9 +258,7 @@ const en: Dict = {
   altarNamePlaceholder: 'Full name',
   altarNote: 'Words of remembrance',
   altarNotePlaceholder: 'Optional short message',
-  altarNoteBudget: '{used} / {max} UTF-8 bytes',
-  altarNoteByteHint:
-    'Counted in UTF-8 bytes — accents use 2–3 each, Chinese and Japanese about 3.',
+  altarNoteBudget: '{used}/{max}',
   altarBirthPlace: 'Hometown',
   altarBirthYear: 'Year of birth',
   altarBirthYearPlaceholder: 'YYYY or YYYY-MM-DD',
@@ -490,9 +487,7 @@ const vi: Dict = {
   altarNamePlaceholder: 'Họ và tên',
   altarNote: 'Lời nguyện',
   altarNotePlaceholder: 'Tuỳ chọn — lời ngắn',
-  altarNoteBudget: '{used} / {max} byte UTF-8',
-  altarNoteByteHint:
-    'Tính theo byte UTF-8 — chữ có dấu 2–3 byte; chữ Hán/Nhật khoảng 3 byte.',
+  altarNoteBudget: '{used}/{max}',
   altarBirthPlace: 'Quê quán',
   altarBirthYear: 'Năm sinh',
   altarBirthYearPlaceholder: 'YYYY hoặc YYYY-MM-DD',
@@ -720,9 +715,7 @@ const zh: Dict = {
   altarNamePlaceholder: '姓名',
   altarNote: '追思寄语',
   altarNotePlaceholder: '可选短句',
-  altarNoteBudget: '{used} / {max} UTF-8 字节',
-  altarNoteByteHint:
-    '按 UTF-8 字节计：汉字、假名每个约 3 字节，不是按字数。',
+  altarNoteBudget: '{used}/{max}',
   altarBirthPlace: '籍贯',
   altarBirthYear: '出生年',
   altarBirthYearPlaceholder: 'YYYY 或 YYYY-MM-DD',
