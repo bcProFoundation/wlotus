@@ -4,6 +4,8 @@ import {
   altarBareNameFromNote,
   altarSearchRelevance,
   memorialDisplayName,
+  mergeAltarFields,
+  type AltarFields,
 } from './altarFields.js';
 
 export interface IndexBurn {
@@ -37,6 +39,32 @@ export type IndexTrendingGroup = Omit<IndexMemorialGroup, 'burns'> & {
   dayBurns: number;
   burns?: IndexBurn[];
 };
+
+/** Packed notes from an index memorial (burns, then original, then latest). */
+export function indexMemorialNotes(
+  remote: Pick<IndexMemorialGroup, 'originalNote' | 'latestNote' | 'burns'>,
+): string[] {
+  const notes: string[] = [];
+  for (const b of remote.burns ?? []) {
+    const n = (b.note || '').trim();
+    if (n) notes.push(n);
+  }
+  const original = (remote.originalNote || '').trim();
+  if (original) notes.push(original);
+  const latest = (remote.latestNote || '').trim();
+  if (latest) notes.push(latest);
+  return notes;
+}
+
+/**
+ * Ban thờ fields from the public index. Viewing must not depend on a local
+ * Recent row — history prune only keeps this device's own offerings.
+ */
+export function altarFieldsFromIndexMemorial(
+  remote: Pick<IndexMemorialGroup, 'originalNote' | 'latestNote' | 'burns'>,
+): AltarFields | null {
+  return mergeAltarFields(indexMemorialNotes(remote));
+}
 
 /** Empty = same origin `/index-api` (Vite proxy / nginx). */
 function viteEnv(name: string): string | undefined {

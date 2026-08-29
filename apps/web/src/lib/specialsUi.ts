@@ -11,6 +11,11 @@ import {
   findCatalogEntryById,
   findCatalogEntryByName,
 } from '../../../../src/params/templeSpecialCatalog.js';
+import {
+  altarHasDeathDate,
+  type AltarDateCalendar,
+  type AltarFields,
+} from './altarFields.js';
 
 /**
  * Temple specials UI helpers — kind-driven copy + story on details / soft pray.
@@ -200,6 +205,41 @@ export function specialHidesAltarSectionLabel(
     special.kind === 'event' ||
     special.kind === 'hero'
   );
+}
+
+/**
+ * Flower re-offers: a packed death/event date, or any catalog temple special.
+ * Heroes such as Hồ Chí Minh are public memorials even when the viewer has
+ * no local Recent row (history prune no longer seeds viewed altars).
+ * Living personal profiles still need a death date.
+ */
+export function altarAllowsFlowerReoffer(
+  altar: Pick<AltarFields, 'deathDate'> | null | undefined,
+  special: TempleSpecialProfileUi | null | undefined,
+): boolean {
+  if (special) return true;
+  return altarHasDeathDate(altar);
+}
+
+/**
+ * Fill the death/event slot from the catalog when the packed note (or the
+ * name-only home-list fallback) omitted it. Prefers the solar effective day.
+ */
+export function overlaySpecialEventDate(
+  altar: AltarFields,
+  special: TempleSpecialProfileUi | null | undefined,
+): AltarFields {
+  if (altarHasDeathDate(altar) || !special) return altar;
+  const death = (
+    special.effectiveEventDate ||
+    special.eventDate ||
+    ''
+  ).trim();
+  if (!/^\d{4}(-\d{2}(-\d{2})?)?$/.test(death)) return altar;
+  const cal = (special.eventCalendar || '').toLowerCase();
+  const dateCalendar: AltarDateCalendar =
+    cal === 'lunar' || cal === 'solar' ? cal : altar.dateCalendar;
+  return { ...altar, deathDate: death, dateCalendar };
 }
 
 export interface RankedTempleSpecial extends TempleSpecialProfileUi {

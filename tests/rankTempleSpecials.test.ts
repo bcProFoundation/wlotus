@@ -1,13 +1,16 @@
 import {
+  altarAllowsFlowerReoffer,
   findSpecialById,
   homeEventOfferHint,
   omitLotusPrayerParagraph,
+  overlaySpecialEventDate,
   parseHomeEventsSort,
   rankTempleSpecials,
   specialCountdown,
   specialStoryForLocale,
 } from '../apps/web/src/lib/specialsUi.js';
 import type { TempleSpecialProfileUi } from '../apps/web/src/lib/specialsUi.js';
+import { emptyAltarFields } from '../src/offering/altarFields.js';
 import { templeSpecialCatalog } from '../src/params/templeSpecialCatalog.js';
 
 function spec(
@@ -250,5 +253,39 @@ describe('omitLotusPrayerParagraph', () => {
     };
     expect(findSpecialById(status, 'vu-lan')?.id).toBe('vu-lan');
     expect(findSpecialById(status, '')).toBeNull();
+  });
+});
+
+describe('altarAllowsFlowerReoffer', () => {
+  const hero = spec('ho-chi-minh', '2026-09-02', {
+    kind: 'hero',
+    name: 'Hồ Chí Minh',
+    profileId: '2'.repeat(64),
+    eventCalendar: 'lunar',
+    eventDate: '2026-07-21',
+    effectiveEventDate: '2026-09-02',
+  });
+
+  it('lets catalog heroes re-offer without a packed death date', () => {
+    expect(altarAllowsFlowerReoffer({ deathDate: '' }, hero)).toBe(true);
+    expect(altarAllowsFlowerReoffer(emptyAltarFields(), hero)).toBe(true);
+  });
+
+  it('still hides flowers on living personal profiles', () => {
+    expect(altarAllowsFlowerReoffer({ deathDate: '' }, null)).toBe(false);
+    expect(
+      altarAllowsFlowerReoffer({ deathDate: '1969-09-02' }, null),
+    ).toBe(true);
+  });
+
+  it('overlays the catalog solar day onto a name-only home-list fallback', () => {
+    const named = { ...emptyAltarFields(), name: 'Hồ Chí Minh' };
+    expect(named.deathDate).toBe('');
+    const overlaid = overlaySpecialEventDate(named, hero);
+    expect(overlaid.deathDate).toBe('2026-09-02');
+    expect(overlaid.dateCalendar).toBe('lunar');
+    expect(overlaySpecialEventDate(overlaid, hero).deathDate).toBe(
+      '2026-09-02',
+    );
   });
 });
