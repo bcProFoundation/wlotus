@@ -171,6 +171,7 @@ export type MessageKey =
   | 'homeEventsTitle'
   | 'homeEventsUpcoming'
   | 'homeEventsTrending'
+  | 'homeEventsSortSwitch'
   | 'homeEventsOfferings'
   | 'homeEventsFirstBurn'
   | 'homeEventsDaysUntil'
@@ -397,7 +398,8 @@ const en: Dict = {
   searchCta: 'Search',
   homeEventsTitle: 'Events',
   homeEventsUpcoming: 'Upcoming',
-  homeEventsTrending: 'Trending',
+  homeEventsTrending: 'Featured',
+  homeEventsSortSwitch: 'Show {other}',
   homeEventsOfferings: '{n} offerings',
   homeEventsFirstBurn: 'Be the first to offer',
   homeEventsDaysUntil: 'in {n} days',
@@ -626,7 +628,8 @@ const vi: Dict = {
   searchCta: 'Tìm kiếm',
   homeEventsTitle: 'Sự kiện',
   homeEventsUpcoming: 'Sắp tới',
-  homeEventsTrending: 'Thịnh hành',
+  homeEventsTrending: 'Nổi bật',
+  homeEventsSortSwitch: 'Xem {other}',
   homeEventsOfferings: '{n} dâng hoa',
   homeEventsFirstBurn: 'Hãy là người dâng đầu tiên',
   homeEventsDaysUntil: 'còn {n} ngày',
@@ -849,7 +852,8 @@ const zh: Dict = {
   searchCta: '搜索',
   homeEventsTitle: '活动',
   homeEventsUpcoming: '即将',
-  homeEventsTrending: '热门',
+  homeEventsTrending: '精选',
+  homeEventsSortSwitch: '查看{other}',
   homeEventsOfferings: '{n} 次供奉',
   homeEventsFirstBurn: '成为第一位献花者',
   homeEventsDaysUntil: '还有 {n} 天',
