@@ -795,7 +795,15 @@ export function AltarSetupModal(props: {
 
                 {festivalSpecial ? null : (
                 <div className="field">
-                  <label htmlFor="altar-note">{t('altarNote')}</label>
+                  <div className="field-label-row">
+                    <label htmlFor="altar-note">{t('altarNote')}</label>
+                    <span className="field-label-budget">
+                      {t('altarNoteBudget', {
+                        used: utf8ByteLength(draft.note),
+                        max: MEMORIAL_NOTE_MAX_BYTES,
+                      })}
+                    </span>
+                  </div>
                   <textarea
                     id="altar-note"
                     rows={2}
@@ -811,12 +819,6 @@ export function AltarSetupModal(props: {
                     }
                     placeholder={t('altarNotePlaceholder')}
                   />
-                  <p className="hint">
-                    {t('altarNoteBudget', {
-                      used: utf8ByteLength(draft.note),
-                      max: MEMORIAL_NOTE_MAX_BYTES,
-                    })}
-                  </p>
                 </div>
                 )}
 

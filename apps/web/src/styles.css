@@ -1737,6 +1737,36 @@ a {
   cursor: pointer;
 }
 
+.offer-modal-header-actions {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.offer-modal-header-actions .offer-modal-close {
+  position: static;
+}
+
+.offer-modal-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.offer-modal-share:hover,
+.offer-modal-share:focus-visible,
 .offer-modal-close:hover,
 .offer-modal-close:focus-visible {
   color: var(--ink);
@@ -1749,6 +1779,10 @@ a {
   font-weight: 600;
   margin: 0 0 0.75rem;
   padding-right: 2rem;
+}
+
+.offer-modal-card.altar-detail-card h2 {
+  padding-right: 4.6rem;
 }
 
 .offer-session-title {
@@ -1811,6 +1845,26 @@ a {
   margin-bottom: 0.35rem;
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.offer-modal-card .field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.offer-modal-card .field-label-row label {
+  margin-bottom: 0;
+}
+
+.offer-modal-card .field-label-budget {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 .offer-modal-card .field textarea {
