@@ -873,6 +873,10 @@ a {
   margin-top: 0.85rem;
 }
 
+.offer-session-footer .link-more {
+  white-space: normal;
+}
+
 .altar-honorific-label {
   display: block;
   font-size: 0.85rem;

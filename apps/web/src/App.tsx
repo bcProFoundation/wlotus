@@ -17,6 +17,7 @@ import { LunarCalendar } from './components/LunarCalendar.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import { TabBar } from './components/TabBar.js';
+import { OfferPushOptIn } from './components/OfferPushOptIn.js';
 import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
@@ -116,7 +117,6 @@ import {
   rootHasRecentOwnOffer,
 } from './lib/ownOffers.js';
 import {
-  enableMorningReminders,
   syncMorningReminders,
 } from './lib/pushReminders.js';
 import {
@@ -766,13 +766,6 @@ export default function App() {
     /** Unbound temple special id (first burn). */
     specialId?: string;
   }) {
-    void enableMorningReminders({
-      installId,
-      locale,
-      altars: remindAltarsFromOffers(loadOffers(), locale, hiddenRecent),
-    }).catch(() => {
-      /* no SW / mint-api / permission */
-    });
     const parentBurnTxid = opts?.parentBurnTxid?.trim() || undefined;
     const amendKind =
       opts?.amend === true
@@ -3131,6 +3124,10 @@ export default function App() {
                 </p>
               </div>
               <p className="hint">{t('hintKeepScreen')}</p>
+              <OfferPushOptIn
+                installId={installId}
+                altars={remindAltarsFromOffers(offers, locale, hiddenRecent)}
+              />
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
                   <p>
@@ -3271,6 +3268,10 @@ export default function App() {
                 </p>
               </div>
               <p className="hint">{t('hintKeepScreen')}</p>
+              <OfferPushOptIn
+                installId={installId}
+                altars={remindAltarsFromOffers(offers, locale, hiddenRecent)}
+              />
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
                   <p>
