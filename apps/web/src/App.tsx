@@ -2176,29 +2176,29 @@ export default function App() {
           )}
         </div>
 
-        <div className="home-events" aria-label={t('homeEventsTitle')}>
+        <div
+          className="home-events"
+          aria-label={
+            homeEventsSort === 'upcoming'
+              ? t('homeEventsTitleUpcoming')
+              : t('homeEventsTitleTrending')
+          }
+        >
             <div className="home-events-heading">
-              <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
+              <h3 className="home-events-title">
+                {homeEventsSort === 'upcoming'
+                  ? t('homeEventsTitleUpcoming')
+                  : t('homeEventsTitleTrending')}
+              </h3>
               <div className="home-events-sort">
                 <button
                   type="button"
                   className="home-events-sort-toggle"
-                  aria-label={t('homeEventsSortSwitch', {
-                    other:
-                      homeEventsNextSort === 'upcoming'
-                        ? t('homeEventsUpcoming')
-                        : t('homeEventsTrending'),
-                  })}
-                  title={
-                    homeEventsNextSort === 'upcoming'
-                      ? t('homeEventsUpcoming')
-                      : t('homeEventsTrending')
-                  }
                   onClick={() => persistHomeEventsSort(homeEventsNextSort)}
                 >
-                  {homeEventsSort === 'upcoming'
-                    ? t('homeEventsUpcoming')
-                    : t('homeEventsTrending')}
+                  {homeEventsNextSort === 'upcoming'
+                    ? t('homeEventsViewUpcoming')
+                    : t('homeEventsViewTrending')}
                 </button>
               </div>
             </div>
