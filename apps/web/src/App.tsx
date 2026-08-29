@@ -1673,9 +1673,6 @@ export default function App() {
     }
   }
 
-  const homeEventsNextSort: HomeEventsSort =
-    homeEventsSort === 'upcoming' ? 'trending' : 'upcoming';
-
   function altarFromUnboundSpecial(sp: TempleSpecialProfileUi): AltarFields {
     return {
       ...emptyAltarFields(),
@@ -2176,31 +2173,30 @@ export default function App() {
           )}
         </div>
 
-        <div
-          className="home-events"
-          aria-label={
-            homeEventsSort === 'upcoming'
-              ? t('homeEventsTitleUpcoming')
-              : t('homeEventsTitleTrending')
-          }
-        >
-            <div className="home-events-heading">
-              <h3 className="home-events-title">
-                {homeEventsSort === 'upcoming'
-                  ? t('homeEventsTitleUpcoming')
-                  : t('homeEventsTitleTrending')}
-              </h3>
-              <div className="home-events-sort">
+        <div className="home-events" aria-label={t('homeEventsTitle')}>
+            <div
+              className="home-events-heading"
+              role="tablist"
+              aria-label={t('homeEventsTitle')}
+            >
                 <button
                   type="button"
-                  className="home-events-sort-toggle"
-                  onClick={() => persistHomeEventsSort(homeEventsNextSort)}
+                  role="tab"
+                  className="home-events-tab"
+                  aria-selected={homeEventsSort === 'upcoming'}
+                  onClick={() => persistHomeEventsSort('upcoming')}
                 >
-                  {homeEventsNextSort === 'upcoming'
-                    ? t('homeEventsViewUpcoming')
-                    : t('homeEventsViewTrending')}
+                  {t('homeEventsUpcoming')}
                 </button>
-              </div>
+                <button
+                  type="button"
+                  role="tab"
+                  className="home-events-tab"
+                  aria-selected={homeEventsSort === 'trending'}
+                  onClick={() => persistHomeEventsSort('trending')}
+                >
+                  {t('homeEventsTrending')}
+                </button>
             </div>
             {homeEventsSort === 'trending' ? (
               indexTrendingLoading && indexTrending.length === 0 ? (
