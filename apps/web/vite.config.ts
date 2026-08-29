@@ -35,6 +35,9 @@ export default defineConfig({
     react(),
     ogOriginPlugin(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       // App registers the SW itself (apps/web/src/lib/pwaUpdate.ts) with a
       // versioned URL — don't also auto-inject vite-plugin-pwa's own
@@ -93,26 +96,11 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         // Fresh check often so deploys land quickly on phones
-        clientsClaim: true,
-        skipWaiting: true,
-        navigationPreload: false,
-        // Main JS is ~2.1 MB (ecash-lib). Default 2 MiB would fail the build
-        // and drop the app shell from the SW precache.
+        injectionPoint: 'self.__WB_MANIFEST',
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
-        navigateFallback: '/index.html',
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkOnly',
-          },
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/index-api/'),
-            handler: 'NetworkOnly',
-          },
-        ],
       },
       devOptions: { enabled: false },
     }),

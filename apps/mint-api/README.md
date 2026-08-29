@@ -142,6 +142,9 @@ Do not send leftover mint XEC back to the desk during burn.
 | GET | `/health` | `ok`, `startedAt`, `deployedAt` (source file mtime), `deploy.gitSha`, `features.raceOpen` |
 | GET | `/api/status?installId=` | remainingToday, tipEpochs, openChallenges, `raceOpen`, `tipFeeAccounts`, `deployedAt`, … |
 | GET | `/api/root-creator?txid=&installId=` | Soft ownership: `{ isCreator, known }` (never returns stored id) |
+| GET | `/api/push/vapid` | Web Push VAPID public key |
+| POST | `/api/push/subscribe` | `{ installId, endpoint, keys, locale, timeZone, altars }` morning giỗ reminders |
+| POST | `/api/push/unsubscribe` | `{ endpoint }` |
 | POST | `/api/challenge` | `{ installId, note? }` → includes `tipFeeAddress` |
 | POST | `/api/submit` | `{ installId, challengeId, nonceHex, … }` → remint; temple may set `burnPending` |
 | POST | `/api/burn` | `{ installId, remintTxid, burnToken }` — memorial burn; `burnToken` from submit only |

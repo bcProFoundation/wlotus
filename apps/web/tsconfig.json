@@ -12,5 +12,6 @@
     "resolveJsonModule": true,
     "types": ["vite/client"]
   },
-    "include": ["src", "../../src/offering/wlbrMemorial.ts", "../../src/offering/memorialFromScript.ts", "../../src/params/specialCountries.ts", "../../src/explorer.ts"]
+  "include": ["src", "../../src/offering/wlbrMemorial.ts", "../../src/offering/memorialFromScript.ts", "../../src/params/specialCountries.ts", "../../src/explorer.ts"],
+  "exclude": ["src/sw.ts"]
 }

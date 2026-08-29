@@ -28,6 +28,12 @@ import {
   remainingOffersToday,
 } from './offer.js';
 import {
+  deletePushSubscription,
+  savePushSubscription,
+  startMorningReminderLoop,
+  vapidPublicKey,
+} from './pushReminders.js';
+import {
   memorialNoteMaxBytes,
   prepareDanaNote,
   truncateUtf8Bytes,
@@ -219,6 +225,43 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/push/vapid') {
+      const publicKey = vapidPublicKey();
+      if (!publicKey) {
+        json(res, 503, { error: 'push unavailable' });
+        return;
+      }
+      json(res, 200, { publicKey });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/push/subscribe') {
+      const body = await readJson(req);
+      const installId = requireInstallId(body.installId);
+      const keys = (body.keys && typeof body.keys === 'object'
+        ? body.keys
+        : {}) as { p256dh?: string; auth?: string };
+      json(
+        res,
+        200,
+        savePushSubscription({
+          installId,
+          endpoint: String(body.endpoint || ''),
+          keys,
+          locale: String(body.locale || ''),
+          timeZone: String(body.timeZone || ''),
+          altars: body.altars,
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/push/unsubscribe') {
+      const body = await readJson(req);
+      json(res, 200, deletePushSubscription(String(body.endpoint || '')));
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/health') {
       json(res, 200, healthPayload());
       return;
@@ -383,7 +426,7 @@ const server = createServer(async (req, res) => {
         ? 413
         : /Too many challenges/i.test(msg)
           ? 429
-          : /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|edit relationships|txid required|already claimed|unknown special|claimant must/i.test(
+          : /Daily limit|installId|mintAtoms|challenge|nonce|expired|capacity|fee UTXO|Tip fee|TIP_RACE_LOST|Someone else offered|fund-tip-fee|pending memorial|remintTxid|No pending|burnToken|Invalid burn|profile creator|edit relationships|txid required|already claimed|unknown special|claimant must|push endpoint|push keys/i.test(
                 msg,
               )
             ? 400
@@ -398,6 +441,7 @@ server.listen(PORT, () => {
   console.log(
     `wlotus mint-api listening on :${PORT} startedAt=${STARTED_AT} deployedAt=${h.deployedAt} raceOpen=${feats.raceOpen}`,
   );
+  startMorningReminderLoop();
 });
 server.on('error', err => {
   console.error(`mint-api listen :${PORT} failed:`, err);

@@ -17,6 +17,7 @@ import { LunarCalendar } from './components/LunarCalendar.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import { TabBar } from './components/TabBar.js';
+import { PushRemindRow } from './components/PushRemindRow.js';
 import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
@@ -110,6 +111,12 @@ import {
   type OfferGroup,
 } from './lib/groupOffers.js';
 import {
+  groupOfferedInPastYear,
+  pruneUnownedAndExpiredOffers,
+  remindAltarsFromOffers,
+  rootHasRecentOwnOffer,
+} from './lib/ownOffers.js';
+import {
   fetchIndexMemorial,
   fetchIndexTrending,
   searchIndexMemorials,
@@ -163,7 +170,13 @@ function loadOffers(): LocalOffer[] {
   try {
     const raw = localStorage.getItem(LOCAL_OFFERS_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as LocalOffer[];
+    const parsed = JSON.parse(raw) as LocalOffer[];
+    if (!Array.isArray(parsed)) return [];
+    const pruned = pruneUnownedAndExpiredOffers(parsed);
+    if (pruned.length !== parsed.length) {
+      localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(pruned));
+    }
+    return pruned;
   } catch {
     return [];
   }
@@ -1137,6 +1150,7 @@ export default function App() {
             hashrateHps: result.hashrateHps || mined.hashrateHps,
             bits: result.bits,
             parentBurnTxid,
+            own: true,
           };
           // Share-link re-offer: original may not be on this device — seed a
           // named root (prefer packed Ban thờ wire) so Recent can open full details.
@@ -1339,7 +1353,15 @@ export default function App() {
 
   /** Persist index burns for a dedication so Recent total matches History. */
   function persistMemorialSync(remote: IndexMemorialGroup): LocalOffer[] {
-    const next = syncIndexMemorialIntoLocal(loadOffers(), remote);
+    const current = loadOffers();
+    // Viewing / search must not create a Recent row — only altars this
+    // device offered in the past year stay in history.
+    if (!rootHasRecentOwnOffer(current, remote.originalBurnTxid)) {
+      return current;
+    }
+    const next = pruneUnownedAndExpiredOffers(
+      syncIndexMemorialIntoLocal(current, remote),
+    );
     localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
     setOffers(next);
     return next;
@@ -1666,7 +1688,9 @@ export default function App() {
   }
 
   const recentGroups = groupOffersByOriginal(offers).filter(
-    g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
+    g =>
+      groupOfferedInPastYear(g) &&
+      !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
 
   const calendarSpecials = filterSpecialsForViewer(templeSpecials?.profiles, {
@@ -2404,6 +2428,10 @@ export default function App() {
         <section className="panel">
           <h2>{t('recentTitle')}</h2>
           <p className="hint">{t('reofferHint')}</p>
+          <PushRemindRow
+            installId={installId}
+            altars={remindAltarsFromOffers(offers, locale, hiddenRecent)}
+          />
           <ul className="history">
             {recentGroups.map(g => {
               const last = g.latest;
