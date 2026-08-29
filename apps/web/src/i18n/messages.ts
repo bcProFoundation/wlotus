@@ -215,7 +215,7 @@ const en: Dict = {
     'A few minutes of remembrance on this device bring forth lotus flowers for memory and merit.',
   hintKeepScreen:
     'Keep the app open while you pray so the flower offering can continue.',
-  pushRemindWait: 'Morning memorial reminder',
+  pushRemindWait: 'Automatic calendar reminders for offerings.',
   howTitle: 'How does W Lotus work?',
   howPrayTitle: '',
   howPrayBody:
@@ -445,7 +445,7 @@ const vi: Dict = {
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',
   hintKeepScreen:
     'Giữ ứng dụng luôn mở để quá trình tìm kiếm và dâng hoa được tiếp tục.',
-  pushRemindWait: 'Nhắc buổi sáng ngày giỗ',
+  pushRemindWait: 'Tự động nhắc lịch cho các lần dâng.',
   howTitle: 'W Lotus hoạt động như thế nào?',
   howPrayTitle: '',
   howPrayBody:
@@ -674,7 +674,7 @@ const zh: Dict = {
     '在本机上花几分钟追思，即可生出莲花，用于功德与纪念。',
   hintKeepScreen:
     '祈祷时请保持应用常开，以便献花过程得以继续。',
-  pushRemindWait: '忌日早晨提醒',
+  pushRemindWait: '自动提醒献花日程。',
   howTitle: 'W Lotus 如何运作？',
   howPrayTitle: '',
   howPrayBody:
