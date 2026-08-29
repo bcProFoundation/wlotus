@@ -86,6 +86,8 @@ import {
   specialOfferButtonKind,
   specialSessionTitle,
   specialHidesAltarSectionLabel,
+  altarAllowsFlowerReoffer,
+  overlaySpecialEventDate,
   rankTempleSpecials,
   formatSpecialEventDateLabel,
   formatSpecialListName,
@@ -120,8 +122,10 @@ import {
   syncMorningReminders,
 } from './lib/pushReminders.js';
 import {
+  altarFieldsFromIndexMemorial,
   fetchIndexMemorial,
   fetchIndexTrending,
+  indexMemorialNotes,
   searchIndexMemorials,
   type IndexMemorialGroup,
   type IndexTrendingGroup,
@@ -799,7 +803,13 @@ export default function App() {
     }
 
     if (isReoffer) {
-      if (opts?.altar && !altarHasDeathDate(opts.altar)) {
+      if (
+        opts?.altar &&
+        !altarAllowsFlowerReoffer(
+          opts.altar,
+          specialForBurn(parentBurnTxid, opts.specialId),
+        )
+      ) {
         setMsg({ kind: 'err', text: t('firstOfferDeathHint') });
         return;
       }
@@ -1390,16 +1400,7 @@ export default function App() {
   function pickDisplayAltarFields(
     remote: IndexMemorialGroup,
   ): AltarFields | null {
-    const notes: string[] = [];
-    for (const b of remote.burns) {
-      const n = (b.note || '').trim();
-      if (n) notes.push(n);
-    }
-    const original = (remote.originalNote || '').trim();
-    if (original) notes.push(original);
-    const latest = (remote.latestNote || '').trim();
-    if (latest) notes.push(latest);
-    return mergeAltarFields(notes);
+    return altarFieldsFromIndexMemorial(remote);
   }
 
   function pickDisplayAltarNote(remote: IndexMemorialGroup): string {
@@ -1461,7 +1462,10 @@ export default function App() {
 
     // Show device burns immediately (relationship fragments are local before
     // dana-index catches up — often minutes later).
-    let resolved = resolveLocal(memorialNote);
+    let resolved = overlaySpecialEventDate(
+      resolveLocal(memorialNote),
+      specialForBurn(opts.parentBurnTxid),
+    );
     let isCreator =
       isLocalCreatedRoot(rootId) || creatorByRoot.get(rootId) === true;
     setDedicationSheet({
@@ -1474,10 +1478,18 @@ export default function App() {
 
     try {
       const remote = await fetchIndexMemorial(opts.parentBurnTxid);
-      // Union into localStorage — keeps device-only relationship / death
-      // fragments that the index has not indexed yet.
+      // Own offerings stay in Recent; viewing must still hydrate Ban thờ
+      // from the index (prune no longer seeds a row for guests).
       persistMemorialSync(remote);
-      resolved = resolveLocal(memorialNote);
+      const localNotes = (localGroup()?.burns ?? [])
+        .map(b => (b.note || '').trim())
+        .filter(Boolean);
+      resolved = overlaySpecialEventDate(
+        mergeAltarFields([...localNotes, ...indexMemorialNotes(remote)]) ??
+          altarFieldsFromIndexMemorial(remote) ??
+          resolveLocal(pickDisplayAltarNote(remote) || memorialNote),
+        specialForBurn(opts.parentBurnTxid),
+      );
     } catch {
       // Test / offline index: still hydrate full Ban thờ from chain.
       try {
@@ -1491,6 +1503,10 @@ export default function App() {
       } catch {
         /* keep local */
       }
+      resolved = overlaySpecialEventDate(
+        resolved,
+        specialForBurn(opts.parentBurnTxid),
+      );
     }
 
     const relatedOptions = await resolveRelatedOptions(
@@ -1688,6 +1704,17 @@ export default function App() {
     return (
       findSpecialForParent(templeSpecials, parentBurnTxid) ||
       findSpecialById(templeSpecials, specialId)
+    );
+  }
+
+  function flowerReofferOk(
+    fields: AltarFields | null | undefined,
+    parentBurnTxid?: string | null,
+    specialId?: string | null,
+  ): boolean {
+    return altarAllowsFlowerReoffer(
+      fields,
+      specialForBurn(parentBurnTxid, specialId),
     );
   }
 
@@ -2459,7 +2486,7 @@ export default function App() {
               const lastWhen = new Date(last.at).toLocaleString(locale);
               const rootId = g.original.burnTxid;
               const groupAltar = altarFromOfferGroup(g);
-              const canReoffer = altarHasDeathDate(groupAltar);
+              const canReoffer = flowerReofferOk(groupAltar, rootId);
               const rootKey = rootId.trim().toLowerCase();
               const isCreator =
                 creatorByRoot.get(rootKey) === true ||
@@ -2757,8 +2784,11 @@ export default function App() {
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />
             ) : null}
-            {altarHasDeathDate(dedicationSheet.altar) ||
-            !dedicationSheet.parentBurnTxid ? (
+            {flowerReofferOk(
+              dedicationSheet.altar,
+              dedicationSheet.parentBurnTxid,
+              dedicationSheet.specialId,
+            ) || !dedicationSheet.parentBurnTxid ? (
                 <div className="field dedication-extra-note-field">
                   <div className="field-label-row">
                     <label htmlFor="dedication-extra-note">
@@ -2805,8 +2835,11 @@ export default function App() {
                 <p className="hint">{t('firstOfferDeathHint')}</p>
             ) : null}
             </div>
-            {altarHasDeathDate(dedicationSheet.altar) ||
-            !dedicationSheet.parentBurnTxid ? (
+            {flowerReofferOk(
+              dedicationSheet.altar,
+              dedicationSheet.parentBurnTxid,
+              dedicationSheet.specialId,
+            ) || !dedicationSheet.parentBurnTxid ? (
               <div className="altar-detail-footer">
                 <p className="hint eta">
                   {t('etaEstimated', { eta: etaLabel })}
