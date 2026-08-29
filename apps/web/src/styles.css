@@ -2056,26 +2056,9 @@ a {
 .home-events-heading {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
+  justify-content: flex-start;
+  gap: 0.9rem;
   margin: 0 0 0.45rem;
-}
-
-.home-events-title {
-  margin: 0;
-  min-width: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.home-events-sort {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: baseline;
-  gap: 0.85rem;
 }
 
 .home-events-tab {
@@ -2088,13 +2071,13 @@ a {
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--muted);
   white-space: nowrap;
 }
 
 .home-events-tab[aria-selected='true'] {
-  font-weight: 600;
   color: var(--accent, #c4a574);
   border-bottom-color: currentColor;
 }

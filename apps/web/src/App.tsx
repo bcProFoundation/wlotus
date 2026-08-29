@@ -2174,13 +2174,11 @@ export default function App() {
         </div>
 
         <div className="home-events" aria-label={t('homeEventsTitle')}>
-            <div className="home-events-heading">
-              <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
-              <div
-                className="home-events-sort"
-                role="tablist"
-                aria-label={t('homeEventsTitle')}
-              >
+            <div
+              className="home-events-heading"
+              role="tablist"
+              aria-label={t('homeEventsTitle')}
+            >
                 <button
                   type="button"
                   role="tab"
@@ -2199,7 +2197,6 @@ export default function App() {
                 >
                   {t('homeEventsTrending')}
                 </button>
-              </div>
             </div>
             {homeEventsSort === 'trending' ? (
               indexTrendingLoading && indexTrending.length === 0 ? (
