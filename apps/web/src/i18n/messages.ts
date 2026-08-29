@@ -112,9 +112,6 @@ export type MessageKey =
   | 'specialFirstBurnHint'
   | 'recentTitle'
   | 'reofferHint'
-  | 'pushRemindEnable'
-  | 'pushRemindOn'
-  | 'pushRemindInstall'
   | 'originalBurnBadge'
   | 'burnTotal'
   | 'activityTotal'
@@ -335,9 +332,6 @@ const en: Dict = {
   recentTitle: 'Recent',
   reofferHint:
     'Re-offer a lotus for a memorial. Tap the burn count for history; swipe left for explorer or delete on this device.',
-  pushRemindEnable: 'Morning memorial reminder',
-  pushRemindOn: 'Morning reminders on',
-  pushRemindInstall: 'Add to Home Screen to get reminders',
   originalBurnBadge: 'Origin',
   burnTotal: '{n} burns',
   activityTotal: '{n} activities',
@@ -566,9 +560,6 @@ const vi: Dict = {
   recentTitle: 'Gần đây',
   reofferHint:
     'Dâng lại hoa sen cho ban thờ. Chạm số lần dâng để xem lịch sử; vuốt sang trái để mở explorer hoặc xóa khỏi máy này.',
-  pushRemindEnable: 'Nhắc buổi sáng ngày giỗ',
-  pushRemindOn: 'Đã bật nhắc buổi sáng',
-  pushRemindInstall: 'Cài ra màn hình chính để nhận nhắc',
   originalBurnBadge: 'Lập ban',
   burnTotal: '{n} lần dâng',
   activityTotal: '{n} hoạt động',
@@ -793,9 +784,6 @@ const zh: Dict = {
   recentTitle: '最近',
   reofferHint:
     '可为灵位再次献花。点按献花次数查看历史；向左滑动可打开浏览器或从本机删除。',
-  pushRemindEnable: '忌日早晨提醒',
-  pushRemindOn: '已开启早晨提醒',
-  pushRemindInstall: '添加到主屏幕后可接收提醒',
   originalBurnBadge: '立坛',
   burnTotal: '{n} 次献花',
   activityTotal: '{n} 次活动',
