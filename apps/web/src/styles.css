@@ -2063,20 +2063,19 @@ a {
 
 .home-events-title {
   margin: 0;
+  min-width: 0;
   font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--muted);
 }
 
 .home-events-sort {
   display: flex;
-  gap: 0.7rem;
   flex: 0 0 auto;
 }
 
-.home-events-sort-link {
+.home-events-sort-toggle {
   appearance: none;
   border: 0;
   padding: 0;
@@ -2085,19 +2084,15 @@ a {
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
-  color: var(--muted);
+  font-weight: 500;
+  color: var(--accent, #c4a574);
   text-decoration: underline;
   text-underline-offset: 0.12em;
+  white-space: nowrap;
 }
 
-.home-events-sort-link.is-selected {
-  color: var(--accent, #c4a574);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.home-events-sort-link:hover {
-  color: var(--accent, #c4a574);
+.home-events-sort-toggle:hover {
+  color: var(--ink);
 }
 
 .home-events-empty {

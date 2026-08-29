@@ -1673,6 +1673,9 @@ export default function App() {
     }
   }
 
+  const homeEventsNextSort: HomeEventsSort =
+    homeEventsSort === 'upcoming' ? 'trending' : 'upcoming';
+
   function altarFromUnboundSpecial(sp: TempleSpecialProfileUi): AltarFields {
     return {
       ...emptyAltarFields(),
@@ -2173,35 +2176,29 @@ export default function App() {
           )}
         </div>
 
-        <div className="home-events" aria-label={t('homeEventsTitle')}>
+        <div
+          className="home-events"
+          aria-label={
+            homeEventsSort === 'upcoming'
+              ? t('homeEventsTitleUpcoming')
+              : t('homeEventsTitleTrending')
+          }
+        >
             <div className="home-events-heading">
-              <h3 className="home-events-title">{t('homeEventsTitle')}</h3>
-              <div className="home-events-sort" role="tablist" aria-label={t('homeEventsTitle')}>
+              <h3 className="home-events-title">
+                {homeEventsSort === 'upcoming'
+                  ? t('homeEventsTitleUpcoming')
+                  : t('homeEventsTitleTrending')}
+              </h3>
+              <div className="home-events-sort">
                 <button
                   type="button"
-                  role="tab"
-                  className={
-                    homeEventsSort === 'upcoming'
-                      ? 'home-events-sort-link is-selected'
-                      : 'home-events-sort-link'
-                  }
-                  aria-selected={homeEventsSort === 'upcoming'}
-                  onClick={() => persistHomeEventsSort('upcoming')}
+                  className="home-events-sort-toggle"
+                  onClick={() => persistHomeEventsSort(homeEventsNextSort)}
                 >
-                  {t('homeEventsUpcoming')}
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  className={
-                    homeEventsSort === 'trending'
-                      ? 'home-events-sort-link is-selected'
-                      : 'home-events-sort-link'
-                  }
-                  aria-selected={homeEventsSort === 'trending'}
-                  onClick={() => persistHomeEventsSort('trending')}
-                >
-                  {t('homeEventsTrending')}
+                  {homeEventsNextSort === 'upcoming'
+                    ? t('homeEventsViewUpcoming')
+                    : t('homeEventsViewTrending')}
                 </button>
               </div>
             </div>
