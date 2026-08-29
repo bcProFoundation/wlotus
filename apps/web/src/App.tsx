@@ -17,6 +17,7 @@ import { LunarCalendar } from './components/LunarCalendar.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import { TabBar } from './components/TabBar.js';
+import { OfferPushOptIn } from './components/OfferPushOptIn.js';
 import {
   formatActualDurationLocale,
   formatElapsedTenthsMinLocale,
@@ -110,6 +111,15 @@ import {
   type OfferGroup,
 } from './lib/groupOffers.js';
 import {
+  groupOfferedInPastYear,
+  pruneUnownedAndExpiredOffers,
+  remindAltarsFromOffers,
+  rootHasRecentOwnOffer,
+} from './lib/ownOffers.js';
+import {
+  syncMorningReminders,
+} from './lib/pushReminders.js';
+import {
   fetchIndexMemorial,
   fetchIndexTrending,
   searchIndexMemorials,
@@ -163,7 +173,13 @@ function loadOffers(): LocalOffer[] {
   try {
     const raw = localStorage.getItem(LOCAL_OFFERS_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as LocalOffer[];
+    const parsed = JSON.parse(raw) as LocalOffer[];
+    if (!Array.isArray(parsed)) return [];
+    const pruned = pruneUnownedAndExpiredOffers(parsed);
+    if (pruned.length !== parsed.length) {
+      localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(pruned));
+    }
+    return pruned;
   } catch {
     return [];
   }
@@ -517,6 +533,18 @@ export default function App() {
     const timer = setInterval(() => void refreshStatus(), 15_000);
     return () => clearInterval(timer);
   }, [refreshStatus]);
+
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'granted') return;
+    void syncMorningReminders({
+      installId,
+      locale,
+      altars: remindAltarsFromOffers(offers, locale, hiddenRecent),
+    }).catch(() => {
+      /* mint-api offline */
+    });
+  }, [installId, locale, offers, hiddenRecent]);
 
   /** Probe once if we have no cached rate; otherwise reuse localStorage. */
   useEffect(() => {
@@ -1137,6 +1165,7 @@ export default function App() {
             hashrateHps: result.hashrateHps || mined.hashrateHps,
             bits: result.bits,
             parentBurnTxid,
+            own: true,
           };
           // Share-link re-offer: original may not be on this device — seed a
           // named root (prefer packed Ban thờ wire) so Recent can open full details.
@@ -1339,7 +1368,15 @@ export default function App() {
 
   /** Persist index burns for a dedication so Recent total matches History. */
   function persistMemorialSync(remote: IndexMemorialGroup): LocalOffer[] {
-    const next = syncIndexMemorialIntoLocal(loadOffers(), remote);
+    const current = loadOffers();
+    // Viewing / search must not create a Recent row — only altars this
+    // device offered in the past year stay in history.
+    if (!rootHasRecentOwnOffer(current, remote.originalBurnTxid)) {
+      return current;
+    }
+    const next = pruneUnownedAndExpiredOffers(
+      syncIndexMemorialIntoLocal(current, remote),
+    );
     localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
     setOffers(next);
     return next;
@@ -1666,7 +1703,9 @@ export default function App() {
   }
 
   const recentGroups = groupOffersByOriginal(offers).filter(
-    g => !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
+    g =>
+      groupOfferedInPastYear(g) &&
+      !isRecentRootHidden(g.original.burnTxid, hiddenRecent),
   );
 
   const calendarSpecials = filterSpecialsForViewer(templeSpecials?.profiles, {
@@ -3128,6 +3167,10 @@ export default function App() {
                 </p>
               </div>
               <p className="hint">{t('hintKeepScreen')}</p>
+              <OfferPushOptIn
+                installId={installId}
+                altars={remindAltarsFromOffers(offers, locale, hiddenRecent)}
+              />
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
                   <p>
@@ -3268,6 +3311,10 @@ export default function App() {
                 </p>
               </div>
               <p className="hint">{t('hintKeepScreen')}</p>
+              <OfferPushOptIn
+                installId={installId}
+                altars={remindAltarsFromOffers(offers, locale, hiddenRecent)}
+              />
               {cancelLoseConfirm ? (
                 <div className="offer-cancel-confirm" role="alertdialog">
                   <p>

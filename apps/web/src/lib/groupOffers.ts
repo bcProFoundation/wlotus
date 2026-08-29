@@ -10,6 +10,8 @@ export interface LocalOffer {
   bits?: number;
   /** Original dedication burn this re-offer links to (on-chain DANA v2). */
   parentBurnTxid?: string;
+  /** True when this device completed the offer (not an index/view seed). */
+  own?: boolean;
 }
 
 /** One dedication thread: original burn + any local re-offers. */

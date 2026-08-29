@@ -307,6 +307,38 @@ export async function claimTempleSpecial(opts: {
   };
 }
 
+export async function fetchPushVapidPublicKey(): Promise<string | null> {
+  const res = await fetch(apiUrl('/api/push/vapid'));
+  if (res.status === 404 || res.status === 503) return null;
+  const body = await readApiJson<{ publicKey?: string; error?: string }>(res);
+  if (!res.ok || !body.publicKey) return null;
+  return body.publicKey;
+}
+
+export async function postPushSubscribe(opts: {
+  installId: string;
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  locale: string;
+  timeZone: string;
+  altars: Array<{
+    txid: string;
+    name: string;
+    deathYmd: string;
+    kind: 'event' | 'person';
+  }>;
+}): Promise<void> {
+  const res = await fetch(apiUrl('/api/push/subscribe'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(opts),
+  });
+  const body = await readApiJson<{ ok?: boolean; error?: string }>(res);
+  if (!res.ok || !body.ok) {
+    throw new Error(body.error || `Push subscribe failed (${res.status})`);
+  }
+}
+
 export function shortTx(txid: string): string {
   return `${txid.slice(0, 8)}…${txid.slice(-6)}`;
 }
