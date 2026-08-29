@@ -169,10 +169,8 @@ export type MessageKey =
   | 'searchHintSuffix'
   | 'searchCta'
   | 'homeEventsTitle'
-  | 'homeEventsTitleUpcoming'
-  | 'homeEventsTitleTrending'
-  | 'homeEventsViewUpcoming'
-  | 'homeEventsViewTrending'
+  | 'homeEventsUpcoming'
+  | 'homeEventsTrending'
   | 'homeEventsOfferings'
   | 'homeEventsFirstBurn'
   | 'homeEventsDaysUntil'
@@ -398,10 +396,8 @@ const en: Dict = {
   searchHintSuffix: '.',
   searchCta: 'Search',
   homeEventsTitle: 'Events',
-  homeEventsTitleUpcoming: 'Upcoming Events',
-  homeEventsTitleTrending: 'Featured Events',
-  homeEventsViewUpcoming: 'View upcoming',
-  homeEventsViewTrending: 'View featured',
+  homeEventsUpcoming: 'Upcoming',
+  homeEventsTrending: 'Featured',
   homeEventsOfferings: '{n} offerings',
   homeEventsFirstBurn: 'Be the first to offer',
   homeEventsDaysUntil: 'in {n} days',
@@ -629,10 +625,8 @@ const vi: Dict = {
   searchHintSuffix: '.',
   searchCta: 'Tìm kiếm',
   homeEventsTitle: 'Sự kiện',
-  homeEventsTitleUpcoming: 'Sự Kiện Sắp Tới',
-  homeEventsTitleTrending: 'Sự Kiện Nổi Bật',
-  homeEventsViewUpcoming: 'Xem sắp tới',
-  homeEventsViewTrending: 'Xem nổi bật',
+  homeEventsUpcoming: 'Sắp tới',
+  homeEventsTrending: 'Nổi bật',
   homeEventsOfferings: '{n} dâng hoa',
   homeEventsFirstBurn: 'Hãy là người dâng đầu tiên',
   homeEventsDaysUntil: 'còn {n} ngày',
@@ -854,10 +848,8 @@ const zh: Dict = {
   searchHintSuffix: '。',
   searchCta: '搜索',
   homeEventsTitle: '活动',
-  homeEventsTitleUpcoming: '即将活动',
-  homeEventsTitleTrending: '精选活动',
-  homeEventsViewUpcoming: '查看即将',
-  homeEventsViewTrending: '查看精选',
+  homeEventsUpcoming: '即将',
+  homeEventsTrending: '精选',
   homeEventsOfferings: '{n} 次供奉',
   homeEventsFirstBurn: '成为第一位献花者',
   homeEventsDaysUntil: '还有 {n} 天',
