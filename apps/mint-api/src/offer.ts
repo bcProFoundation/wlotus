@@ -62,14 +62,16 @@ import {
 } from '../../../src/params/templeSpecials.js';
 import {
   DESK_TOPUP_RESERVE_SATS,
+  OFFERING_PAIR_SATS,
   REMINT_FUEL_SATS,
+  pickBurnPostageUtxo,
   pickSizedFuelUtxo,
   pickSplitSourceUtxo,
   pureXecBalance,
 } from '../../../src/mint/fuelUtxo.js';
 import {
-  peelSizedFuel,
-  sendSizedFuelFromDesk,
+  peelOfferingPair,
+  sendOfferingPairFromDesk,
 } from '../../../src/mint/peelSizedFuel.js';
 import {
   loadTipFeeWallet,
@@ -243,6 +245,8 @@ interface StoredChallenge {
   tipLocktime: number;
   baton: { txid: string; outIdx: number; sats: string };
   fuel: { txid: string; outIdx: number; sats: string };
+  /** Sized burn-postage coin; leftover XEC returns to the desk. */
+  postage: { txid: string; outIdx: number; sats: string };
   locktime: number;
   bits: number;
   preimageHex: string;
@@ -432,11 +436,12 @@ function notifyDanaIndex(burnTxid: string): void {
 
 /**
  * After temple remint, burn flower atoms from the tip fee (mint) wallet.
- * Pure-XEC change stays on the mint receive address — never the desk.
+ * Fee input is the sized postage coin; leftover XEC returns to the **desk**.
  * Leftover miner inventory → temple.
  */
 async function burnMinerAtomAfterMint(opts: {
   wallet: Wallet;
+  desk: Wallet;
   tokenId: string;
   note: string;
   parentBurnTxid?: string;
@@ -463,6 +468,9 @@ async function burnMinerAtomAfterMint(opts: {
       continue;
     }
     try {
+      if (!pickBurnPostageUtxo(opts.wallet.utxos)) {
+        await topUpOfferingPairFromDesk(opts.desk, opts.wallet);
+      }
       const burned = await burnOnePrayer({
         wallet: opts.wallet,
         tokenId: opts.tokenId,
@@ -470,7 +478,7 @@ async function burnMinerAtomAfterMint(opts: {
         offeringId: OFFERING_ID_WLOTUS,
         parentBurnTxid: opts.parentBurnTxid,
         burnAtoms,
-        changeScript: opts.wallet.script,
+        changeScript: opts.desk.script,
         inventoryScript: opts.inventoryScript,
       });
       return {
@@ -603,14 +611,24 @@ function persistFollowedTip(
 }
 
 type FuelCoin = { txid: string; outIdx: number; sats: string };
+type OfferingCoins = { fuel: FuelCoin; postage: FuelCoin };
+
+function toFuelCoin(u: {
+  outpoint: { txid: string; outIdx: number };
+  sats: bigint;
+}): FuelCoin {
+  return {
+    txid: u.outpoint.txid,
+    outIdx: u.outpoint.outIdx,
+    sats: u.sats.toString(),
+  };
+}
 
 /**
- * Refill the mint/tip fee wallet from the desk with **one sized remint fuel**
- * (~40 XEC). Remint has no change out, so a large UTXO would be burned as fee.
- * Desk change stays on the desk. This extra hop is required; chunking a large
- * balance onto the tip does not save a transaction.
+ * Desk → tip: remint fuel + burn postage in **one** tx. Remint has no change
+ * out, so fuel stays ~40 XEC. Postage leftover returns to the desk on burn.
  */
-async function topUpTipFuelFromDesk(
+async function topUpOfferingPairFromDesk(
   desk: Wallet,
   tipWallet: Wallet,
 ): Promise<void> {
@@ -618,100 +636,95 @@ async function topUpTipFuelFromDesk(
   const pure = pureXecBalance(desk.utxos);
   const available =
     pure > DESK_TOPUP_RESERVE_SATS ? pure - DESK_TOPUP_RESERVE_SATS : 0n;
-  if (available < REMINT_FUEL_SATS) {
+  if (available < OFFERING_PAIR_SATS) {
     throw new Error(
-      `Tip fee wallet ${tipWallet.address} is empty and desk has no XEC to fund it. ` +
+      `Tip fee wallet ${tipWallet.address} needs remint+postage and desk has no XEC to fund it. ` +
         `Run: npm run fund-tip-fee-wallets`,
     );
   }
-  const txid = await sendSizedFuelFromDesk(desk, tipWallet);
+  const pair = await sendOfferingPairFromDesk(desk, tipWallet);
   console.log(
-    `desk→mint fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC ` +
+    `desk→mint pair ${pair.txid} ` +
+      `${Number(REMINT_FUEL_SATS) / 100}+${Number(pair.postage.sats) / 100} XEC ` +
       `${desk.address} → ${tipWallet.address} (change on desk)`,
   );
 }
 
 /**
- * One sized fee UTXO per tip wallet. Racers on the same tip share it
- * (only the winner broadcasts). Tips use separate HD accounts so they
- * cannot spend each other's fuel.
+ * One remint fuel + one postage UTXO per tip. Racers on the same tip share
+ * them (only the winner broadcasts). Tips cannot spend each other's coins.
  */
-function resolveFuelForTip(
+function resolveOfferingPair(
   wallet: Wallet,
   tipIndex: number,
   batonTxid: string,
   batonOutIdx: number,
-): FuelCoin {
+): OfferingCoins {
   const sibling =
     openChallengesOnTip(tipIndex).find(
       ch => ch.baton.txid === batonTxid && ch.baton.outIdx === batonOutIdx,
     ) ?? openChallengesOnTip(tipIndex)[0];
-  if (sibling) {
-    return { ...sibling.fuel };
+  if (sibling?.fuel && sibling?.postage) {
+    return { fuel: { ...sibling.fuel }, postage: { ...sibling.postage } };
   }
 
   const fuelUtxo = pickSizedFuelUtxo(wallet.utxos);
-  if (!fuelUtxo) {
+  const postageUtxo = pickBurnPostageUtxo(wallet.utxos);
+  if (!fuelUtxo || !postageUtxo) {
     throw new Error(
-      'Tip fee wallet needs a sized fee UTXO. Try again shortly.',
+      'Tip fee wallet needs remint fuel and burn postage. Try again shortly.',
     );
   }
-  return {
-    txid: fuelUtxo.outpoint.txid,
-    outIdx: fuelUtxo.outpoint.outIdx,
-    sats: fuelUtxo.sats.toString(),
-  };
+  return { fuel: toFuelCoin(fuelUtxo), postage: toFuelCoin(postageUtxo) };
 }
 
-async function ensureTipSizedFuel(
+async function ensureTipOfferingPair(
   desk: Wallet,
   tipWallet: Wallet,
   tipIndex: number,
   batonTxid: string,
   batonOutIdx: number,
-): Promise<FuelCoin> {
-  // Reuse sibling binding without syncing / splitting.
+): Promise<OfferingCoins> {
   try {
-    return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
+    return resolveOfferingPair(tipWallet, tipIndex, batonTxid, batonOutIdx);
   } catch {
     /* need to provision */
   }
 
   await tipWallet.sync();
   try {
-    return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
+    return resolveOfferingPair(tipWallet, tipIndex, batonTxid, batonOutIdx);
   } catch {
     /* continue */
   }
 
   await desk.sync();
-  if (pickSizedFuelUtxo(tipWallet.utxos)) {
-    /* already have sized fuel */
-  } else {
+  const hasFuel = Boolean(pickSizedFuelUtxo(tipWallet.utxos));
+  const hasPostage = Boolean(pickBurnPostageUtxo(tipWallet.utxos));
+  if (!hasFuel || !hasPostage) {
     const deskPure = pureXecBalance(desk.utxos);
     const deskAvail =
       deskPure > DESK_TOPUP_RESERVE_SATS
         ? deskPure - DESK_TOPUP_RESERVE_SATS
         : 0n;
-    if (deskAvail >= REMINT_FUEL_SATS) {
-      await topUpTipFuelFromDesk(desk, tipWallet);
+    if (deskAvail >= OFFERING_PAIR_SATS) {
+      await topUpOfferingPairFromDesk(desk, tipWallet);
     } else if (pickSplitSourceUtxo(tipWallet.utxos)) {
-      // Desk empty: peel a sized fuel on mint; leftover stays on mint receive.
-      const txid = await peelSizedFuel(tipWallet, {
+      const peeled = await peelOfferingPair(tipWallet, {
         fuelScript: tipWallet.script,
         changeScript: tipWallet.script,
       });
-      if (txid) {
+      if (peeled) {
         console.log(
-          `mint local peel ${txid}: fuel + change stay on mint receive`,
+          `mint local pair ${peeled.txid}: fuel+postage; change on mint receive`,
         );
       }
     } else {
-      await topUpTipFuelFromDesk(desk, tipWallet);
+      await topUpOfferingPairFromDesk(desk, tipWallet);
     }
   }
 
-  return resolveFuelForTip(tipWallet, tipIndex, batonTxid, batonOutIdx);
+  return resolveOfferingPair(tipWallet, tipIndex, batonTxid, batonOutIdx);
 }
 
 async function createChallengeOnce(opts: {
@@ -891,13 +904,14 @@ async function createChallengeOnce(opts: {
     vout: live.outIdx,
   };
 
-  const fuelCoin = await ensureTipSizedFuel(
+  const offering = await ensureTipOfferingPair(
     desk.wallet,
     tipFee.wallet,
     tipRec.index,
     baton.outpoint.txid,
     baton.outpoint.outIdx,
   );
+  const fuelCoin = offering.fuel;
 
   const { mtp } = await getMedianTimePast(chronik);
   const locktime = Math.max(tipRec.tipLocktime, mtp - 1);
@@ -955,6 +969,7 @@ async function createChallengeOnce(opts: {
       sats: baton.sats.toString(),
     },
     fuel: fuelCoin,
+    postage: offering.postage,
     locktime,
     bits: prepared.tip.bits,
     preimageHex: prepared.preimageHex,
@@ -1271,6 +1286,7 @@ async function completeBurnOnce(opts: {
 
   const chronik = await createChronik('closest');
   const tipFee = await loadTipFeeWallet(chronik, pb.tipIndex);
+  const desk = await loadMintWallet(chronik);
   const { dep } = loadDep();
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
   if (!templeHashHex || templeHashHex.length !== 40) {
@@ -1279,6 +1295,7 @@ async function completeBurnOnce(opts: {
   const inventoryScript = Script.p2sh(fromHex(templeHashHex));
   const burned = await burnMinerAtomAfterMint({
     wallet: tipFee.wallet,
+    desk: desk.wallet,
     tokenId: pb.tokenId,
     note: pb.note,
     parentBurnTxid: pb.parentBurnTxid,

@@ -10,6 +10,7 @@ import {
   type Script,
 } from 'ecash-lib';
 import type { Wallet } from 'ecash-wallet';
+import { pickBurnPostageUtxo } from '../mint/fuelUtxo.js';
 import {
   memorialPushdata,
   OFFERING_ID_PRAYER,
@@ -36,13 +37,11 @@ export { explorerTx, danaExplorerOrigin, DEFAULT_DANA_EXPLORER_ORIGIN } from '..
  * Burn `burnAtoms` (default 1) with on-chain memorial (**DANA** LOKAD).
  * Temple specials may burn more than 1 during an active event window.
  *
- * Pure-XEC change stays on the mint/tip **receive** script (`wallet.script`)
- * unless `changeScript` is set. Do not route leftover XEC to the desk — that
- * swallows the next remint fuel UTXOs. HD wallets must not use the default
- * BIP44 change chain (…/1/i).
- *
- * Extra fee inputs prefer the smallest non-token UTXO so sized remint fuels
- * (~40 XEC) are left for the next offering.
+ * Fee input is **only** a small burn-postage UTXO (15–35 XEC). Never attach
+ * an oversized tip reserve. Pass `changeScript` as the **desk** so leftover
+ * XEC returns to treasury. Pinning postage in `requiredUtxos` is what keeps
+ * sibling remint fuels from being swallowed (the old desk-change bug).
+ * HD wallets must not use the default BIP44 change chain (…/1/i).
  *
  * `inventoryScript`: leftover token atoms after the burn (temple cold storage).
  */
@@ -56,8 +55,8 @@ export async function burnOnePrayer(opts: {
   /** Atoms to burn (default 1). Must be ≥ 1. */
   burnAtoms?: bigint;
   /**
-   * Force pure-XEC change onto this script. Defaults to wallet.script
-   * (mint receive). Do not pass the desk / funding address.
+   * Pure-XEC change. Offering path: desk treasury script.
+   * Defaults to wallet.script (mint receive).
    */
   changeScript?: Script;
   /**
@@ -94,16 +93,17 @@ export async function burnOnePrayer(opts: {
   }
   const inventoryAtoms = totalAtoms - burnAtoms;
 
-  // Token UTXOs + the smallest extra pure-XEC coin (fee). Prefer leftover
-  // dust (< remint fuel size) so sized ~40 XEC fuels stay for the next mint.
-  const extraPure = opts.wallet.utxos
-    .filter(u => !u.token)
-    .sort((a, b) => (a.sats < b.sats ? -1 : a.sats > b.sats ? 1 : 0));
-  const dustFee = extraPure.find(u => u.sats < 4_000n);
-  const feeUtxo = dustFee ?? extraPure[0];
+  // Token UTXOs + postage only. Do **not** fall back to the largest/only
+  // pure coin: a 1M-XEC reserve on the tip would be spent as miner fee.
+  const feeUtxo = pickBurnPostageUtxo(opts.wallet.utxos);
+  if (!feeUtxo) {
+    throw new Error(
+      'Tip needs a small burn-postage UTXO (15–35 XEC). Oversized reserves are not spent.',
+    );
+  }
   const requiredUtxos = [
     ...tokenUtxos.map(u => u.outpoint),
-    ...(feeUtxo ? [feeUtxo.outpoint] : []),
+    feeUtxo.outpoint,
   ];
 
   const changeScript = opts.changeScript ?? opts.wallet.script;
