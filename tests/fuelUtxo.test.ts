@@ -1,8 +1,14 @@
 import {
+  BURN_POSTAGE_MAX_SATS,
+  BURN_POSTAGE_MIN_SATS,
+  BURN_POSTAGE_SATS,
+  OFFERING_PAIR_SATS,
   REMINT_FUEL_MAX_SATS,
   REMINT_FUEL_SATS,
+  isBurnPostageSats,
   isOversizedFuelSats,
   isSizedFuelSats,
+  pickBurnPostageUtxo,
   pickSizedFuelUtxo,
   pickSplitSourceUtxo,
   pureXecBalance,
@@ -14,12 +20,23 @@ function u(txid: string, outIdx: number, sats: bigint, token?: unknown) {
 }
 
 describe('fuelUtxo sizing', () => {
-  it('accepts only small fuel sats', () => {
+  it('accepts only small remint fuel sats', () => {
     expect(isSizedFuelSats(REMINT_FUEL_SATS)).toBe(true);
     expect(isSizedFuelSats(REMINT_FUEL_MAX_SATS)).toBe(true);
     expect(isSizedFuelSats(REMINT_FUEL_SATS - 1n)).toBe(false);
     expect(isSizedFuelSats(REMINT_FUEL_MAX_SATS + 1n)).toBe(false);
     expect(isOversizedFuelSats(1_000_000n)).toBe(true);
+  });
+
+  it('keeps burn postage below remint fuel so pickers do not overlap', () => {
+    expect(BURN_POSTAGE_SATS).toBe(2_500n);
+    expect(isBurnPostageSats(BURN_POSTAGE_SATS)).toBe(true);
+    expect(isBurnPostageSats(BURN_POSTAGE_MIN_SATS)).toBe(true);
+    expect(isBurnPostageSats(BURN_POSTAGE_MAX_SATS)).toBe(true);
+    expect(isSizedFuelSats(BURN_POSTAGE_SATS)).toBe(false);
+    expect(isBurnPostageSats(REMINT_FUEL_SATS)).toBe(false);
+    expect(BURN_POSTAGE_MAX_SATS).toBeLessThan(REMINT_FUEL_SATS);
+    expect(OFFERING_PAIR_SATS).toBe(REMINT_FUEL_SATS + BURN_POSTAGE_SATS);
   });
 
   it('never picks an oversized coin as remint fuel', () => {
@@ -30,6 +47,17 @@ describe('fuelUtxo sizing', () => {
     ];
     const pick = pickSizedFuelUtxo(coins);
     expect(pick?.outpoint.txid).toBe('ok');
+  });
+
+  it('never picks the oversized reserve or remint fuel as burn postage', () => {
+    const coins = [
+      u('big', 0, 1_000_000n),
+      u('fuel', 0, REMINT_FUEL_SATS),
+      u('dust', 0, 546n),
+      u('post', 0, BURN_POSTAGE_SATS),
+    ];
+    expect(pickBurnPostageUtxo(coins)?.outpoint.txid).toBe('post');
+    expect(pickBurnPostageUtxo([u('big', 0, 1_000_000n), u('dust', 0, 546n)])).toBeNull();
   });
 
   it('respects blocked outpoints (other tips)', () => {
@@ -66,8 +94,10 @@ describe('fuelUtxo sizing', () => {
     expect(() => tipFeeAccountNumber(-1)).toThrow(/non-negative/);
   });
 
-  it('desk auto-fund sends one remint fuel, not a treasury chunk', () => {
+  it('desk auto-fund sends remint fuel plus postage, not a treasury chunk', () => {
     expect(REMINT_FUEL_SATS).toBe(4_000n);
-    expect(isSizedFuelSats(REMINT_FUEL_SATS)).toBe(true);
+    expect(BURN_POSTAGE_SATS).toBe(2_500n);
+    expect(isSizedFuelSats(OFFERING_PAIR_SATS)).toBe(false);
+    expect(isOversizedFuelSats(OFFERING_PAIR_SATS)).toBe(true);
   });
 });

@@ -38,15 +38,16 @@ signs remint, receives the miner atoms, and burns the offering.
 **Offering fee flow** (one extra hop is required; a large “chunk” on the mint
 does not save a transaction):
 
-1. Desk → mint: one sized ~40 XEC fuel (change stays on desk).
-2. Mint remint spends that fuel (leftover is miner fee, not change).
-3. Mint burn spends the miner-atom UTXO. Pure-XEC change stays on the **mint
-   receive** address — never swept back to the desk (that was swallowing the
-   next fuel and causing insufficient-fee failures). Leftover WLOTUS inventory
-   still goes to temple P2SH.
+1. Desk → mint: **one tx, two sized outputs** — ~40 XEC remint fuel + ~25 XEC
+   burn postage (change stays on desk).
+2. Mint remint spends the ~40 XEC fuel (leftover is miner fee, not change).
+3. Mint burn spends the token UTXO + the ~25 XEC postage **only**. Leftover
+   XEC returns to the **desk**. Leftover WLOTUS inventory still goes to temple
+   P2SH. Sibling remint fuels on the tip are not inputs, so they are not
+   swallowed.
 
-`fund-tip-fee-wallets` pre-places several sized fuels on the mint (change on
-desk) so offerings often skip the auto top-up.
+`fund-tip-fee-wallets` pre-places several remint+postage pairs on the mint
+(change on desk) so offerings often skip the auto top-up.
 
 ### Custody: one mnemonic today, split keys later
 
@@ -61,12 +62,12 @@ holds value worth stealing.
 | Role | Must be hot? | Today | Later |
 |------|----------------|-------|--------|
 | **Tip / mint keys** | Yes — remint and burn are in the request path | Same mnemonic | Stay in mint-api (own secret) |
-| **Desk / treasury key** | No — only peels ~40 XEC onto an empty tip | Same mnemonic, same process | Different secret, not on the mint host |
+| **Desk / treasury key** | No — peels remint+postage onto an empty tip | Same mnemonic, same process | Different secret, not on the mint host |
 
 **Why one desk funds all tips:** remint cannot attach a large UTXO, so treasury
 cannot sit on a remint-capable wallet. Per-tip HD keys still isolate fuel
-across parallel races. Pre-place `MINT_FUELS_PER_TIP` coins per tip; do not
-move treasury onto the tips.
+across parallel races. Pre-place `MINT_FUELS_PER_TIP` remint+postage pairs
+per tip; do not move treasury onto the tips.
 
 **When splitting keys:**
 
@@ -131,9 +132,9 @@ npm run fund-tip-fee-wallets
 
 Optional env: `MINT_DESK_RESERVE_SATS` (default 10000), `MINT_FUELS_PER_TIP` (default 3).
 
-If the mint/tip wallet has no sized fuel at challenge time, mint-api sends **one
-~40 XEC** coin from the desk (`sendSizedFuelFromDesk`). Change stays on the desk.
-Do not send leftover mint XEC back to the desk during burn.
+If the mint/tip wallet has no remint fuel or burn postage at challenge time,
+mint-api sends **both** from the desk in one tx (`sendOfferingPairFromDesk`).
+Change stays on the desk. Burn leftover XEC also returns to the desk.
 
 ## Endpoints
 

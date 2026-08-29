@@ -47,11 +47,14 @@ import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { loadTipFeeWallet } from '../src/mint/loadTipFeeWallet.js';
 import { loadMintWallet } from '../src/mint/loadMintWallet.js';
 import {
+  BURN_POSTAGE_SATS,
+  pickBurnPostageUtxo,
   pickSizedFuelUtxo,
 } from '../src/mint/fuelUtxo.js';
 import {
+  peelOfferingPair,
   peelSizedFuel,
-  sendSizedFuelFromDesk,
+  sendOfferingPairFromDesk,
 } from '../src/mint/peelSizedFuel.js';
 import {
   burnOnePrayer,
@@ -683,32 +686,34 @@ async function remintForInventory(
   };
 }
 
-/** Desk → tip ~40 XEC fuel; peel on tip only if the desk cannot fund. */
+/** Desk → tip remint fuel + postage; peel a pair on tip only if the desk cannot fund. */
 async function ensureTipSizedFuel(
   chronik: Awaited<ReturnType<typeof createChronik>>,
   tipWallet: Wallet,
   tipIndex: number,
 ): Promise<void> {
   await tipWallet.sync();
-  if (pickSizedFuelUtxo(tipWallet.utxos)) return;
+  if (pickSizedFuelUtxo(tipWallet.utxos) && pickBurnPostageUtxo(tipWallet.utxos)) {
+    return;
+  }
 
   try {
     const desk = await loadMintWallet(chronik);
-    const txid = await sendSizedFuelFromDesk(desk.wallet, tipWallet);
-    console.log(`  desk→tip-${tipIndex} sized fuel ${txid}`);
+    const pair = await sendOfferingPairFromDesk(desk.wallet, tipWallet);
+    console.log(`  desk→tip-${tipIndex} remint+postage ${pair.txid}`);
     return;
   } catch (e) {
     console.log(
-      `  desk→tip fuel failed (${e instanceof Error ? e.message : e}); trying local peel`,
+      `  desk→tip pair failed (${e instanceof Error ? e.message : e}); trying local peel`,
     );
   }
 
   await tipWallet.sync();
-  const peeled = await peelSizedFuel(tipWallet, {
+  const peeled = await peelOfferingPair(tipWallet, {
     fuelScript: tipWallet.script,
     changeScript: tipWallet.script,
   });
-  if (peeled) console.log(`  tip fuel peel ${peeled}`);
+  if (peeled) console.log(`  tip pair peel ${peeled.txid}`);
 }
 
 async function ensureInventory(
@@ -931,12 +936,25 @@ async function main(): Promise<void> {
     }
 
     await holder.wallet.sync();
+    const desk = await loadMintWallet(chronik);
+    if (!pickBurnPostageUtxo(holder.wallet.utxos)) {
+      if (desk.wallet.address === holder.wallet.address) {
+        await peelSizedFuel(desk.wallet, {
+          sats: BURN_POSTAGE_SATS,
+          fuelScript: desk.wallet.script,
+          changeScript: desk.wallet.script,
+        });
+      } else {
+        await sendOfferingPairFromDesk(desk.wallet, holder.wallet);
+      }
+    }
     const { txid } = await burnOnePrayer({
       wallet: holder.wallet,
       tokenId,
       note,
       offeringId: OFFERING_ID_WLOTUS,
       burnAtoms: 1n,
+      changeScript: desk.wallet.script,
     });
 
     created.push({

@@ -1,8 +1,10 @@
 /**
  * Fund per-tip fee wallets from the main mint desk (tip-funding address).
  *
- * Remint has no change out — tips only hold small sized ~40 XEC fuel coins.
- * Treasury stays on the desk; each send is one fuel UTXO with change on desk.
+ * Remint has no change out — tips only hold small sized remint fuels and
+ * burn-postage coins. Treasury stays on the desk. Each send is one tx with
+ * two outputs (fuel + postage); change stays on desk. Burn leftover XEC
+ * returns to the desk.
  * This script:
  *   1. Derives tip HD accounts from MINT_MNEMONIC (account tipIndex+1)
  *   2. Sends REMINT_FUEL_SATS × N from desk → tip (change remains on desk)
@@ -23,7 +25,10 @@ import {
   tipFeeWalletSummary,
 } from '../src/mint/loadTipFeeWallet.js';
 import {
+  BURN_POSTAGE_SATS,
+  OFFERING_PAIR_SATS,
   REMINT_FUEL_SATS,
+  isBurnPostageSats,
   isSizedFuelSats,
   pickSplitSourceUtxo,
   pureXecBalance,
@@ -77,17 +82,24 @@ async function main(): Promise<void> {
     `desk pool above reserve ≈ ${Number(pool) / 100} XEC (reserve ${Number(DESK_RESERVE_SATS) / 100} XEC)`,
   );
 
-  // Sized fuels only on tips; treasury + change stay on desk (tip-funding).
+  // Sized remint fuels + postage on tips; treasury + burn change stay on desk.
   if (pool > 0n && tips.length > 0) {
     for (const t of tips) {
       await t.tip.wallet.sync();
-      let sized = t.tip.wallet.utxos.filter(
-        (u: { token?: unknown; sats: bigint }) =>
-          !u.token && isSizedFuelSats(u.sats),
-      ).length;
-      const need = Math.max(0, FUELS_PER_TIP - sized);
+      const countFuel = () =>
+        t.tip.wallet.utxos.filter(
+          (u: { token?: unknown; sats: bigint }) =>
+            !u.token && isSizedFuelSats(u.sats),
+        ).length;
+      const countPostage = () =>
+        t.tip.wallet.utxos.filter(
+          (u: { token?: unknown; sats: bigint }) =>
+            !u.token && isBurnPostageSats(u.sats),
+        ).length;
+      let pairs = Math.min(countFuel(), countPostage());
+      const need = Math.max(0, FUELS_PER_TIP - pairs);
       if (need === 0) {
-        console.log(`tip ${t.i}: already has ${sized} sized fuels`);
+        console.log(`tip ${t.i}: already has ${pairs} remint+postage pairs`);
         continue;
       }
       for (let n = 0; n < need; n++) {
@@ -95,34 +107,34 @@ async function main(): Promise<void> {
         const pureNow = pureXecBalance(desk.wallet.utxos);
         const available =
           pureNow > DESK_RESERVE_SATS ? pureNow - DESK_RESERVE_SATS : 0n;
-        if (available < REMINT_FUEL_SATS) {
+        if (available < OFFERING_PAIR_SATS) {
           console.log(
-            `desk pure ${Number(pureNow) / 100} XEC below reserve+fuel; stop funding`,
+            `desk pure ${Number(pureNow) / 100} XEC below reserve+pair; stop funding`,
           );
           break;
         }
         if (DRY) {
           console.log(
-            `[dry] desk → tip ${t.i}: ${Number(REMINT_FUEL_SATS) / 100} XEC fuel (change on desk)`,
+            `[dry] desk → tip ${t.i}: ${Number(REMINT_FUEL_SATS) / 100}+${Number(BURN_POSTAGE_SATS) / 100} XEC pair (change on desk)`,
           );
-          sized++;
+          pairs++;
           continue;
         }
-        const { sendSizedFuelFromDesk } = await import(
+        const { sendOfferingPairFromDesk } = await import(
           '../src/mint/peelSizedFuel.js'
         );
-        const txid = await sendSizedFuelFromDesk(desk.wallet, t.tip.wallet);
+        const pair = await sendOfferingPairFromDesk(desk.wallet, t.tip.wallet);
         console.log(
-          `desk→tip ${t.i} fuel ${txid} ${Number(REMINT_FUEL_SATS) / 100} XEC (change on desk)`,
+          `desk→tip ${t.i} pair ${pair.txid} ` +
+            `${Number(REMINT_FUEL_SATS) / 100}+${Number(BURN_POSTAGE_SATS) / 100} XEC (change on desk)`,
         );
-        sized++;
+        pairs++;
       }
       await t.tip.wallet.sync();
-      const sized2 = t.tip.wallet.utxos.filter(
-        (u: { token?: unknown; sats: bigint }) =>
-          !u.token && isSizedFuelSats(u.sats),
-      ).length;
-      console.log(`tip ${t.i} sized fuels ready: ${sized2}`);
+      console.log(
+        `tip ${t.i} pairs ready: ${Math.min(countFuel(), countPostage())} ` +
+          `(fuel ${countFuel()}, postage ${countPostage()})`,
+      );
     }
   } else {
     console.log('Desk has no spendable surplus above reserve; skipping fund.');
