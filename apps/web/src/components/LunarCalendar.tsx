@@ -3,6 +3,7 @@ import { useLocale } from '../i18n/LocaleContext.js';
 import {
   addMonths,
   buildSolarMonthGrid,
+  calendarEmptyKind,
   defaultSelectedYmdForMonth,
   excludeSpecialDuplicateMemorials,
   lunarCellLabel,
@@ -71,6 +72,21 @@ export function LunarCalendar(props: {
     inMonthDays,
     selected.ymd,
     locale,
+  );
+  const selectedDaySpecials = specialsOnYmd(
+    props.specials,
+    selected.ymd,
+    locale,
+  );
+  const selectedDayMemorials = memorialsOnYmd(
+    personalMemorials,
+    selected,
+    locale,
+  );
+  const emptyKind = calendarEmptyKind(
+    monthSpecials.length + monthMemorials.length,
+    selectedDaySpecials.length + selectedDayMemorials.length,
+    selected.solarD === 1,
   );
 
   const monthTitle = new Date(cursor.year, cursor.month - 1, 1).toLocaleDateString(
@@ -223,8 +239,15 @@ export function LunarCalendar(props: {
           )}
         </div>
 
-        {monthSpecials.length === 0 && monthMemorials.length === 0 ? (
+        {emptyKind === 'month' ? (
           <p className="hint">{t('calendarEmptyMonth')}</p>
+        ) : emptyKind === 'day' ? (
+          <p className="hint">
+            {t('calendarEmptyDay', {
+              d: selected.solarD,
+              m: selected.solarM,
+            })}
+          </p>
         ) : null}
 
         {monthSpecials.length > 0 ? (

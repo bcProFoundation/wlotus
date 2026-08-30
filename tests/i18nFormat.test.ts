@@ -24,6 +24,12 @@ describe('formatOfferedAtLocale', () => {
       interpolate(MESSAGES.vi.offerSuccessWhen, { when: '22/08/2026, 19:25' }),
     ).toBe('Dâng lúc 22/08/2026, 19:25');
   });
+
+  it('names a calendar day with no observances', () => {
+    expect(interpolate(MESSAGES.vi.calendarEmptyDay, { d: 30, m: 8 })).toBe(
+      'Ngày 30/8 không có ngày lễ / giỗ…',
+    );
+  });
 });
 
 describe('formatActualDurationLocale', () => {

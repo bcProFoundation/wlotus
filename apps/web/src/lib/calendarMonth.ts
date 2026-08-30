@@ -649,6 +649,21 @@ export function memorialsInMonth(
   return [...onDay, ...rest];
 }
 
+/** Empty copy under the calendar: remaining month vs this solar day. */
+export type CalendarEmptyKind = 'month' | 'day' | null;
+
+export function calendarEmptyKind(
+  remainingCount: number,
+  selectedDayCount: number,
+  /** Day 1 = whole-month view; do not name that date as empty. */
+  monthView = false,
+): CalendarEmptyKind {
+  if (remainingCount <= 0) return 'month';
+  if (monthView) return null;
+  if (selectedDayCount <= 0) return 'day';
+  return null;
+}
+
 export type AppTab = 'home' | 'calendar';
 
 function hashPath(hash: string): string {

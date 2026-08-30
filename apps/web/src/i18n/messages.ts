@@ -428,7 +428,7 @@ const en: Dict = {
   calendarNextMonth: 'Next month',
   calendarToday: 'Today',
   calendarViewToday: 'View today',
-  calendarEmptyDay: 'No observances on this day.',
+  calendarEmptyDay: 'No observances on {d}/{m}.',
   calendarEmptyMonth: 'No observances this month.',
   calendarMemorialsHeading: 'Memorial days',
 };
@@ -657,7 +657,7 @@ const vi: Dict = {
   calendarNextMonth: 'Tháng sau',
   calendarToday: 'Hôm nay',
   calendarViewToday: 'Xem hôm nay',
-  calendarEmptyDay: 'Ngày này không có lễ hay giỗ.',
+  calendarEmptyDay: 'Ngày {d}/{m} không có ngày lễ / giỗ…',
   calendarEmptyMonth: 'Tháng này không có lễ hay giỗ.',
   calendarMemorialsHeading: 'Ngày giỗ',
 };
@@ -878,7 +878,7 @@ const zh: Dict = {
   calendarNextMonth: '下个月',
   calendarToday: '今天',
   calendarViewToday: '查看今天',
-  calendarEmptyDay: '这一天没有节日或忌日。',
+  calendarEmptyDay: '{m}月{d}日没有节日或忌日。',
   calendarEmptyMonth: '这个月没有节日或忌日。',
   calendarMemorialsHeading: '忌日',
 };
