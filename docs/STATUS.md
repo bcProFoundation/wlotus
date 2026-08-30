@@ -39,4 +39,4 @@ Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`.
 1. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
 2. Postage / fee sponsorship polish
 3. **GLOTUS** genesis when the economic layer ships
-4. Fractional-bit PoW if/when eCash raises the 201-op limit
+4. Fractional-bit PoW: GLotus `GlotusPowRemintMooreTip` fits felt +1 bit (flat 8×2B table, ALP MINT only). Intra-era 8-slot / daily tables do not fit with hard next-P2SH. WLOTUS stays whole-byte.
