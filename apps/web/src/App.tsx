@@ -26,6 +26,7 @@ import {
 } from './i18n/format.js';
 import { useLocale } from './i18n/LocaleContext.js';
 import { applyDocumentTheme, documentTheme } from './i18n/appearance.js';
+import { setOfferingBlocksPwaReload } from './lib/pwaReloadGate.js';
 import {
   getMinPrayMs,
   getOrCreateInstallId,
@@ -447,6 +448,10 @@ export default function App() {
     applyDocumentTheme(documentTheme(locale, appearance, busy));
     document.documentElement.dataset.locale = locale;
   }, [locale, appearance, busy]);
+
+  useEffect(() => {
+    setOfferingBlocksPwaReload(busy);
+  }, [busy]);
 
   useEffect(() => {
     const sync = () => {
