@@ -12,15 +12,30 @@
  * each deploy a genuinely new URL the browser has never cached, so the very
  * first registration attempt after a deploy is guaranteed to hit the
  * network and discover the new worker.
+ *
+ * Never check-or-reload while an offering is in progress — skipWaiting +
+ * clientsClaim would swap the controller and this listener would reload,
+ * aborting the mine and losing the burn. After the session, the next
+ * visibility / focus / 5-minute poll applies the deferred reload.
  */
+import { pwaReloadGate } from './pwaReloadGate';
+
+export { setOfferingBlocksPwaReload } from './pwaReloadGate';
+
+function reloadOnce(state: { refreshing: boolean }): void {
+  if (state.refreshing) return;
+  state.refreshing = true;
+  window.location.reload();
+}
+
 export function registerPwaAutoUpdate(): void {
   if (!('serviceWorker' in navigator)) return;
 
-  let refreshing = false;
+  const state = { refreshing: false };
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
+    if (pwaReloadGate.onControllerChange() === 'reload') {
+      reloadOnce(state);
+    }
   });
 
   const swUrl = `/sw.js?v=${__WLOTUS_BUILD_ID__}`;
@@ -29,7 +44,12 @@ export function registerPwaAutoUpdate(): void {
     .register(swUrl, { scope: '/', type: 'classic' })
     .then(registration => {
       const check = () => {
-        void registration.update();
+        const action = pwaReloadGate.onCheck();
+        if (action === 'reload') {
+          reloadOnce(state);
+          return;
+        }
+        if (action === 'check') void registration.update();
       };
       // Periodic + on focus / visibility
       setInterval(check, 5 * 60_000);
