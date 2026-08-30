@@ -9,29 +9,44 @@
  */
 import { Wallet } from 'ecash-wallet';
 import { toHex } from 'ecash-lib';
+import type { ChronikClient } from 'chronik-client';
 import { createChronik } from '../src/network/createChronik.js';
 
 /** Isolated from desk (0) and sponsored tips (1–28). */
 export const GLOTUS_GENESIS_ACCOUNT = 99;
 
-async function main(): Promise<void> {
+export const GLOTUS_EXPECTED_GENESIS_ADDRESS =
+  'ecash:qz269uelzmdvjqls2862p3va3hkkplwxsuhaes8se0';
+
+export function glotusMnemonicPhrase(): string {
   const raw = process.env.GLOTUS_MNEMONIC?.trim();
   if (!raw) throw new Error('Set GLOTUS_MNEMONIC');
   const phrase = raw.split(/\s+/).join(' ');
   const words = phrase.split(' ');
   if (words.length !== 12 && words.length !== 24) {
-    throw new Error(`GLOTUS_MNEMONIC must be 12 or 24 words (got ${words.length})`);
+    throw new Error(
+      `GLOTUS_MNEMONIC must be 12 or 24 words (got ${words.length})`,
+    );
   }
+  return phrase;
+}
 
-  const chronik = await createChronik('closest');
-  const wallet = Wallet.fromMnemonic(phrase, chronik, {
+export async function loadGlotusGenesisWallet(
+  chronik: ChronikClient,
+): Promise<Wallet> {
+  const wallet = Wallet.fromMnemonic(glotusMnemonicPhrase(), chronik, {
     hd: true,
     accountNumber: GLOTUS_GENESIS_ACCOUNT,
     receiveIndex: 0,
     changeIndex: 0,
   });
   await wallet.sync();
+  return wallet;
+}
 
+async function main(): Promise<void> {
+  const chronik = await createChronik('closest');
+  const wallet = await loadGlotusGenesisWallet(chronik);
   console.log(
     JSON.stringify(
       {
@@ -48,7 +63,11 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch(err => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+const isDirect =
+  process.argv[1]?.includes('glotus-genesis-address') === true;
+if (isDirect) {
+  main().catch(err => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}

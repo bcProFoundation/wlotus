@@ -31,6 +31,6 @@ Older experiments (Ergon / Moore / Prayer / mWLOTUS). Keep for archaeology.
 | `mainnet-*-archived-*.json` | Superseded genesis / remint records |
 | `mainnet-pow-token-v*-locked.json` | Broken predecessor covenants |
 | `mainnet-test-token.json` | Custodial **WLTEST** (not for mining) |
-| `pending-funding-mwlotus.json` | Fund address if a genesis wallet is empty |
+| `mainnet-dglotus.json` | Dogfood **dGLOTUS** — felt +1 bit MooreTip, no temple tax |
 
 Private keys live only in `.env` (gitignored). Never commit `GENESIS_SK_HEX`.
