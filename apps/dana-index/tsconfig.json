@@ -15,6 +15,7 @@
     "src",
     "../../src/offering/wlbrMemorial.ts",
     "../../src/offering/memorialFromScript.ts",
-    "../../src/offering/altarFields.ts"
+    "../../src/offering/altarFields.ts",
+    "../../src/lib/trendingScore.ts"
   ]
 }

@@ -24,7 +24,7 @@ import {
   ingestUnconfirmed,
 } from './ingest.js';
 import { buildOgHtml, resolveOgLocale } from './ogPreview.js';
-import { BurnStore, TRENDING_WINDOW_MS } from './store.js';
+import { BurnStore, TRENDING_GRAVITY } from './store.js';
 import { readJsonBody, PayloadTooLargeError } from '../../../src/lib/httpJson.js';
 import { allowIndexNotify } from '../../../src/lib/indexNotifyAuth.js';
 
@@ -179,7 +179,8 @@ const server = createServer(async (req, res) => {
       json(res, 200, {
         ok: true,
         tokenId: TOKEN_ID,
-        windowMs: TRENDING_WINDOW_MS,
+        algorithm: 'decay',
+        gravity: TRENDING_GRAVITY,
         items: store.trendingGroups(limit),
       });
       return;

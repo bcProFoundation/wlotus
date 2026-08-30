@@ -285,7 +285,7 @@ When implementing amendments / richer fields:
 | `src/offering/altarFields.ts` | Separator pack / parse / display name / relationship fields |
 | `apps/dana-index` | Public recent / memorial history from chain |
 | `apps/dana-index` `GET /api/search?q=` | Search named star roots by display name (relevance tier, then offering count) |
-| `apps/dana-index` `GET /api/trending` | Home Trending: all named altars ranked by burns in the last 24 hours |
+| `apps/dana-index` `GET /api/trending` | Home Trending: all named altars ranked by gravity-decayed offerings |
 | `apps/web` Offer **Thêm** + Recent / Lịch sử | Altar setup; merge index + local under star |
 | `apps/web/src/components/AltarSetupModal.tsx` | Setup (full altar) or `variant="relationship"` (link only) |
 | `apps/web/src/App.tsx` `onOffer({ amend: true })` | Star-fragment burn that re-packs the full altar (open for now) |

@@ -10,6 +10,11 @@ import {
   altarSearchRelevance,
   memorialDisplayName,
 } from '../../../src/offering/altarFields.js';
+import {
+  compareTrending,
+  TRENDING_GRAVITY,
+  trendingGroupScore,
+} from '../../../src/lib/trendingScore.js';
 
 export interface IndexedBurn {
   burnTxid: string;
@@ -36,12 +41,16 @@ export interface MemorialGroup {
   burns: IndexedBurn[];
 }
 
-/** Rolling 24-hour window used by home Trending. */
+/** @deprecated Trending uses gravity decay; kept for older `/api/trending` clients. */
 export const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+export { TRENDING_GRAVITY };
+
 export interface TrendingGroup extends MemorialGroup {
-  /** Burns whose activity time falls in the trending window. */
+  /** Burns in the last 24 hours (display / older clients). */
   dayBurns: number;
+  /** Gravity score used to rank the list. */
+  score: number;
 }
 
 interface StoreFile {
@@ -149,9 +158,9 @@ export class BurnStore {
   }
 
   /**
-   * Named star roots (person memorials and events) ranked by burns in
-   * the last `windowMs` (default 24 hours). Lifetime `totalBurns` is
-   * unchanged. Groups with zero window burns are omitted.
+   * Named star roots ranked by gravity-decayed offerings (each burn
+   * scores `1 / (ageHours + 2)^G`). Lifetime `totalBurns` is unchanged.
+   * Groups with no dated burns are omitted.
    */
   trendingGroups(
     limit: number,
@@ -161,18 +170,21 @@ export class BurnStore {
     const cutoff = nowMs - windowMs;
     const scored: TrendingGroup[] = [];
     for (const g of this.buildGroups()) {
+      const times = g.burns.map(activityMs);
+      const score = trendingGroupScore(times, nowMs);
+      if (score <= 0) continue;
       let dayBurns = 0;
-      for (const b of g.burns) {
-        const t = activityMs(b);
+      for (const t of times) {
         if (t >= cutoff && t <= nowMs) dayBurns++;
       }
-      if (dayBurns <= 0) continue;
-      scored.push({ ...g, burns: [], dayBurns });
+      scored.push({ ...g, burns: [], dayBurns, score });
     }
-    scored.sort((a, b) => {
-      if (a.dayBurns !== b.dayBurns) return b.dayBurns - a.dayBurns;
-      return Date.parse(b.at) - Date.parse(a.at);
-    });
+    scored.sort((a, b) =>
+      compareTrending(
+        { score: a.score, atMs: Date.parse(a.at) },
+        { score: b.score, atMs: Date.parse(b.at) },
+      ),
+    );
     return scored.slice(0, Math.max(1, Math.min(50, limit)));
   }
 

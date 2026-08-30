@@ -79,4 +79,4 @@ curl -sS "http://127.0.0.1:8788/og/<txid>?lang=vi" | grep og:title
 If `/api/search` returns 404, the web app falls back to ranking `/api/recent`
 client-side (works for small indexes; restart dana-index after pulling search support).
 If `/api/trending` returns 404, home Trending likewise ranks `/api/recent` by
-burns in the last 24 hours.
+gravity-decayed offerings.

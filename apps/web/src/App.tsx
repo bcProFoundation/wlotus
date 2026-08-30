@@ -2233,11 +2233,11 @@ export default function App() {
                           <span
                             className="home-events-count home-events-count--offers"
                             aria-label={t('homeEventsOfferings', {
-                              n: g.dayBurns,
+                              n: g.totalBurns,
                             })}
                           >
                             <span className="home-events-count-n">
-                              {g.dayBurns}
+                              {g.totalBurns}
                             </span>
                             <BrandMark badge width={24} height={24} />
                           </span>
