@@ -25,6 +25,7 @@ import {
   GLOTUS_TOKEN_NAME,
   GLOTUS_TOKEN_TICKER,
   MOORE_DAY_SECONDS,
+  POW_BATON_COUNT,
   TOKEN_URL,
 } from '../src/params/consensus.js';
 import {
@@ -46,9 +47,14 @@ function resolveTicker(): string {
 
 async function main(): Promise<void> {
   const ticker = resolveTicker();
-  const batons = Number(process.env.BATONS?.trim() || 4);
+  const batons = Number(process.env.BATONS?.trim() || POW_BATON_COUNT);
   if (!Number.isFinite(batons) || batons < 2) {
     throw new Error(`BATONS must be >= 2 (got ${batons})`);
+  }
+  if (batons > POW_BATON_COUNT) {
+    throw new Error(
+      `BATONS=${batons} exceeds ALP max ${POW_BATON_COUNT} (immutable at genesis)`,
+    );
   }
 
   const chronik = await createChronik('closest');
@@ -88,7 +94,8 @@ async function main(): Promise<void> {
     ),
   );
 
-  const minSats = 8_000n + BigInt(batons) * 3_000n;
+  const fuelReserveSats = 10_000n;
+  const minSats = 8_000n + BigInt(batons) * 3_000n + fuelReserveSats;
   if (wallet.balanceSats < minSats) {
     throw new Error(
       `Insufficient XEC: need ≥${Number(minSats) / 100}, have ${Number(wallet.balanceSats) / 100}`,
@@ -149,6 +156,21 @@ async function main(): Promise<void> {
     console.log(`Handoff ${i + 1}/${batons}: ${resp.broadcasted[0]}`);
   }
 
+  await wallet.syncAndDiscoverAddresses({ gapLimit: 20 });
+  const fuelSized = wallet.utxos.find(
+    u => !u.token && u.sats >= 4_000n && u.sats <= 12_000n,
+  );
+  if (!fuelSized) {
+    const peel = await wallet
+      .action({ outputs: [{ sats: fuelReserveSats, script: wallet.script }] })
+      .build()
+      .broadcast();
+    if (!peel.success || !peel.broadcasted?.length) {
+      throw new Error(`Fuel reserve peel failed: ${JSON.stringify(peel)}`);
+    }
+    console.log('Reserved remint fuel', peel.broadcasted[0], fuelReserveSats.toString());
+  }
+
   const depDir = resolve(process.cwd(), 'deployments');
   mkdirSync(depDir, { recursive: true });
   const livePath = resolve(depDir, 'mainnet-dglotus.json');
@@ -198,6 +220,7 @@ async function main(): Promise<void> {
     notes: [
       'Felt +1 bit (Moore 2× / 845 days). Hard next-P2SH. No temple tax.',
       'ALP MINT only (no DANA EMPP tip) so remBits fits in 201 ops.',
+      `ALP max ${POW_BATON_COUNT} batons (immutable). Prior 4-baton dGLOTUS is leftover.`,
       'Dogfood ticker DGLOTUS — production GLOTUS is a later genesis.',
     ],
   };

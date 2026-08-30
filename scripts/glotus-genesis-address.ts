@@ -40,7 +40,8 @@ export async function loadGlotusGenesisWallet(
     receiveIndex: 0,
     changeIndex: 0,
   });
-  await wallet.sync();
+  // Prior spends send change to /1/n; a fresh changeIndex=0 misses those UTXOs.
+  await wallet.syncAndDiscoverAddresses({ gapLimit: 20 });
   return wallet;
 }
 
