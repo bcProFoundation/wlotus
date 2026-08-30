@@ -439,10 +439,15 @@ describe('calendarMonth', () => {
 describe('calendarEmptyKind', () => {
   it('uses the month line when nothing remains through month end', () => {
     expect(calendarEmptyKind(0, 0)).toBe('month');
+    expect(calendarEmptyKind(0, 0, true)).toBe('month');
   });
 
   it('uses the day line when later days still have observances', () => {
     expect(calendarEmptyKind(2, 0)).toBe('day');
+  });
+
+  it('hides the day line on the 1st when the month still has observances', () => {
+    expect(calendarEmptyKind(2, 0, true)).toBe(null);
   });
 
   it('hides empty copy when the selected day has an observance', () => {

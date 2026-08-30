@@ -86,6 +86,7 @@ export function LunarCalendar(props: {
   const emptyKind = calendarEmptyKind(
     monthSpecials.length + monthMemorials.length,
     selectedDaySpecials.length + selectedDayMemorials.length,
+    selected.solarD === 1,
   );
 
   const monthTitle = new Date(cursor.year, cursor.month - 1, 1).toLocaleDateString(
