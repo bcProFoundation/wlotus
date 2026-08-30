@@ -16,6 +16,7 @@ import {
   hashForTab,
   ymdKey,
   defaultSelectedYmdForMonth,
+  calendarEmptyKind,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
 import { formatSpecialEventDateLabel, formatSpecialListName } from '../apps/web/src/lib/specialsUi.js';
@@ -432,5 +433,19 @@ describe('calendarMonth', () => {
       effectiveEventDate: lunarYmdToSolarYmd('2026-09-15', 7)!,
     };
     expect(formatSpecialListName(ramThang9, 'vi')).toBe('rằm tháng 9');
+  });
+});
+
+describe('calendarEmptyKind', () => {
+  it('uses the month line when nothing remains through month end', () => {
+    expect(calendarEmptyKind(0, 0)).toBe('month');
+  });
+
+  it('uses the day line when later days still have observances', () => {
+    expect(calendarEmptyKind(2, 0)).toBe('day');
+  });
+
+  it('hides empty copy when the selected day has an observance', () => {
+    expect(calendarEmptyKind(2, 1)).toBe(null);
   });
 });
