@@ -7,6 +7,11 @@ import {
   mergeAltarFields,
   type AltarFields,
 } from './altarFields.js';
+import {
+  compareTrending,
+  TRENDING_GRAVITY,
+  trendingGroupScore,
+} from '../../../../src/lib/trendingScore.js';
 
 export interface IndexBurn {
   burnTxid: string;
@@ -31,12 +36,16 @@ export interface IndexMemorialGroup {
   burns: IndexBurn[];
 }
 
-/** Rolling 24h window — same as dana-index `TRENDING_WINDOW_MS`. */
+/** Rolling 24h count on the trending payload (ranking uses gravity decay). */
 export const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+export { TRENDING_GRAVITY };
+
 export type IndexTrendingGroup = Omit<IndexMemorialGroup, 'burns'> & {
-  /** Burns whose activity time falls in the trending window. */
+  /** Burns in the last 24 hours (not the rank key). */
   dayBurns: number;
+  /** Gravity score when the index sent one. */
+  score?: number;
   burns?: IndexBurn[];
 };
 
@@ -144,28 +153,37 @@ export function countBurnsInWindow(
   return n;
 }
 
-/** Rank named altars by burns in the last 24 hours (client fallback). */
-export function rankGroupsByDayBurns(
+/** Rank named altars by gravity-decayed offerings (client fallback). */
+export function rankGroupsByTrendingScore(
   groups: IndexMemorialGroup[],
   limit: number,
   nowMs = Date.now(),
   windowMs = TRENDING_WINDOW_MS,
 ): IndexTrendingGroup[] {
-  const scored: IndexTrendingGroup[] = [];
+  const scored: Array<IndexTrendingGroup & { score: number; atMs: number }> =
+    [];
   for (const g of groups) {
-    const dayBurns = countBurnsInWindow(g, nowMs, windowMs);
-    if (dayBurns <= 0) continue;
-    scored.push({ ...g, dayBurns });
+    const times = (g.burns ?? []).map(burnActivityMs);
+    const score = trendingGroupScore(times, nowMs);
+    if (score <= 0) continue;
+    scored.push({
+      ...g,
+      dayBurns: countBurnsInWindow(g, nowMs, windowMs),
+      score,
+      atMs: Date.parse(g.at) || 0,
+    });
   }
-  scored.sort((a, b) => {
-    if (a.dayBurns !== b.dayBurns) return b.dayBurns - a.dayBurns;
-    return Date.parse(b.at) - Date.parse(a.at);
-  });
-  return scored.slice(0, Math.max(1, Math.min(50, limit)));
+  scored.sort(compareTrending);
+  return scored
+    .slice(0, Math.max(1, Math.min(50, limit)))
+    .map(({ atMs: _atMs, ...g }) => g);
 }
 
+/** @deprecated Use `rankGroupsByTrendingScore`. */
+export const rankGroupsByDayBurns = rankGroupsByTrendingScore;
+
 /**
- * Home Trending: all named star-root altars, ranked by burns in 24 hours.
+ * Home Trending: named star-root altars ranked by gravity decay.
  * Falls back to ranking `/api/recent` when `/api/trending` is not deployed.
  */
 export async function fetchIndexTrending(
@@ -174,7 +192,7 @@ export async function fetchIndexTrending(
 ): Promise<IndexTrendingGroup[]> {
   async function fallbackViaRecent(): Promise<IndexTrendingGroup[]> {
     const recent = await fetchIndexRecent(200);
-    return rankGroupsByDayBurns(recent, limit, nowMs);
+    return rankGroupsByTrendingScore(recent, limit, nowMs);
   }
 
   try {

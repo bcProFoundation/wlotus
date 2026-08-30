@@ -66,11 +66,17 @@ const recentPayload = {
 };
 
 describe('rankGroupsByDayBurns', () => {
-  it('counts only burns in the last 24 hours and includes person altars', () => {
+  it('ranks by decay and still includes altars quieter than 24 hours', () => {
     const ranked = rankGroupsByDayBurns(recentPayload.items, 8, nowMs);
-    expect(ranked.map(r => r.originalBurnTxid)).toEqual([event, person]);
-    expect(ranked.map(r => r.dayBurns)).toEqual([3, 1]);
-    expect(ranked.map(r => r.totalBurns)).toEqual([3, 2]);
+    expect(ranked.map(r => r.originalBurnTxid)).toEqual([
+      event,
+      person,
+      quiet,
+    ]);
+    expect(ranked.map(r => r.dayBurns)).toEqual([3, 1, 0]);
+    expect(ranked.map(r => r.totalBurns)).toEqual([3, 2, 1]);
+    expect(ranked[0]!.score!).toBeGreaterThan(ranked[1]!.score!);
+    expect(ranked[1]!.score!).toBeGreaterThan(ranked[2]!.score!);
   });
 });
 
@@ -131,7 +137,11 @@ describe('fetchIndexTrending', () => {
     }) as typeof fetch;
 
     const results = await fetchIndexTrending(8, nowMs);
-    expect(results.map(r => r.originalBurnTxid)).toEqual([event, person]);
-    expect(results.map(r => r.dayBurns)).toEqual([3, 1]);
+    expect(results.map(r => r.originalBurnTxid)).toEqual([
+      event,
+      person,
+      quiet,
+    ]);
+    expect(results.map(r => r.dayBurns)).toEqual([3, 1, 0]);
   });
 });

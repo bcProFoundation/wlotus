@@ -196,7 +196,7 @@ describe('BurnStore', () => {
     expect(results.map(r => r.totalBurns)).toEqual([9, 4, 3]);
   });
 
-  it('ranks trending by burns in 24 hours across person and event altars', () => {
+  it('ranks trending by gravity decay across person and event altars', () => {
     const person =
       '638825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const event =
@@ -249,13 +249,19 @@ describe('BurnStore', () => {
     );
 
     const trending = store.trendingGroups(8, nowMs);
-    expect(trending.map(r => r.originalBurnTxid)).toEqual([event, person]);
-    expect(trending.map(r => r.dayBurns)).toEqual([4, 1]);
-    expect(trending.map(r => r.totalBurns)).toEqual([4, 9]);
+    expect(trending.map(r => r.originalBurnTxid)).toEqual([
+      event,
+      person,
+      quiet,
+    ]);
+    expect(trending.map(r => r.dayBurns)).toEqual([4, 1, 0]);
+    expect(trending.map(r => r.totalBurns)).toEqual([4, 9, 1]);
+    expect(trending[0]!.score).toBeGreaterThan(trending[1]!.score);
+    expect(trending[1]!.score).toBeGreaterThan(trending[2]!.score);
     expect(trending.every(r => r.burns.length === 0)).toBe(true);
   });
 
-  it('counts a previous-calendar-day burn that is still within 24 hours', () => {
+  it('still ranks a previous-calendar-day burn that is outside 24 hours', () => {
     const recent =
       '938825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const stale =
@@ -281,7 +287,8 @@ describe('BurnStore', () => {
     );
 
     const trending = store.trendingGroups(8, nowMs);
-    expect(trending.map(r => r.originalBurnTxid)).toEqual([recent]);
-    expect(trending[0]!.dayBurns).toBe(1);
+    expect(trending.map(r => r.originalBurnTxid)).toEqual([recent, stale]);
+    expect(trending.map(r => r.dayBurns)).toEqual([1, 0]);
+    expect(trending[0]!.score).toBeGreaterThan(trending[1]!.score);
   });
 });
