@@ -8,7 +8,7 @@ Live params: [SPEC.md](./SPEC.md). Why 500 days: below.
 
 | Layer | Role |
 |-------|------|
-| **Moore D** | `bits = base + floor((locktime − genesis) / secondsPerExtraBit)`. Cap **bits ≤ 128**. Default **+1 bit / 500 days** (五百罗汉). Whole-byte only (`bits % 8 == 0`) for the 201-op budget. |
+| **Moore D** | `bits = base + floor((locktime − genesis) / secondsPerExtraBit)`. Cap **bits ≤ 128**. Live whole-byte: **+1 bit / 500 days**, felt only when `bits % 8 == 0`. Felt recut: **+1 bit / 730 days** (2× / ~2 y). |
 | **tipLocktime** | `locktime ≥ tip` — blocks past-cheat rewind on that baton |
 | **Hard next-P2SH** | Miner supplies `nextRedeem`; baton → `P2SH(hash160(nextRedeem))`. JSON `powAddress` is a cache. |
 
@@ -26,18 +26,20 @@ Miner asks Chronik for MTP, sets `nLockTime ≤ MTP − ε` and `nSequence = 0xf
 
 Short-term UX is **`VITE_MIN_PRAY_SECONDS`** (attention after remint). Moore is the **long-term** ramp. They are independent.
 
-Product intent: **base 0** at genesis (PoW free — presence is soft pray + 6/108 + fees). Difficulty rises on a **500-day** arhat clock so issuance eventually dearens.
+Product intent: **base 0** at genesis (PoW free — presence is soft pray + fees). The live token still uses the **500-day** arhat clock **and** `bits % 8 == 0`, so felt D jumps **256× every ~11 years**. That trade bought the remint DANA tip + temple split under the 201-op budget. It is too steep and too slow.
 
-Script only accepts `bits % 8 == 0`. The formula ticks +1 bit per period, but **felt PoW only jumps every 8 ticks** (+8 bits = **256×** harder).
+The felt recut (`GlotusPowRemintMooreTip`, ALP MINT only) drops the whole-byte guard. Formula tick = felt tick:
 
-| Period | First felt +8 | Under Moore (2× / 2 y) |
-|--------|---------------|------------------------|
-| **500 d** (default) | ~11 y | ×~6 → ~20 s — gentle dearening |
-| **365 d** | ~8 y | faster dearening |
-| **730 d** | ~16 y | ~flat forever |
-| **840 d** (legacy) | ~18 y | hardware **outruns** difficulty |
+| Period | Felt step | vs Moore (2× / ~2.3 y) |
+|--------|-----------|------------------------|
+| **730 d** (recut default) | 2× / ~2 y | slightly faster than Ergon 2× |
+| **845 d** (dGLOTUS) | 2× / ~2.31 y | Ergon Moore |
+| **500 d** + felt | 2× / ~1.37 y | steeper than asked |
+| **500 d** + whole-byte (live) | **256× / ~11 y** | retired by the recut |
 
-**840 does not buy “mobile forever”** — it removes difficulty-based scarcity. Capacity under load is still **≤ 28 wins / cycle** ([ARCHITECTURE.md](./ARCHITECTURE.md)). Buy→burn demand vs desk refill (**101 × remints/day** on the sponsored path) can still tighten inventory — [ECONOMICS.md](./ECONOMICS.md).
+Whole-byte + 730 d would have been **256× / ~16 y** — worse. Felt +1 bit is the only way to get ~2-year adjustments under 201 ops.
+
+**840 does not buy “mobile forever”** — it removes difficulty-based scarcity. Capacity under load is still **≤ 28 wins / cycle** ([ARCHITECTURE.md](./ARCHITECTURE.md)). Buy→burn demand vs desk refill can still tighten inventory — [ECONOMICS.md](./ECONOMICS.md).
 
 ## Sunset (base 0, 500 d/bit)
 
@@ -45,7 +47,7 @@ Script only accepts `bits % 8 == 0`. The formula ticks +1 bit per period, but **
 
 Through at least **~bit 64 (~year 88)** raw PoW stays soft-pray dominated. At **128**, remints **fail forever** (`verify bits <= 128`). WLOTUS becomes legacy; **GLOTUS** carries living economics.
 
-Legal bases: **0, 8, 16, 24, …** — not 1. GLOTUS may use a higher whole-byte base.
+Live whole-byte legal bases: **0, 8, 16, 24, …**. Felt recut / GLotus accept any integer bits (remBits table). GLOTUS may use a higher base.
 
 ## Why `codeHash` + miner-supplied `nextRedeem`
 

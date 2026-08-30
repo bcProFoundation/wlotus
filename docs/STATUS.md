@@ -3,7 +3,7 @@
 Canonical home: **https://github.com/bcProFoundation/wlotus**  
 Docs map: [README.md](./README.md).
 
-Both desks run **`WlotusPowRemintMooreTipTemple`** — mint **108** = **102** miner + **6** temple. Confirm with `/api/status` if a checkout disagrees. Params: [SPEC.md](./SPEC.md). Why 102/6: [ECONOMICS.md](./ECONOMICS.md).
+Both desks still run **`WlotusPowRemintMooreTipTemple`** — mint **108** = **102** miner + **6** temple. That split and the whole-byte 256× / ~11 y felt jump are **immutable on this tokenId**. A felt no-tax recut (108 to miner, +1 bit / 730 days) needs a **new genesis** — [ECONOMICS.md](./ECONOMICS.md) · [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md). Confirm live ids with `/api/status`.
 
 ## Live tokens
 
@@ -25,7 +25,8 @@ Git copies under `deployments/` can lag the VMs (tip JSON is not committed). If 
 
 ```bash
 TICKER=dWLOTUS BATONS=28 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
-TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token   # prod WLOTUS
+TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token   # prod WLOTUS (102/6)
+FELT=1 TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token  # felt no-tax recut
 BATON_INDEX=0 TIER=wlotus npm run mine-dryrun-once
 ```
 
@@ -40,4 +41,5 @@ Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`, **dGLOTUS**
 1. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
 2. Postage / fee sponsorship polish
 3. **GLOTUS** genesis when the economic layer ships
-4. Fractional-bit PoW: GLotus `GlotusPowRemintMooreTip` fits felt +1 bit (flat 8×2B table, ALP MINT only). Intra-era 8-slot / daily tables do not fit with hard next-P2SH. WLOTUS stays whole-byte.
+4. **WLOTUS felt no-tax recut** (new genesis): drop 6-atom temple tax; felt +1 bit / 730 days. Cannot mutate `154d229b…`. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
+5. Intra-era 8-slot / daily mantissa still does not fit with hard next-P2SH. GLotus / felt WLotus use the 8×2B remBits table (ALP MINT only).

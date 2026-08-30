@@ -2,8 +2,8 @@
  * Soft pray floor (seconds) between remint and memorial burn.
  * Remint submits as soon as PoW finds a nonce (tip race). Soft wait only
  * delays the memorial burn; cancel during the wait skips burn and the desk
- * keeps the miner atom. Anti-farming is separate: wLotus 6/108 temple tax +
- * XEC fees — see docs/ECONOMICS.md.
+ * keeps the miner atom. Anti-farming is XEC fees + soft pray + Moore ramp
+ * (live 6/108 tax is retired by the felt recut) — see docs/ECONOMICS.md.
  *
  * Default **108** ≈ one second per mala bead (~2 min presence).
  * Bake at build time: `VITE_MIN_PRAY_SECONDS=108`. `0` disables.

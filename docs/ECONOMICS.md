@@ -2,6 +2,8 @@
 
 **Live** on prod (`WLOTUS`) and test (`dWLOTUS`) since 2026-08 — mint **108** = **102** miner + **6** temple; sponsored desk burns **1**, keeps **101**. Tag [`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0).
 
+The **6-atom temple tax + whole-byte PoW** was a bad trade: independents pay ~5.6% forever, and felt difficulty only jumps **256× every ~11 years**. That split and schedule are **baked into the live batons**. Code cannot change them. The next WLOTUS is a **new genesis**: 108 to the miner, felt +1 bit / 730 days (2× / ~2 years). Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
+
 Related: [STATUS.md](./STATUS.md) · [VISION.md](./VISION.md) · [SPEC.md](./SPEC.md) · [CLOCK.md](./CLOCK.md)
 
 ---
@@ -10,7 +12,7 @@ Related: [STATUS.md](./STATUS.md) · [VISION.md](./VISION.md) · [SPEC.md](./SPE
 
 | Token | Ticker | Role | Monetary? | Mint posture |
 |-------|--------|------|-----------|--------------|
-| **W Lotus** | `WLOTUS` (test: `dWLOTUS`) | Memorial / dana proof | **No** (ceremonial) | Light temple tax; mobile may get **sponsored XEC fees** |
+| **W Lotus** | `WLOTUS` (test: `dWLOTUS`) | Memorial / dana proof | **No** (ceremonial) | Live: 6/108 tax. Recut: **no mint tax**; mobile may get **sponsored XEC fees** |
 | **Golden Lotus** | `GLOTUS` | Scarce burnable value for special events & later commerce | **Yes** (real cost) | **Permissionless** remint; miner pays own XEC; **no platform mint tax** |
 
 ```text
@@ -101,4 +103,21 @@ Permissionless remint, miner pays XEC only, **no** temple mint tax. Premine + ev
 - Covenant: `WlotusPowRemintMooreTipTemple` — [SPEC.md](./SPEC.md)
 - Constants: `WLOTUS_MINER_ATOMS=102`, `WLOTUS_TEMPLE_ATOMS=6`, `WLOTUS_DESK_KEEP_AFTER_BURN=101`
 - Fuel: `REMINT_FUEL_SATS = 4000` (40 XEC); burn tx ~5.46 XEC
-- **Immutability:** changing the split requires a **new genesis**
+- **Immutability:** changing the split or the felt schedule requires a **new genesis**
+
+## Felt no-tax recut (next genesis)
+
+Same ticker `WLOTUS` / `dWLOTUS`, **new `tokenId`**. Redeem is `GlotusPowRemintMooreTip` (already dogfooded as dGLOTUS):
+
+| | Live (`154d229b…`) | Recut |
+|--|--|--|
+| Mint | 102 miner + 6 temple | **108 miner** |
+| Felt D | 256× / ~11 y (`bits % 8 == 0`) | **2× / ~2 y** (+1 bit / 730 d) |
+| Remint EMPP | ALP MINT + DANA tip v4 | ALP MINT only |
+| Offerings | Separate DANA v1/v2 burn | Unchanged |
+| Desk after burn-1 | 101 | **107** |
+| Temple P2SH | Covenant tax + inventory | Inventory / premine only |
+
+Felt + remint DANA tip is **213 ops** — over the 201-op cap even after dropping the temple output. Offerings do not need the remint tip ad (dana-index skips DANA v4).
+
+`FELT=1 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token`

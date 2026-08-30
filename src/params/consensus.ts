@@ -95,6 +95,13 @@ export const MOORE_DAYS_PER_EXTRA_BIT = 500;
  */
 export const GLOTUS_MOORE_DAYS_PER_EXTRA_BIT = 845;
 
+/**
+ * WLotus felt recut: calendar days per felt +1 bit (2× every ~2 years).
+ * Whole-byte 500 d made felt D jump 256× / ~11 y — too steep and too slow.
+ * 730 is the existing genesis clamp max (`MOORE_DAYS_PER_EXTRA_BIT_MAX`).
+ */
+export const WLOTUS_FELT_DAYS_PER_EXTRA_BIT = 730;
+
 /** GLotus remint size — one mala, all to miner (no temple tax). */
 export const GLOTUS_MINT_ATOMS = 108n;
 

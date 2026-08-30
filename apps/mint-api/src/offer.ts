@@ -1,7 +1,7 @@
 /**
  * Offer API: device PoW → server fees/sign/broadcast.
  *
- * wLotus (temple): remint mint 108 (102 miner + 6 temple) → burn miner atoms with DANA
+ * wLotus (temple 102/6 or felt no-tax 108): remint → burn miner atoms with DANA
  * (1 flower normally; more on active temple specials — ghosts/heroes).
  * Legacy Prayer memo: remint mint 1 with DANA memorial in OP_RETURN (no burn tx).
  *
@@ -24,6 +24,8 @@ import { createChronik } from '../../../src/network/createChronik.js';
 import { getMedianTimePast } from '../../../src/network/medianTimePast.js';
 import { createPowRemintMooreTipMemoContract } from '../../../src/covenant/powRemintMooreTipMemoScript.js';
 import { createPowRemintMooreTipTempleContract } from '../../../src/covenant/powRemintMooreTipTempleScript.js';
+import { createPowRemintGlotusTipContract } from '../../../src/covenant/powRemintGlotusTipScript.js';
+import { expectedGlotusMintOpReturnScript } from '../../../src/covenant/powRemintGlotusTipOutputs.js';
 import {
   buildMooreTipMemoRemintChallenge,
   buildMooreTipMemoRemintTxWithNonce,
@@ -40,6 +42,13 @@ import {
   type MooreTipTempleRemintPrepared,
 } from '../../../src/miner/remintMooreTipTemple.js';
 import {
+  buildMooreTipRemintChallenge,
+  buildMooreTipRemintTxWithNonce,
+  MOORE_TIP_NONCE_LENGTH,
+  MOORE_TIP_POW_COMMIT,
+  type MooreTipRemintPrepared,
+} from '../../../src/miner/remintMooreTip.js';
+import {
   burnOnePrayer,
   explorerTx,
   memorialPushdata,
@@ -54,7 +63,13 @@ import {
   isDeathDateAmendNote,
   isRelationshipAmendNote,
 } from '../../../src/offering/altarFields.js';
-import { WLOTUS_MINT_ATOMS, WLOTUS_MINER_ATOMS } from '../../../src/params/wlotusMint.js';
+import {
+  WLOTUS_FELT_MINER_ATOMS,
+  WLOTUS_MINT_ATOMS,
+  WLOTUS_MINER_ATOMS,
+  isWlotusFeltCovenant,
+  isWlotusTempleCovenant,
+} from '../../../src/params/wlotusMint.js';
 import {
   resolveOfferBurnAtoms,
   resolveTempleSpecialsStatus,
@@ -183,7 +198,8 @@ export interface ChallengePublic {
   bits: number;
   commit:
     | typeof MOORE_TIP_MEMO_POW_COMMIT
-    | typeof MOORE_TIP_TEMPLE_POW_COMMIT;
+    | typeof MOORE_TIP_TEMPLE_POW_COMMIT
+    | typeof MOORE_TIP_POW_COMMIT;
   nonceLength: number;
   preimageHex: string;
   powPrefixHex: string;
@@ -231,7 +247,7 @@ interface DryrunDep {
   templePkhHex?: string | null;
 }
 
-type OfferMode = 'temple' | 'memo';
+type OfferMode = 'temple' | 'felt' | 'memo';
 
 interface StoredChallenge {
   id: string;
@@ -403,12 +419,22 @@ function loadDep(): { path: string; dep: DryrunDep } {
   );
 }
 
+function isFeltDep(dep: DryrunDep): boolean {
+  return isWlotusFeltCovenant(dep);
+}
+
 function isTempleDep(dep: DryrunDep): boolean {
-  return (
-    dep.tier === 'wlotus' ||
-    dep.covenant === 'WlotusPowRemintMooreTipTemple' ||
-    dep.mode === 'moore-tip-temple-hard-bind'
-  );
+  if (isFeltDep(dep)) return false;
+  return isWlotusTempleCovenant(dep) || dep.tier === 'wlotus';
+}
+
+/** Memorial-on-burn desk (102/6 temple or felt no-tax). */
+function isWlotusDeskDep(dep: DryrunDep): boolean {
+  return isTempleDep(dep) || isFeltDep(dep);
+}
+
+function deskMinerAtoms(dep: DryrunDep): bigint {
+  return isFeltDep(dep) ? WLOTUS_FELT_MINER_ATOMS : WLOTUS_MINER_ATOMS;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -604,7 +630,7 @@ function persistFollowedTip(
     'deployments/mainnet-dryrun-wlotus.json',
   ]) {
     const sibling = resolve(process.cwd(), rel);
-    if (existsSync(sibling) && depPath !== sibling && isTempleDep(dep)) {
+    if (existsSync(sibling) && depPath !== sibling && isWlotusDeskDep(dep)) {
       writeFileSync(sibling, `${JSON.stringify(updated, null, 2)}\n`);
     }
   }
@@ -759,8 +785,10 @@ async function createChallengeOnce(opts: {
 
   const { path: depPath, dep } = loadDep();
   const temple = isTempleDep(dep);
+  const felt = isFeltDep(dep);
+  const wlotusDesk = isWlotusDeskDep(dep);
   const mintAtoms = BigInt(dep.mintAtomsPerRemint);
-  if (temple) {
+  if (wlotusDesk) {
     if (mintAtoms !== WLOTUS_MINT_ATOMS) {
       throw new Error(
         `wLotus deployment mintAtoms=${mintAtoms}; expected ${WLOTUS_MINT_ATOMS}`,
@@ -808,18 +836,18 @@ async function createChallengeOnce(opts: {
     prepareDanaNote(opts.note, Boolean(parentBurnTxid)),
     memorialNoteMaxBytes(Boolean(parentBurnTxid)),
   );
-  if (parentBurnTxid && !temple) {
+  if (parentBurnTxid && !wlotusDesk) {
     throw new Error(
-      'parentBurnTxid (re-offer) requires the wLotus temple burn path',
+      'parentBurnTxid (re-offer) requires the wLotus burn path',
     );
   }
   const memorial = memorialPushdata(
     note,
-    temple ? OFFERING_ID_WLOTUS : OFFERING_ID_PRAYER,
+    wlotusDesk ? OFFERING_ID_WLOTUS : OFFERING_ID_PRAYER,
     parentBurnTxid,
   );
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
-  if (temple && (!templeHashHex || templeHashHex.length !== 40)) {
+  if (wlotusDesk && (!templeHashHex || templeHashHex.length !== 40)) {
     throw new Error('wLotus deployment missing templeScriptHashHex');
   }
 
@@ -845,17 +873,29 @@ async function createChallengeOnce(opts: {
         });
         return withP2shHex(c, tipLocktime);
       })
-    : await matchCovenantToBaton(live, locktimeGuesses, async tipLocktime => {
-        const c = await createPowRemintMooreTipMemoContract({
-          tokenId: dep.tokenId,
-          mintAtoms,
-          genesisUnix: dep.genesisUnix,
-          baseZeroBits: dep.baseZeroBits,
-          secondsPerExtraBit: dep.secondsPerExtraBit,
-          tipLocktime,
+    : felt
+      ? await matchCovenantToBaton(live, locktimeGuesses, async tipLocktime => {
+          const c = await createPowRemintGlotusTipContract({
+            tokenId: dep.tokenId,
+            mintAtoms,
+            genesisUnix: dep.genesisUnix,
+            baseZeroBits: dep.baseZeroBits,
+            secondsPerExtraBit: dep.secondsPerExtraBit,
+            tipLocktime,
+          });
+          return withP2shHex(c, tipLocktime);
+        })
+      : await matchCovenantToBaton(live, locktimeGuesses, async tipLocktime => {
+          const c = await createPowRemintMooreTipMemoContract({
+            tokenId: dep.tokenId,
+            mintAtoms,
+            genesisUnix: dep.genesisUnix,
+            baseZeroBits: dep.baseZeroBits,
+            secondsPerExtraBit: dep.secondsPerExtraBit,
+            tipLocktime,
+          });
+          return withP2shHex(c, tipLocktime);
         });
-        return withP2shHex(c, tipLocktime);
-      });
 
   if (
     live.hops > 0 ||
@@ -936,20 +976,43 @@ async function createChallengeOnce(opts: {
         miner: { sk: tipFee.sk, pk: tipFee.pk },
         locktime,
       })
-    : await buildMooreTipMemoRemintChallenge({
-        contract: contract as Awaited<
-          ReturnType<typeof createPowRemintMooreTipMemoContract>
-        >,
-        baton,
-        fuel: {
-          outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
-          sats: BigInt(fuelCoin.sats),
-          outputScript: tipFee.wallet.script,
-        },
-        miner: { sk: tipFee.sk, pk: tipFee.pk },
-        locktime,
-        memorial,
-      });
+    : felt
+      ? await (async () => {
+          const glotus = contract as Awaited<
+            ReturnType<typeof createPowRemintGlotusTipContract>
+          >;
+          const nextContract = await createPowRemintGlotusTipContract({
+            ...glotus.params,
+            tipLocktime: locktime,
+          });
+          return buildMooreTipRemintChallenge({
+            contract: glotus,
+            baton,
+            fuel: {
+              outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
+              sats: BigInt(fuelCoin.sats),
+              outputScript: tipFee.wallet.script,
+            },
+            miner: { sk: tipFee.sk, pk: tipFee.pk },
+            locktime,
+            opReturn: expectedGlotusMintOpReturnScript(dep.tokenId, mintAtoms),
+            nextContract,
+          });
+        })()
+      : await buildMooreTipMemoRemintChallenge({
+          contract: contract as Awaited<
+            ReturnType<typeof createPowRemintMooreTipMemoContract>
+          >,
+          baton,
+          fuel: {
+            outpoint: { txid: fuelCoin.txid, outIdx: fuelCoin.outIdx },
+            sats: BigInt(fuelCoin.sats),
+            outputScript: tipFee.wallet.script,
+          },
+          miner: { sk: tipFee.sk, pk: tipFee.pk },
+          locktime,
+          memorial,
+        });
 
   const now = Date.now();
   const id = randomUUID();
@@ -959,7 +1022,7 @@ async function createChallengeOnce(opts: {
     createdAt: now,
     expiresAt: now + CHALLENGE_TTL_MS,
     status: 'open',
-    mode: temple ? 'temple' : 'memo',
+    mode: temple ? 'temple' : felt ? 'felt' : 'memo',
     tokenId: dep.tokenId,
     tipIndex: tipRec.index,
     tipLocktime: tipRec.tipLocktime,
@@ -982,7 +1045,7 @@ async function createChallengeOnce(opts: {
     note,
     parentBurnTxid,
     memorialHex: toHex(memorial),
-    templeScriptHashHex: temple ? templeHashHex! : undefined,
+    templeScriptHashHex: wlotusDesk ? templeHashHex! : undefined,
   };
   challenges.set(id, stored);
 
@@ -992,10 +1055,16 @@ async function createChallengeOnce(opts: {
     expiresAt: new Date(stored.expiresAt).toISOString(),
     tokenId: dep.tokenId,
     bits: prepared.tip.bits,
-    commit: temple ? MOORE_TIP_TEMPLE_POW_COMMIT : MOORE_TIP_MEMO_POW_COMMIT,
+    commit: temple
+      ? MOORE_TIP_TEMPLE_POW_COMMIT
+      : felt
+        ? MOORE_TIP_POW_COMMIT
+        : MOORE_TIP_MEMO_POW_COMMIT,
     nonceLength: temple
       ? MOORE_TIP_TEMPLE_NONCE_LENGTH
-      : MOORE_TIP_MEMO_NONCE_LENGTH,
+      : felt
+        ? MOORE_TIP_NONCE_LENGTH
+        : MOORE_TIP_MEMO_NONCE_LENGTH,
     preimageHex: prepared.preimageHex,
     powPrefixHex: prepared.powPrefixHex,
     locktime,
@@ -1011,7 +1080,10 @@ async function createChallengeOnce(opts: {
 }
 
 async function rebuildPrepared(ch: StoredChallenge): Promise<{
-  prepared: MooreTipMemoRemintPrepared | MooreTipTempleRemintPrepared;
+  prepared:
+    | MooreTipMemoRemintPrepared
+    | MooreTipTempleRemintPrepared
+    | MooreTipRemintPrepared;
   depPath: string;
   dep: DryrunDep;
   tips: BatonTip[];
@@ -1050,7 +1122,10 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
   };
   const miner = { sk: tipFee.sk, pk: tipFee.pk };
 
-  let prepared: MooreTipMemoRemintPrepared | MooreTipTempleRemintPrepared;
+  let prepared:
+    | MooreTipMemoRemintPrepared
+    | MooreTipTempleRemintPrepared
+    | MooreTipRemintPrepared;
   if (ch.mode === 'temple') {
     if (!ch.templeScriptHashHex || ch.templeScriptHashHex.length !== 40) {
       throw new Error('Temple challenge missing templeScriptHashHex');
@@ -1070,6 +1145,31 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
       fuel,
       miner,
       locktime: ch.locktime,
+    });
+  } else if (ch.mode === 'felt') {
+    const contract = await createPowRemintGlotusTipContract({
+      tokenId: ch.tokenId,
+      mintAtoms: BigInt(ch.mintAtoms),
+      genesisUnix: ch.genesisUnix,
+      baseZeroBits: ch.baseZeroBits,
+      secondsPerExtraBit: ch.secondsPerExtraBit,
+      tipLocktime: ch.tipLocktime,
+    });
+    const nextContract = await createPowRemintGlotusTipContract({
+      ...contract.params,
+      tipLocktime: ch.locktime,
+    });
+    prepared = await buildMooreTipRemintChallenge({
+      contract,
+      baton,
+      fuel,
+      miner,
+      locktime: ch.locktime,
+      opReturn: expectedGlotusMintOpReturnScript(
+        ch.tokenId,
+        BigInt(ch.mintAtoms),
+      ),
+      nextContract,
     });
   } else {
     const contract = await createPowRemintMooreTipMemoContract({
@@ -1127,10 +1227,15 @@ async function submitChallengeOnce(opts: {
           prepared: prepared as MooreTipTempleRemintPrepared,
           nonce,
         })
-      : await buildMooreTipMemoRemintTxWithNonce({
-          prepared: prepared as MooreTipMemoRemintPrepared,
-          nonce,
-        });
+      : ch.mode === 'felt'
+        ? await buildMooreTipRemintTxWithNonce({
+            prepared: prepared as MooreTipRemintPrepared,
+            nonce,
+          })
+        : await buildMooreTipMemoRemintTxWithNonce({
+            prepared: prepared as MooreTipMemoRemintPrepared,
+            nonce,
+          });
 
   const chronik = await createChronik('closest');
   let remintTxid: string;
@@ -1189,7 +1294,7 @@ async function submitChallengeOnce(opts: {
     'deployments/mainnet-dryrun-wlotus.json',
   ]) {
     const sibling = resolve(process.cwd(), rel);
-    if (existsSync(sibling) && depPath !== sibling && isTempleDep(dep)) {
+    if (existsSync(sibling) && depPath !== sibling && isWlotusDeskDep(dep)) {
       writeFileSync(sibling, `${JSON.stringify(updated, null, 2)}\n`);
     }
   }
@@ -1207,9 +1312,9 @@ async function submitChallengeOnce(opts: {
       ? Math.round(powAttempts / (powMs / 1000))
       : 0;
 
-  // Temple: remint now (tip race). Memorial burn is deferred to POST /api/burn
+  // Desk: remint now (tip race). Memorial burn is deferred to POST /api/burn
   // after the client's soft pray wait — cancel abandons burn; desk keeps the atom.
-  if (ch.mode === 'temple') {
+  if (ch.mode === 'temple' || ch.mode === 'felt') {
     const remintKey = remintTxid.toLowerCase();
     const burnToken = newBurnToken();
     pendingBurns.set(remintKey, {
@@ -1309,7 +1414,7 @@ async function completeBurnOnce(opts: {
   }
   notifyDanaIndex(burned.txid);
 
-  const deskKeep = Number(WLOTUS_MINER_ATOMS - burned.burnAtoms);
+  const deskKeep = Number(deskMinerAtoms(dep) - burned.burnAtoms);
   return {
     remintTxid: pb.remintTxid,
     burnTxid: burned.txid,
@@ -1478,7 +1583,7 @@ export function publicStatus(): {
 } {
   try {
     const { dep } = loadDep();
-    const temple = isTempleDep(dep);
+    const wlotusDesk = isWlotusDeskDep(dep);
     const tips =
       dep.batonTips && dep.batonTips.length > 0 ? dep.batonTips : [];
     const served = servingTips(tips);
@@ -1490,7 +1595,7 @@ export function publicStatus(): {
     return {
       tokenId: dep.tokenId,
       mintAtoms: dep.mintAtomsPerRemint,
-      ticker: dep.ticker ?? (temple ? 'WLOTUS' : 'dPRAYER'),
+      ticker: dep.ticker ?? (wlotusDesk ? 'WLOTUS' : 'dPRAYER'),
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
@@ -1502,8 +1607,8 @@ export function publicStatus(): {
       raceOpen: true,
       baseZeroBits: dep.baseZeroBits,
       clientPow: true,
-      memorialOnMint: !temple,
-      memorialOnBurn: temple,
+      memorialOnMint: !wlotusDesk,
+      memorialOnBurn: wlotusDesk,
       tipFeeAccounts: true,
       templeSpecials: resolveTempleSpecialsStatus(),
     };
