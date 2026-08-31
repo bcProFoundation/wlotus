@@ -87,6 +87,10 @@ Token genesis + specials go live at:
 This covers a useful portion of traditional cúng cô hồn on the 14th evening in
 Vietnam while landing the public launch story on Rằm Tháng 7.
 
+**Nepal 26/8** (`nepal-26-08`) is a Global memorial event for the 26 August 2026
+Himalayan debris flood (Rasuwa / Syabrubesi). Solar window **26 Aug–2 Sep**.
+Temple story is in the catalog (vi / en / zh). Unbound until the first offering.
+
 ### Code vs product window
 
 | Layer | Behaviour today | Intended next |

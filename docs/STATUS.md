@@ -3,7 +3,7 @@
 Canonical home: **https://github.com/bcProFoundation/wlotus**  
 Docs map: [README.md](./README.md).
 
-Both desks still run **`WlotusPowRemintMooreTipTemple`** — mint **108** = **102** miner + **6** temple. That split and the whole-byte 256× / ~11 y felt jump are **immutable on this tokenId**. A felt no-tax recut (108 to miner, +1 bit / 730 days) needs a **new genesis** — [ECONOMICS.md](./ECONOMICS.md) · [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md). Confirm live ids with `/api/status`.
+Both desks still run **`WlotusPowRemintMooreTipTemple`** — mint **108** = **102** miner + **6** temple. That split and the whole-byte 256× / ~11 y felt jump are **immutable on this tokenId**. A felt no-tax recut (108 to miner, felt +1 bit / 500 days) needs a **new genesis** — [ECONOMICS.md](./ECONOMICS.md) · [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md). Confirm live ids with `/api/status`.
 
 ## Live tokens
 
@@ -41,5 +41,5 @@ Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`, **dGLOTUS**
 1. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
 2. Postage / fee sponsorship polish
 3. **GLOTUS** genesis when the economic layer ships
-4. **WLOTUS felt no-tax recut** (new genesis): drop 6-atom temple tax; felt +1 bit / 730 days. Cannot mutate `154d229b…`. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
+4. **WLOTUS felt no-tax recut** (new genesis): drop 6-atom temple tax; felt +1 bit / 500 days. Cannot mutate `154d229b…`. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
 5. Intra-era 8-slot / daily mantissa still does not fit with hard next-P2SH. GLotus / felt WLotus use the 8×2B remBits table (ALP MINT only).

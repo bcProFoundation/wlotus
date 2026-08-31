@@ -1347,6 +1347,38 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
           '25 April, Australia and New Zealand stand at dawn for those who served and those who did not come home. A minute of silence; a sprig of rosemary.\n\nEach lotus offered today is also a prayer: that this silence is kept, and that every home may find peace.',
       },
     },
+    {
+      id: 'nepal-26-08',
+      name: 'Nepal 26/08',
+      aliases: [
+        'nepal',
+        'nepal flood',
+        'nepal 26/8',
+        'rasuwa',
+        'syabrubesi',
+        'lũ nepal',
+      ],
+      kind: 'event',
+      eventCalendar: 'solar',
+      eventDate: '2026-08-26',
+      eventStart: '2026-08-26',
+      eventEnd: '2026-09-02',
+      countries: [],
+      birthPlace: 'Nepal',
+      altarName: 'Nepal 26/08',
+      note: 'Tưởng niệm Nepal',
+      story: {
+        title: 'Lũ Nepal 26/8',
+        body:
+          'Sáng 26 tháng 8 năm 2026, băng đá Himalaya sụp xuống sông trên biên giới Nepal–Tây Tạng. Lũ bùn quét qua Rasuwa, Syabrubesi: nhà cửa, cầu, người đi đường. Nhiều người mất, nhiều người còn mất tích — dân địa phương và khách phương xa.\n\nKhông cần biết hết tên. Thắp hương, dâng một bông sen — cho người đã khuất, cho người nhà đang chờ tin, cho những vong hồn chưa có chỗ về.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện người đã khuất được siêu thoát, nguyện người còn mất tích được tìm thấy, nguyện cho nhà nhà được bình an.',
+        titleEn: 'Nepal 26 August',
+        bodyEn:
+          'On the morning of 26 August 2026, ice and rock collapsed into a Himalayan river on the Nepal–Tibet border. A wall of mud tore through Rasuwa and Syabrubesi — homes, bridges, people on the road. Many died; many remain missing: villagers and travellers from far away.\n\nYou do not need every name. Light incense, offer a lotus — for those who are gone, for families still waiting, for spirits who have no place yet.\n\nEach lotus offered today is also a prayer: that the dead may be at peace, that the missing may be found, and that every home may find peace.',
+        titleZh: '尼泊尔 8 月 26 日',
+        bodyZh:
+          '2026年8月26日清晨，喜马拉雅山冰岩崩入尼泊尔与西藏交界的河流。泥石流冲过拉苏瓦、夏尔布贝西——房屋、桥梁、路上的人。许多人遇难，许多人仍下落不明：当地居民，也有远道而来的旅人。\n\n不必叫出每一个名字。一炷香、一朵莲——给逝者，给仍在等候消息的家人，给尚未有归处的亡灵。\n\n今日每一朵莲花，也是一句愿：愿逝者得安，愿失联者被寻回，愿家家平安。',
+      },
+    },
   ];
 }
 

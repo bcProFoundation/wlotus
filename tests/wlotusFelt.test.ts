@@ -23,10 +23,10 @@ describe('WLotus felt no-tax recut', () => {
     expect(WLOTUS_FELT_DESK_KEEP_AFTER_BURN).toBe(107n);
   });
 
-  it('defaults to 730 days (2× / ~2 years), not whole-byte 500', () => {
-    expect(WLOTUS_FELT_DAYS_PER_EXTRA_BIT).toBe(730);
-    expect(resolveFeltSecondsPerExtraBit()).toBe(730 * MOORE_DAY_SECONDS);
-    expect(resolveFeltSecondsPerExtraBit('500')).toBe(500 * MOORE_DAY_SECONDS);
+  it('keeps the aggressive 500-day arhat clock (felt every bit, not 256× / 11 y)', () => {
+    expect(WLOTUS_FELT_DAYS_PER_EXTRA_BIT).toBe(500);
+    expect(resolveFeltSecondsPerExtraBit()).toBe(500 * MOORE_DAY_SECONDS);
+    expect(resolveFeltSecondsPerExtraBit('730')).toBe(730 * MOORE_DAY_SECONDS);
   });
 
   it('classifies covenants without treating felt as temple', () => {

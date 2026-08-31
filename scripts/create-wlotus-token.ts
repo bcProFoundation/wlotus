@@ -3,7 +3,7 @@
  * Genesis for W Lotus — **same covenant for prod and dryrun**.
  *
  * Default (legacy, still on live desks): MooreTipTemple 102/6, whole-byte PoW.
- * Felt recut (no temple tax, +1 bit / 730 days):
+ * Felt recut (no temple tax, felt +1 bit / 500 days):
  *   FELT=1 TEMPLE_ADDRESS=ecash:p… BATONS=28 npm run create-wlotus-token
  *   TICKER=dWLOTUS FELT=1 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token
  *
@@ -356,7 +356,7 @@ async function main(): Promise<void> {
     notes: felt
       ? [
           'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
-          `Felt +1 bit / ${daysPerBit} days (2× / ~2 y). Cap bits ≤ 128. ALP MINT only (no remint DANA tip). baseZeroBits=0.`,
+          `Felt +1 bit / ${daysPerBit} days (2× / ~1.4 y from bits=0). Cap bits ≤ 128. ALP MINT only (no remint DANA tip). baseZeroBits=0.`,
           `W Lotus recut: mint ${WLOTUS_MINT_ATOMS} → miner only (no temple tax). Temple P2SH is inventory/premine only. initialMintAtoms=${WLOTUS_MINT_ATOMS} → temple.`,
           isProdTicker
             ? `Prod genesis ticker ${PROD_TOKEN_TICKER} — do not reuse test secrets or mnemonics.`

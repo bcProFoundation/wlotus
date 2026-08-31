@@ -8,7 +8,7 @@ Live params: [SPEC.md](./SPEC.md). Why 500 days: below.
 
 | Layer | Role |
 |-------|------|
-| **Moore D** | `bits = base + floor((locktime − genesis) / secondsPerExtraBit)`. Cap **bits ≤ 128**. Live whole-byte: **+1 bit / 500 days**, felt only when `bits % 8 == 0`. Felt recut: **+1 bit / 730 days** (2× / ~2 y). |
+| **Moore D** | `bits = base + floor((locktime − genesis) / secondsPerExtraBit)`. Cap **bits ≤ 128**. Live whole-byte: **+1 bit / 500 days**, felt only when `bits % 8 == 0`. Felt recut: same **500-day** clock, felt every bit (2× / ~1.4 y). |
 | **tipLocktime** | `locktime ≥ tip` — blocks past-cheat rewind on that baton |
 | **Hard next-P2SH** | Miner supplies `nextRedeem`; baton → `P2SH(hash160(nextRedeem))`. JSON `powAddress` is a cache. |
 
@@ -28,16 +28,15 @@ Short-term UX is **`VITE_MIN_PRAY_SECONDS`** (attention after remint). Moore is 
 
 Product intent: **base 0** at genesis (PoW free — presence is soft pray + fees). The live token still uses the **500-day** arhat clock **and** `bits % 8 == 0`, so felt D jumps **256× every ~11 years**. That trade bought the remint DANA tip + temple split under the 201-op budget. It is too steep and too slow.
 
-The felt recut (`GlotusPowRemintMooreTip`, ALP MINT only) drops the whole-byte guard. Formula tick = felt tick:
+The felt recut (`GlotusPowRemintMooreTip`, ALP MINT only) drops the whole-byte guard. Formula tick = felt tick. WLotus is ceremonial, not a currency — keep the aggressive **500-day** arhat clock from bits=0:
 
-| Period | Felt step | vs Moore (2× / ~2.3 y) |
-|--------|-----------|------------------------|
-| **730 d** (recut default) | 2× / ~2 y | slightly faster than Ergon 2× |
-| **845 d** (dGLOTUS) | 2× / ~2.31 y | Ergon Moore |
-| **500 d** + felt | 2× / ~1.37 y | steeper than asked |
+| Period | Felt step | Role |
+|--------|-----------|------|
+| **500 d** + felt (WLotus recut) | **2× / ~1.4 y** | ceremonial climb |
 | **500 d** + whole-byte (live) | **256× / ~11 y** | retired by the recut |
+| **845 d** + felt (dGLOTUS) | 2× / ~2.31 y | Ergon Moore (currency) |
 
-Whole-byte + 730 d would have been **256× / ~16 y** — worse. Felt +1 bit is the only way to get ~2-year adjustments under 201 ops.
+Felt +1 bit is what makes the 500-day clock actually bite; whole-byte hid it behind 11 years.
 
 **840 does not buy “mobile forever”** — it removes difficulty-based scarcity. Capacity under load is still **≤ 28 wins / cycle** ([ARCHITECTURE.md](./ARCHITECTURE.md)). Buy→burn demand vs desk refill can still tighten inventory — [ECONOMICS.md](./ECONOMICS.md).
 

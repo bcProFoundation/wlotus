@@ -109,6 +109,8 @@ const COUNTRY_ALIASES: Record<string, string> = {
   'SOUTH AFRICA': 'ZA',
   PH: 'PH',
   PHILIPPINES: 'PH',
+  NP: 'NP',
+  NEPAL: 'NP',
 };
 
 export function canonicalizeCountryCode(

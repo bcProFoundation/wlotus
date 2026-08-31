@@ -34,6 +34,7 @@
     "create-prod-token": "tsx scripts/create-wlotus-token.ts",
     "create-dryrun-wlotus": "TICKER=dWLOTUS tsx scripts/create-wlotus-token.ts",
     "create-felt-wlotus": "FELT=1 tsx scripts/create-wlotus-token.ts",
+    "migrate-offerings": "tsx scripts/migrate-offerings.ts",
     "create-dryrun-token": "tsx scripts/create-dryrun-token.ts",
     "mine-dryrun-once": "tsx scripts/mine-dryrun-once.ts",
     "smoke-moore-tip-temple": "tsx scripts/smoke-moore-tip-temple.ts",

@@ -12,7 +12,7 @@ Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar:
 | Protocol | ALP standard (`SLP2`) | eCash |
 | Decimals | `0` | Whole tokens |
 | Covenant (live) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — **this tokenId** |
-| Covenant (recut) | `GlotusPowRemintMooreTip` | 108 miner, felt +1 bit / 730 d — **new tokenId** |
+| Covenant (recut) | `GlotusPowRemintMooreTip` | 108 miner, felt +1 bit / 500 d — **new tokenId** |
 
 ## PoW remint
 
@@ -24,7 +24,7 @@ Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar:
 | PoW predicate | `hash256(preimage ‖ nonce)` | BIP143 preimage + nonce |
 | `baseZeroBits` | **0** | Live: whole-byte only. Recut: felt `remBits = bits % 8` |
 | Moore (live) | **+1 bit / 500 days**, felt every **8** bits | 256× / ~11 y |
-| Moore (recut) | **+1 bit / 730 days**, felt every bit | 2× / ~2 y |
+| Moore (recut) | **+1 bit / 500 days**, felt every bit | 2× / ~1.4 y (ceremonial; not a currency) |
 | Hard sunset | **bits ≤ 128** | Remints fail beyond |
 | Supply cap | **none** | Batons never die; sunset ends remints |
 

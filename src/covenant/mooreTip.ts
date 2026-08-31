@@ -36,8 +36,8 @@ export function resolveProdSecondsPerExtraBit(
 }
 
 /**
- * Felt no-tax recut: default **730** days (2× / ~2 years).
- * Empty env uses 730, not the whole-byte 500 default.
+ * Felt no-tax recut: default **500** days (same arhat clock as live whole-byte).
+ * Empty env uses 500. WLotus is ceremonial — aggressive climb from bits=0.
  */
 export function resolveFeltSecondsPerExtraBit(
   raw?: string,

@@ -2,7 +2,7 @@
 
 **Live** on prod (`WLOTUS`) and test (`dWLOTUS`) since 2026-08 — mint **108** = **102** miner + **6** temple; sponsored desk burns **1**, keeps **101**. Tag [`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0).
 
-The **6-atom temple tax + whole-byte PoW** was a bad trade: independents pay ~5.6% forever, and felt difficulty only jumps **256× every ~11 years**. That split and schedule are **baked into the live batons**. Code cannot change them. The next WLOTUS is a **new genesis**: 108 to the miner, felt +1 bit / 730 days (2× / ~2 years). Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
+The **6-atom temple tax + whole-byte PoW** was a bad trade: independents pay ~5.6% forever, and felt difficulty only jumps **256× every ~11 years**. That split and schedule are **baked into the live batons**. Code cannot change them. The next WLOTUS is a **new genesis**: 108 to the miner, felt +1 bit / 500 days (2× / ~1.4 years from bits=0). WLotus is ceremonial, not a currency. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
 
 Related: [STATUS.md](./STATUS.md) · [VISION.md](./VISION.md) · [SPEC.md](./SPEC.md) · [CLOCK.md](./CLOCK.md)
 
@@ -112,7 +112,7 @@ Same ticker `WLOTUS` / `dWLOTUS`, **new `tokenId`**. Redeem is `GlotusPowRemintM
 | | Live (`154d229b…`) | Recut |
 |--|--|--|
 | Mint | 102 miner + 6 temple | **108 miner** |
-| Felt D | 256× / ~11 y (`bits % 8 == 0`) | **2× / ~2 y** (+1 bit / 730 d) |
+| Felt D | 256× / ~11 y (`bits % 8 == 0`) | **2× / ~1.4 y** (+1 bit / 500 d, felt every bit) |
 | Remint EMPP | ALP MINT + DANA tip v4 | ALP MINT only |
 | Offerings | Separate DANA v1/v2 burn | Unchanged |
 | Desk after burn-1 | 101 | **107** |
