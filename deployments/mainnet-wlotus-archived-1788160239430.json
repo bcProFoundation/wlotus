@@ -1,0 +1,245 @@
+{
+  "tier": "wlotus",
+  "ticker": "WLOTUS",
+  "name": "W Lotus",
+  "tokenId": "a716e58dc9e20ba14bbf91f710754fe392265ed04d6f10acf0bcc8c9c1429665",
+  "mode": "moore-tip-hard-bind",
+  "role": "production",
+  "covenant": "WlotusPowRemintMooreTip",
+  "decimals": 0,
+  "powAddress": "ecash:ppdfztuzcswhvrejrkd257jz6tv4jzf50sg7rzys22",
+  "redeemScriptHex": "20659642c1c9c8bcf0ac106f4dd05e2692e34f7510f791bf4ba10be2c98de516a7066c0000000000048d12956a010004002e9302205a1c4ce44356b0e79f2af521be78f5b9e9f0778a9253c21494ed0da5f9b369c0205aa8af1fcaff39e27f2dd044a52a793dfc6537cf47d3d61369d12415e4871f6f040413956a59798258947f7776547f75768158798154798159798159798154795479a26954795379a269547954799478965279789376028000a1697658970088011279a80117797eaa76527958967f757681008801137901557f78a85f79887601217f7776557f78545f7954807e8876a801137988011979011a7982770128947f777601207f750444414e41547e5a7952807e5b7954807e607954807e0a534c503200044d494e54011b797e517e011a797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e012179a97e0288ac7e08220200000000000001177e02a9147e012079a97e01877e527952797e787eaa577988ab012479012379ad012379012279a8012479ba7777777777777777777777777777777777777777777777777777777777777777777777777777",
+  "codeHashHex": "5a1c4ce44356b0e79f2af521be78f5b9e9f0778a9253c21494ed0da5f9b369c0",
+  "codeBytesHex": "59798258947f7776547f75768158798154798159798159798154795479a26954795379a269547954799478965279789376028000a1697658970088011279a80117797eaa76527958967f757681008801137901557f78a85f79887601217f7776557f78545f7954807e8876a801137988011979011a7982770128947f777601207f750444414e41547e5a7952807e5b7954807e607954807e0a534c503200044d494e54011b797e517e011a797e517e026a505279827751807e52797e78827751807e787e08000000000000000078827751807e787e08220200000000000001197e0376a9147e012179a97e0288ac7e08220200000000000001177e02a9147e012079a97e01877e527952797e787eaa577988ab012479012379ad012379012279a8012479ba7777777777777777777777777777777777777777777777777777777777777777777777777777",
+  "prefixHashHex": "5aa8af1fcaff39e27f2dd044a52a793dfc6537cf47d3d61369d12415e4871f6f",
+  "tipValueOffset": 119,
+  "genesisUnix": 1788154509,
+  "baseZeroBits": 0,
+  "secondsPerExtraBit": 43200000,
+  "daysPerBit": 500,
+  "tipLocktime": 1788154628,
+  "mintAtomsPerRemint": "108",
+  "initialMintAtoms": "108",
+  "initialMintAddress": "ecash:qr9587sly420lryvtghwz92h8vrqfu4a9vy53q90ad",
+  "mintSplit": {
+    "miner": "108",
+    "temple": "0"
+  },
+  "templeAddress": null,
+  "templeScriptHashHex": null,
+  "templeRedeemHex": null,
+  "templeDryrunWrappedP2pkh": false,
+  "powBatonCount": 28,
+  "batonTips": [
+    {
+      "index": 0,
+      "tipLocktime": 1788154628,
+      "powAddress": "ecash:ppdfztuzcswhvrejrkd257jz6tv4jzf50sg7rzys22",
+      "lastRemintTxid": "323360c87dd8927ba9887bda6658f764e6ccdd5eea8ec1870680fc7a15875343"
+    },
+    {
+      "index": 1,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 2,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 3,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 4,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 5,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 6,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 7,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 8,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 9,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 10,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 11,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 12,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 13,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 14,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 15,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 16,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 17,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 18,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 19,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 20,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 21,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 22,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 23,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 24,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 25,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 26,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    },
+    {
+      "index": 27,
+      "tipLocktime": 1788154509,
+      "powAddress": "ecash:pzs65pgl4f56ycrke3uf5me3x0le8jcuggx90k5x87",
+      "lastRemintTxid": null
+    }
+  ],
+  "genesisTxid": "a716e58dc9e20ba14bbf91f710754fe392265ed04d6f10acf0bcc8c9c1429665",
+  "handoffTxids": [
+    "a8d25f6cc2e00eb900bdc0bd83507cf369a5d6d6e4c44c4ec1b63c464110caf5",
+    "f6fb16cd7b015dac605c31fae85322824604436a4e4979185c9ed6e594d4c7aa",
+    "2ef128a814f7fedae0c90c57328b928ba6ade291bb2bcb1ed4a0af5242d1aee6",
+    "441d9eba3613e417a1aa76a6c775ffec747fcbf2fc7025ec6a0d3c2451848816",
+    "31c193c63840e09f5e8b564a867c916fed8995f2109ea8d62929050587dba399",
+    "3eb43ec86f608a6bcb9ffde9773df507d59711d5b13ff257af933ecd3ea72553",
+    "5ba57e2dee8ca829b19d7704f685d050ffdb13538b3739fbb63d0f3d223149aa",
+    "c5869e62af5bf65d36244c5ec1d5fd28bbdadfeab486869c9287746a767d4b84",
+    "c2b96a1e3c2d963d0043612c5d44cb5946b39f290d7787ce8b20ca293f431f7a",
+    "ebfa188ceb364a9289a73fff9b4ebc589f0f5a90796573c12a9f5cd806a8e590",
+    "428c972e9b3fb0646edd578e9c27e7c584bba9b6a38675e3cbb5e6eae3fa376a",
+    "82ed6dd80f99d3be444c2e3f6dbeb6920d57ee4d5fa29c606cc2de4b8f85924c",
+    "bf22fb8b7762802d3bc4c39bd41ce602eab42b8cb1336d412fa0faf525702aa5",
+    "1f8940ca492c2b50e43487693380cb472dd5ec6d23a1a7ba931999d6b9f1acf4",
+    "b7c924791939f7af73c3a529d7b572a7900f93ff8354df0ff6b29042e74e6b8d",
+    "8ff5850dc92c74abbadfde0b222e177b8dd2e0db9554c39f0d020d0708323509",
+    "f90c0b59a84b406f1084a78e73ac5a1b90715362a0f70b35b7edea893e3a5a63",
+    "8a861525ccd5d03363e24c497be8fe0c9eaf1e8552cc9c0f6830811be00b8f77",
+    "c731ec79160125e38c0fea8bc8af0dbebfb648b597f508c74f5a65e0e6ab6c64",
+    "fbe61515f2a123595b584ab023a61cd7375b7939dd8f8632acb876efc4329a1a",
+    "86bf3c26edc8341dcba0a246348f332761f9253702aeff0512f17a7cd8332f01",
+    "f2b4eca9e922b66f5e69f78dfbf73d92ff4f577753cf476b02415bfefeba8a1b",
+    "fc598a82b0c64ded4222fda8ba7cb7b5f81c94c7d0acbeb52eee8f1d2be39b32",
+    "e41eef182f224900eab4fdc3f68efa61164be22158bfe0cbcc48fe91bbda502f",
+    "1dc9e194b9d81efa56b56f32089cb4b5de166649a9138147794949b9c6d5a372",
+    "ffd74bdb92063eeffd95b88ac435badcf391a02dea3265618e570d6907f37a59",
+    "3d530d651745f02cdb133aba25175835708fde8714b3c7bccc1c5fbce6555576",
+    "113218e484fa864578a3c208d3c3b180916d13eaeb87c3288836c03a2bb68a04"
+  ],
+  "authPubkey": "0351036139c97f2e2c95c921d77311c168fdf2a70f108dcd9f4225b9b62647e755",
+  "genesisAddress": "ecash:qr9587sly420lryvtghwz92h8vrqfu4a9vy53q90ad",
+  "createdAt": "2026-08-31T06:56:49.908Z",
+  "explorer": "https://explorer.e.cash/tx/a716e58dc9e20ba14bbf91f710754fe392265ed04d6f10acf0bcc8c9c1429665",
+  "notes": [
+    "Hard next-P2SH via codeHash + tipLocktime anti-rewind.",
+    "Moore D: +1 bit / 500 days (五百罗汉; override MOORE_DAYS_PER_EXTRA_BIT=365..730). Cap bits ≤ 128. Whole-byte PoW only. baseZeroBits=0.",
+    "W Lotus: mint 108 → miner only (no temple ctor / tax). initialMintAtoms=108 → genesis wallet. Remint tip + burn memorial use DANA LOKAD.",
+    "Prod genesis ticker WLOTUS — do not reuse test secrets or mnemonics."
+  ],
+  "updatedAt": "2026-08-31T06:57:31.358Z"
+}

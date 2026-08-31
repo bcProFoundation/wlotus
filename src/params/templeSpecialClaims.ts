@@ -73,3 +73,27 @@ export function claimSpecialRoot(
   }
   return { ok: true, profileId: txid, created: true };
 }
+
+/** Rebind a catalog special to a new root (token recut). */
+export function rebindSpecialRoot(
+  specialId: string,
+  profileId: string,
+  env: NodeJS.ProcessEnv | Record<string, string | undefined> = process.env,
+): { ok: true; profileId: string; previous: string | null } | { ok: false; error: string } {
+  const id = specialId.trim().toLowerCase();
+  const txid = profileId.trim().toLowerCase();
+  if (!id) return { ok: false, error: 'specialId required' };
+  if (!TXID_RE.test(txid)) return { ok: false, error: 'profileId must be 64 hex' };
+  const current = loadSpecialClaims(env);
+  const previous = current[id] ?? null;
+  current[id] = txid;
+  const path = claimsFilePath(env);
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, `${JSON.stringify(current, null, 2)}\n`);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `could not write claims file: ${msg}` };
+  }
+  return { ok: true, profileId: txid, previous };
+}

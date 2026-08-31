@@ -45,6 +45,44 @@ export { explorerTx, danaExplorerOrigin, DEFAULT_DANA_EXPLORER_ORIGIN } from '..
  *
  * `inventoryScript`: leftover token atoms after the burn (temple cold storage).
  */
+export type TokenUtxoLike = {
+  outpoint: { txid: string; outIdx: number };
+  token?: {
+    tokenId?: string;
+    atoms?: bigint | number | string;
+    isMintBaton?: boolean;
+  };
+};
+
+/** Smallest sufficient UTXO (or smallest-first set) totaling `needAtoms`. */
+export function pickTokenUtxosForBurn<T extends TokenUtxoLike>(
+  utxos: T[],
+  tokenId: string,
+  needAtoms: bigint,
+): T[] {
+  const lots = utxos
+    .filter(
+      u =>
+        u.token?.tokenId === tokenId &&
+        u.token.atoms != null &&
+        !u.token.isMintBaton,
+    )
+    .map(u => ({ u, atoms: BigInt(u.token!.atoms) }))
+    .sort((a, b) => (a.atoms < b.atoms ? -1 : a.atoms > b.atoms ? 1 : 0));
+  const single = lots.find(x => x.atoms >= needAtoms);
+  if (single) return [single.u];
+  const picked: T[] = [];
+  let sum = 0n;
+  for (const x of lots) {
+    picked.push(x.u);
+    sum += x.atoms;
+    if (sum >= needAtoms) return picked;
+  }
+  throw new Error(
+    `Need ≥ ${needAtoms} atoms of ${tokenId.slice(0, 8)}… (have ${sum})`,
+  );
+}
+
 export async function burnOnePrayer(opts: {
   wallet: Wallet;
   tokenId: string;
@@ -64,6 +102,11 @@ export async function burnOnePrayer(opts: {
    * If omitted, leftover inventory follows wallet change (not recommended on tip HD).
    */
   inventoryScript?: Script;
+  /**
+   * Minimum leftover atoms that must be sent to `inventoryScript`.
+   * Felt listing: 6 (soft temple tax).
+   */
+  minInventoryAtoms?: bigint;
 }): Promise<{ txid: string; burnAtoms: bigint; inventoryAtoms: bigint }> {
   const note = (opts.note ?? '').trim();
   const offeringId = opts.offeringId ?? OFFERING_ID_PRAYER;
@@ -76,22 +119,27 @@ export async function burnOnePrayer(opts: {
   }
 
   await opts.wallet.sync();
-  const tokenUtxos = opts.wallet.utxos.filter(
-    u =>
-      u.token?.tokenId === opts.tokenId &&
-      u.token.atoms != null &&
-      !u.token.isMintBaton,
+  const minInventory = opts.minInventoryAtoms ?? 0n;
+  if (minInventory > 0n && !opts.inventoryScript) {
+    throw new Error('minInventoryAtoms requires inventoryScript (temple sink)');
+  }
+  const needAtoms = burnAtoms + minInventory;
+  const tokenUtxos = pickTokenUtxosForBurn(
+    opts.wallet.utxos,
+    opts.tokenId,
+    needAtoms,
   );
   const totalAtoms = tokenUtxos.reduce(
     (sum, u) => sum + BigInt(u.token!.atoms),
     0n,
   );
-  if (totalAtoms < burnAtoms) {
+  const inventoryAtoms = totalAtoms - burnAtoms;
+  if (inventoryAtoms < minInventory) {
     throw new Error(
-      `Need ≥ ${burnAtoms} atoms of ${opts.tokenId.slice(0, 8)}… (have ${totalAtoms})`,
+      `Offering must send ≥ ${minInventory} WLOTUS to the temple address ` +
+        `with the burn (have leftover ${inventoryAtoms})`,
     );
   }
-  const inventoryAtoms = totalAtoms - burnAtoms;
 
   // Token UTXOs + postage only. Do **not** fall back to the largest/only
   // pure coin: a 1M-XEC reserve on the tip would be spent as miner fee.
@@ -149,6 +197,12 @@ export async function burnOnePrayer(opts: {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.includes('OP_RETURN of') || !opts.inventoryScript) throw e;
+      if (minInventory > 0n) {
+        throw new Error(
+          `Burn OP_RETURN too large to attach the temple inventory send ` +
+            `(need ≥ ${minInventory} leftover atoms on the listing)`,
+        );
+      }
       // Leftover ALP SEND + a long DANA note can exceed 223. Burn the
       // memorial without the inventory SEND so the flower still lands.
       built = buildWithInventory(false);

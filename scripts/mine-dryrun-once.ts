@@ -14,7 +14,14 @@ import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
 import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
+import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { expectedGlotusMintOpReturnScript } from '../src/covenant/powRemintGlotusTipOutputs.js';
 import { computeMooreTipState } from '../src/covenant/mooreTip.js';
+import {
+  isWlotusFeltCovenant,
+  isWlotusMooreTipCovenant,
+  isWlotusTempleCovenant,
+} from '../src/params/wlotusMint.js';
 import {
   buildMinedMooreTipRemintTx,
   mooreTipMinerBanner,
@@ -118,9 +125,12 @@ async function main(): Promise<void> {
   const tokenId = process.env.TOKEN_ID?.trim() || dep.tokenId;
   const mintAtoms = BigInt(dep.mintAtomsPerRemint);
   const batonIndex = Number(process.env.BATON_INDEX?.trim() || 0);
+  const felt = isWlotusFeltCovenant(dep);
+  const mooreTip = isWlotusMooreTipCovenant(dep);
   const isTemple =
-    dep.tier === 'wlotus' ||
-    dep.covenant === 'WlotusPowRemintMooreTipTemple';
+    !felt &&
+    !mooreTip &&
+    (isWlotusTempleCovenant(dep) || dep.tier === 'wlotus');
   const tips =
     dep.batonTips && dep.batonTips.length > 0
       ? dep.batonTips
@@ -151,14 +161,23 @@ async function main(): Promise<void> {
         secondsPerExtraBit: dep.secondsPerExtraBit,
         tipLocktime: tipRec.tipLocktime,
       })
-    : await createPowRemintMooreTipContract({
-        tokenId,
-        mintAtoms,
-        genesisUnix: dep.genesisUnix,
-        baseZeroBits: dep.baseZeroBits,
-        secondsPerExtraBit: dep.secondsPerExtraBit,
-        tipLocktime: tipRec.tipLocktime,
-      });
+    : felt
+      ? await createPowRemintGlotusTipContract({
+          tokenId,
+          mintAtoms,
+          genesisUnix: dep.genesisUnix,
+          baseZeroBits: dep.baseZeroBits,
+          secondsPerExtraBit: dep.secondsPerExtraBit,
+          tipLocktime: tipRec.tipLocktime,
+        })
+      : await createPowRemintMooreTipContract({
+          tokenId,
+          mintAtoms,
+          genesisUnix: dep.genesisUnix,
+          baseZeroBits: dep.baseZeroBits,
+          secondsPerExtraBit: dep.secondsPerExtraBit,
+          tipLocktime: tipRec.tipLocktime,
+        });
   console.log(
     isTemple
       ? mooreTipTempleMinerBanner(
@@ -270,7 +289,30 @@ async function main(): Promise<void> {
         miner: { sk: wallet.sk, pk: wallet.pk },
         locktime,
       })
-    : await buildMinedMooreTipRemintTx({
+    : felt
+      ? await (async () => {
+          const glotus = contract as Awaited<
+            ReturnType<typeof createPowRemintGlotusTipContract>
+          >;
+          const nextContract = await createPowRemintGlotusTipContract({
+            ...glotus.params,
+            tipLocktime: locktime,
+          });
+          return buildMinedMooreTipRemintTx({
+            contract: glotus,
+            baton,
+            fuel: {
+              outpoint: fuelUtxo.outpoint,
+              sats: fuelUtxo.sats,
+              outputScript: wallet.script,
+            },
+            miner: { sk: wallet.sk, pk: wallet.pk },
+            locktime,
+            opReturn: expectedGlotusMintOpReturnScript(tokenId, mintAtoms),
+            nextContract,
+          });
+        })()
+      : await buildMinedMooreTipRemintTx({
         contract: contract as Awaited<
           ReturnType<typeof createPowRemintMooreTipContract>
         >,
@@ -309,11 +351,9 @@ async function main(): Promise<void> {
     updatedAt: new Date().toISOString(),
   };
   writeFileSync(depPath, `${JSON.stringify(updated, null, 2)}\n`);
-  if (existsSync(resolve(process.cwd(), 'deployments/mainnet-dryrun-active.json'))) {
-    writeFileSync(
-      resolve(process.cwd(), 'deployments/mainnet-dryrun-active.json'),
-      `${JSON.stringify(updated, null, 2)}\n`,
-    );
+  const dryrunActive = resolve(process.cwd(), 'deployments/mainnet-dryrun-active.json');
+  if (existsSync(dryrunActive) && depPath.includes('dryrun')) {
+    writeFileSync(dryrunActive, `${JSON.stringify(updated, null, 2)}\n`);
   }
 
   writeFileSync(

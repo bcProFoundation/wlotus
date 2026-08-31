@@ -15,6 +15,7 @@ import {
   TRENDING_GRAVITY,
   trendingGroupScore,
 } from '../../../src/lib/trendingScore.js';
+import { loadDryrunCopiedTxids } from '../../../src/offering/migrateOfferings.js';
 
 export interface IndexedBurn {
   burnTxid: string;
@@ -58,13 +59,59 @@ interface StoreFile {
   burns: IndexedBurn[];
 }
 
+function loadHiddenStarRoots(
+  env: NodeJS.ProcessEnv = process.env,
+): Set<string> {
+  const explicit = env.HIDDEN_STAR_ROOTS_FILE?.trim();
+  const path = explicit
+    ? resolve(explicit)
+    : resolve(process.cwd(), 'deployments/hidden-star-roots.json');
+  if (!existsSync(path)) return new Set();
+  try {
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    const list = Array.isArray(raw)
+      ? raw
+      : raw &&
+          typeof raw === 'object' &&
+          Array.isArray((raw as { roots?: unknown }).roots)
+        ? (raw as { roots: unknown[] }).roots
+        : [];
+    const out = new Set<string>();
+    for (const item of list) {
+      const id = String(item || '')
+        .trim()
+        .toLowerCase();
+      if (/^[0-9a-f]{64}$/.test(id)) out.add(id);
+    }
+    return out;
+  } catch {
+    return new Set();
+  }
+}
+
 export class BurnStore {
   private readonly path: string;
   private byTxid = new Map<string, IndexedBurn>();
+  private readonly hiddenRoots: Set<string>;
 
-  constructor(path: string) {
+  constructor(path: string, hiddenRoots?: Set<string>) {
     this.path = resolve(path);
+    this.hiddenRoots =
+      hiddenRoots ??
+      new Set([...loadHiddenStarRoots(), ...loadDryrunCopiedTxids()]);
     this.load();
+  }
+
+  private isHidden(burn: IndexedBurn): boolean {
+    if (this.hiddenRoots.size === 0) return false;
+    const id = burn.burnTxid.toLowerCase();
+    const parent = (burn.parentBurnTxid || '').toLowerCase();
+    const original = (burn.originalBurnTxid || '').toLowerCase();
+    return (
+      this.hiddenRoots.has(id) ||
+      (parent !== '' && this.hiddenRoots.has(parent)) ||
+      (original !== '' && this.hiddenRoots.has(original))
+    );
   }
 
   private load(): void {
@@ -72,10 +119,18 @@ export class BurnStore {
     try {
       const raw = JSON.parse(readFileSync(this.path, 'utf8')) as StoreFile;
       if (!raw?.burns || !Array.isArray(raw.burns)) return;
+      let dropped = 0;
       for (const b of raw.burns) {
-        if (b?.burnTxid) this.byTxid.set(b.burnTxid.toLowerCase(), normalizeBurn(b));
+        if (!b?.burnTxid) continue;
+        const next = normalizeBurn(b);
+        if (this.isHidden(next)) {
+          dropped += 1;
+          continue;
+        }
+        this.byTxid.set(next.burnTxid, next);
       }
       this.recomputeOriginals();
+      if (dropped > 0) this.persist();
     } catch (err) {
       console.error('dana-index store load failed', err);
     }
@@ -102,6 +157,10 @@ export class BurnStore {
   upsert(burn: IndexedBurn): boolean {
     const id = burn.burnTxid.toLowerCase();
     const next = normalizeBurn({ ...burn, burnTxid: id });
+    if (this.isHidden(next)) {
+      if (this.byTxid.delete(id)) this.persist();
+      return false;
+    }
     const prev = this.byTxid.get(id);
     if (prev && sameBurn(prev, next)) return false;
     this.byTxid.set(id, next);

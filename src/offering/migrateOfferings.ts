@@ -4,6 +4,8 @@
  * Roots (no parent) first, then re-offers / fragments. Parent txids on
  * children are rewritten through the mapping after each root burns.
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 export interface MigratableBurn {
   burnTxid: string;
@@ -65,6 +67,63 @@ export function remapSpecialClaims(
   return out;
 }
 
-export function migrationNeedAtoms(burns: readonly MigratableBurn[]): bigint {
-  return BigInt(orderBurnsForMigration(burns).length);
+/**
+ * Atoms the tip must hold: 1 memorial burn per offering, plus optional
+ * leftover sent to the temple with that burn (felt soft tax).
+ */
+export function migrationNeedAtoms(
+  burns: readonly MigratableBurn[],
+  inventoryPerOffering = 0n,
+): bigint {
+  const n = BigInt(orderBurnsForMigration(burns).length);
+  if (inventoryPerOffering < 0n) {
+    throw new Error('inventoryPerOffering must be ≥ 0');
+  }
+  return n * (1n + inventoryPerOffering);
+}
+
+const TXID_RE = /^[0-9a-f]{64}$/;
+
+/**
+ * Destination txids from a bulk copy whose source is the dryrun token.
+ * Used so the public index does not mix dWLOTUS history into a WLOTUS desk.
+ */
+export function txidsCopiedFromDryrunToken(
+  fromTokenId: string | undefined,
+  mapping: Record<string, string> | undefined,
+  dryrunTokenId: string | undefined,
+): Set<string> {
+  const from = (fromTokenId || '').trim().toLowerCase();
+  const dry = (dryrunTokenId || '').trim().toLowerCase();
+  const out = new Set<string>();
+  if (!from || !dry || from !== dry || !mapping) return out;
+  for (const v of Object.values(mapping)) {
+    const id = String(v || '')
+      .trim()
+      .toLowerCase();
+    if (TXID_RE.test(id)) out.add(id);
+  }
+  return out;
+}
+
+export function loadDryrunCopiedTxids(cwd = process.cwd()): Set<string> {
+  const dryPath = resolve(cwd, 'deployments/mainnet-dryrun-wlotus.json');
+  const migPath = resolve(cwd, 'deployments/offering-migration.json');
+  if (!existsSync(dryPath) || !existsSync(migPath)) return new Set();
+  try {
+    const dry = JSON.parse(readFileSync(dryPath, 'utf8')) as {
+      tokenId?: string;
+    };
+    const mig = JSON.parse(readFileSync(migPath, 'utf8')) as {
+      fromTokenId?: string;
+      mapping?: Record<string, string>;
+    };
+    return txidsCopiedFromDryrunToken(
+      mig.fromTokenId,
+      mig.mapping,
+      dry.tokenId,
+    );
+  } catch {
+    return new Set();
+  }
 }
