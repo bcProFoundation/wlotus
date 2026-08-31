@@ -6,6 +6,8 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { parseAltarNote } from './altarFields.js';
+import { findCatalogEntryByName } from '../params/templeSpecialCatalog.js';
 
 export interface MigratableBurn {
   burnTxid: string;
@@ -54,7 +56,13 @@ export function remapParentTxid(
   return remapTxid(parentBurnTxid, mapping);
 }
 
-/** Point special claims at reminted roots when the old txid was migrated. */
+const TXID_RE = /^[0-9a-f]{64}$/;
+
+/**
+ * Point special claims at reminted roots. Drop ids whose old txid was not
+ * in the mapping — leaving a prod/test txid on the new token makes Events
+ * look empty (bound profile, no burns in the new index).
+ */
 export function remapSpecialClaims(
   claims: Readonly<Record<string, string>>,
   mapping: Readonly<Record<string, string>>,
@@ -62,7 +70,78 @@ export function remapSpecialClaims(
   const out: Record<string, string> = {};
   for (const [id, txid] of Object.entries(claims)) {
     const old = txid.trim().toLowerCase();
-    out[id] = mapping[old] ?? old;
+    const next = mapping[old];
+    if (next) out[id] = next;
+  }
+  return out;
+}
+
+export interface BindableBurn {
+  burnTxid: string;
+  note: string;
+  parentBurnTxid?: string;
+}
+
+/** Catalog special id from a packed altar note or a plain name. */
+export function catalogSpecialIdFromNote(
+  note: string | undefined,
+): string | undefined {
+  const raw = (note ?? '').trim();
+  if (!raw) return undefined;
+  const packed = parseAltarNote(raw);
+  const name = (packed?.name || '').trim();
+  if (name) {
+    const hit = findCatalogEntryByName(name);
+    if (hit) return hit.id;
+  }
+  return findCatalogEntryByName(raw.replace(/\u001f/g, ' '))?.id;
+}
+
+/**
+ * Bind catalog specials to migrated roots by altar name.
+ *
+ * Prod Nepal 26/8 is a visitor star (`Nepal 26/08`) that was never claimed as
+ * `nepal-26-08`. Remapping the claims file alone leaves the event unbound.
+ * Pick the largest matching star when several roots share a name.
+ */
+export function bindCatalogClaimsFromBurns(
+  claims: Readonly<Record<string, string>>,
+  burns: readonly BindableBurn[],
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [id, txid] of Object.entries(claims)) {
+    const v = txid.trim().toLowerCase();
+    if (TXID_RE.test(v)) out[id] = v;
+  }
+
+  const memberCount = new Map<string, number>();
+  const roots: BindableBurn[] = [];
+  for (const b of burns) {
+    const id = b.burnTxid.trim().toLowerCase();
+    if (!TXID_RE.test(id)) continue;
+    const parent = b.parentBurnTxid?.trim().toLowerCase();
+    if (parent) {
+      memberCount.set(parent, (memberCount.get(parent) ?? 0) + 1);
+    } else {
+      roots.push({ ...b, burnTxid: id });
+      memberCount.set(id, (memberCount.get(id) ?? 0) + 1);
+    }
+  }
+
+  const best = new Map<string, { txid: string; n: number }>();
+  for (const r of roots) {
+    const specialId = catalogSpecialIdFromNote(r.note);
+    if (!specialId) continue;
+    const n = memberCount.get(r.burnTxid) ?? 1;
+    const prev = best.get(specialId);
+    if (!prev || n > prev.n) best.set(specialId, { txid: r.burnTxid, n });
+  }
+
+  const live = new Set(memberCount.keys());
+  for (const [specialId, hit] of best) {
+    const existing = out[specialId];
+    if (existing && live.has(existing)) continue;
+    out[specialId] = hit.txid;
   }
   return out;
 }
@@ -81,8 +160,6 @@ export function migrationNeedAtoms(
   }
   return n * (1n + inventoryPerOffering);
 }
-
-const TXID_RE = /^[0-9a-f]{64}$/;
 
 /**
  * Destination txids from a bulk copy whose source is the dryrun token.
