@@ -7,8 +7,14 @@
  * TEMPLE_ADDRESS (P2PKH or P2SH). Soft listing tax is ≥ 6; migration
  * always sends the full leftover mala.
  *
- *   FROM_TOKEN_ID=… TO_TOKEN_ID=… DRY_RUN=1 npm run migrate-offerings
- *   FROM_TOKEN_ID=… TO_TOKEN_ID=… TEMPLE_ADDRESS=ecash:q… npm run migrate-offerings
+ *   FROM_TOKEN_ID=<live prod> TO_TOKEN_ID=<new> DRY_RUN=1 npm run migrate-offerings
+ *   FROM_TOKEN_ID=<live prod> TO_TOKEN_ID=<new> TEMPLE_ADDRESS=ecash:q… npm run migrate-offerings
+ *
+ * FROM_TOKEN_ID is required (no silent 154d229b fallback). Abandoned ids
+ * (retired prod, old dWLOTUS, failed fcf7de59 cutover) are refused unless
+ * ALLOW_ABANDONED_FROM=1. Dest must not be an abandoned token
+ * (ALLOW_ABANDONED_TO=1 to override). INDEX_ONLY refuses the live store
+ * path unless INDEX_ONLY_LIVE=1.
  */
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,6 +64,10 @@ import {
   WLOTUS_FELT_DESK_KEEP_AFTER_BURN,
   WLOTUS_FELT_MINER_ATOMS,
 } from '../src/params/wlotusMint.js';
+import {
+  assertMigrateToTokenId,
+  requireMigrateFromTokenId,
+} from '../src/params/wlotusTokens.js';
 import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
 import { expectedGlotusMintOpReturnScript } from '../src/covenant/powRemintGlotusTipOutputs.js';
 import { buildMinedMooreTipRemintTx } from '../src/miner/remintMooreTip.js';
@@ -69,10 +79,9 @@ import {
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
 
-const LIVE_PROD =
-  '154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091';
 const DEFAULT_TEMPLE =
   'ecash:qz2cyuu3y5h0tanf8wy3esr64drpzzweeyu2c5dyen';
+const LIVE_STORE = resolve(process.cwd(), 'data/dana-index-burns.json');
 /** Migration leftover: 108 remint − 1 flower. */
 const MIGRATE_TEMPLE_ATOMS = WLOTUS_FELT_DESK_KEEP_AFTER_BURN;
 
@@ -360,12 +369,23 @@ async function sendTokensToTip(
 }
 
 async function main(): Promise<void> {
-  const fromTokenId = tokenIdEnv('FROM_TOKEN_ID', LIVE_PROD);
+  const fromTokenId = requireMigrateFromTokenId();
   const indexOnly = envFlag('INDEX_ONLY');
   const dry = envFlag('DRY_RUN');
   const toStore =
     process.env.TO_STORE?.trim() ||
     resolve(process.cwd(), 'data/dana-index-burns.json');
+  if (
+    indexOnly &&
+    resolve(toStore) === LIVE_STORE &&
+    !envFlag('INDEX_ONLY_LIVE')
+  ) {
+    throw new Error(
+      'INDEX_ONLY refuses the live dana-index store ' +
+        '(data/dana-index-burns.json). Set TO_STORE to a copy ' +
+        '(e.g. data/dana-index-burns.from.json) or INDEX_ONLY_LIVE=1.',
+    );
+  }
   const templeAddr =
     process.env.TEMPLE_ADDRESS?.trim() || DEFAULT_TEMPLE;
   const temple = scriptFromCashAddress(templeAddr);
@@ -402,7 +422,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const toTokenId = tokenIdEnv('TO_TOKEN_ID');
+  const toTokenId = assertMigrateToTokenId(tokenIdEnv('TO_TOKEN_ID'));
   if (toTokenId === fromTokenId) {
     throw new Error('TO_TOKEN_ID must differ from FROM_TOKEN_ID');
   }

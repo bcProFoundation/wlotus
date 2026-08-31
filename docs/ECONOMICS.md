@@ -109,15 +109,16 @@ Permissionless remint, miner pays XEC only, **no** temple mint tax. Premine + ev
 
 Same ticker `WLOTUS` / `dWLOTUS`, **new `tokenId`**. Redeem is `GlotusPowRemintMooreTip` (already dogfooded as dGLOTUS):
 
-| | Live (`154d229b…`) | Recut |
+| | Live (`f4e452ef…`) | Recut |
 |--|--|--|
 | Mint | 102 miner + 6 temple | **108 miner** |
 | Felt D | 256× / ~11 y (`bits % 8 == 0`) | **2× / ~1.4 y** (+1 bit / 500 d, felt every bit) |
 | Remint EMPP | ALP MINT + DANA tip v4 | ALP MINT only |
 | Offerings | Separate DANA v1/v2 burn | Unchanged |
 | Desk after burn-1 | 101 | **107** |
-| Temple P2SH | Covenant tax + inventory | Inventory / premine only |
+| Special-event burn | 96 | **102** (108 − deskKeep 6) |
+| Temple P2SH | Covenant tax + inventory | Soft listing tax / inventory / premine only |
 
 Felt + remint DANA tip is **213 ops** — over the 201-op cap even after dropping the temple output. Offerings do not need the remint tip ad (dana-index skips DANA v4).
 
-`FELT=1 TEMPLE_ADDRESS=ecash:p… npm run create-wlotus-token`
+**One genesis:** ticker `WLOTUS` on the test VM, dogfood, then retarget prod at the same `tokenId`. Do not genesis prod in parallel. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
