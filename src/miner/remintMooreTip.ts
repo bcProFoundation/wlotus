@@ -92,19 +92,26 @@ async function prepareMooreTipRemint(opts: {
   fuel: FuelUtxo;
   miner: RemintKeys;
   locktime: number;
+  /** When set, skip DANA tip reconstruction (GLotus ALP-only mint). */
+  opReturn?: Script;
+  nextContract?: PowRemintMooreTipContract;
 }): Promise<MooreTipRemintPrepared> {
   const { contract, baton, fuel, miner, locktime } = opts;
   const dust = DEFAULT_DUST_SATS;
   const tip = computeMooreTipState(locktime, contract.params);
-  const nextContract = await createPowRemintMooreTipContract({
-    ...contract.params,
-    tipLocktime: tip.locktime,
-  });
-  const opReturn = expectedMooreTipMintOpReturnScript(
-    contract.params.tokenId,
-    contract.params.mintAtoms,
-    tip,
-  );
+  const nextContract =
+    opts.nextContract ??
+    (await createPowRemintMooreTipContract({
+      ...contract.params,
+      tipLocktime: tip.locktime,
+    }));
+  const opReturn =
+    opts.opReturn ??
+    expectedMooreTipMintOpReturnScript(
+      contract.params.tokenId,
+      contract.params.mintAtoms,
+      tip,
+    );
   const minerP2pkh = Script.p2pkh(shaRmd160(miner.pk));
   const nextRedeem = reconstructNextRedeem(
     contract.params,
@@ -177,6 +184,8 @@ export async function buildMooreTipRemintChallenge(opts: {
   fuel: FuelUtxo;
   miner: RemintKeys;
   locktime: number;
+  opReturn?: Script;
+  nextContract?: PowRemintMooreTipContract;
 }): Promise<MooreTipRemintPrepared> {
   return prepareMooreTipRemint(opts);
 }
@@ -310,6 +319,8 @@ export async function buildMinedMooreTipRemintTx(opts: {
   fuel: FuelUtxo;
   miner: RemintKeys;
   locktime: number;
+  opReturn?: Script;
+  nextContract?: PowRemintMooreTipContract;
 }): Promise<{
   txHex: string;
   nonceHex: string;

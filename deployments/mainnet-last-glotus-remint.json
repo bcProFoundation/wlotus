@@ -1,0 +1,10 @@
+{
+  "tokenId": "baaf918ba8c863941c4e5d0b826071e42a2f225baac5b33f729f8a3b8cdcbbdb",
+  "txid": "61775345a41c395209b76895e990d0ec0b4d7dd4e244b95869486ca318868358",
+  "bits": 0,
+  "extraBits": 0,
+  "powAttempts": 1,
+  "nextPowAddress": "ecash:prlhd5sldjmg88czcg6nya772jpqzsck7qacqgnygp",
+  "explorer": "https://explorer.e.cash/tx/61775345a41c395209b76895e990d0ec0b4d7dd4e244b95869486ca318868358",
+  "minedAt": "2026-08-30T21:02:22.759Z"
+}

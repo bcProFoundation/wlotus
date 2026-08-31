@@ -89,6 +89,18 @@ export const MOORE_DAY_SECONDS = 86_400;
  */
 export const MOORE_DAYS_PER_EXTRA_BIT = 500;
 
+/**
+ * GLotus calendar days per felt +1 bit (Moore / Ergon 2×).
+ * ln(2)/ln(100000/99918) ≈ 845.3 days (~2.31y). Not the WLotus 500-arhat clock.
+ */
+export const GLOTUS_MOORE_DAYS_PER_EXTRA_BIT = 845;
+
+/** GLotus remint size — one mala, all to miner (no temple tax). */
+export const GLOTUS_MINT_ATOMS = 108n;
+
+export const GLOTUS_TOKEN_TICKER = 'DGLOTUS';
+export const GLOTUS_TOKEN_NAME = 'Golden Lotus';
+
 /** Allowed range for genesis override (~1–2 years). */
 export const MOORE_DAYS_PER_EXTRA_BIT_MIN = 365;
 export const MOORE_DAYS_PER_EXTRA_BIT_MAX = 730;

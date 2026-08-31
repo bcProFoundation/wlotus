@@ -12,6 +12,7 @@ Both desks run **`WlotusPowRemintMooreTipTemple`** — mint **108** = **102** mi
 | **Prod** | `WLOTUS` | https://wlotus.org | `154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091` | 2026-08-13 · tag [`v26.8.0`](https://github.com/bcProFoundation/wlotus/releases/tag/v26.8.0) |
 | **Test** | `dWLOTUS` | https://test.wlotus.org | `ffc15eb40711fbf069370a4f90ca44ce7913968a6d5940df9890343066f119ec` | 2026-08-14 |
 | **GLOTUS** | `GLOTUS` | — | not minted | Design — [ECONOMICS.md](./ECONOMICS.md) |
+| **dGLOTUS** | `DGLOTUS` | dogfood | `baaf918ba8c863941c4e5d0b826071e42a2f225baac5b33f729f8a3b8cdcbbdb` | 2026-08-30 · 28 batons · `GlotusPowRemintMooreTip` |
 
 ALP stores the test ticker uppercase (`DWLOTUS`); docs write `dWLOTUS`. On-chain name is **W Lotus** on both.
 
@@ -32,11 +33,11 @@ Chronik: `https://chronik.e.cash` · `https://xec.paybutton.org` · `https://chr
 
 Local: `npm run mint-api` + `npm run web`. Hosting: [test](../deploy/contabo/README.md) · [prod](../deploy/contabo/PROD.md). The 1/107 → 102/6 recut is **done** ([runbook](../deploy/contabo/PROD_CUTOVER_102_6.md)).
 
-Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`.
+Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`, **dGLOTUS** (`GlotusPowRemintMooreTip`).
 
 ## Next
 
 1. Altar separator packing + minter-only ≤10 amendments ([ALTAR.md](./ALTAR.md))
 2. Postage / fee sponsorship polish
 3. **GLOTUS** genesis when the economic layer ships
-4. Fractional-bit PoW if/when eCash raises the 201-op limit
+4. Fractional-bit PoW: GLotus `GlotusPowRemintMooreTip` fits felt +1 bit (flat 8×2B table, ALP MINT only). Intra-era 8-slot / daily tables do not fit with hard next-P2SH. WLOTUS stays whole-byte.
