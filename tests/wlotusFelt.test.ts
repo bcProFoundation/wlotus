@@ -10,9 +10,14 @@ import {
   WLOTUS_FELT_MODE,
   WLOTUS_FELT_TEMPLE_ATOMS,
   WLOTUS_MINT_ATOMS,
+  WLOTUS_SOFT_TEMPLE_ATOMS,
+  WLOTUS_MOORE_TIP_COVENANT,
+  WLOTUS_MOORE_TIP_MODE,
   isWlotusDeskCovenant,
   isWlotusFeltCovenant,
+  isWlotusMooreTipCovenant,
   isWlotusTempleCovenant,
+  resolveWlotusGenesisRegime,
 } from '../src/params/wlotusMint.js';
 
 describe('WLotus felt no-tax recut', () => {
@@ -21,6 +26,7 @@ describe('WLotus felt no-tax recut', () => {
     expect(WLOTUS_FELT_TEMPLE_ATOMS).toBe(0n);
     expect(WLOTUS_FELT_MINER_ATOMS).toBe(WLOTUS_MINT_ATOMS);
     expect(WLOTUS_FELT_DESK_KEEP_AFTER_BURN).toBe(107n);
+    expect(WLOTUS_SOFT_TEMPLE_ATOMS).toBe(6n);
   });
 
   it('keeps the aggressive 500-day arhat clock (felt every bit, not 256× / 11 y)', () => {
@@ -29,10 +35,25 @@ describe('WLotus felt no-tax recut', () => {
     expect(resolveFeltSecondsPerExtraBit('730')).toBe(730 * MOORE_DAY_SECONDS);
   });
 
-  it('classifies covenants without treating felt as temple', () => {
+  it('defaults genesis to GLotus felt redeem; temple / whole-byte are opt-in', () => {
+    expect(resolveWlotusGenesisRegime({})).toBe('felt');
+    expect(resolveWlotusGenesisRegime({ FELT: '1' })).toBe('felt');
+    expect(resolveWlotusGenesisRegime({ COVENANT: 'moore-tip' })).toBe(
+      'moore-tip',
+    );
+    expect(resolveWlotusGenesisRegime({ FELT: '0' })).toBe('temple');
+    expect(resolveWlotusGenesisRegime({ COVENANT: 'temple' })).toBe('temple');
+  });
+
+  it('classifies covenants without treating felt or MooreTip as temple', () => {
     const felt = {
       covenant: WLOTUS_FELT_COVENANT,
       mode: WLOTUS_FELT_MODE,
+      tier: 'wlotus',
+    };
+    const mooreTip = {
+      covenant: WLOTUS_MOORE_TIP_COVENANT,
+      mode: WLOTUS_MOORE_TIP_MODE,
       tier: 'wlotus',
     };
     const temple = {
@@ -43,7 +64,12 @@ describe('WLotus felt no-tax recut', () => {
     expect(isWlotusFeltCovenant(felt)).toBe(true);
     expect(isWlotusTempleCovenant(felt)).toBe(false);
     expect(isWlotusDeskCovenant(felt)).toBe(true);
+    expect(isWlotusMooreTipCovenant(mooreTip)).toBe(true);
+    expect(isWlotusFeltCovenant(mooreTip)).toBe(false);
+    expect(isWlotusTempleCovenant(mooreTip)).toBe(false);
+    expect(isWlotusDeskCovenant(mooreTip)).toBe(true);
     expect(isWlotusTempleCovenant(temple)).toBe(true);
     expect(isWlotusFeltCovenant(temple)).toBe(false);
+    expect(isWlotusMooreTipCovenant(temple)).toBe(false);
   });
 });

@@ -81,6 +81,30 @@ describe('BurnStore', () => {
     expect(store.memorial(child)).toBeNull();
   });
 
+  it('omits hidden star roots from recent and memorial', () => {
+    const hidden =
+      '1111111111111111111111111111111111111111111111111111111111111111';
+    const child =
+      '2222222222222222222222222222222222222222222222222222222222222222';
+    const keep =
+      '3333333333333333333333333333333333333333333333333333333333333333';
+    const hiddenStore = new BurnStore(join(dir, 'hidden-burns.json'), new Set([hidden]));
+    hiddenStore.upsert(burn({ burnTxid: hidden, note: 'Mùng 1' }));
+    hiddenStore.upsert(
+      burn({
+        burnTxid: child,
+        note: '',
+        parentBurnTxid: hidden,
+      }),
+    );
+    hiddenStore.upsert(burn({ burnTxid: keep, note: 'Nepal 26/08' }));
+    expect(hiddenStore.recentGroups(10).map(g => g.originalBurnTxid)).toEqual([
+      keep,
+    ]);
+    expect(hiddenStore.memorial(hidden)).toBeNull();
+    expect(hiddenStore.size()).toBe(1);
+  });
+
   it('skips empty-name roots', () => {
     const root =
       'c38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
