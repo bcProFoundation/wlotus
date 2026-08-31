@@ -35,11 +35,14 @@ describe('templeSpecials', () => {
     ).toBe(false);
   });
 
-  it('deskKeep 6 → burn 96; deskKeep 0 → burn 102', () => {
+  it('deskKeep 6 → burn 96 on 102/6; felt 108 − 6 → 102', () => {
     expect(DEFAULT_SPECIAL_DESK_KEEP).toBe(6);
     expect(burnAtomsForDeskKeep(6)).toBe(96n);
     expect(burnAtomsForDeskKeep(0)).toBe(102n);
     expect(burnAtomsForDeskKeep(101)).toBe(1n);
+    expect(burnAtomsForDeskKeep(6, 108n)).toBe(102n);
+    expect(burnAtomsForDeskKeep(0, 108n)).toBe(108n);
+    expect(burnAtomsForDeskKeep(107, 108n)).toBe(1n);
   });
 
   it('loads global deskKeep and testOffsetDays from env', () => {
@@ -165,6 +168,24 @@ describe('templeSpecials', () => {
     expect(st.burnAtoms).toBe('96');
     expect(st.active).toHaveLength(1);
     expect(st.active[0]!.effectiveEventDate).toBe('2026-08-13');
+  });
+
+  it('felt minerAtoms 108 → special burn 108 − deskKeep', () => {
+    const st = resolveTempleSpecialsStatus(
+      [
+        {
+          id: 'ghost',
+          profileId: 'a'.repeat(64),
+          kind: 'ghost' as const,
+          eventDate: '2026-08-28',
+          eventCalendar: 'solar' as const,
+        },
+      ],
+      { deskKeep: 6, testOffsetDays: 0, minerAtoms: 108n },
+      Date.parse('2026-08-28T12:00:00Z'),
+    );
+    expect(st.deskKeep).toBe(6);
+    expect(st.burnAtoms).toBe('102');
   });
 
   it('defaults eventCalendar to lunar and converts to solar', () => {

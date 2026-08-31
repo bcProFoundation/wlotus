@@ -5,10 +5,11 @@
  * Discovers stars on FROM_TOKEN_ID, matches root names to the specials
  * catalog (no hardcoded txids), remints on the desk, and rebinds claims.
  *
- *   FROM_TOKEN_ID=<prod> DRY_RUN=1 npm run migrate-catalog-specials
- *   FROM_TOKEN_ID=<prod> npm run migrate-catalog-specials
+ *   FROM_TOKEN_ID=<live prod> DRY_RUN=1 npm run migrate-catalog-specials
+ *   FROM_TOKEN_ID=<live prod> npm run migrate-catalog-specials
  *
- * Skip a special that is already claimed unless FORCE=1.
+ * FROM_TOKEN_ID is required and must not be an abandoned token
+ * (see wlotusTokens.ts). Skip a special that is already claimed unless FORCE=1.
  * Death-date star fragments are folded into the root note.
  */
 import { resolve } from 'node:path';
@@ -42,6 +43,10 @@ import {
   remintMalaOnTip,
   type FeltDep,
 } from './migrate-offerings.js';
+import {
+  assertMigrateToTokenId,
+  requireMigrateFromTokenId,
+} from '../src/params/wlotusTokens.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
@@ -145,10 +150,7 @@ async function ensureMala(
 }
 
 async function main(): Promise<void> {
-  const fromTokenId = (process.env.FROM_TOKEN_ID ?? '').trim().toLowerCase();
-  if (!/^[0-9a-f]{64}$/.test(fromTokenId)) {
-    throw new Error('FROM_TOKEN_ID (64 hex) required — source token to scan');
-  }
+  const fromTokenId = requireMigrateFromTokenId();
   const dry = envFlag('DRY_RUN');
   const force = envFlag('FORCE');
   const depPath = resolve(
@@ -160,7 +162,9 @@ async function main(): Promise<void> {
   const dep = JSON.parse(readFileSync(depPath, 'utf8')) as FeltDep & {
     tokenId: string;
   };
-  const toTokenId = (process.env.TO_TOKEN_ID?.trim() || dep.tokenId).toLowerCase();
+  const toTokenId = assertMigrateToTokenId(
+    (process.env.TO_TOKEN_ID?.trim() || dep.tokenId).toLowerCase(),
+  );
   if (toTokenId === fromTokenId) {
     throw new Error('TO_TOKEN_ID must differ from FROM_TOKEN_ID');
   }

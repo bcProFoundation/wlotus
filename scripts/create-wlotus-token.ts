@@ -4,13 +4,21 @@
  *
  * Default: `GlotusPowRemintMooreTip` + ALP ticker WLOTUS / name "W Lotus".
  * 108 to miner, no temple ctor, felt +1 bit / 500 days, ALP MINT only.
- * Premine lands on the genesis wallet. Temple address is not required.
+ * Premine lands on the genesis wallet. Temple address is not required
+ * at genesis; listing still uses TEMPLE_ADDRESS as a soft-tax sink.
  *
- *   # Live (default ticker WLOTUS)
- *   BATONS=28 npm run create-wlotus-token
- *   # or: npm run create-prod-token / npm run create-felt-wlotus
+ * Felt recut is **one genesis**. Run it on the **test VM** with ticker
+ * **WLOTUS** (writes `deployments/mainnet-wlotus.json` — that is the
+ * production token). Dogfood on test.wlotus.org, then copy the same JSON
+ * to prod and retarget mint-api / dana-index / `VITE_PRAYER_TOKEN_ID`.
+ * Do **not** genesis a second token. Do **not** genesis prod from a laptop
+ * in parallel. Do **not** `TICKER=dWLOTUS` for this cutover.
  *
- *   # Test / dryrun
+ *   # Test VM — ticker WLOTUS (this IS the prod-destined token)
+ *   BATONS=28 TEMPLE_ADDRESS=ecash:qz2cyuu3y5h0tanf8wy3esr64drpzzweeyu2c5dyen \
+ *     GENESIS_SK_HEX=… npm run create-wlotus-token
+ *
+ *   # Sandbox / old dryrun only (not the felt cutover)
  *   TICKER=dWLOTUS BATONS=28 npm run create-wlotus-token
  *
  * Whole-byte WLotus MooreTip (256× / ~11 y):
@@ -384,8 +392,8 @@ async function main(): Promise<void> {
           `Felt +1 bit / ${daysPerBit} days (2× / ~1.4 y from bits=0). Cap bits ≤ 128. ALP MINT only (no remint DANA tip). baseZeroBits=0.`,
           `W Lotus on GLotus felt redeem: mint ${WLOTUS_MINT_ATOMS} → miner only (no temple tax). initialMintAtoms=${WLOTUS_MINT_ATOMS} → ${initialMintAddress}.`,
           isProdTicker
-            ? `Prod genesis ticker ${PROD_TOKEN_TICKER} — do not reuse test secrets or mnemonics.`
-            : `Test/dryrun genesis ticker ${ticker} — same covenant as prod; only ticker/metadata differ.`,
+            ? `Ticker ${PROD_TOKEN_TICKER} writes mainnet-wlotus.json — this is the production token. Dogfood on test, then retarget prod at the same tokenId. Do not genesis a second WLOTUS.`
+            : `Test/dryrun genesis ticker ${ticker} — same covenant as prod; only ticker/metadata differ. Not the felt cutover path.`,
         ]
       : templeCovenant
         ? [
@@ -411,6 +419,14 @@ async function main(): Promise<void> {
     writeFileSync(
       resolve(depDir, 'mainnet-dryrun-active.json'),
       `${JSON.stringify(record, null, 2)}\n`,
+    );
+  }
+  if (isProdTicker) {
+    console.warn(
+      'Ticker WLOTUS writes deployments/mainnet-wlotus.json. ' +
+        'This tokenId is production. Dogfood on test.wlotus.org, then copy ' +
+        'this JSON to prod and retarget mint-api / dana-index / VITE_PRAYER_TOKEN_ID. ' +
+        'Do not genesis a second token. Do not point prod at fcf7de59.',
     );
   }
   console.log(isProdTicker ? '\nLive WLOTUS ready' : `\n${ticker} dryrun ready`);

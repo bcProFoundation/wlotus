@@ -5,7 +5,8 @@
  * **not** need a temple root burn. The first visitor's offering becomes the
  * on-chain root (`profileId`); later re-offers in the event window burn more
  * than the usual 1-atom flower:
- *   burnAtoms = WLOTUS_MINER_ATOMS - deskKeep
+ *   burnAtoms = minerAtoms - deskKeep
+ * (102 − deskKeep on live 102/6; 108 − deskKeep on felt / MooreTip).
  * where deskKeep is a **global** env (TEMPLE_SPECIAL_DESK_KEEP), not per-profile.
  *
  * Outside the event window the profile is still fully offerable — burn stays 1.
@@ -31,7 +32,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { WLOTUS_MINER_ATOMS } from './wlotusMint.js';
+import { WLOTUS_FELT_MINER_ATOMS, WLOTUS_MINER_ATOMS } from './wlotusMint.js';
 import {
   lunarYmdToSolarYmd,
   lunarMonthLastSolarYmd,
@@ -49,7 +50,7 @@ export type TempleEventCalendar = 'lunar' | 'solar';
 /** How the event date repeats. Default yearly. */
 export type TempleEventRecurrence = 'yearly' | 'monthly-lunar';
 
-/** Default desk retain during a special event (burn 102 − 6 = 96). */
+/** Default desk retain during a special event (102/6: burn 96; felt: burn 102). */
 export const DEFAULT_SPECIAL_DESK_KEEP = 6;
 
 /** Normal flower burn (always used outside an active special window). */
@@ -138,11 +139,16 @@ export interface TempleSpecial {
 /** Global economics + test shift (from env / GitHub variables). */
 export interface TempleSpecialsGlobalConfig {
   /**
-   * Atoms the desk keeps after a special-event burn (0..101).
-   * burnAtoms = WLOTUS_MINER_ATOMS - deskKeep.
+   * Atoms the desk keeps after a special-event burn (0 .. minerAtoms−1).
+   * burnAtoms = minerAtoms − deskKeep.
    * Default {@link DEFAULT_SPECIAL_DESK_KEEP} (6). Set 0 for full miner-share burn.
    */
   deskKeep: number;
+  /**
+   * Miner share of a remint. 102 on live 102/6; 108 on felt / MooreTip.
+   * Status and offer burns use this so felt specials are 108 − deskKeep.
+   */
+  minerAtoms?: bigint;
   /**
    * Shift every profile's effective event date **earlier** by N days.
    * For test/dryrun only — set 0 in production.
@@ -192,7 +198,7 @@ export interface TempleSpecialsPublicStatus {
   deskKeep: number;
   /** Global test shift applied to all event dates. */
   testOffsetDays: number;
-  /** Atoms burned when offering to an active special (102 − deskKeep). */
+  /** Atoms burned when offering to an active special (minerAtoms − deskKeep). */
   burnAtoms: string;
   profiles: TempleSpecialPublic[];
   active: TempleSpecialPublic[];
@@ -259,15 +265,31 @@ export function isWithinGlobalCivilDay(nowMs: number, ymd: string): boolean {
   return nowMs >= w.startMs && nowMs < w.endMs;
 }
 
-export function clampDeskKeep(raw: unknown): number {
-  const n = Math.floor(Number(raw));
-  if (!Number.isFinite(n)) return DEFAULT_SPECIAL_DESK_KEEP;
-  return Math.max(0, Math.min(Number(WLOTUS_MINER_ATOMS) - 1, n));
+export function specialMinerAtoms(minerAtoms?: bigint): bigint {
+  if (minerAtoms === WLOTUS_FELT_MINER_ATOMS || minerAtoms === WLOTUS_MINER_ATOMS) {
+    return minerAtoms;
+  }
+  if (minerAtoms != null && minerAtoms >= 2n) return minerAtoms;
+  return WLOTUS_MINER_ATOMS;
 }
 
-export function burnAtomsForDeskKeep(deskKeep: number): bigint {
-  const keep = clampDeskKeep(deskKeep);
-  const burn = WLOTUS_MINER_ATOMS - BigInt(keep);
+export function clampDeskKeep(
+  raw: unknown,
+  minerAtoms: bigint = WLOTUS_MINER_ATOMS,
+): number {
+  const cap = Number(specialMinerAtoms(minerAtoms)) - 1;
+  const n = Math.floor(Number(raw));
+  if (!Number.isFinite(n)) return DEFAULT_SPECIAL_DESK_KEEP;
+  return Math.max(0, Math.min(cap, n));
+}
+
+export function burnAtomsForDeskKeep(
+  deskKeep: number,
+  minerAtoms: bigint = WLOTUS_MINER_ATOMS,
+): bigint {
+  const miner = specialMinerAtoms(minerAtoms);
+  const keep = clampDeskKeep(deskKeep, miner);
+  const burn = miner - BigInt(keep);
   return burn < 1n ? 1n : burn;
 }
 
@@ -776,9 +798,10 @@ export function resolveTempleSpecialsStatus(
   nowMs = Date.now(),
 ): TempleSpecialsPublicStatus {
   const serverNow = new Date(nowMs).toISOString();
-  const deskKeep = clampDeskKeep(globalCfg.deskKeep);
+  const minerAtoms = specialMinerAtoms(globalCfg.minerAtoms);
+  const deskKeep = clampDeskKeep(globalCfg.deskKeep, minerAtoms);
   const testOffsetDays = Math.max(0, Math.floor(globalCfg.testOffsetDays || 0));
-  const burn = burnAtomsForDeskKeep(deskKeep);
+  const burn = burnAtomsForDeskKeep(deskKeep, minerAtoms);
   const profiles: TempleSpecialPublic[] = [];
   for (const s of specials) {
     const pub = toPublicSpecial(s, testOffsetDays, nowMs);

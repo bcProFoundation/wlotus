@@ -75,6 +75,8 @@ import {
 } from '../../../src/params/wlotusMint.js';
 import { resolveTempleSinkFromEnv } from '../../../src/offering/templeSink.js';
 import {
+  loadTempleSpecialsFromEnv,
+  loadTempleSpecialsGlobalConfig,
   resolveOfferBurnAtoms,
   resolveTempleSpecialsStatus,
   NORMAL_FLOWER_BURN_ATOMS,
@@ -445,6 +447,13 @@ function deskMinerAtoms(dep: DryrunDep): bigint {
   return isFeltDep(dep) || isMooreTipDep(dep)
     ? WLOTUS_FELT_MINER_ATOMS
     : WLOTUS_MINER_ATOMS;
+}
+
+function specialsGlobalForDep(dep: DryrunDep) {
+  return {
+    ...loadTempleSpecialsGlobalConfig(),
+    minerAtoms: deskMinerAtoms(dep),
+  };
 }
 
 function sleep(ms: number): Promise<void> {
@@ -1442,14 +1451,15 @@ async function completeBurnOnce(opts: {
 
   // Resolve burn at burn time (server clock). Outside active special → 1 flower.
   // Never reject — specials only raise the burn amount.
+  const { dep } = loadDep();
   const { burnAtoms } = resolveOfferBurnAtoms({
     parentBurnTxid: pb.parentBurnTxid,
+    globalCfg: specialsGlobalForDep(dep),
   });
 
   const chronik = await createChronik('closest');
   const tipFee = await loadTipFeeWallet(chronik, pb.tipIndex);
   const desk = await loadMintWallet(chronik);
-  const { dep } = loadDep();
   const sink = resolveTempleSinkFromEnv();
   const templeHashHex = dep.templeScriptHashHex ?? dep.templePkhHex;
   const inventoryScript = sink
@@ -1680,7 +1690,10 @@ export function publicStatus(): {
       memorialOnMint: !wlotusDesk,
       memorialOnBurn: wlotusDesk,
       tipFeeAccounts: true,
-      templeSpecials: resolveTempleSpecialsStatus(),
+      templeSpecials: resolveTempleSpecialsStatus(
+        loadTempleSpecialsFromEnv(),
+        specialsGlobalForDep(dep),
+      ),
     };
   } catch {
     return {
