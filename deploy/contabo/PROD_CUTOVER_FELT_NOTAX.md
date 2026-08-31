@@ -38,37 +38,44 @@ Felt default is **500** days (`MOORE_DAYS_PER_EXTRA_BIT` still clamps 365–730)
 
 ## Migrate offerings
 
-Do **not** wipe the dana-index store this time. Copy the live feed, then
-re-burn onto the new token so Cashtab / explorers show the new tokenId.
+Genesis on **test** with ticker `WLOTUS`, then clone **live prod**
+(`f4e452ef…`) — not old test `dWLOTUS` / `fcf7de59…` / retired `154d229b…`.
+
+Wipe the dest dana-index store first. Do **not** `INDEX_ONLY` into the live
+path. After re-burn, claims are remapped **and** rebound by altar name so
+visitor stars that were never in `temple-special-claims.json` still attach
+to the catalog event (Nepal 26/8 on prod is this case).
 
 ```bash
-# 1. Snapshot the public feed (no wallet)
-FROM_TOKEN_ID=154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091 \
-  INDEX_ONLY=1 TO_STORE=/var/lib/wlotus/dana-index-burns.json \
-  npm run migrate-offerings
+FROM_TOKEN_ID=f4e452ef78eaf61908d30ecbd804df5588c6bb6aeea61cf0cbe8bf2186764456 \
+  TO_TOKEN_ID=<new> TEMPLE_ADDRESS=ecash:qz2cyuu3y5h0tanf8wy3esr64drpzzweeyu2c5dyen \
+  DRY_RUN=1 npm run migrate-offerings
 
-# 2. After the new genesis has inventory on tip-0 (1 atom per offering)
-FROM_TOKEN_ID=154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091 \
-  TO_TOKEN_ID=<new> DRY_RUN=1 npm run migrate-offerings
-
-FROM_TOKEN_ID=154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091 \
-  TO_TOKEN_ID=<new> TEMPLE_SCRIPT_HASH_HEX=<20-byte hex> \
+FROM_TOKEN_ID=f4e452ef78eaf61908d30ecbd804df5588c6bb6aeea61cf0cbe8bf2186764456 \
+  TO_TOKEN_ID=<new> TEMPLE_ADDRESS=ecash:qz2cyuu3y5h0tanf8wy3esr64drpzzweeyu2c5dyen \
   npm run migrate-offerings
 ```
 
-Step 2 writes `deployments/offering-migration.json` (old txid → new txid),
-rewrites `temple-special-claims.json` so Vu Lan / Cô Hồn roots follow, and
-replaces `TO_STORE` with remapped burns (new txids + `TO_TOKEN_ID`). Keep that
-file when retargeting dana-index.
+Then (optional if migrate-offerings already bound names):
+
+```bash
+FROM_TOKEN_ID=f4e452ef78eaf61908d30ecbd804df5588c6bb6aeea61cf0cbe8bf2186764456 \
+  TEMPLE_ADDRESS=ecash:qz2cyuu3y5h0tanf8wy3esr64drpzzweeyu2c5dyen \
+  npm run migrate-catalog-specials
+```
+
+That second script **rebinds** a dest star that already matches; it does not
+remint a duplicate Nepal root.
 
 ## Nepal 26/8
 
-Catalog id **`nepal-26-08`** (solar 26 Aug–2 Sep, Global, temple story in
-vi/en/zh). No pre-burn — first visitor claims the root. After cutover:
+Catalog id **`nepal-26-08`**. On live prod the 7 offerings sit on visitor
+root `22df868b…` (`Nepal 26/08`) and the special is **unbound**. Migration
+must claim that star (by packed name), not create an empty event.
 
-```bash
-CREATE_TEMPLE_SPECIALS_IDS=nepal-26-08 npm run create-temple-specials
-```
+Remembrance Day and All Saints' Day **are** claimed on prod (one temple
+root each, no extra flowers). They are EN-country events — the VN home
+Events list hides them; Search / English locale still show them.
 
 Then the 102/6 playbook: freeze mint-api, pin the new JSON,
 `MINT_REQUIRE_LIVE=1`, retarget dana-index `TOKEN_ID` (keep the migrated
