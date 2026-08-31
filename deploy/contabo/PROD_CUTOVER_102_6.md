@@ -406,8 +406,8 @@ Restore `mint.env` from step 5 and `sudo systemctl restart wlotus-mint-api`.
 
 - **Old token:** still on eCash. Cashtab / explorers can show it; wlotus.org
   will not index it after step 7.
-- **PWA Recent:** device `localStorage` may list old-token rows until the user
-  clears site data.
+- **PWA Recent:** the SPA clears this device's own-history when the live
+  token id changes. Deploy that web build on the current token before genesis.
 - **Desk XEC:** same funding address as before. Tips only need a few ~40 XEC
   coins (`fund-tip-fee-wallets`).
 - **Next deploys:** ordinary `v*` tags on `master` are enough **until** you

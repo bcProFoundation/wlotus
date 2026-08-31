@@ -32,6 +32,7 @@ import {
   getOrCreateInstallId,
   LOCAL_OFFERS_KEY,
   PRAYER_TICKER,
+  PRAYER_TOKEN_ID,
   TIP_POLL_MS,
 } from './lib/config.js';
 import {
@@ -147,6 +148,11 @@ import {
 import { mergeIndexAndLocalOffers, syncIndexMemorialIntoLocal } from './lib/mergeRecentOffers.js';
 import { explorerTx } from './lib/explorer.js';
 import {
+  ACTIVE_CHALLENGE_KEY,
+  offersForLiveToken,
+  syncLocalHistoryToLiveToken,
+} from './lib/tokenEra.js';
+import {
   burnTxidFromLocation,
   clearDedicationPath,
   dedicationShareUrl,
@@ -167,20 +173,26 @@ type Msg =
 
 type Phase = 'idle' | 'challenge' | 'mining' | 'submit' | 'holding' | 'burn';
 
-const ACTIVE_CHALLENGE_KEY = 'wlotus.activeChallenge';
-
 interface StoredChallenge {
   challengeId: string;
   installId: string;
 }
 
+function liveTokenForLocalOffers(): string {
+  return PRAYER_TOKEN_ID.trim().toLowerCase();
+}
+
 function loadOffers(): LocalOffer[] {
   try {
+    syncLocalHistoryToLiveToken(PRAYER_TOKEN_ID);
     const raw = localStorage.getItem(LOCAL_OFFERS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as LocalOffer[];
     if (!Array.isArray(parsed)) return [];
-    const pruned = pruneUnownedAndExpiredOffers(parsed);
+    const pruned = offersForLiveToken(
+      pruneUnownedAndExpiredOffers(parsed),
+      liveTokenForLocalOffers(),
+    );
     if (pruned.length !== parsed.length) {
       localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(pruned));
     }
@@ -243,7 +255,11 @@ function ExplorerLinkIcon({
 
 
 function pushOffer(o: LocalOffer): LocalOffer[] {
-  const next = [o, ...loadOffers()].slice(0, 40);
+  const stamped: LocalOffer = {
+    ...o,
+    tokenId: o.tokenId || liveTokenForLocalOffers(),
+  };
+  const next = [stamped, ...loadOffers()].slice(0, 40);
   localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
   return next;
 }
@@ -536,6 +552,16 @@ export default function App() {
       setTempleSpecials(null);
     }
   }, [installId]);
+
+  useEffect(() => {
+    if (!tokenId) return;
+    const wiped = syncLocalHistoryToLiveToken(tokenId);
+    if (!wiped) return;
+    setOffers([]);
+    setHiddenRecent(new Set());
+    setCreatorByRoot(new Map());
+    clearRememberedChallenge();
+  }, [tokenId]);
 
   useEffect(() => {
     void refreshStatus();

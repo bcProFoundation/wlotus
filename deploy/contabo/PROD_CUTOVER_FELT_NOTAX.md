@@ -74,4 +74,11 @@ Then the 102/6 playbook: freeze mint-api, pin the new JSON,
 `MINT_REQUIRE_LIVE=1`, retarget dana-index `TOKEN_ID` (keep the migrated
 store), bake `VITE_PRAYER_TOKEN_ID`, tag deploy.
 
+The SPA drops this device's Recent / hidden roots / created-root cache /
+in-flight challenge when `/api/status` (or the baked `VITE_PRAYER_TOKEN_ID`)
+is a new token. **Deploy this web build on the current token first** so
+clients record `wlotus.liveTokenId`; the genesis deploy then clears old
+own-history automatically. Morning reminders resync to an empty follow list.
+`installId` is kept.
+
 Old batons on the previous tokenId remain spendable under the old covenant.

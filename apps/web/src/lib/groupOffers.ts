@@ -12,6 +12,8 @@ export interface LocalOffer {
   parentBurnTxid?: string;
   /** True when this device completed the offer (not an index/view seed). */
   own?: boolean;
+  /** Live token id when this row was saved (era check on genesis). */
+  tokenId?: string;
 }
 
 /** One dedication thread: original burn + any local re-offers. */
