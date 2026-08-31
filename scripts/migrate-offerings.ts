@@ -10,7 +10,7 @@
  *   FROM_TOKEN_ID=… TO_TOKEN_ID=… DRY_RUN=1 npm run migrate-offerings
  *   FROM_TOKEN_ID=… TO_TOKEN_ID=… TEMPLE_ADDRESS=ecash:q… npm run migrate-offerings
  */
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
@@ -33,6 +33,7 @@ import {
   scriptFromCashAddress,
 } from '../src/offering/templeSink.js';
 import {
+  bindCatalogClaimsFromBurns,
   migrationNeedAtoms,
   orderBurnsForMigration,
   remapParentTxid,
@@ -517,11 +518,17 @@ async function main(): Promise<void> {
     console.log(`Wrote remapped index ${remapped.length} burns → ${toStore}`);
 
     const claimsPath = claimsFilePath();
-    if (existsSync(claimsPath)) {
-      const next = remapSpecialClaims(loadSpecialClaims(), mapping);
-      writeFileSync(claimsPath, `${JSON.stringify(next, null, 2)}\n`);
-      console.log('Rewrote special claims', claimsPath);
-    }
+    mkdirSync(dirname(claimsPath), { recursive: true });
+    const next = bindCatalogClaimsFromBurns(
+      remapSpecialClaims(loadSpecialClaims(), mapping),
+      remapped,
+    );
+    writeFileSync(claimsPath, `${JSON.stringify(next, null, 2)}\n`);
+    console.log(
+      'Rewrote special claims',
+      claimsPath,
+      Object.keys(next).sort().join(','),
+    );
   }
 
   const outPath =
