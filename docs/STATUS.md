@@ -42,4 +42,4 @@ Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`, **dGLOTUS**
 2. Postage / fee sponsorship polish
 3. **GLOTUS** genesis when the economic layer ships
 4. **WLOTUS felt no-tax recut** (new genesis): drop 6-atom temple tax; felt +1 bit / 500 days. Cannot mutate `154d229b…`. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
-5. Intra-era 8-slot / daily mantissa still does not fit with hard next-P2SH. GLotus / felt WLotus use the 8×2B remBits table (ALP MINT only).
+5. Intra-era 8-slot / daily mantissa still does not fit with hard next-P2SH. GLotus / felt WLotus use the 8×2B remBits table (ALP MINT only). Live WLOTUS stays whole-byte until that genesis.
