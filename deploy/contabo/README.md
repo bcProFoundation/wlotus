@@ -508,9 +508,9 @@ npm run fund-tip-fee-wallets
 #    then Actions → Deploy web (test) → Run workflow (branch master)
 ```
 
-**Client note:** browser/PWA **localStorage** “Recent” may still list old device
-offerings. That is offline UX only; public `/index-api` will only list the new token
-after the store wipe. Users can clear site data for a clean slate.
+**Client note:** the SPA drops localStorage Recent / own-history when the live
+token id changes (`wlotus.liveTokenId`). Public `/index-api` only lists the new
+token after the store wipe.
 
 **Production** uses the same steps with `mainnet-wlotus.json`, `MINT_REQUIRE_LIVE=1`,
 and Environment `production` variables — see **[PROD.md § Upgrade: new live genesis](./PROD.md#upgrade-new-live-genesis)**.

@@ -48,6 +48,19 @@ describe('temple special catalog', () => {
     expect(byId['memorial-day']!.eventDate).toBe('2026-05-25');
     expect(byId['memorial-day']!.countries).toEqual(['US']);
     expect(byId['anzac']!.countries).toEqual(['AU', 'NZ']);
+    expect(byId['nepal-26-08']!.kind).toBe('event');
+    expect(byId['nepal-26-08']!.eventCalendar).toBe('solar');
+    expect(byId['nepal-26-08']!.eventDate).toBe('2026-08-26');
+    expect(byId['nepal-26-08']!.eventEnd).toBe('2026-09-02');
+    expect(byId['nepal-26-08']!.countries).toEqual([]);
+    expect(byId['nepal-26-08']!.story.title).toBe('Lũ Nepal 26/8');
+    expect(byId['nepal-26-08']!.story.body).toContain('Rasuwa');
+    expect(byId['nepal-26-08']!.story.bodyEn).toContain('26 August 2026');
+    expect(byId['nepal-26-08']!.story.bodyZh).toContain('2026年8月26日');
+    expect(byId['nepal-26-08']!.story.bodyZh).toContain('今日每一朵莲花，也是一句愿');
+    expect(
+      templeSpecialCatalog(2027).find(e => e.id === 'nepal-26-08')!.eventDate,
+    ).toBe('2026-08-26');
     expect(byId['phat-dan']!.eventCalendar).toBe('lunar');
     expect(byId['phat-dan']!.eventDate).toBe('2026-04-15');
     expect(byId['phat-dan']!.eventStart).toBe('2026-04-08');
@@ -180,6 +193,8 @@ describe('temple special catalog', () => {
     expect(findCatalogEntryByName('佛诞')?.id).toBe('fo-dan');
     expect(findCatalogEntryByName('浴佛节')?.id).toBe('fo-dan');
     expect(findCatalogEntryByName('Vesak')?.id).toBe('vesak');
+    expect(findCatalogEntryByName('Nepal 26/08')?.id).toBe('nepal-26-08');
+    expect(findCatalogEntryByName('Rasuwa')?.id).toBe('nepal-26-08');
     expect(findCatalogEntryByName('Wesak')?.id).toBe('vesak');
     expect(findCatalogEntryByName('Phật nhập Niết-bàn')?.id).toBe(
       'phat-niet-ban',

@@ -11,6 +11,8 @@ describe('specialCountries', () => {
     expect(canonicalizeCountryCode('vn')).toBe('VN');
     expect(canonicalizeCountryCode('Việt Nam')).toBe('VN');
     expect(canonicalizeCountryCode('UK')).toBe('GB');
+    expect(canonicalizeCountryCode('Nepal')).toBe('NP');
+    expect(canonicalizeCountryCode('NP')).toBe('NP');
     expect(canonicalizeCountryCode('*')).toBe('*');
     expect(canonicalizeCountryCode('GLOBAL')).toBe('*');
     expect(canonicalizeCountryCode('Mỹ Thành, Phù Mỹ')).toBeNull();

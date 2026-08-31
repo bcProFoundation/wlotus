@@ -2,12 +2,13 @@
 
 Server sponsors **XEC fees**, signs, and broadcasts. **PoW runs on the device.**
 
-**wLotus (live):** remint mints **108** (one mala: **102** → miner / tip fee wallet, **6** → temple P2SH).
+**wLotus (live 102/6):** remint mints **108** (**102** → miner / tip fee wallet, **6** → temple P2SH).
+**Felt recut:** same mala, **108 → miner**, no remint tax (ALP MINT only; offerings stay a separate DANA v1/v2 burn).
 Memorial burn of the miner 1 (`DANA`) is **deferred** until after the client soft pray
 window (`POST /api/burn`). Remint runs on submit so tip races are not delayed. Cancel
 during the soft wait abandons the burn — desk keeps the miner atom.
-The on-chain burn is the gift (memorial + dana). Remint tip EMPP also uses **`DANA` v4**
-(same LOKAD; ver distinguishes tip vs memorial).
+The on-chain burn is the gift (memorial + dana). The live temple covenant also writes **`DANA` v4**
+on remint (tip ad). The felt recut drops that push to fit +1-bit PoW.
 Re-offers send `parentBurnTxid` (**original** dedication burn) and encode
 **DANA v2** with optional note + 32-byte parent txid for dana explorer linkage.
 (star topology: all re-offers → root, not a tip chain).
@@ -16,7 +17,7 @@ Legacy Prayer memo path (mint 1 + DANA memorial on remint, no burn) still works 
 loaded deployment is `tier=prayer`.
 
 **Genesis is immutable.** A new split or redeem requires a new token id. Prod and
-test already run **102/6** — see [docs/STATUS.md](../../docs/STATUS.md).
+test still run **102/6** until the felt recut — see [docs/STATUS.md](../../docs/STATUS.md).
 
 **Open race (MVP):** many devices may hold challenges across **`MINT_SERVING_TIP_COUNT`**
 tips (default **1** at launch — bound fee burn; raise toward **28** if demand warrants).

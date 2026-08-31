@@ -1,6 +1,6 @@
 /** Local soft cache of root dedications created on this device (installId). */
 
-const CREATED_ROOTS_KEY = 'wlotus.createdRoots';
+export const CREATED_ROOTS_KEY = 'wlotus.createdRoots';
 
 function loadCreatedRoots(): Set<string> {
   try {

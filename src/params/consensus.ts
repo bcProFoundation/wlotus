@@ -95,6 +95,13 @@ export const MOORE_DAYS_PER_EXTRA_BIT = 500;
  */
 export const GLOTUS_MOORE_DAYS_PER_EXTRA_BIT = 845;
 
+/**
+ * WLotus felt recut: same 500-day arhat clock as live, but felt every bit
+ * (2× / ~500 days). WLotus is ceremonial, not a currency — start at bits=0
+ * and let difficulty climb aggressively. GLotus keeps 845 (Ergon 2×).
+ */
+export const WLOTUS_FELT_DAYS_PER_EXTRA_BIT = 500;
+
 /** GLotus remint size — one mala, all to miner (no temple tax). */
 export const GLOTUS_MINT_ATOMS = 108n;
 

@@ -328,7 +328,10 @@ launch economics or branding that only apply to **new genesis**, for example:
 **Do not** point dana-index at the new token while leaving the old store file in place —
 `BurnStore` loads every row and does not filter by current `TOKEN_ID` on read.
 
-**Clients:** installed PWAs may still show local recent rows for the previous token until site data is cleared; the public index only lists the new token after step 6.
+**Clients:** the SPA clears device Recent (and related own-history keys) when
+the live `tokenId` changes. Deploy the web build that records
+`wlotus.liveTokenId` **before** genesis so the next bake wipes old rows.
+`installId` is kept. The public index only lists the new token after step 6.
 
 Mirror of the test cutover: [README.md — Switch to a new genesis (test)](./README.md).
 

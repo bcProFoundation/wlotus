@@ -10,6 +10,7 @@
 import {
   MOORE_DAY_SECONDS,
   MOORE_DAYS_PER_EXTRA_BIT,
+  WLOTUS_FELT_DAYS_PER_EXTRA_BIT,
   resolveMooreDaysPerExtraBit,
 } from '../params/consensus.js';
 
@@ -32,6 +33,20 @@ export function resolveProdSecondsPerExtraBit(
   raw?: string,
 ): number {
   return resolveMooreDaysPerExtraBit(raw) * MOORE_DAY_SECONDS;
+}
+
+/**
+ * Felt no-tax recut: default **500** days (same arhat clock as live whole-byte).
+ * Empty env uses 500. WLotus is ceremonial — aggressive climb from bits=0.
+ */
+export function resolveFeltSecondsPerExtraBit(
+  raw?: string,
+): number {
+  const s = (raw ?? '').trim();
+  const days = s
+    ? resolveMooreDaysPerExtraBit(s)
+    : WLOTUS_FELT_DAYS_PER_EXTRA_BIT;
+  return days * MOORE_DAY_SECONDS;
 }
 
 /** Absolute bit ceiling in WlotusPowRemintMooreTip.spedn. */
