@@ -27,7 +27,7 @@ import {
   isDeathDateAmendNote,
   parseAltarNote,
 } from '../src/offering/altarFields.js';
-import { rebindSpecialRoot } from '../src/params/templeSpecialClaims.js';
+import { bindCatalogClaimsFromBurns } from '../src/offering/migrateOfferings.js';
 import {
   findCatalogEntryByName,
   type TempleSpecialCatalogEntry,
@@ -227,6 +227,11 @@ async function main(): Promise<void> {
     process.env.DANA_INDEX_STORE?.trim() ||
     resolve(process.cwd(), 'data/dana-index-burns.json');
   const store = new BurnStore(storePath);
+  const destBurns = existsSync(storePath)
+    ? ((JSON.parse(readFileSync(storePath, 'utf8')) as { burns?: IndexedBurn[] })
+        .burns ?? [])
+    : [];
+  const destClaims = bindCatalogClaimsFromBurns({}, destBurns);
   const now = new Date().toISOString();
   const results: unknown[] = [];
 
@@ -252,18 +257,23 @@ async function main(): Promise<void> {
   };
 
   for (const job of plan) {
+    const destRoot = destClaims[job.specialId];
+    if (destRoot && !force) {
+      const bound = rebindSpecialRoot(job.specialId, destRoot);
+      if (!bound.ok) throw new Error(JSON.stringify(bound));
+      console.log('rebind dest star', job.specialId, destRoot);
+      results.push({ ...job, skipped: 'already-on-dest', newRoot: destRoot, claim: bound });
+      continue;
+    }
     if (!force) {
       const claims = JSON.parse(
         existsSync('deployments/temple-special-claims.json')
           ? readFileSync('deployments/temple-special-claims.json', 'utf8')
           : '{}',
       ) as Record<string, string>;
-      if (claims[job.specialId]) {
-        console.log(
-          'already claimed, skip',
-          job.specialId,
-          claims[job.specialId],
-        );
+      const existing = claims[job.specialId];
+      if (existing && store.get(existing)) {
+        console.log('already claimed, skip', job.specialId, existing);
         results.push({ ...job, skipped: 'already-claimed' });
         continue;
       }
