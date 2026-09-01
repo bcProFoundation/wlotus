@@ -2253,6 +2253,7 @@ a {
   width: 100%;
   max-width: 100%;
   z-index: 45;
+  /* Above #root (z-index 1). Offer sheets portal to body at z-index 50. */
   display: flex;
   justify-content: center;
   pointer-events: none;

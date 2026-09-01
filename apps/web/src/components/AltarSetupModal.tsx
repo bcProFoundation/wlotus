@@ -42,6 +42,7 @@ import {
   type RelatedAltarOption,
 } from './AltarDetails.js';
 import { TempleStory } from './TempleStory.js';
+import { OfferModal } from './OfferModal.js';
 
 type Step = 'edit' | 'review';
 type ModalVariant = 'setup' | 'relationship' | 'death';
@@ -575,7 +576,7 @@ export function AltarSetupModal(props: {
             : t('profileDetailTitle');
 
   return (
-    <div
+    <OfferModal
       className="offer-modal"
       role="dialog"
       aria-modal="true"
@@ -1026,6 +1027,6 @@ export function AltarSetupModal(props: {
           </>
         )}
       </div>
-    </div>
+    </OfferModal>
   );
 }

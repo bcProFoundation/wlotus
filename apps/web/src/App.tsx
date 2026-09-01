@@ -17,6 +17,7 @@ import { LunarCalendar } from './components/LunarCalendar.js';
 import { SearchOverlay } from './components/SearchOverlay.js';
 import { SwipeReveal } from './components/SwipeReveal.js';
 import { TabBar } from './components/TabBar.js';
+import { OfferModal } from './components/OfferModal.js';
 import { OfferPushOptIn } from './components/OfferPushOptIn.js';
 import {
   formatActualDurationLocale,
@@ -82,6 +83,7 @@ import {
   todayYmd,
   type AppTab,
 } from './lib/calendarMonth.js';
+import { showAppTabBar } from './lib/showTabBar.js';
 import {
   findSpecialForParent,
   findSpecialById,
@@ -1375,14 +1377,14 @@ export default function App() {
   }
 
   useEffect(() => {
-    const lock = Boolean(
-      busy ||
-        dedicationSheet ||
-        historyGroup ||
-        altarOpen ||
-        amendSheet ||
-        searchOpen,
-    );
+    const lock = !showAppTabBar({
+      busy,
+      dedicationSheet,
+      historyGroup,
+      altarOpen,
+      amendSheet,
+      searchOpen,
+    });
     document.body.style.overflow = lock ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
@@ -2066,7 +2068,14 @@ export default function App() {
     );
   }
 
-  const showTabs = !(busy && session);
+  const showTabs = showAppTabBar({
+    busy,
+    dedicationSheet,
+    historyGroup,
+    altarOpen,
+    amendSheet,
+    searchOpen,
+  });
 
   return (
     <div className={`app${showTabs ? ' app--has-tabs' : ''}`}>
@@ -2711,7 +2720,7 @@ export default function App() {
       ) : null}
 
       {dedicationSheet && !busy ? (
-        <div
+        <OfferModal
           className="offer-modal offer-modal--fill"
           role="dialog"
           aria-modal="true"
@@ -2987,7 +2996,7 @@ export default function App() {
               </div>
             ) : null}
           </div>
-        </div>
+        </OfferModal>
       ) : null}
 
       {amendSheet && !busy ? (
@@ -3065,7 +3074,7 @@ export default function App() {
       ) : null}
 
       {historyGroup ? (
-        <div
+        <OfferModal
           className="offer-modal"
           role="dialog"
           aria-modal="true"
@@ -3133,11 +3142,11 @@ export default function App() {
               })}
             </ul>
           </div>
-        </div>
+        </OfferModal>
       ) : null}
 
       {busy && session?.reoffer ? (
-        <div
+        <OfferModal
           className="offer-modal offer-modal--fill"
           role="dialog"
           aria-modal="true"
@@ -3265,11 +3274,11 @@ export default function App() {
               {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
             </div>
           </div>
-        </div>
+        </OfferModal>
       ) : null}
 
       {busy && session && !session.reoffer ? (
-        <div
+        <OfferModal
           className="offer-modal offer-modal--fill"
           role="dialog"
           aria-modal="true"
@@ -3409,7 +3418,7 @@ export default function App() {
               {msg ? <div className={`msg ${msg.kind}`}>{msg.text}</div> : null}
             </div>
           </div>
-        </div>
+        </OfferModal>
       ) : null}
 
       <footer className="footer">
