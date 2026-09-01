@@ -256,10 +256,13 @@ export async function fetchIndexMemorialOrNull(
   const body = await readJson<
     IndexMemorialGroup & { ok?: boolean; error?: string }
   >(res);
-  if (!res.ok || body.ok === false) {
-    const err = (body.error || '').toLowerCase();
-    if (res.status === 404 || err.includes('not found')) return null;
+  if (!res.ok) {
     throw new Error(body.error || `Index memorial ${res.status}`);
+  }
+  if (body.ok === false) {
+    const err = (body.error || '').toLowerCase();
+    if (err.includes('not found')) return null;
+    throw new Error(body.error || 'Index memorial failed');
   }
   return body;
 }

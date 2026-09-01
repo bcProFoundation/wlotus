@@ -4,6 +4,7 @@
  */
 
 import { LIVE_PROD_WLOTUS_TOKEN_ID } from '../../../../src/params/wlotusTokens.js';
+import { resolveBakedLiveTokenId } from './tokenEra.js';
 import {
   MIN_PRAY_SECONDS_KEY,
   minPraySecondsToMs,
@@ -16,9 +17,10 @@ import { parseTipPollMs } from './tipPollMs.js';
  * Must be the live felt token — the old dWLOTUS dryrun default made test
  * deploys ping-pong era against `/api/status` and hid new Recent rows.
  */
-export const DEFAULT_PRAYER_TOKEN_ID =
-  (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
-  LIVE_PROD_WLOTUS_TOKEN_ID;
+export const DEFAULT_PRAYER_TOKEN_ID = resolveBakedLiveTokenId(
+  import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined,
+  LIVE_PROD_WLOTUS_TOKEN_ID,
+);
 
 export const PRAYER_TOKEN_ID = DEFAULT_PRAYER_TOKEN_ID;
 

@@ -39,6 +39,23 @@ export function isSpaBakePlaceholderTokenId(
   return id === SPA_BAKE_PLACEHOLDER_TOKEN_ID;
 }
 
+/**
+ * Bake-time token id. Empty or the old dryrun default → live felt id so a
+ * stale Actions secret cannot stamp Recent with `7ab478bc…`.
+ */
+export function resolveBakedLiveTokenId(
+  raw: string | null | undefined,
+  fallback: string,
+): string {
+  const id = normalizeTokenId(raw);
+  const live = normalizeTokenId(fallback);
+  if (!live) {
+    throw new Error('resolveBakedLiveTokenId fallback must be 64 hex');
+  }
+  if (!id || isSpaBakePlaceholderTokenId(id)) return live;
+  return id;
+}
+
 export function readStoredLiveTokenId(): string | null {
   try {
     return normalizeTokenId(localStorage.getItem(LIVE_TOKEN_ERA_KEY));
