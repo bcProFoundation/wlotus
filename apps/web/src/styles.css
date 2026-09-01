@@ -2250,11 +2250,16 @@ a {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100%;
+  max-width: 100%;
   z-index: 45;
   display: flex;
   justify-content: center;
   pointer-events: none;
   padding: 0 1.1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  /* Own compositor layer so iOS does not flatten this into document flow. */
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
 }
 
 .glass-nav-shell {
@@ -2274,6 +2279,7 @@ a {
   padding: 0.28rem;
   border-radius: 999px;
   isolation: isolate;
+  overflow: hidden;
   background:
     linear-gradient(
       180deg,
@@ -2284,6 +2290,15 @@ a {
   border: 1px solid var(--glass-rim);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-shine),
     inset 0 -0.5px 0 color-mix(in srgb, #000 22%, transparent);
+}
+
+.glass-nav-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
   backdrop-filter: blur(22px) saturate(1.7);
   -webkit-backdrop-filter: blur(22px) saturate(1.7);
 }
@@ -2371,6 +2386,9 @@ a {
     0 1px 4px rgba(8, 4, 2, 0.08);
   background: var(--glass-fill);
   box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
+}
+
+[data-theme='wood'] .glass-nav-shell::before {
   backdrop-filter: blur(20px) saturate(1.15);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
 }
@@ -2378,6 +2396,23 @@ a {
 [data-theme='wood'] .glass-nav-blob {
   background: var(--glass-blob);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 20%, transparent);
+}
+
+/* iOS WebKit: backdrop-filter on a position:fixed tree paints in document flow. */
+@supports (-webkit-touch-callout: none) {
+  .glass-nav-shell::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-nav-shell {
+    --glass-fill: color-mix(in srgb, #1a1a1a 86%, transparent);
+  }
+  [data-theme='light'] .glass-nav-shell {
+    --glass-fill: color-mix(in srgb, #fff8ef 92%, transparent);
+  }
+  [data-theme='wood'] .glass-nav-shell {
+    --glass-fill: color-mix(in srgb, #2a1810 90%, transparent);
+  }
 }
 
 /* Lunar calendar */
