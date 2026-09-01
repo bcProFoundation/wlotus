@@ -58,6 +58,7 @@ describe('BurnStore', () => {
     expect(recent[0]!.originalNote).toBe('Cao Lâm Quả');
     expect(recent[0]!.latestNote).toBe('nhớ mãi');
     expect(recent[0]!.totalBurns).toBe(2);
+    expect(recent[0]!.totalLotus).toBe(2);
 
     const memorial = store.memorial(child);
     expect(memorial?.originalBurnTxid).toBe(root);
@@ -283,6 +284,60 @@ describe('BurnStore', () => {
     expect(trending[0]!.score).toBeGreaterThan(trending[1]!.score);
     expect(trending[1]!.score).toBeGreaterThan(trending[2]!.score);
     expect(trending.every(r => r.burns.length === 0)).toBe(true);
+  });
+
+  it('exposes summed lotus atoms on event groups, not offering count', () => {
+    const root =
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const child =
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    store.upsert(
+      burn({
+        burnTxid: root,
+        note: 'Nepal 26/08',
+        burnAtoms: '1',
+        blockTimestamp: 1_700_000_000,
+      }),
+    );
+    store.upsert(
+      burn({
+        burnTxid: child,
+        note: '',
+        parentBurnTxid: root,
+        burnAtoms: '102',
+        blockTimestamp: 1_700_000_200,
+      }),
+    );
+    const memorial = store.memorial(root);
+    expect(memorial?.totalBurns).toBe(2);
+    expect(memorial?.totalLotus).toBe(103);
+    const trending = store.trendingGroups(8, 1_700_000_200_000);
+    expect(trending[0]!.totalBurns).toBe(2);
+    expect(trending[0]!.totalLotus).toBe(103);
+    expect(trending[0]!.burns).toEqual([]);
+  });
+
+  it('updates totalLotus when Chronik re-ingest fills burnAtoms', () => {
+    const root =
+      'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc';
+    store.upsert(
+      burn({
+        burnTxid: root,
+        note: 'Nepal 26/08',
+        blockTimestamp: 1_700_000_000,
+      }),
+    );
+    expect(store.memorial(root)?.totalLotus).toBe(1);
+    store.upsert(
+      burn({
+        burnTxid: root,
+        note: 'Nepal 26/08',
+        burnAtoms: '102',
+        blockTimestamp: 1_700_000_000,
+      }),
+    );
+    expect(store.get(root)?.burnAtoms).toBe('102');
+    expect(store.memorial(root)?.totalLotus).toBe(102);
   });
 
   it('still ranks a previous-calendar-day burn that is outside 24 hours', () => {

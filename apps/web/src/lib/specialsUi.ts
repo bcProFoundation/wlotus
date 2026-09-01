@@ -249,7 +249,7 @@ export interface RankedTempleSpecial extends TempleSpecialProfileUi {
    */
   sortDate: string;
   /**
-   * Public or local offering count under this profile root.
+   * Public lotus-atom total under this profile root (not offering txs).
    * `null` = bound but index/local count not loaded yet (don’t treat as 0).
    */
   offerCount: number | null;
@@ -277,8 +277,8 @@ export function parseHomeEventsSort(
  *   1. Happening now (active / in window) before upcoming
  *   2. Within a tier: closer in time first
  *        - upcoming → soonest start first
- *        - active   → most offerings first (same day competition, e.g. 15/7)
- *   3. Tie-break: offerCount desc, then name
+ *        - active   → most lotuses burned first (same day competition, e.g. 15/7)
+ *   3. Tie-break: lotus count desc, then name
  *
  * Example (before 2/7 lunar): Cô Hồn (starts sooner) above Vu Lan.
  * On 15/7 when both active: higher burn count on top.

@@ -16,6 +16,7 @@ import {
   trendingGroupScore,
 } from '../../../src/lib/trendingScore.js';
 import { loadDryrunCopiedTxids } from '../../../src/offering/migrateOfferings.js';
+import { sumLotusAtoms } from '../../../src/offering/lotusAtoms.js';
 
 export interface IndexedBurn {
   burnTxid: string;
@@ -30,6 +31,8 @@ export interface IndexedBurn {
   /** Unix seconds when confirmed; null if mempool. */
   blockTimestamp: number | null;
   timeFirstSeen: string;
+  /** ALP atoms burned on this tx (event-window offerings may be 102). */
+  burnAtoms?: string;
 }
 
 export interface MemorialGroup {
@@ -38,6 +41,8 @@ export interface MemorialGroup {
   latestBurnTxid: string;
   latestNote: string;
   totalBurns: number;
+  /** Sum of on-chain lotus atoms (not the offering tx count). */
+  totalLotus: number;
   at: string;
   burns: IndexedBurn[];
 }
@@ -203,6 +208,7 @@ export class BurnStore {
         latestBurnTxid: latest.burnTxid,
         latestNote: (latest.note || '').trim(),
         totalBurns: burns.length,
+        totalLotus: sumLotusAtoms(burns, burns.length),
         at: isoFromBurn(latest),
         burns,
       });
@@ -296,6 +302,7 @@ export class BurnStore {
       latestBurnTxid: latest.burnTxid,
       latestNote: (latest.note || '').trim(),
       totalBurns: burns.length,
+      totalLotus: sumLotusAtoms(burns, burns.length),
       at: isoFromBurn(latest),
       burns,
     };
@@ -313,6 +320,7 @@ function normalizeBurn(b: IndexedBurn): IndexedBurn {
     originalBurnTxid: (parent || burnTxid).toLowerCase(),
     note: b.note ?? '',
     offeringId: b.offeringId ?? '',
+    burnAtoms: b.burnAtoms,
   };
 }
 
@@ -349,6 +357,7 @@ function sameBurn(a: IndexedBurn, b: IndexedBurn): boolean {
     a.blockHeight === b.blockHeight &&
     a.blockTimestamp === b.blockTimestamp &&
     a.version === b.version &&
-    a.offeringId === b.offeringId
+    a.offeringId === b.offeringId &&
+    (a.burnAtoms ?? '') === (b.burnAtoms ?? '')
   );
 }
