@@ -12,6 +12,7 @@
  *
  * Usage (Contabo or local):
  *   MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
+ *   MINT_SERVING_TIP_OFFSET=1 MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
  *
  * Dry-run (addresses + balances only):
  *   FUND_DRY_RUN=1 MINT_MNEMONIC="…" npm run fund-tip-fee-wallets
@@ -33,14 +34,16 @@ import {
   pickSplitSourceUtxo,
   pureXecBalance,
 } from '../src/mint/fuelUtxo.js';
+import {
+  parseServingTipCount,
+  parseServingTipOffset,
+} from '../src/mint/servingTips.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 loadEnv({ path: '/etc/wlotus/mint.env', override: true });
 
-const SERVING = Math.max(
-  1,
-  Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 1) || 1,
-);
+const SERVING = parseServingTipCount();
+const OFFSET = parseServingTipOffset();
 const DRY = /^(1|true|yes)$/i.test(process.env.FUND_DRY_RUN?.trim() || '');
 /** Keep this much pure XEC on the desk after funding (sats). */
 const DESK_RESERVE_SATS = BigInt(
@@ -65,7 +68,7 @@ async function main(): Promise<void> {
     tip: Awaited<ReturnType<typeof loadTipFeeWallet>>;
     bal: bigint;
   }[] = [];
-  for (let i = 0; i < SERVING; i++) {
+  for (let i = OFFSET; i < OFFSET + SERVING; i++) {
     const tip = await loadTipFeeWallet(chronik, i);
     await tip.wallet.sync();
     const bal = pureXecBalance(tip.wallet.utxos);

@@ -182,6 +182,7 @@ Change stays on the desk. Burn leftover XEC also returns to the desk.
 - `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
 - `MINT_MAX_CHALLENGES_PER_IP_PER_MIN` (default **8**) — Chronik-heavy challenge builds per IP per minute. nginx `limit_req zone=wl_challenge` is the matching edge limit (`POST /api/challenge`).
 - `MINT_SERVING_TIP_COUNT` (default **1**) — tips load-balanced; raise toward **28** if demand warrants
+- `MINT_SERVING_TIP_OFFSET` (default **0**) — first served tip index. Test on the live token: `1` so it does not race prod's tip 0
 - Challenges expire after 15 minutes (or when that tip is reminted by someone else)
 - Pending memorial burns expire after 15 minutes if `/api/burn` is never called (desk keeps atom)
 
