@@ -1,7 +1,7 @@
 /**
  * Which genesis batons this mint-api process spends.
- * Prod launch: offset 0, count 1 (tip 0). Test on the same token: offset 1,
- * count 1 (tip 1) so the two desks do not race one UTXO.
+ * Prod launch: offset 0, count 1 (tip 0). Test on the same token: offset 27,
+ * count 1 (last of 28 batons) so the two desks do not race one UTXO.
  */
 export function parseServingTipCount(
   raw: string | undefined = process.env.MINT_SERVING_TIP_COUNT,

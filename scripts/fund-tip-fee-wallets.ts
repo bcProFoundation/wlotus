@@ -12,7 +12,7 @@
  *
  * Usage (Contabo or local):
  *   MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
- *   MINT_SERVING_TIP_OFFSET=1 MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
+ *   MINT_SERVING_TIP_OFFSET=27 MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
  *
  * Dry-run (addresses + balances only):
  *   FUND_DRY_RUN=1 MINT_MNEMONIC="…" npm run fund-tip-fee-wallets

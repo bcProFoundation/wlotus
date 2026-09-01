@@ -13,10 +13,11 @@ describe('selectServingTips', () => {
     );
   });
 
-  it('lets test pin a different baton on the same token', () => {
-    expect(selectServingTips(tips, { count: 1, offset: 1 }).map(t => t.index)).toEqual(
-      [1],
-    );
+  it('lets test pin the last of 28 batons', () => {
+    const twentyEight = Array.from({ length: 28 }, (_, index) => ({ index }));
+    expect(
+      selectServingTips(twentyEight, { count: 1, offset: 27 }).map(t => t.index),
+    ).toEqual([27]);
   });
 
   it('parses env (invalid → count 1, offset 0)', () => {

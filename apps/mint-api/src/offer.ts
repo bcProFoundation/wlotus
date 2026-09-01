@@ -152,7 +152,8 @@ const MAX_CHALLENGES_PER_IP_PER_MIN = Math.max(
 );
 /**
  * Tips this process spends, from `MINT_SERVING_TIP_OFFSET`.
- * Launch: offset **0**, count **1** (tip 0). Same token on test: offset **1**.
+ * Launch: offset **0**, count **1** (tip 0). Same token on test: offset **27**
+ * (28th baton).
  */
 const SERVING_TIP_COUNT = parseServingTipCount();
 const SERVING_TIP_OFFSET = parseServingTipOffset();
