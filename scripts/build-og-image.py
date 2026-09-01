@@ -33,7 +33,7 @@ IMAGES = PUBLIC / "images"
 SOURCE = IMAGES / "W-bold.png"
 FONT_CACHE = Path("/tmp/og-fonts")
 
-BG = (29, 19, 12)
+BG = (20, 12, 8)
 CREAM = (243, 230, 212)
 GOLD = (212, 168, 75)
 
@@ -63,7 +63,7 @@ CARDS = (
         "locale": "vi",
         "file": "og.png",
         "tag": "Kết nối các thế hệ",
-        "body": "Đoá sen của sự tưởng nhớ.",
+        "body": "Bông sen của sự tưởng nhớ.",
         "cjk": False,
     },
     {

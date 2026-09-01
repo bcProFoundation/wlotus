@@ -77,8 +77,8 @@
 
 /* Vietnamese / Chinese dark — aged rosewood, gold ink. */
 [data-theme='wood'] {
-  --bg0: #1c120c;
-  --bg1: #120c08;
+  --bg0: #140c08;
+  --bg1: #100804;
   --ink: #f3e6d4;
   --muted: #c4a882;
   --accent: #d4a84b;
@@ -86,7 +86,7 @@
   --danger: #e07a6a;
   --card: rgba(243, 230, 212, 0.04);
   --line: rgba(212, 168, 75, 0.28);
-  --panel: #1a100c;
+  --panel: #160e0a;
   --surface: rgba(212, 168, 75, 0.08);
   --surface-strong: rgba(212, 168, 75, 0.14);
   --surface-inset: rgba(0, 0, 0, 0.28);

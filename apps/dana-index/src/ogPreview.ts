@@ -50,7 +50,7 @@ export function ogImageAlt(locale: OgLocale): string {
     case 'zh':
       return 'W Lotus — 追思之花';
     default:
-      return 'W Lotus — đoá sen của sự tưởng nhớ';
+      return 'W Lotus — bông sen của sự tưởng nhớ';
   }
 }
 
@@ -115,7 +115,7 @@ export function ogCopy(
     default:
       return {
         title: 'W Lotus - Kết nối các thế hệ',
-        description: 'Đoá sen của sự tưởng nhớ.',
+        description: 'Bông sen của sự tưởng nhớ.',
       };
   }
 }

@@ -35,7 +35,7 @@ The OG page boots the SPA in browsers; crawlers keep the meta tags.
 | Altar / named dedication | `Tưởng nhớ {name}` |
 | No name | `W Lotus - Kết nối các thế hệ` |
 
-`og:description` (no name): `Đoá sen của sự tưởng nhớ.`
+`og:description` (no name): `Bông sen của sự tưởng nhớ.`
 
 Optional `?lang=en|vi|zh` localizes the card. The web Share action embeds the
 **sender's** current app locale in the URL. Crawler `Accept-Language` is

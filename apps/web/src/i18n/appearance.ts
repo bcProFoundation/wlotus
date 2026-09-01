@@ -63,7 +63,7 @@ export function documentTheme(
 
 export function themeColorFor(theme: DocumentTheme): string {
   if (theme === 'light') return '#f3ebe0';
-  if (theme === 'wood') return '#1c120c';
+  if (theme === 'wood') return '#140c08';
   return '#050505';
 }
 
