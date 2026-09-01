@@ -4,6 +4,7 @@
 
 import { ChronikClient, type Tx } from 'chronik-client';
 import { memorialFromOutputScriptHex } from '../../../src/offering/memorialFromScript.js';
+import { burnAtomsFromTokenEntries } from '../../../src/offering/lotusAtoms.js';
 import type { BurnStore, IndexedBurn } from './store.js';
 
 const DEFAULT_CHRONIK = [
@@ -36,6 +37,11 @@ function memorialFromTx(tx: Tx): ReturnType<typeof memorialFromOutputScriptHex> 
     if (m) return m;
   }
   return null;
+}
+
+/** On-chain lotus atoms burned for this token (event days may be 102). */
+export function burnAtomsFromTx(tx: Tx, tokenId: string): string {
+  return burnAtomsFromTokenEntries(tx.tokenEntries ?? [], tokenId);
 }
 
 function txTouchesToken(tx: Tx, tokenId: string): boolean {
@@ -76,6 +82,7 @@ export function indexedBurnFromTx(
     blockHeight: tx.block?.height ?? null,
     blockTimestamp: tx.block?.timestamp ?? null,
     timeFirstSeen: nowIso,
+    burnAtoms: burnAtomsFromTx(tx, tokenId),
   };
 }
 

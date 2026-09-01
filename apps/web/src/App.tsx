@@ -127,6 +127,7 @@ import {
   altarFieldsFromIndexMemorial,
   fetchIndexMemorial,
   fetchIndexTrending,
+  groupLotusCount,
   indexMemorialNotes,
   searchIndexMemorials,
   type IndexMemorialGroup,
@@ -1622,7 +1623,7 @@ export default function App() {
   }
 
   /** Device-local Recent only — dana-index is for History / share lookup. */
-  // Offering counts for temple specials (home top-5 ranking).
+  // Lotus atoms for temple specials (home events flower count).
   useEffect(() => {
     const profiles = templeSpecials?.profiles ?? [];
     if (profiles.length === 0) {
@@ -1646,12 +1647,8 @@ export default function App() {
           let n = localByRoot.get(id) ?? 0;
           try {
             const remote = await fetchIndexMemorial(p.profileId);
-            if (
-              typeof remote.totalBurns === 'number' &&
-              remote.totalBurns > n
-            ) {
-              n = remote.totalBurns;
-            }
+            const lotus = groupLotusCount(remote);
+            if (lotus > n) n = lotus;
             next[id] = Math.max(n, 1);
           } catch {
             if (n > 0) next[id] = n;
@@ -2241,6 +2238,7 @@ export default function App() {
                       memorialDisplayName(g.originalNote, locale) ||
                       g.originalNote.trim() ||
                       g.originalBurnTxid.slice(0, 8);
+                    const lotus = groupLotusCount(g);
                     return (
                       <li
                         key={g.originalBurnTxid}
@@ -2263,12 +2261,12 @@ export default function App() {
                           </span>
                           <span
                             className="home-events-count home-events-count--offers"
-                            aria-label={t('homeEventsOfferings', {
-                              n: g.totalBurns,
+                            aria-label={t('homeEventsLotuses', {
+                              n: lotus,
                             })}
                           >
                             <span className="home-events-count-n">
-                              {g.totalBurns}
+                              {lotus}
                             </span>
                             <BrandMark badge width={24} height={24} />
                           </span>
@@ -2345,7 +2343,7 @@ export default function App() {
                       }
                       aria-label={
                         hint === 'count'
-                          ? t('homeEventsOfferings', { n: ev.offerCount ?? 0 })
+                          ? t('homeEventsLotuses', { n: ev.offerCount ?? 0 })
                           : undefined
                       }
                     >

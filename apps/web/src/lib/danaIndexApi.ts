@@ -12,6 +12,7 @@ import {
   TRENDING_GRAVITY,
   trendingGroupScore,
 } from '../../../../src/lib/trendingScore.js';
+import { groupLotusAtoms } from '../../../../src/offering/lotusAtoms.js';
 
 export interface IndexBurn {
   burnTxid: string;
@@ -24,6 +25,7 @@ export interface IndexBurn {
   blockHeight: number | null;
   blockTimestamp: number | null;
   timeFirstSeen: string;
+  burnAtoms?: string;
 }
 
 export interface IndexMemorialGroup {
@@ -32,6 +34,7 @@ export interface IndexMemorialGroup {
   latestBurnTxid: string;
   latestNote: string;
   totalBurns: number;
+  totalLotus?: number;
   at: string;
   burns: IndexBurn[];
 }
@@ -40,6 +43,15 @@ export interface IndexMemorialGroup {
 export const TRENDING_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export { TRENDING_GRAVITY };
+
+/** Lotus atoms shown next to the flower — not the offering tx count. */
+export function groupLotusCount(
+  g: Pick<IndexMemorialGroup, 'totalBurns' | 'burns'> & {
+    totalLotus?: number;
+  },
+): number {
+  return groupLotusAtoms(g);
+}
 
 export type IndexTrendingGroup = Omit<IndexMemorialGroup, 'burns'> & {
   /** Burns in the last 24 hours (not the rank key). */

@@ -172,6 +172,7 @@ export type MessageKey =
   | 'homeEventsUpcoming'
   | 'homeEventsTrending'
   | 'homeEventsOfferings'
+  | 'homeEventsLotuses'
   | 'homeEventsFirstBurn'
   | 'homeEventsDaysUntil'
   | 'homeEventsToday'
@@ -398,7 +399,8 @@ const en: Dict = {
   homeEventsTitle: 'Events',
   homeEventsUpcoming: 'Upcoming',
   homeEventsTrending: 'Featured',
-  homeEventsOfferings: '{n} offerings',
+  homeEventsOfferings: '{n} lotus',
+  homeEventsLotuses: '{n} lotus',
   homeEventsFirstBurn: 'Be the first to offer',
   homeEventsDaysUntil: 'in {n} days',
   homeEventsToday: 'Today',
@@ -627,7 +629,8 @@ const vi: Dict = {
   homeEventsTitle: 'Sự kiện',
   homeEventsUpcoming: 'Sắp tới',
   homeEventsTrending: 'Nổi bật',
-  homeEventsOfferings: '{n} dâng hoa',
+  homeEventsOfferings: '{n} sen',
+  homeEventsLotuses: '{n} sen',
   homeEventsFirstBurn: 'Hãy là người dâng đầu tiên',
   homeEventsDaysUntil: 'còn {n} ngày',
   homeEventsToday: 'Hôm nay',
@@ -850,7 +853,8 @@ const zh: Dict = {
   homeEventsTitle: '活动',
   homeEventsUpcoming: '即将',
   homeEventsTrending: '精选',
-  homeEventsOfferings: '{n} 次供奉',
+  homeEventsOfferings: '{n} 朵莲花',
+  homeEventsLotuses: '{n} 朵莲花',
   homeEventsFirstBurn: '成为第一位献花者',
   homeEventsDaysUntil: '还有 {n} 天',
   homeEventsToday: '今天',
