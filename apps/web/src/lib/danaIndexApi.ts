@@ -46,8 +46,10 @@ export { TRENDING_GRAVITY };
 
 /** Lotus atoms shown next to the flower — not the offering tx count. */
 export function groupLotusCount(
-  g: Pick<IndexMemorialGroup, 'totalBurns' | 'burns'> & {
+  g: {
+    totalBurns?: number;
     totalLotus?: number;
+    burns?: IndexBurn[];
   },
 ): number {
   return groupLotusAtoms(g);
