@@ -1,3 +1,4 @@
+import type { LocalOffer } from '../apps/web/src/lib/groupOffers.js';
 import {
   CREATED_ROOTS_KEY,
   markLocalCreatedRoot,
@@ -8,22 +9,21 @@ import {
   loadHiddenRecentRoots,
 } from '../apps/web/src/lib/hiddenRecent.js';
 import {
-  HIDDEN_RECENT_KEY,
-  hideRecentRoot,
-  loadHiddenRecentRoots,
-} from '../apps/web/src/lib/hiddenRecent.js';
-import {
   ACTIVE_CHALLENGE_KEY,
   LIVE_TOKEN_ERA_KEY,
   clearOwnOfferingHistory,
+  isSpaBakePlaceholderTokenId,
   offersForLiveToken,
+  stampOffersForLiveToken,
   syncLocalHistoryToLiveToken,
 } from '../apps/web/src/lib/tokenEra.js';
+import { SPA_BAKE_PLACEHOLDER_TOKEN_ID } from '../src/params/wlotusTokens.js';
 
 const TOKEN_A = 'a'.repeat(64);
 const TOKEN_B = 'b'.repeat(64);
 const ROOT = 'c'.repeat(64);
 const LOCAL_OFFERS_KEY = 'wlotus.web.offers';
+const PLACEHOLDER = SPA_BAKE_PLACEHOLDER_TOKEN_ID;
 
 function installMemoryStorage(): void {
   const make = () => {
@@ -102,6 +102,22 @@ describe('tokenEra', () => {
     expect(sessionStorage.getItem(ACTIVE_CHALLENGE_KEY)).toBeNull();
   });
 
+  it('does not adopt the old SPA dryrun bake default as an era', () => {
+    seedOwnHistory();
+    expect(isSpaBakePlaceholderTokenId(PLACEHOLDER)).toBe(true);
+    expect(syncLocalHistoryToLiveToken(PLACEHOLDER)).toBe(false);
+    expect(localStorage.getItem(LIVE_TOKEN_ERA_KEY)).toBeNull();
+    expect(JSON.parse(localStorage.getItem(LOCAL_OFFERS_KEY)!)).toHaveLength(1);
+  });
+
+  it('adopts the live token without wiping when the stored era is the bake default', () => {
+    seedOwnHistory();
+    localStorage.setItem(LIVE_TOKEN_ERA_KEY, PLACEHOLDER);
+    expect(syncLocalHistoryToLiveToken(TOKEN_B)).toBe(false);
+    expect(localStorage.getItem(LIVE_TOKEN_ERA_KEY)).toBe(TOKEN_B);
+    expect(JSON.parse(localStorage.getItem(LOCAL_OFFERS_KEY)!)).toHaveLength(1);
+  });
+
   it('is a no-op when the live token is unchanged', () => {
     seedOwnHistory();
     syncLocalHistoryToLiveToken(TOKEN_A);
@@ -109,7 +125,7 @@ describe('tokenEra', () => {
     expect(JSON.parse(localStorage.getItem(LOCAL_OFFERS_KEY)!)).toHaveLength(1);
   });
 
-  it('drops rows stamped for a different token and keeps untagged / live rows', () => {
+  it('drops rows stamped for a different token and keeps untagged / live / bake-placeholder rows', () => {
     const offers: LocalOffer[] = [
       {
         remintTxid: '',
@@ -131,9 +147,24 @@ describe('tokenEra', () => {
         at: '2026-01-03T00:00:00.000Z',
         tokenId: TOKEN_B,
       },
+      {
+        remintTxid: 'f'.repeat(64),
+        burnTxid: '1'.repeat(64),
+        note: 'new bake-stamped',
+        at: '2026-09-01T00:00:00.000Z',
+        own: true,
+        tokenId: PLACEHOLDER,
+      },
     ];
     const next = offersForLiveToken(offers, TOKEN_B);
-    expect(next.map(o => o.note)).toEqual(['legacy', 'live']);
+    expect(next.map(o => o.note)).toEqual([
+      'legacy',
+      'live',
+      'new bake-stamped',
+    ]);
+    expect(
+      stampOffersForLiveToken(next, TOKEN_B).map(o => o.tokenId),
+    ).toEqual([TOKEN_B, TOKEN_B, TOKEN_B]);
   });
 
   it('clearOwnOfferingHistory does not touch install id', () => {

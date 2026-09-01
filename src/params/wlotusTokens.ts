@@ -9,6 +9,13 @@
 export const LIVE_PROD_WLOTUS_TOKEN_ID =
   'a41bf9d03961a2be83f854c8cea0b3fddf7e275ff3695d9848046052d6db3df9';
 
+/**
+ * Old SPA fallback when `VITE_PRAYER_TOKEN_ID` was unset (dWLOTUS dryrun).
+ * Never a live WLOTUS era — do not adopt this id as `wlotus.liveTokenId`.
+ */
+export const SPA_BAKE_PLACEHOLDER_TOKEN_ID =
+  '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
+
 /** Pre-felt 102/6 prod. Clone FROM this during the felt recut. Not live. */
 export const PREV_PROD_102_6_WLOTUS_TOKEN_ID =
   'f4e452ef78eaf61908d30ecbd804df5588c6bb6aeea61cf0cbe8bf2186764456';

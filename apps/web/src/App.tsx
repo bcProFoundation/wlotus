@@ -129,6 +129,7 @@ import {
 import {
   altarFieldsFromIndexMemorial,
   fetchIndexMemorial,
+  fetchIndexMemorialOrNull,
   fetchIndexRecent,
   fetchIndexTrending,
   groupLotusCount,
@@ -151,10 +152,13 @@ import {
   unhideRecentRoot,
 } from './lib/hiddenRecent.js';
 import { mergeIndexAndLocalOffers, syncIndexMemorialIntoLocal } from './lib/mergeRecentOffers.js';
+import { reconcileLocalOffersWithIndex } from './lib/reconcileRecentOffers.js';
 import { explorerTx } from './lib/explorer.js';
 import {
   ACTIVE_CHALLENGE_KEY,
   offersForLiveToken,
+  readStoredLiveTokenId,
+  stampOffersForLiveToken,
   syncLocalHistoryToLiveToken,
 } from './lib/tokenEra.js';
 import {
@@ -184,23 +188,37 @@ interface StoredChallenge {
 }
 
 function liveTokenForLocalOffers(): string {
-  return PRAYER_TOKEN_ID.trim().toLowerCase();
+  return readStoredLiveTokenId() || PRAYER_TOKEN_ID.trim().toLowerCase();
+}
+
+function readStoredOffers(): LocalOffer[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_OFFERS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as LocalOffer[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistOffers(next: LocalOffer[]): LocalOffer[] {
+  try {
+    localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota / private mode */
+  }
+  return next;
 }
 
 function loadOffers(): LocalOffer[] {
   try {
-    syncLocalHistoryToLiveToken(PRAYER_TOKEN_ID);
-    const raw = localStorage.getItem(LOCAL_OFFERS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as LocalOffer[];
-    if (!Array.isArray(parsed)) return [];
+    const parsed = readStoredOffers();
     const pruned = offersForLiveToken(
       pruneUnownedAndExpiredOffers(parsed),
       liveTokenForLocalOffers(),
     );
-    if (pruned.length !== parsed.length) {
-      localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(pruned));
-    }
+    if (pruned.length !== parsed.length) persistOffers(pruned);
     return pruned;
   } catch {
     return [];
@@ -259,14 +277,23 @@ function ExplorerLinkIcon({
 }
 
 
-function pushOffer(o: LocalOffer): LocalOffer[] {
+function pushOffer(o: LocalOffer, liveTokenId?: string | null): LocalOffer[] {
+  const live =
+    (liveTokenId || '').trim().toLowerCase() || liveTokenForLocalOffers();
+  const id = o.burnTxid.trim().toLowerCase();
   const stamped: LocalOffer = {
     ...o,
-    tokenId: o.tokenId || liveTokenForLocalOffers(),
+    burnTxid: id || o.burnTxid,
+    tokenId: o.tokenId || live,
   };
-  const next = [stamped, ...loadOffers()].slice(0, 40);
-  localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
-  return next;
+  const current = loadOffers().filter(
+    x => x.burnTxid.trim().toLowerCase() !== stamped.burnTxid,
+  );
+  const next = stampOffersForLiveToken([stamped, ...current], live).slice(
+    0,
+    80,
+  );
+  return persistOffers(next);
 }
 
 function rememberChallenge(c: StoredChallenge): void {
@@ -568,11 +595,31 @@ export default function App() {
   useEffect(() => {
     if (!tokenId) return;
     const wiped = syncLocalHistoryToLiveToken(tokenId);
-    if (!wiped) return;
-    setOffers([]);
-    setHiddenRecent(new Set());
-    setCreatorByRoot(new Map());
-    clearRememberedChallenge();
+    if (wiped) {
+      setOffers([]);
+      setHiddenRecent(new Set());
+      setCreatorByRoot(new Map());
+      clearRememberedChallenge();
+      return;
+    }
+    setOffers(loadOffers());
+    let cancelled = false;
+    void (async () => {
+      try {
+        const next = await reconcileLocalOffersWithIndex(readStoredOffers(), {
+          liveTokenId: tokenId,
+          fetchMemorial: fetchIndexMemorialOrNull,
+        });
+        if (cancelled) return;
+        persistOffers(next);
+        setOffers(next);
+      } catch {
+        if (!cancelled) setOffers(loadOffers());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [tokenId]);
 
   useEffect(() => {
@@ -1232,16 +1279,17 @@ export default function App() {
                 /* keep historyNote */
               }
             }
+            if (!rootNote) rootNote = challengeNote.trim();
             if (rootNote) {
               const seeded = seedLocalRootIfMissing(
                 loadOffers(),
                 parentBurnTxid,
                 rootNote,
               );
-              localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(seeded));
+              persistOffers(seeded);
             }
           }
-          setOffers(pushOffer(saved));
+          setOffers(pushOffer(saved, tokenId));
           // Offering again restores a previously hidden dedication on this device.
           setHiddenRecent(prev =>
             unhideRecentRoot(resolveOriginalTxid(saved), prev),
@@ -1427,10 +1475,13 @@ export default function App() {
     if (!rootHasRecentOwnOffer(current, remote.originalBurnTxid)) {
       return current;
     }
-    const next = pruneUnownedAndExpiredOffers(
-      syncIndexMemorialIntoLocal(current, remote),
+    const next = stampOffersForLiveToken(
+      pruneUnownedAndExpiredOffers(
+        syncIndexMemorialIntoLocal(current, remote),
+      ),
+      liveTokenForLocalOffers(),
     );
-    localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(next));
+    persistOffers(next);
     setOffers(next);
     return next;
   }
@@ -1991,7 +2042,7 @@ export default function App() {
     const root = g.original.burnTxid;
     setHiddenRecent(prev => hideRecentRoot(root, prev));
     const nextOffers = stripOffersForRoot(loadOffers(), root);
-    localStorage.setItem(LOCAL_OFFERS_KEY, JSON.stringify(nextOffers));
+    persistOffers(nextOffers);
     setOffers(nextOffers);
     setSwipeOpenRoot(null);
     if (historyGroup?.original.burnTxid === root) setHistoryGroup(null);
