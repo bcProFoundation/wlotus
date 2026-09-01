@@ -13,6 +13,7 @@ import {
   type InAppApp,
 } from '../lib/inAppBrowser.js';
 import { BrandMark } from './BrandMark.js';
+import { OfferModal } from './OfferModal.js';
 
 /**
  * When a dedication share link opens inside a messenger WebView, offer
@@ -80,7 +81,7 @@ export function OpenInBrowserGate(props: {
   }
 
   return (
-    <div
+    <OfferModal
       className="offer-modal open-browser-gate"
       role="dialog"
       aria-modal="true"
@@ -115,7 +116,7 @@ export function OpenInBrowserGate(props: {
           </a>
         </div>
       </div>
-    </div>
+    </OfferModal>
   );
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocale } from '../i18n/LocaleContext.js';
 import type { SearchResultRow } from '../lib/searchAltars.js';
+import { OfferModal } from './OfferModal.js';
 import { SearchResultsList } from './SearchResultsList.js';
 
 /** Search by name across W Lotus — ordered by relevance then offering score. */
@@ -25,7 +26,7 @@ export function SearchOverlay(props: {
   }, [props.query, props.results, props.loading]);
 
   return (
-    <div
+    <OfferModal
       className="offer-modal"
       role="dialog"
       aria-modal="true"
@@ -79,6 +80,6 @@ export function SearchOverlay(props: {
           </p>
         ) : null}
       </div>
-    </div>
+    </OfferModal>
   );
 }
