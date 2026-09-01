@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useLocale } from '../i18n/LocaleContext.js';
 import type { AppTab } from '../lib/calendarMonth.js';
 
@@ -6,7 +7,7 @@ export function TabBar(props: {
   onTab: (tab: AppTab) => void;
 }) {
   const { t } = useLocale();
-  return (
+  const nav = (
     <nav className="glass-nav" aria-label={t('tabHome')}>
       <div className={`glass-nav-shell glass-nav-shell--${props.tab}`}>
         <span className="glass-nav-blob" aria-hidden="true" />
@@ -56,4 +57,7 @@ export function TabBar(props: {
       </div>
     </nav>
   );
+  /* Body portal: iOS treats position:fixed inside #root as in-flow when a
+     descendant uses backdrop-filter. */
+  return createPortal(nav, document.body);
 }
