@@ -98,6 +98,7 @@ import {
   isBoundSpecialRoot,
   homeEventOfferHint,
   HOME_EVENTS_SORT_KEY,
+  catalogSpecialsStatus,
   parseHomeEventsSort,
   type HomeEventsSort,
   type TempleSpecialsStatusUi,
@@ -126,6 +127,7 @@ import {
 import {
   altarFieldsFromIndexMemorial,
   fetchIndexMemorial,
+  fetchIndexRecent,
   fetchIndexTrending,
   groupLotusCount,
   indexMemorialNotes,
@@ -550,7 +552,14 @@ export default function App() {
     } catch {
       setApiOnline(false);
       setRemaining(null);
-      setTempleSpecials(null);
+      // Upcoming is catalog+windows, not mint-api. Test often has mint-api
+      // stopped so two desks do not race the live felt batons.
+      try {
+        const recent = await fetchIndexRecent(200);
+        setTempleSpecials(catalogSpecialsStatus(recent));
+      } catch {
+        setTempleSpecials(catalogSpecialsStatus());
+      }
     }
   }, [installId]);
 

@@ -1,5 +1,8 @@
 import {
   altarAllowsFlowerReoffer,
+  bindSpecialsFromIndex,
+  catalogSpecialProfiles,
+  catalogSpecialsStatus,
   findSpecialById,
   homeEventOfferHint,
   omitLotusPrayerParagraph,
@@ -287,5 +290,45 @@ describe('altarAllowsFlowerReoffer', () => {
     expect(overlaySpecialEventDate(overlaid, hero).deathDate).toBe(
       '2026-09-02',
     );
+  });
+});
+
+describe('catalog specials when mint-api is down', () => {
+  const nepalRoot =
+    '51a2211da2aa54ed8eea53ea17e8eb848053df066f03d403bde1aac9c03112ad';
+  const sep1 = new Date(2026, 8, 1); // 1 Sep 2026
+
+  it('binds Nepal 26/08 from a packed index note', () => {
+    const bound = bindSpecialsFromIndex(catalogSpecialProfiles(2026), [
+      {
+        originalBurnTxid: nepalRoot,
+        originalNote: '\u001fNepal 26/08',
+      },
+    ]);
+    expect(bound.find(p => p.id === 'nepal-26-08')?.profileId).toBe(nepalRoot);
+  });
+
+  it('lists Nepal as ongoing on 1 Sep 2026', () => {
+    const status = catalogSpecialsStatus(
+      [
+        {
+          originalBurnTxid: nepalRoot,
+          originalNote: '\u001fNepal 26/08',
+        },
+      ],
+      2026,
+    );
+    const ranked = rankTempleSpecials(
+      status.profiles,
+      { [nepalRoot]: 211 },
+      8,
+      sep1,
+      'vi',
+    );
+    expect(ranked.map(r => r.id)).toContain('nepal-26-08');
+    const nepal = ranked.find(r => r.id === 'nepal-26-08')!;
+    expect(nepal.active).toBe(true);
+    expect(nepal.offerCount).toBe(211);
+    expect(nepal.profileId).toBe(nepalRoot);
   });
 });
