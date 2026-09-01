@@ -118,6 +118,8 @@ After depositing XEC to the **desk** address:
 ```bash
 # Preview addresses / planned sends
 FUND_DRY_RUN=1 MINT_MNEMONIC="…" MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
+# Test desk on the live token (baton 27):
+# FUND_DRY_RUN=1 MINT_SERVING_TIP_INDEX=27 MINT_SERVING_TIP_COUNT=1 npm run fund-tip-fee-wallets
 
 # Equalize: send sized ~40 XEC fuels from desk → mint (change remains on desk)
 MINT_MNEMONIC="…" npm run fund-tip-fee-wallets
@@ -182,7 +184,7 @@ Change stays on the desk. Burn leftover XEC also returns to the desk.
 - `MINT_MAX_OPEN_CHALLENGES` (default **32**) — concurrent open challenge objects the desk will hold
 - `MINT_MAX_CHALLENGES_PER_IP_PER_MIN` (default **8**) — Chronik-heavy challenge builds per IP per minute. nginx `limit_req zone=wl_challenge` is the matching edge limit (`POST /api/challenge`).
 - `MINT_SERVING_TIP_COUNT` (default **1**) — tips load-balanced; raise toward **28** if demand warrants
-- `MINT_SERVING_TIP_OFFSET` (default **0**) — first served tip index. Test on the live token: `27` (last of 28 batons) so it does not race prod's tip 0
+- `MINT_SERVING_TIP_INDEX` (default **0**) — baton this desk spends (`0`…`27`). Test on the live token: `27` (last of 28 batons) so it does not race prod's tip 0. `MINT_SERVING_TIP_OFFSET` is a deprecated alias.
 - Challenges expire after 15 minutes (or when that tip is reminted by someone else)
 - Pending memorial burns expire after 15 minutes if `/api/burn` is never called (desk keeps atom)
 
@@ -197,7 +199,7 @@ systemctl restart wlotus-mint-api
 curl -sS https://test.wlotus.org/health | jq .
 ```
 
-Expect `features.raceOpen: true`, `features.servingTipCount: 1` (or your `MINT_SERVING_TIP_COUNT`), and a fresh `startedAt` / `deployedAt`.
+Expect `features.raceOpen: true`, `features.servingTipIndex: 0` (or `27` on test), `features.servingTipCount: 1` (or your `MINT_SERVING_TIP_COUNT`), and a fresh `startedAt` / `deployedAt`.
 Old builds only return `{"ok":true}` from `/health` and omit `raceOpen` from `/api/status`.
 
 **Prod must not serve `dWLOTUS`:** set `MINT_REQUIRE_LIVE=1` in `/etc/wlotus/mint.env` and ensure `deployments/mainnet-wlotus.json` exists (see [PROD.md](../../deploy/contabo/PROD.md)).

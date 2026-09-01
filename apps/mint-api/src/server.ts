@@ -176,6 +176,7 @@ function healthPayload(): Record<string, unknown> {
     },
     features: {
       raceOpen: pub.raceOpen === true,
+      servingTipIndex: pub.servingTipIndex ?? null,
       servingTipCount: pub.servingTipCount ?? null,
       tipFeeAccounts: pub.tipFeeAccounts === true,
       maxOpenChallenges: pub.maxOpenChallenges ?? null,
@@ -445,9 +446,13 @@ try {
 
 server.listen(PORT, () => {
   const h = healthPayload();
-  const feats = h.features as { raceOpen?: boolean };
+  const feats = h.features as {
+    raceOpen?: boolean;
+    servingTipIndex?: number | null;
+    servingTipCount?: number | null;
+  };
   console.log(
-    `wlotus mint-api listening on :${PORT} startedAt=${STARTED_AT} deployedAt=${h.deployedAt} raceOpen=${feats.raceOpen}`,
+    `wlotus mint-api listening on :${PORT} startedAt=${STARTED_AT} deployedAt=${h.deployedAt} raceOpen=${feats.raceOpen} servingTipIndex=${feats.servingTipIndex} servingTipCount=${feats.servingTipCount}`,
   );
   startMorningReminderLoop();
 });

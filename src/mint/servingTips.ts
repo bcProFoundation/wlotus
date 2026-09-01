@@ -1,7 +1,10 @@
 /**
  * Which genesis batons this mint-api process spends.
- * Prod launch: offset 0, count 1 (tip 0). Test on the same token: offset 27,
+ * Prod launch: index 0, count 1 (tip 0). Test on the same token: index 27,
  * count 1 (last of 28 batons) so the two desks do not race one UTXO.
+ *
+ * `MINT_SERVING_TIP_INDEX` is the baton index (0..27), not a slice into the
+ * tips array. `MINT_SERVING_TIP_OFFSET` is a deprecated alias for the same env.
  */
 export function parseServingTipCount(
   raw: string | undefined = process.env.MINT_SERVING_TIP_COUNT,
@@ -9,18 +12,28 @@ export function parseServingTipCount(
   return Math.max(1, Number(raw?.trim() || 1) || 1);
 }
 
-export function parseServingTipOffset(
-  raw: string | undefined = process.env.MINT_SERVING_TIP_OFFSET,
+function servingTipIndexEnv(): string | undefined {
+  const named = process.env.MINT_SERVING_TIP_INDEX?.trim();
+  if (named) return named;
+  return process.env.MINT_SERVING_TIP_OFFSET;
+}
+
+export function parseServingTipIndex(
+  raw: string | undefined = servingTipIndexEnv(),
 ): number {
   return Math.max(0, Number(raw?.trim() || 0) || 0);
 }
 
 export function selectServingTips<T extends { index: number }>(
   tips: T[],
-  opts?: { count?: number; offset?: number },
+  opts?: { count?: number; index?: number },
 ): T[] {
-  const sorted = [...tips].sort((a, b) => a.index - b.index);
-  const offset = Math.max(0, opts?.offset ?? 0);
+  const start = Math.max(0, opts?.index ?? 0);
   const count = Math.max(1, opts?.count ?? 1);
-  return sorted.slice(offset, offset + count);
+  const wanted = new Set(
+    Array.from({ length: count }, (_, i) => start + i),
+  );
+  return [...tips]
+    .filter(t => wanted.has(t.index))
+    .sort((a, b) => a.index - b.index);
 }
