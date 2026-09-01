@@ -209,12 +209,34 @@ jobs:
             echo "On the VM as root: sudo chown -R $ME:$ME $REPO"
             exit 1
           fi
+          # Force-checkout must not replace the live felt JSON with git's
+          # abandoned fcf7de59 copy (that desyncs mint-api from dana-index).
+          BAK=/tmp/wlotus-deploy-bak
+          mkdir -p "$BAK"
+          for f in \
+            deployments/mainnet-wlotus.json \
+            deployments/mainnet-dryrun-wlotus.json \
+            deployments/mainnet-dryrun-active.json \
+            deployments/temple-special-claims.json; do
+            [ -f "$f" ] && cp -a "$f" "$BAK/" || true
+          done
           git fetch --tags origin
           if [ -n "$TAG" ]; then
             git checkout --force "tags/$TAG" || git checkout --force "$TAG"
           else
             git checkout --force "$SHA"
           fi
+          mkdir -p deployments
+          for f in \
+            mainnet-wlotus.json \
+            mainnet-dryrun-wlotus.json \
+            mainnet-dryrun-active.json \
+            temple-special-claims.json; do
+            if [ -f "$BAK/$f" ]; then
+              cp -a "$BAK/$f" "deployments/$f"
+              echo "restored deployments/$f"
+            fi
+          done
           if [ -d node_modules ] && [ ! -w node_modules ]; then
             echo "::error::$REPO/node_modules is not writable by $ME (still root-owned?)."
             echo "On the VM as root run once:"

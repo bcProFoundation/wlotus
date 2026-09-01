@@ -148,6 +148,7 @@ jobs:
           BAK=/tmp/wlotus-deploy-bak
           mkdir -p "$BAK"
           for f in \
+            deployments/mainnet-wlotus.json \
             deployments/mainnet-dryrun-active.json \
             deployments/mainnet-dryrun-wlotus.json \
             deployments/temple-special-claims.json; do
@@ -157,11 +158,13 @@ jobs:
           git reset --hard "$SHA"
           mkdir -p deployments
           for f in \
+            mainnet-wlotus.json \
             mainnet-dryrun-active.json \
             mainnet-dryrun-wlotus.json \
             temple-special-claims.json; do
             if [ -f "$BAK/$f" ]; then
               cp -a "$BAK/$f" "deployments/$f"
+              echo "restored deployments/$f"
             fi
           done
           if [ -d node_modules ] && [ ! -w node_modules ]; then

@@ -26,6 +26,7 @@ import {
   enqueueSubmit,
   publicStatus,
   remainingOffersToday,
+  requireMintDesk,
 } from './offer.js';
 import {
   deletePushSubscription,
@@ -434,6 +435,13 @@ const server = createServer(async (req, res) => {
     json(res, status, { error: msg });
   }
 });
+
+try {
+  requireMintDesk();
+} catch (err) {
+  console.error('mint-api refused to start:', err);
+  process.exit(1);
+}
 
 server.listen(PORT, () => {
   const h = healthPayload();
