@@ -7,8 +7,9 @@ Type=simple
 User=deploy
 WorkingDirectory=/opt/wlotus
 # Do NOT use EnvironmentFile for MINT_MNEMONIC (spaces break systemd).
-# server.ts loads /etc/wlotus/mint.env via dotenv. File must be readable
-# by User=deploy: chown root:deploy && chmod 640 (not 600 root:root).
+# loadMintEnv.boot.ts loads /etc/wlotus/mint.env via dotenv *before* offer.ts
+# reads MINT_SERVING_TIP_INDEX. File must be readable by User=deploy:
+# chown root:deploy && chmod 640 (not 600 root:root).
 Environment=NODE_ENV=production
 Environment=MINT_API_PORT=8787
 ExecStartPre=/usr/bin/test -x /opt/wlotus/node_modules/.bin/tsx

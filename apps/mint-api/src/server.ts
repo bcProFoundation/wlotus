@@ -13,11 +13,11 @@
  *   GET  /api/root-creator?txid=&installId= → { isCreator, known }
  *   GET  /health         → ok + deploy stamps (file mtime / git sha)
  */
+import './loadMintEnv.boot.js';
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config as loadEnv } from 'dotenv';
 import {
   checkRootCreator,
   enqueueBurn,
@@ -45,19 +45,6 @@ import {
   PayloadTooLargeError,
   readJsonBody,
 } from '../../../src/lib/httpJson.js';
-
-
-loadEnv({ path: resolve(process.cwd(), '.env') });
-{
-  const mintEnv = loadEnv({ path: '/etc/wlotus/mint.env', override: true });
-  if (mintEnv.error) {
-    console.error(
-      'mint-api: failed to load /etc/wlotus/mint.env:',
-      mintEnv.error.message,
-      '\nFix: sudo chown root:deploy /etc/wlotus/mint.env && sudo chmod 640 /etc/wlotus/mint.env',
-    );
-  }
-}
 
 const PORT = Number(process.env.MINT_API_PORT?.trim() || 8787);
 const STARTED_AT = new Date().toISOString();

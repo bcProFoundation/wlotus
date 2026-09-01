@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Contabo / systemd entrypoint for mint-api (User=deploy).
 # Loads /etc/wlotus/mint.env via Node dotenv (handles mnemonic spaces).
+# loadMintEnv.boot.ts must run before offer.ts so MINT_SERVING_TIP_INDEX is set.
 # Do not put unquoted multi-word MINT_MNEMONIC in systemd EnvironmentFile.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
