@@ -439,7 +439,7 @@ const vi: Dict = {
   brand: 'W Lotus',
   brandWithLogo: 'Lotus',
   headline: 'Kết nối các thế hệ',
-  tagline: 'Đoá sen của sự tưởng nhớ.',
+  tagline: 'Bông sen của sự tưởng nhớ.',
   offerTitle: 'Dâng Hoa',
   hintPrayMine:
     'Một vài phút tưởng niệm trên máy sẽ sản sinh ra hoa sen để tưởng nhớ và công đức.',

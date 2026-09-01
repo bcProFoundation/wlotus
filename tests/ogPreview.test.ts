@@ -68,7 +68,7 @@ describe('ogPreview', () => {
 
   it('uses brand fallback without a name', () => {
     expect(ogCopy('vi', '').title).toBe('W Lotus - Kết nối các thế hệ');
-    expect(ogCopy('vi', '').description).toBe('Đoá sen của sự tưởng nhớ.');
+    expect(ogCopy('vi', '').description).toBe('Bông sen của sự tưởng nhớ.');
     expect(ogCopy('en', '').title).toBe('W Lotus - Connecting generations');
   });
 
@@ -95,7 +95,7 @@ describe('ogPreview', () => {
 
   it('uses locale-specific image alt on the rosewood OG card', () => {
     expect(ogImageAlt('en')).toBe('W Lotus — a flower of remembrance');
-    expect(ogImageAlt('vi')).toContain('đoá sen của sự tưởng nhớ');
+    expect(ogImageAlt('vi')).toContain('bông sen của sự tưởng nhớ');
     const html = buildOgHtml({
       siteOrigin: 'https://wlotus.org',
       pathTxid: TX,

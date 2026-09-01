@@ -63,7 +63,7 @@ CARDS = (
         "locale": "vi",
         "file": "og.png",
         "tag": "Kết nối các thế hệ",
-        "body": "Đoá sen của sự tưởng nhớ.",
+        "body": "Bông sen của sự tưởng nhớ.",
         "cjk": False,
     },
     {

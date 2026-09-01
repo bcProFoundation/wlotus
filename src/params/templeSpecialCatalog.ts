@@ -957,10 +957,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Giỗ Hồ Chí Minh',
         body:
-          'Ngày 21 tháng Bảy âm lịch là giỗ Chủ tịch Hồ Chí Minh — Người mất ngày 2 tháng 9 năm 1969 (âm lịch 21/7 năm Kỷ Dậu). Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
+          'Ngày 21 tháng Bảy âm lịch là giỗ Chủ tịch Hồ Chí Minh — Người mất ngày 2 tháng 9 năm 1969 (âm lịch 21/7 năm Kỷ Dậu). Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện nhớ công ơn người, nguyện cho nhà nhà được bình an.',
         titleEn: 'Hồ Chí Minh — Death Anniversary',
         bodyEn:
-          'The twenty-first of the seventh lunar month is the death anniversary of President Hồ Chí Minh, who died on 2 September 1969 (lunar 21/7 of the Kỷ Dậu year). Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
+          'The twenty-first of the seventh lunar month is the death anniversary of President Hồ Chí Minh, who died on 2 September 1969 (lunar 21/7 of the Kỷ Dậu year). Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that we remember the merit of those who came before, and that every home may find peace.',
       },
     },
     {
@@ -978,10 +978,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Ngày sinh Hồ Chí Minh',
         body:
-          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện giữ lời tưởng niệm, nguyện cho nhà nhà được bình an.',
+          '19 tháng 5 là ngày sinh Chủ tịch Hồ Chí Minh. Nhiều nhà vẫn thắp hương như giỗ một người ông của đất nước — không ồn, chỉ một nén hương và bông hoa.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện nhớ công ơn người, nguyện cho nhà nhà được bình an.',
         titleEn: 'Hồ Chí Minh — Birthday',
         bodyEn:
-          '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that this remembrance is kept, and that every home may find peace.',
+          '19 May is the birthday of President Hồ Chí Minh. Many households still offer incense as they would for a grandfather of the country — quietly, with a flower.\n\nEach lotus offered today is also a prayer: that we remember the merit of those who came before, and that every home may find peace.',
       },
     },
     {
