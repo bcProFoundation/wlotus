@@ -383,6 +383,7 @@ Desk / rate limits (soft, changeable):
 | Env | Launch default |
 |-----|---------------:|
 | `MINT_SERVING_TIP_COUNT` | **1** |
+| `MINT_SERVING_TIP_OFFSET` | **0** (prod tip 0; test on same token uses **27**) |
 | `MINT_MAX_OFFERS_PER_DAY` | **20** / `installId` (device) |
 
 ```bash

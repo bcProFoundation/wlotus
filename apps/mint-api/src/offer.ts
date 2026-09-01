@@ -110,6 +110,11 @@ import {
   resolveLiveMintBaton,
   matchCovenantToBaton,
 } from '../../../src/mint/followMintBaton.js';
+import {
+  parseServingTipCount,
+  parseServingTipOffset,
+  selectServingTips,
+} from '../../../src/mint/servingTips.js';
 import { createDailyCounter, createRollingWindowCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
 import {
   isKnownRootCreator,
@@ -146,14 +151,12 @@ const MAX_CHALLENGES_PER_IP_PER_MIN = Math.max(
   Number(process.env.MINT_MAX_CHALLENGES_PER_IP_PER_MIN?.trim() || 8) || 8,
 );
 /**
- * How many baton tips the desk serves.
- * Launch default **1** (bound XEC fee burn); genesis still has 28 batons —
- * raise `MINT_SERVING_TIP_COUNT` when demand warrants.
+ * Tips this process spends, from `MINT_SERVING_TIP_OFFSET`.
+ * Launch: offset **0**, count **1** (tip 0). Same token on test: offset **27**
+ * (28th baton).
  */
-const SERVING_TIP_COUNT = Math.max(
-  1,
-  Number(process.env.MINT_SERVING_TIP_COUNT?.trim() || 1) || 1,
-);
+const SERVING_TIP_COUNT = parseServingTipCount();
+const SERVING_TIP_OFFSET = parseServingTipOffset();
 const CHALLENGE_TTL_MS = 15 * 60_000;
 /** Pending memorial burns after remint (soft pray window). */
 const PENDING_BURN_TTL_MS = 15 * 60_000;
@@ -593,8 +596,10 @@ function openChallengesOnTip(tipIndex: number): StoredChallenge[] {
 }
 
 function servingTips(tips: BatonTip[]): BatonTip[] {
-  const sorted = [...tips].sort((a, b) => a.index - b.index);
-  return sorted.slice(0, Math.min(SERVING_TIP_COUNT, sorted.length));
+  return selectServingTips(tips, {
+    count: SERVING_TIP_COUNT,
+    offset: SERVING_TIP_OFFSET,
+  });
 }
 
 /** Load-balance across served tips (fewest open racers wins). */
