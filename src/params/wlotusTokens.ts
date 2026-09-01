@@ -5,8 +5,12 @@
  * `deployments/mainnet-wlotus.json` can lag or point at a failed cutover.
  */
 
-/** Current https://wlotus.org — 102/6 temple, ticker WLOTUS. Clone FROM this. */
+/** Current https://wlotus.org — felt 108, ticker WLOTUS. Confirm `/api/status`. */
 export const LIVE_PROD_WLOTUS_TOKEN_ID =
+  'a41bf9d03961a2be83f854c8cea0b3fddf7e275ff3695d9848046052d6db3df9';
+
+/** Pre-felt 102/6 prod. Clone FROM this during the felt recut. Not live. */
+export const PREV_PROD_102_6_WLOTUS_TOKEN_ID =
   'f4e452ef78eaf61908d30ecbd804df5588c6bb6aeea61cf0cbe8bf2186764456';
 
 /** Retired 1/107 (or earlier) prod genesis. Not live. */
@@ -42,6 +46,36 @@ export function isTokenId(raw: string): boolean {
 
 export function abandonedWlotusLabel(tokenId: string): string | undefined {
   return ABANDONED_WLOTUS_TOKEN_IDS[normalizeTokenId(tokenId)];
+}
+
+/** Thrown when mint-api would serve a known-abandoned tokenId. */
+export class AbandonedDeskError extends Error {
+  override name = 'AbandonedDeskError';
+}
+
+/**
+ * mint-api must not serve abandoned ids (failed fcf7de59 cutover, retired
+ * prod, old dWLOTUS). Git `deployments/mainnet-wlotus.json` can still be
+ * fcf7de59 after a force-checkout; restore the VM overlay instead.
+ */
+export function assertDeskTokenId(
+  tokenId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const id = normalizeTokenId(tokenId);
+  if (!isTokenId(id)) {
+    throw new Error('Deployment JSON tokenId must be 64 hex');
+  }
+  const label = abandonedWlotusLabel(id);
+  if (label && !envFlag('ALLOW_ABANDONED_DESK', env)) {
+    throw new AbandonedDeskError(
+      `Deployment JSON tokenId is ${label} — do not serve this desk. ` +
+        `Restore deployments/mainnet-wlotus.json from the VM overlay ` +
+        `(live ${LIVE_PROD_WLOTUS_TOKEN_ID}). Git copies can be the failed ` +
+        `fcf7de59 cutover. Set ALLOW_ABANDONED_DESK=1 only to override.`,
+    );
+  }
+  return id;
 }
 
 function envFlag(name: string, env: NodeJS.ProcessEnv): boolean {

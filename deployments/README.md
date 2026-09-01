@@ -23,8 +23,8 @@ Copies of the dryrun JSON in git may be an **older 1/107** genesis. If
 
 After the failed felt cutover (#251), git `mainnet-wlotus.json` may be test
 token `fcf7de59…` with `"role": "production"`. **That is not prod.** Live
-prod is `f4e452ef…` on wlotus.org. The next felt genesis (ticker `WLOTUS`
-on the test VM) overwrites this file with the real prod-destined token.
+prod is `a41bf9d0…` on wlotus.org. Deploy workflows must restore the VM copy
+of this file after `git checkout --force` / `git reset --hard`.
 
 ## Incubation / dogfood (not the live desks)
 

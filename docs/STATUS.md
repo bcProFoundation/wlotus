@@ -3,19 +3,15 @@
 Canonical home: **https://github.com/bcProFoundation/wlotus**  
 Docs map: [README.md](./README.md).
 
-Both desks still run **`WlotusPowRemintMooreTipTemple`** on live prod —
-mint **108** = **102** miner + **6** temple. That split and the whole-byte
-256× / ~11 y felt jump are **immutable on this tokenId**. A felt no-tax recut
-(108 to miner, felt +1 bit / 500 days) needs a **new genesis** — one token,
-dogfood on test, then retarget prod at the same `tokenId`
-([PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md)).
-Confirm live ids with `/api/status`.
+Live prod is **felt** `GlotusPowRemintMooreTip` (`a41bf9d0…`): mint **108**
+to miner, no covenant temple tax. Confirm `/api/status`. The previous 102/6
+token `f4e452ef…` cannot be upgraded in place.
 
 ## Live tokens
 
 | Env | Ticker | Site | `tokenId` | Since |
 |-----|--------|------|-----------|-------|
-| **Prod** | `WLOTUS` | https://wlotus.org | `f4e452ef78eaf61908d30ecbd804df5588c6bb6aeea61cf0cbe8bf2186764456` | 102/6 temple (confirm `/api/status`) |
+| **Prod** | `WLOTUS` | https://wlotus.org | `a41bf9d03961a2be83f854c8cea0b3fddf7e275ff3695d9848046052d6db3df9` | felt 108, no temple tax (confirm `/api/status`) |
 | **Test (failed felt)** | `WLOTUS` | https://test.wlotus.org | `fcf7de592aceef5c0ee118fa8830daeb3d0efb445020e92b8a102e5127555ec4` | **Abandon** — mixed history; do not clone FROM/TO; do not point prod here |
 | **Old test** | `dWLOTUS` | retired | `ffc15eb40711fbf069370a4f90ca44ce7913968a6d5940df9890343066f119ec` | **Abandon** |
 | **Retired prod** | `WLOTUS` | retired | `154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091` | **Abandon** |
@@ -25,12 +21,16 @@ Confirm live ids with `/api/status`.
 ALP stores the test ticker uppercase (`DWLOTUS`); docs write `dWLOTUS`. On-chain name is **W Lotus**.
 
 Git `deployments/mainnet-wlotus.json` after #251 is the **failed** test token
-`fcf7de59…` with `"role": "production"`. **Do not treat it as prod.** Tip JSON
-on the VMs is the source of truth.
+`fcf7de59…` with `"role": "production"`. **Do not treat it as prod.** Live
+prod is `a41bf9d0…` on wlotus.org (felt). Tip JSON on the VMs is the source of
+truth. A deploy `git checkout --force` that overwrites that file makes mint-api
+serve `fcf7de59…` while dana-index still watches `a41bf9d0…` — new burns never
+show in Recent / Trending. Restore from `git show HEAD@{1}:deployments/mainnet-wlotus.json`
+on the VM, then restart mint-api.
 
 | Env | VM JSON | Actions bake |
 |-----|---------|--------------|
-| Test | `deployments/mainnet-dryrun-wlotus.json` (+ `mainnet-dryrun-active.json`) | `VITE_PRAYER_TOKEN_ID` = live dryrun id |
+| Test | `deployments/mainnet-wlotus.json` (same felt token; **keep mint-api stopped**) | `VITE_PRAYER_TOKEN_ID` = `a41bf9d0…` |
 | Prod | `deployments/mainnet-wlotus.json` | Environment `production` → same var |
 
 ```bash

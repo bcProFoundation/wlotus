@@ -73,6 +73,10 @@ import {
   isWlotusMooreTipCovenant,
   isWlotusTempleCovenant,
 } from '../../../src/params/wlotusMint.js';
+import {
+  AbandonedDeskError,
+  assertDeskTokenId,
+} from '../../../src/params/wlotusTokens.js';
 import { resolveTempleSinkFromEnv } from '../../../src/offering/templeSink.js';
 import {
   loadTempleSpecialsFromEnv,
@@ -415,6 +419,16 @@ function loadDep(): { path: string; dep: DryrunDep } {
           `Create live genesis: npm run create-wlotus-token`,
       );
     }
+    try {
+      assertDeskTokenId(String(dep.tokenId || ''));
+    } catch (err) {
+      if (err instanceof AbandonedDeskError) {
+        if (explicit || requireLive) throw err;
+        console.warn(`mint-api skipping ${rel}: ${err.message}`);
+        continue;
+      }
+      throw err;
+    }
     return { path, dep };
   }
   throw new Error(
@@ -423,6 +437,11 @@ function loadDep(): { path: string; dep: DryrunDep } {
         `Run create-wlotus-token on prod (default ticker WLOTUS).`
       : 'Missing deployment JSON (mainnet-wlotus / dryrun-wlotus / active / prayer)',
   );
+}
+
+/** Fail mint-api startup when git JSON is an abandoned tokenId. */
+export function requireMintDesk(): void {
+  loadDep();
 }
 
 function isFeltDep(dep: DryrunDep): boolean {
@@ -1695,7 +1714,8 @@ export function publicStatus(): {
         specialsGlobalForDep(dep),
       ),
     };
-  } catch {
+  } catch (err) {
+    if (err instanceof AbandonedDeskError) throw err;
     return {
       tokenId: null,
       mintAtoms: null,
