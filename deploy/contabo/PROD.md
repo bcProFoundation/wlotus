@@ -216,6 +216,8 @@ sudo tee /etc/wlotus/mint.env >/dev/null <<'EOF'
 MINT_MNEMONIC="word1 word2 ... word12"
 MINT_API_PORT=8787
 MINT_SERVING_TIP_COUNT=1
+# Prod spends baton 0 (default). Do not set 27 here.
+# MINT_SERVING_TIP_INDEX=0
 # Fail closed: never load dWLOTUS / dryrun JSON on this host
 MINT_REQUIRE_LIVE=1
 MINT_DEPLOYMENT_JSON=deployments/mainnet-wlotus.json

@@ -112,7 +112,7 @@ import {
 } from '../../../src/mint/followMintBaton.js';
 import {
   parseServingTipCount,
-  parseServingTipOffset,
+  parseServingTipIndex,
   selectServingTips,
 } from '../../../src/mint/servingTips.js';
 import { createDailyCounter, createRollingWindowCounter, normalizeClientIp } from '../../../src/lib/rateLimit.js';
@@ -151,12 +151,12 @@ const MAX_CHALLENGES_PER_IP_PER_MIN = Math.max(
   Number(process.env.MINT_MAX_CHALLENGES_PER_IP_PER_MIN?.trim() || 8) || 8,
 );
 /**
- * Tips this process spends, from `MINT_SERVING_TIP_OFFSET`.
- * Launch: offset **0**, count **1** (tip 0). Same token on test: offset **27**
- * (28th baton).
+ * Tips this process spends, from `MINT_SERVING_TIP_INDEX` (baton 0..27).
+ * Launch: index **0**, count **1** (tip 0). Same token on test: index **27**
+ * (28th baton). `MINT_SERVING_TIP_OFFSET` is a deprecated alias.
  */
 const SERVING_TIP_COUNT = parseServingTipCount();
-const SERVING_TIP_OFFSET = parseServingTipOffset();
+const SERVING_TIP_INDEX = parseServingTipIndex();
 const CHALLENGE_TTL_MS = 15 * 60_000;
 /** Pending memorial burns after remint (soft pray window). */
 const PENDING_BURN_TTL_MS = 15 * 60_000;
@@ -598,7 +598,7 @@ function openChallengesOnTip(tipIndex: number): StoredChallenge[] {
 function servingTips(tips: BatonTip[]): BatonTip[] {
   return selectServingTips(tips, {
     count: SERVING_TIP_COUNT,
-    offset: SERVING_TIP_OFFSET,
+    index: SERVING_TIP_INDEX,
   });
 }
 
@@ -1664,6 +1664,7 @@ export function publicStatus(): {
   maxOffersPerDay: number;
   maxOpenChallenges: number;
   openChallenges: number;
+  servingTipIndex: number;
   servingTipCount: number;
   tipEpochs: Record<string, string>;
   /** @deprecated use tipEpochs — kept for older clients */
@@ -1703,6 +1704,7 @@ export function publicStatus(): {
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
+      servingTipIndex: SERVING_TIP_INDEX,
       servingTipCount: SERVING_TIP_COUNT,
       tipEpochs,
       tipEpoch: primary ? tipEpochOf(primary) : null,
@@ -1728,6 +1730,7 @@ export function publicStatus(): {
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
+      servingTipIndex: SERVING_TIP_INDEX,
       servingTipCount: SERVING_TIP_COUNT,
       tipEpochs: {},
       tipEpoch: null,

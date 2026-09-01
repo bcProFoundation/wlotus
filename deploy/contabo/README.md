@@ -383,7 +383,7 @@ Desk / rate limits (soft, changeable):
 | Env | Launch default |
 |-----|---------------:|
 | `MINT_SERVING_TIP_COUNT` | **1** |
-| `MINT_SERVING_TIP_OFFSET` | **0** (prod tip 0; test on same token uses **27**) |
+| `MINT_SERVING_TIP_INDEX` | **0** (prod tip 0; test on same token uses **27**) |
 | `MINT_MAX_OFFERS_PER_DAY` | **20** / `installId` (device) |
 
 ```bash
@@ -418,9 +418,11 @@ TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
 
 # Tip fee wallets for the soft tip count:
 set -a && source /etc/wlotus/mint.env && set +a
-# ensure in mint.env:
+# ensure in mint.env (test on the live token uses baton 27):
 #   MINT_SERVING_TIP_COUNT=1
+#   MINT_SERVING_TIP_INDEX=27
 #   MINT_MAX_OFFERS_PER_DAY=20
+# Private dryrun token: INDEX=0 is fine.
 npm run fund-tip-fee-wallets
 sudo systemctl restart wlotus-mint-api
 ```
@@ -429,7 +431,7 @@ Until mint-api is restarted with the new deployment JSON, `/api/status` may show
 
 ```bash
 sudo systemctl restart wlotus-mint-api
-curl -sS https://test.wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,baseZeroBits,memorialOnBurn,servingTipCount,powBatonCount,maxOffersPerDay}'
+curl -sS https://test.wlotus.org/api/status | jq '{ticker,tokenId,mintAtoms,baseZeroBits,memorialOnBurn,servingTipIndex,servingTipCount,powBatonCount,maxOffersPerDay}'
 ```
 
 **Web (test):** set GitHub Actions variable/secret **`VITE_PRAYER_TOKEN_ID`** to the new `tokenId`, then run **Deploy web (test)** (or push to `master`). Hard-refresh https://test.wlotus.org.
