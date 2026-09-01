@@ -154,9 +154,15 @@ const MAX_CHALLENGES_PER_IP_PER_MIN = Math.max(
  * Tips this process spends, from `MINT_SERVING_TIP_INDEX` (baton 0..27).
  * Launch: index **0**, count **1** (tip 0). Same token on test: index **27**
  * (28th baton). `MINT_SERVING_TIP_OFFSET` is a deprecated alias.
+ * Read at use time — not at import — so mint.env loaded in `loadMintEnv.boot.ts`
+ * is visible even if import order slips.
  */
-const SERVING_TIP_COUNT = parseServingTipCount();
-const SERVING_TIP_INDEX = parseServingTipIndex();
+function servingTipCount(): number {
+  return parseServingTipCount();
+}
+function servingTipIndex(): number {
+  return parseServingTipIndex();
+}
 const CHALLENGE_TTL_MS = 15 * 60_000;
 /** Pending memorial burns after remint (soft pray window). */
 const PENDING_BURN_TTL_MS = 15 * 60_000;
@@ -597,8 +603,8 @@ function openChallengesOnTip(tipIndex: number): StoredChallenge[] {
 
 function servingTips(tips: BatonTip[]): BatonTip[] {
   return selectServingTips(tips, {
-    count: SERVING_TIP_COUNT,
-    index: SERVING_TIP_INDEX,
+    count: servingTipCount(),
+    index: servingTipIndex(),
   });
 }
 
@@ -1704,8 +1710,8 @@ export function publicStatus(): {
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
-      servingTipIndex: SERVING_TIP_INDEX,
-      servingTipCount: SERVING_TIP_COUNT,
+      servingTipIndex: servingTipIndex(),
+      servingTipCount: servingTipCount(),
       tipEpochs,
       tipEpoch: primary ? tipEpochOf(primary) : null,
       tipKey: primary ? tipEpochOf(primary) : null,
@@ -1730,8 +1736,8 @@ export function publicStatus(): {
       maxOffersPerDay: MAX_OFFERS_PER_DAY,
       maxOpenChallenges: MAX_OPEN_CHALLENGES,
       openChallenges: countOpenChallenges(),
-      servingTipIndex: SERVING_TIP_INDEX,
-      servingTipCount: SERVING_TIP_COUNT,
+      servingTipIndex: servingTipIndex(),
+      servingTipCount: servingTipCount(),
       tipEpochs: {},
       tipEpoch: null,
       tipKey: null,
