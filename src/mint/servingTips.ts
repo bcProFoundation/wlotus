@@ -6,10 +6,25 @@
  * `MINT_SERVING_TIP_INDEX` is the baton index (0..27), not a slice into the
  * tips array. `MINT_SERVING_TIP_OFFSET` is a deprecated alias for the same env.
  */
+import { POW_BATON_COUNT_MAX } from '../params/consensus.js';
+
+const LAST_BATON_INDEX = POW_BATON_COUNT_MAX - 1;
+
+function clampInt(
+  n: number,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (!Number.isInteger(n)) return fallback;
+  if (n < min) return fallback;
+  return Math.min(max, n);
+}
+
 export function parseServingTipCount(
   raw: string | undefined = process.env.MINT_SERVING_TIP_COUNT,
 ): number {
-  return Math.max(1, Number(raw?.trim() || 1) || 1);
+  return clampInt(Number(raw?.trim() || 1), 1, POW_BATON_COUNT_MAX, 1);
 }
 
 function servingTipIndexEnv(): string | undefined {
@@ -21,19 +36,17 @@ function servingTipIndexEnv(): string | undefined {
 export function parseServingTipIndex(
   raw: string | undefined = servingTipIndexEnv(),
 ): number {
-  return Math.max(0, Number(raw?.trim() || 0) || 0);
+  return clampInt(Number(raw?.trim() || 0), 0, LAST_BATON_INDEX, 0);
 }
 
 export function selectServingTips<T extends { index: number }>(
   tips: T[],
   opts?: { count?: number; index?: number },
 ): T[] {
-  const start = Math.max(0, opts?.index ?? 0);
-  const count = Math.max(1, opts?.count ?? 1);
-  const wanted = new Set(
-    Array.from({ length: count }, (_, i) => start + i),
-  );
+  const start = clampInt(opts?.index ?? 0, 0, LAST_BATON_INDEX, 0);
+  const count = clampInt(opts?.count ?? 1, 1, POW_BATON_COUNT_MAX, 1);
+  const end = start + count;
   return [...tips]
-    .filter(t => wanted.has(t.index))
+    .filter(t => t.index >= start && t.index < end)
     .sort((a, b) => a.index - b.index);
 }

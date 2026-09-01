@@ -39,6 +39,20 @@ describe('selectServingTips', () => {
     expect(parseServingTipIndex('-3')).toBe(0);
     expect(parseServingTipIndex('1')).toBe(1);
     expect(parseServingTipIndex('27')).toBe(27);
+    expect(parseServingTipIndex('1.5')).toBe(0);
+    expect(parseServingTipIndex('28')).toBe(27);
+    expect(parseServingTipIndex('Infinity')).toBe(0);
+    expect(parseServingTipCount('Infinity')).toBe(1);
+    expect(parseServingTipCount('99')).toBe(28);
+  });
+
+  it('does not allocate from count', () => {
+    const sparse = [{ index: 0 }, { index: 27 }];
+    expect(
+      selectServingTips(sparse, { count: Number.POSITIVE_INFINITY, index: 0 }).map(
+        t => t.index,
+      ),
+    ).toEqual([0]);
   });
 
   it('prefers MINT_SERVING_TIP_INDEX over deprecated OFFSET env', () => {

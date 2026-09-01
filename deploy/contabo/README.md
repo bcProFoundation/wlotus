@@ -418,10 +418,11 @@ TIER=wlotus BATON_INDEX=0 npm run mine-dryrun-once
 
 # Tip fee wallets for the soft tip count:
 set -a && source /etc/wlotus/mint.env && set +a
-# ensure in mint.env:
+# ensure in mint.env (test on the live token uses baton 27):
 #   MINT_SERVING_TIP_COUNT=1
-#   MINT_SERVING_TIP_INDEX=0
+#   MINT_SERVING_TIP_INDEX=27
 #   MINT_MAX_OFFERS_PER_DAY=20
+# Private dryrun token: INDEX=0 is fine.
 npm run fund-tip-fee-wallets
 sudo systemctl restart wlotus-mint-api
 ```
