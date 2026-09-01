@@ -14,6 +14,7 @@ import {
   clearOwnOfferingHistory,
   isSpaBakePlaceholderTokenId,
   offersForLiveToken,
+  resolveBakedLiveTokenId,
   stampOffersForLiveToken,
   syncLocalHistoryToLiveToken,
 } from '../apps/web/src/lib/tokenEra.js';
@@ -173,5 +174,12 @@ describe('tokenEra', () => {
     clearOwnOfferingHistory();
     expect(localStorage.getItem('wlotus.installId')).toBe('keep-me');
     expect(localStorage.getItem(LOCAL_OFFERS_KEY)).toBeNull();
+  });
+
+  it('resolveBakedLiveTokenId ignores empty and the dryrun placeholder', () => {
+    expect(resolveBakedLiveTokenId(undefined, TOKEN_B)).toBe(TOKEN_B);
+    expect(resolveBakedLiveTokenId('', TOKEN_B)).toBe(TOKEN_B);
+    expect(resolveBakedLiveTokenId(PLACEHOLDER, TOKEN_B)).toBe(TOKEN_B);
+    expect(resolveBakedLiveTokenId(TOKEN_A, TOKEN_B)).toBe(TOKEN_A);
   });
 });
