@@ -41,7 +41,7 @@ describe('document theme', () => {
 
   it('theme-color matches each skin', () => {
     expect(themeColorFor('light')).toBe('#f3ebe0');
-    expect(themeColorFor('wood')).toBe('#140c08');
+    expect(themeColorFor('wood')).toBe('#1c120c');
     expect(themeColorFor('dark')).toBe('#050505');
   });
 });

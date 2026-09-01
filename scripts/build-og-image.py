@@ -33,7 +33,7 @@ IMAGES = PUBLIC / "images"
 SOURCE = IMAGES / "W-bold.png"
 FONT_CACHE = Path("/tmp/og-fonts")
 
-BG = (20, 12, 8)
+BG = (29, 19, 12)
 CREAM = (243, 230, 212)
 GOLD = (212, 168, 75)
 
