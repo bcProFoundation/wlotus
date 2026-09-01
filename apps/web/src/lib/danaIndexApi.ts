@@ -238,12 +238,27 @@ export async function fetchIndexTrending(
 export async function fetchIndexMemorial(
   txid: string,
 ): Promise<IndexMemorialGroup> {
+  const found = await fetchIndexMemorialOrNull(txid);
+  if (!found) {
+    throw new Error('Memorial not found');
+  }
+  return found;
+}
+
+/** `null` when the live index has no star for this burn (old-token / unknown). */
+export async function fetchIndexMemorialOrNull(
+  txid: string,
+): Promise<IndexMemorialGroup | null> {
   const id = txid.trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(id)) return null;
   const res = await fetch(indexUrl(`/api/memorial/${id}`));
-  const body = await readJson<IndexMemorialGroup & { ok?: boolean; error?: string }>(
-    res,
-  );
+  if (res.status === 404) return null;
+  const body = await readJson<
+    IndexMemorialGroup & { ok?: boolean; error?: string }
+  >(res);
   if (!res.ok || body.ok === false) {
+    const err = (body.error || '').toLowerCase();
+    if (res.status === 404 || err.includes('not found')) return null;
     throw new Error(body.error || `Index memorial ${res.status}`);
   }
   return body;

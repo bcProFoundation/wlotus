@@ -3,23 +3,28 @@
  * Device PoW; server pays fees; wLotus burns miner atom for memorial.
  */
 
-/** Live dWLOTUS temple dryrun (mint 108 mala → burn 1) */
-export const DEFAULT_PRAYER_TOKEN_ID =
-  (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
-  '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
-
-export const PRAYER_TOKEN_ID = DEFAULT_PRAYER_TOKEN_ID;
-
-export const PRAYER_TICKER =
-  (import.meta.env.VITE_PRAYER_TICKER as string | undefined)?.trim() ||
-  'dWLOTUS';
-
+import { LIVE_PROD_WLOTUS_TOKEN_ID } from '../../../../src/params/wlotusTokens.js';
 import {
   MIN_PRAY_SECONDS_KEY,
   minPraySecondsToMs,
   parseMinPraySeconds,
 } from './minPraySeconds.js';
 import { parseTipPollMs } from './tipPollMs.js';
+
+/**
+ * Fallback when GitHub Actions omits `VITE_PRAYER_TOKEN_ID`.
+ * Must be the live felt token — the old dWLOTUS dryrun default made test
+ * deploys ping-pong era against `/api/status` and hid new Recent rows.
+ */
+export const DEFAULT_PRAYER_TOKEN_ID =
+  (import.meta.env.VITE_PRAYER_TOKEN_ID as string | undefined)?.trim() ||
+  LIVE_PROD_WLOTUS_TOKEN_ID;
+
+export const PRAYER_TOKEN_ID = DEFAULT_PRAYER_TOKEN_ID;
+
+export const PRAYER_TICKER =
+  (import.meta.env.VITE_PRAYER_TICKER as string | undefined)?.trim() ||
+  'WLOTUS';
 
 /** Mint API base — empty = same origin (/api via Vite proxy or nginx). */
 export const MINT_API_BASE =

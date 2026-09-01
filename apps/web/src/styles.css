@@ -1316,8 +1316,9 @@ a {
   border: 1px solid var(--line);
   border-radius: 14px;
   transition: transform 0.18s ease-out;
-  /* Let the page scroll vertically; JS takes over once a horizontal swipe wins. */
-  touch-action: pan-y;
+  /* pan-y alone: Chrome Android swallows horizontal pans so swipe-to-delete
+     never starts. Allow both axes; JS preventDefault after the swipe wins. */
+  touch-action: pan-x pan-y;
   will-change: transform;
   -webkit-user-select: none;
   user-select: none;
@@ -1325,7 +1326,8 @@ a {
 
 .swipe-reveal-track button,
 .swipe-reveal-track a {
-  touch-action: manipulation;
+  /* Keep swipe-to-delete working when the gesture starts on Dâng lại. */
+  touch-action: pan-x pan-y;
   -webkit-user-select: none;
   user-select: none;
 }

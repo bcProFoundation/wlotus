@@ -139,7 +139,8 @@ export function SwipeReveal(props: {
 
     const onTouchStart = (e: TouchEvent) => {
       if (disabledRef.current || e.touches.length !== 1) return;
-      if (isInteractiveTarget(e.target)) return;
+      // Do not skip buttons — Android users swipe from Dâng lại / share.
+      // A tap without horizontal travel still fires the button click.
       const t = e.touches[0]!;
       begin(t.clientX, t.clientY);
     };

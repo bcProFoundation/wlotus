@@ -61,7 +61,7 @@ jobs:
 
       - name: Build web
         env:
-          # Prefer variables. Empty ticker/token → apps/web config defaults (dWLOTUS).
+          # Prefer variables. Empty ticker/token → live WLOTUS felt defaults.
           # Stale secrets.VITE_PRAYER_TICKER=dPRAYER would otherwise bake the old name.
           VITE_PRAYER_TOKEN_ID: ${{ vars.VITE_PRAYER_TOKEN_ID || secrets.VITE_PRAYER_TOKEN_ID }}
           VITE_PRAYER_TICKER: ${{ vars.VITE_PRAYER_TICKER }}
