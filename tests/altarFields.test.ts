@@ -91,16 +91,25 @@ describe('altarFields', () => {
       { relationshipType: 'spouse', relatedTxid },
       { maxBytes: MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT },
     );
-    // type + 64-hex txid + separators is ~74 bytes; fits under the v2 120-byte cap.
-    expect(new TextEncoder().encode(packed).length).toBeLessThanOrEqual(
-      MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
-    );
+    // Compact `s\x1f` + 64-hex = 66 bytes (10-slot pack was 74 and overflowed
+    // leftover SEND + DANA v2 at the 223 OP_RETURN edge).
+    expect(new TextEncoder().encode(packed).length).toBe(66);
+    expect(packed).toBe(`s${ALTAR_SEP}${'f'.repeat(64)}`);
     const parsed = parseAltarNote(packed)!;
     expect(parsed.name).toBe('');
     expect(parsed.deathDate).toBe('');
     expect(parsed.relationshipType).toBe('spouse');
     expect(parsed.relatedTxid).toBe(relatedTxid);
     expect(memorialDisplayName(packed, 'vi')).toBe('');
+  });
+
+  it('still reads the 10-slot relationship fragment written before compact wire', () => {
+    const relatedTxid = 'e'.repeat(64);
+    const legacy = `${ALTAR_SEP.repeat(8)}p${ALTAR_SEP}${relatedTxid}`;
+    const parsed = parseAltarNote(legacy)!;
+    expect(parsed.name).toBe('');
+    expect(parsed.relationshipType).toBe('parent');
+    expect(parsed.relatedTxid).toBe(relatedTxid);
   });
 
   it('drops optional memorial message before the relationship link', () => {
