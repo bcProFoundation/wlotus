@@ -462,7 +462,32 @@ function isTitleFirstWire(parts: string[]): boolean {
   return raw0 === '' && parts.length >= 2;
 }
 
+/**
+ * Tight relationship star fragment: `s|p|c` + SEP + 64-hex related txid
+ * (+ optional SEP + memorial text). 66 bytes without extra text — fits
+ * leftover ALP SEND + DANA v2 under the 223-byte OP_RETURN (the 10-slot
+ * pack is 74 bytes and sits on the 223 edge, so felt listing burns fail).
+ */
+const COMPACT_REL_RE =
+  /^([spc])\u001f([0-9a-fA-F]{64})(?:\u001f(.*))?$/;
+
+function parseCompactRelationshipNote(raw: string): AltarFields | null {
+  const m = COMPACT_REL_RE.exec(raw);
+  if (!m) return null;
+  const type = normalizeAltarRelationshipType(m[1]);
+  const txid = normalizeAltarRelatedTxid(m[2]);
+  if (!type || !txid) return null;
+  const fields = emptyAltarFields();
+  fields.relationshipType = type;
+  fields.relatedTxid = txid;
+  fields.note = (m[3] ?? '').trim();
+  fields.relationships = linksFromSingularFields(type, txid);
+  return fields;
+}
+
 export function parseAltarNote(raw: string): AltarFields | null {
+  const compact = parseCompactRelationshipNote(raw);
+  if (compact) return compact;
   if (!isAltarPackedNote(raw)) return null;
   const parts = raw.split(ALTAR_SEP);
   let fields: AltarFields;
@@ -904,44 +929,16 @@ export function encodeRelationshipNote(
     );
   }
 
-  const maxBytes = Math.max(
-    opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
-    // type + 64-hex txid + separators is ~74 bytes; leftover SEND is retried
-    // without DATA overflow in burnOnePrayer.
-    80,
-  );
+  const maxBytes = opts?.maxBytes ?? MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT;
   let note = scrub(fields.note || '');
+  const code = wireRelationshipType(relType);
 
   const pack = (): string =>
-    joinAltarParts([
-      '',
-      '',
-      note,
-      '',
-      '',
-      '',
-      '',
-      '',
-      wireRelationshipType(relType),
-      relTxid,
-    ]);
+    note ? `${code}${ALTAR_SEP}${relTxid}${ALTAR_SEP}${note}` : `${code}${ALTAR_SEP}${relTxid}`;
 
   let packed = pack();
   if (utf8ByteLength(packed) > maxBytes && note) {
-    const overhead = utf8ByteLength(
-      joinAltarParts([
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        wireRelationshipType(relType),
-        relTxid,
-      ]),
-    );
+    const overhead = utf8ByteLength(`${code}${ALTAR_SEP}${relTxid}${ALTAR_SEP}`);
     const noteBudget = Math.max(0, maxBytes - overhead);
     note = truncateUtf8Bytes(note, noteBudget);
     packed = pack();
