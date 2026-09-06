@@ -96,6 +96,8 @@ Still true:
 
 Permissionless remint, miner pays XEC only, **no** temple mint tax. Premine + event burns fund the platform. Own difficulty schedule (may use a higher whole-byte base). Details TBD at launch.
 
+Current dogfood `dGLOTUS` is a **research token**: covenant `GlotusPowRemintMooreTip`, 845 d/bit, own `genesisUnix` (MTP−120 / `GLOTUS_GENESIS_UNIX`). It is not a `WLotusCovenant` fork and is not 1:1 with WLOTUS.
+
 ---
 
 ## Implementation
@@ -107,7 +109,7 @@ Permissionless remint, miner pays XEC only, **no** temple mint tax. Premine + ev
 
 ## Felt no-tax recut (next genesis)
 
-Same ticker `WLOTUS` / `dWLOTUS`, **new `tokenId`**. Redeem is `GlotusPowRemintMooreTip` (already dogfooded as dGLOTUS):
+Same ticker `WLOTUS` / `dWLOTUS`, **new `tokenId`**. Redeem is **`WLotusCovenant`**. Live W Lotus JSON may still store the historical compile name `GlotusPowRemintMooreTip`. **dGLOTUS is a separate research token** (own covenant + 845-day clock), not this recut:
 
 | | Live (`f4e452ef…`) | Recut |
 |--|--|--|
@@ -122,3 +124,19 @@ Same ticker `WLOTUS` / `dWLOTUS`, **new `tokenId`**. Redeem is `GlotusPowRemintM
 Felt + remint DANA tip is **213 ops** — over the 201-op cap even after dropping the temple output. Offerings do not need the remint tip ad (dana-index skips DANA v4).
 
 **One genesis:** ticker `WLOTUS` on the test VM, dogfood, then retarget prod at the same `tokenId`. Do not genesis prod in parallel. Runbook: [PROD_CUTOVER_FELT_NOTAX.md](../deploy/contabo/PROD_CUTOVER_FELT_NOTAX.md).
+
+## WLotusCovenant (fork reference)
+
+`contracts/WLotusCovenant.spedn` is the **final remint** — copy this, not the retired temple / whole-byte contracts.
+
+| Baked at genesis | W Lotus felt |
+|------------------|--------------|
+| Mint | **108** → miner; **0** temple tax |
+| Moore | felt +1 bit / **500** days; `baseZeroBits=0`; cap 128 |
+| Clock origin | live prod `genesisUnix` **1788215242** (2026-08-31 22:27:22 UTC) |
+
+Forks that use this covenant **and** bake the same economics **and** the same `genesisUnix` share the issuance clock. Those tokens may exchange **1:1** value-wise. ALP `tokenId`s stay distinct — 1:1 is a value convention, not a merge. `create-wlotus-token` defaults `genesisUnix` to the live prod clock (`1788215242`); override with `GENESIS_UNIX`.
+
+**GLotus stays a research token** (`GlotusPowRemintMooreTip`, 845 d/bit, own `genesisUnix`). It is not a WLotusCovenant fork and is not 1:1 with WLOTUS.
+
+A different genesis timestamp, mint size, Moore step, or temple split is a different clock — not 1:1. Helper: `isWLotusCovenantExchangePeer` in `src/params/wlotusMint.ts`. Live W Lotus desks still accept the historical name `GlotusPowRemintMooreTip` when `mode` is `wlotus-moore-felt-bit`.

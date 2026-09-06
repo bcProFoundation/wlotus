@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-/** Smoke: compile GlotusPowRemintMooreTip and report redeem size / op count. */
+/** Smoke: compile the GLotus research covenant and report redeem size / ops. */
 import { readFileSync } from 'node:fs';
 import { Spedn } from '@spedn/sdk';
 import { ModuleFactory } from '@spedn/rts';

@@ -2,8 +2,11 @@
 /**
  * Genesis for W Lotus — **same covenant for prod and dryrun**.
  *
- * Default: `GlotusPowRemintMooreTip` + ALP ticker WLOTUS / name "W Lotus".
+ * Default: `WLotusCovenant` + ALP ticker WLOTUS / name "W Lotus".
  * 108 to miner, no temple ctor, felt +1 bit / 500 days, ALP MINT only.
+ * `genesisUnix` defaults to live prod (`LIVE_PROD_WLOTUS_GENESIS_UNIX`)
+ * so forks share the WLOTUS issuance clock (1:1). Override with
+ * `GENESIS_UNIX=` (or legacy `DRYRUN_GENESIS_UNIX=`).
  * Premine lands on the genesis wallet. Temple address is not required
  * at genesis; listing still uses TEMPLE_ADDRESS as a soft-tax sink.
  *
@@ -51,7 +54,7 @@ import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
 import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
-import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { createWLotusCovenantContract } from '../src/covenant/powRemintGlotusTipScript.js';
 import {
   WLOTUS_FELT_COVENANT,
   WLOTUS_FELT_MODE,
@@ -72,6 +75,7 @@ import {
   PROD_TOKEN_TICKER,
   TOKEN_URL,
 } from '../src/params/consensus.js';
+import { resolveWlotusGenesisUnix } from '../src/params/wlotusTokens.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
@@ -186,9 +190,7 @@ async function main(): Promise<void> {
 
   const chronik = await createChronik('closest');
   const { mtp, tipHeight } = await getMedianTimePast(chronik);
-  const genesisUnix = Number(
-    process.env.DRYRUN_GENESIS_UNIX?.trim() || Math.max(0, mtp - 120),
-  );
+  const genesisUnix = resolveWlotusGenesisUnix();
   const tipLocktime = genesisUnix;
 
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);
@@ -253,7 +255,7 @@ async function main(): Promise<void> {
   console.log('Initial mint →', initialMintAddress);
 
   const contract = felt
-    ? await createPowRemintGlotusTipContract({
+    ? await createWLotusCovenantContract({
         tokenId: genesis.tokenId,
         mintAtoms: WLOTUS_MINT_ATOMS,
         genesisUnix,
@@ -390,7 +392,7 @@ async function main(): Promise<void> {
       ? [
           'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
           `Felt +1 bit / ${daysPerBit} days (2× / ~1.4 y from bits=0). Cap bits ≤ 128. ALP MINT only (no remint DANA tip). baseZeroBits=0.`,
-          `W Lotus on GLotus felt redeem: mint ${WLOTUS_MINT_ATOMS} → miner only (no temple tax). initialMintAtoms=${WLOTUS_MINT_ATOMS} → ${initialMintAddress}.`,
+          `WLotusCovenant: mint ${WLOTUS_MINT_ATOMS} → miner only (no temple tax). initialMintAtoms=${WLOTUS_MINT_ATOMS} → ${initialMintAddress}.`,
           isProdTicker
             ? `Ticker ${PROD_TOKEN_TICKER} writes mainnet-wlotus.json — this is the production token. Dogfood on test, then retarget prod at the same tokenId. Do not genesis a second WLOTUS.`
             : `Test/dryrun genesis ticker ${ticker} — same covenant as prod; only ticker/metadata differ. Not the felt cutover path.`,

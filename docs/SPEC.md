@@ -7,12 +7,15 @@ Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar:
 | Param | Value | Notes |
 |-------|-------|-------|
 | Ticker (prod) | `WLOTUS` | Live memorial / dana token |
-| Ticker (test) | `dWLOTUS` | Same covenant; separate genesis |
+| Ticker (test) | `dWLOTUS` | Same covenant; distinct tokenId; default same `genesisUnix` as prod |
 | Companion | `GLOTUS` | Golden Lotus — separate token when shipped |
 | Protocol | ALP standard (`SLP2`) | eCash |
 | Decimals | `0` | Whole tokens |
-| Covenant (live) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — **this tokenId** |
-| Covenant (recut) | `GlotusPowRemintMooreTip` | 108 miner, felt +1 bit / 500 d — **new tokenId** |
+| Covenant (live felt) | `WLotusCovenant` | 108 miner, felt +1 bit / 500 d — reference for forks |
+| Clock origin | `1788215242` | Live prod `genesisUnix` — default for new WLotusCovenant geneses |
+| Covenant (W Lotus JSON alias) | `GlotusPowRemintMooreTip` | Live W Lotus JSON may still store this name |
+| Covenant (GLotus research) | `GlotusPowRemintMooreTip` | Separate token; 845 d/bit; not 1:1 with WLOTUS |
+| Covenant (retired) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — previous tokenId |
 
 ## PoW remint
 
@@ -75,7 +78,7 @@ k = floor(elapsed_days since genesis)
 | PoW / Moore | Own schedule (may use higher base bits) |
 | Role | Event burns / later commerce |
 
-Details TBD at GLOTUS launch; see [ECONOMICS.md](./ECONOMICS.md).
+Research dogfood (`dGLOTUS`) keeps **`GlotusPowRemintMooreTip`** and the 845-day clock. Do not retarget it at `WLotusCovenant` or the live WLOTUS `genesisUnix`. Production GLOTUS details TBD; see [ECONOMICS.md](./ECONOMICS.md).
 
 ## Explicit non-goals
 

@@ -3,10 +3,12 @@ import {
   assertDeskTokenId,
   assertMigrateToTokenId,
   FAILED_FELT_CUTOVER_TOKEN_ID,
+  LIVE_PROD_WLOTUS_GENESIS_UNIX,
   LIVE_PROD_WLOTUS_TOKEN_ID,
   OLD_TEST_DWLOTUS_TOKEN_ID,
   PREV_PROD_102_6_WLOTUS_TOKEN_ID,
   requireMigrateFromTokenId,
+  resolveWlotusGenesisUnix,
   RETIRED_PROD_WLOTUS_TOKEN_ID,
 } from '../src/params/wlotusTokens.js';
 
@@ -59,5 +61,25 @@ describe('wlotusTokens migrate guards', () => {
     expect(
       assertDeskTokenId(failed, { ALLOW_ABANDONED_DESK: '1' }),
     ).toBe(failed);
+  });
+
+  it('defaults WLotusCovenant genesisUnix to live prod', () => {
+    expect(LIVE_PROD_WLOTUS_GENESIS_UNIX).toBe(1_788_215_242);
+    expect(resolveWlotusGenesisUnix({})).toBe(LIVE_PROD_WLOTUS_GENESIS_UNIX);
+    expect(resolveWlotusGenesisUnix({ GENESIS_UNIX: '1700000000' })).toBe(
+      1_700_000_000,
+    );
+    expect(
+      resolveWlotusGenesisUnix({ DRYRUN_GENESIS_UNIX: '1700000001' }),
+    ).toBe(1_700_000_001);
+    expect(
+      resolveWlotusGenesisUnix({
+        GENESIS_UNIX: '1700000000',
+        DRYRUN_GENESIS_UNIX: '1',
+      }),
+    ).toBe(1_700_000_000);
+    expect(() => resolveWlotusGenesisUnix({ GENESIS_UNIX: '-1' })).toThrow(
+      /GENESIS_UNIX/,
+    );
   });
 });

@@ -18,19 +18,23 @@ describe('sync-danaverse-wlotus', () => {
       },
       stdio: 'pipe',
     });
-    const spedn = join(
+    const felt = join(dest, 'contracts/WLotusCovenant.spedn');
+    const temple = join(
       dest,
       'contracts/WlotusPowRemintMooreTipTemple.spedn',
     );
-    expect(existsSync(spedn)).toBe(true);
-    expect(readFileSync(spedn, 'utf8')).toContain(
+    expect(existsSync(felt)).toBe(true);
+    expect(readFileSync(felt, 'utf8')).toContain('WLotusCovenant');
+    expect(existsSync(temple)).toBe(true);
+    expect(readFileSync(temple, 'utf8')).toContain(
       'WlotusPowRemintMooreTipTemple',
     );
     expect(existsSync(join(dest, 'apps/web/src/App.tsx'))).toBe(true);
     expect(existsSync(join(dest, 'apps/web/README.md'))).toBe(false);
     expect(existsSync(join(dest, 'apps/mint-api'))).toBe(false);
     const readme = readFileSync(join(dest, 'README.md'), 'utf8');
-    expect(readme).toContain('102');
+    expect(readme).toContain('WLotusCovenant');
+    expect(readme).toContain('108');
     expect(readme).toContain('154d229bab3cf228');
     expect(existsSync(join(dest, 'LICENSE'))).toBe(true);
   });

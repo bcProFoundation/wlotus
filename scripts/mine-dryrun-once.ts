@@ -14,7 +14,7 @@ import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
 import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
-import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { createWLotusCovenantContract } from '../src/covenant/powRemintGlotusTipScript.js';
 import { expectedGlotusMintOpReturnScript } from '../src/covenant/powRemintGlotusTipOutputs.js';
 import { computeMooreTipState } from '../src/covenant/mooreTip.js';
 import {
@@ -162,7 +162,7 @@ async function main(): Promise<void> {
         tipLocktime: tipRec.tipLocktime,
       })
     : felt
-      ? await createPowRemintGlotusTipContract({
+      ? await createWLotusCovenantContract({
           tokenId,
           mintAtoms,
           genesisUnix: dep.genesisUnix,
@@ -292,9 +292,9 @@ async function main(): Promise<void> {
     : felt
       ? await (async () => {
           const glotus = contract as Awaited<
-            ReturnType<typeof createPowRemintGlotusTipContract>
+            ReturnType<typeof createWLotusCovenantContract>
           >;
-          const nextContract = await createPowRemintGlotusTipContract({
+          const nextContract = await createWLotusCovenantContract({
             ...glotus.params,
             tipLocktime: locktime,
           });

@@ -22,9 +22,23 @@ export const WLOTUS_DESK_KEEP_AFTER_BURN = WLOTUS_MINER_ATOMS - 1n;
 export const WLOTUS_MOORE_TIP_COVENANT = 'WlotusPowRemintMooreTip';
 export const WLOTUS_MOORE_TIP_MODE = 'moore-tip-hard-bind';
 
-/** Felt no-tax recut: GLotus redeem (`GlotusPowRemintMooreTip`) — opt-in via FELT=1. */
-export const WLOTUS_FELT_COVENANT = 'GlotusPowRemintMooreTip';
+/**
+ * Reference remint: `WLotusCovenant` — 108 miner, felt +1 bit / 500 days,
+ * no temple tax. Forks that copy this redeem and bake the same economics
+ * plus the same `genesisUnix` share the issuance clock and may exchange
+ * 1:1 value-wise (distinct ALP `tokenId`s).
+ */
+export const WLOTUS_FELT_COVENANT = 'WLotusCovenant';
+/**
+ * Live W Lotus JSON may still store this compile name. GLotus research
+ * tokens also use it as *their* covenant — distinguish with
+ * {@link GLOTUS_FELT_MODE} / `tier: 'glotus'`.
+ */
+export const WLOTUS_FELT_COVENANT_LEGACY = 'GlotusPowRemintMooreTip';
 export const WLOTUS_FELT_MODE = 'wlotus-moore-felt-bit';
+/** GLotus research token — own clock (845 d/bit), not a WLotusCovenant fork. */
+export const GLOTUS_COVENANT = 'GlotusPowRemintMooreTip';
+export const GLOTUS_FELT_MODE = 'glotus-moore-felt-bit';
 /** One mala, all to miner. */
 export const WLOTUS_FELT_MINER_ATOMS = 108n;
 export const WLOTUS_FELT_TEMPLE_ATOMS = 0n;
@@ -40,8 +54,8 @@ export const WLOTUS_FELT_DESK_KEEP_AFTER_BURN = WLOTUS_FELT_MINER_ATOMS - 1n;
 export type WlotusGenesisRegime = 'moore-tip' | 'felt' | 'temple';
 
 /**
- * `create-wlotus-token` default is GLotus felt redeem + WLOTUS ticker
- * (`GlotusPowRemintMooreTip`: 108 miner, +1 bit / 500 days, no temple).
+ * `create-wlotus-token` default is `WLotusCovenant` + WLOTUS ticker
+ * (108 miner, +1 bit / 500 days, no temple).
  * `COVENANT=moore-tip` → whole-byte `WlotusPowRemintMooreTip`.
  * `FELT=0` / `COVENANT=temple` → 102/6 temple (needs TEMPLE_ADDRESS).
  */
@@ -64,15 +78,95 @@ export function resolveWlotusGenesisRegime(
   return 'felt';
 }
 
-export function isWlotusFeltCovenant(
-  dep: { covenant?: string; mode?: string } | null | undefined,
+export function isGlotusResearchCovenant(
+  dep: { covenant?: string; mode?: string; tier?: string } | null | undefined,
 ): boolean {
   if (!dep) return false;
+  return dep.mode === GLOTUS_FELT_MODE || dep.tier === 'glotus';
+}
+
+export function isWlotusFeltCovenant(
+  dep: { covenant?: string; mode?: string; tier?: string } | null | undefined,
+): boolean {
+  if (!dep || isGlotusResearchCovenant(dep)) return false;
   return (
     dep.covenant === WLOTUS_FELT_COVENANT ||
-    dep.mode === WLOTUS_FELT_MODE ||
-    dep.mode === 'glotus-moore-felt-bit'
+    dep.covenant === WLOTUS_FELT_COVENANT_LEGACY ||
+    dep.mode === WLOTUS_FELT_MODE
   );
+}
+
+export type WLotusCovenantEconomy = {
+  covenant?: string;
+  mode?: string;
+  genesisUnix?: number;
+  mintAtomsPerRemint?: string | number | bigint;
+  secondsPerExtraBit?: number;
+  baseZeroBits?: number;
+  mintSplit?: {
+    miner?: string | number | bigint;
+    temple?: string | number | bigint;
+  };
+  powBatonCount?: number;
+};
+
+function asAtoms(v: string | number | bigint | undefined): bigint | null {
+  if (v === undefined) return null;
+  try {
+    const n = typeof v === 'bigint' ? v : BigInt(v);
+    return n;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Same WLotusCovenant economics + same genesisUnix → same issuance clock.
+ * Those tokens may exchange 1:1 value-wise; ALP `tokenId`s stay distinct.
+ */
+export function isWLotusCovenantExchangePeer(
+  a: WLotusCovenantEconomy | null | undefined,
+  b: WLotusCovenantEconomy | null | undefined,
+): boolean {
+  if (!a || !b) return false;
+  if (!isWlotusFeltCovenant(a) || !isWlotusFeltCovenant(b)) return false;
+  if (
+    !Number.isFinite(a.genesisUnix) ||
+    !Number.isFinite(b.genesisUnix) ||
+    a.genesisUnix !== b.genesisUnix
+  ) {
+    return false;
+  }
+  const mintA = asAtoms(a.mintAtomsPerRemint);
+  const mintB = asAtoms(b.mintAtomsPerRemint);
+  if (mintA === null || mintB === null || mintA !== mintB) return false;
+  if (mintA !== WLOTUS_FELT_MINER_ATOMS) return false;
+  if (
+    !Number.isFinite(a.secondsPerExtraBit) ||
+    !Number.isFinite(b.secondsPerExtraBit) ||
+    a.secondsPerExtraBit !== b.secondsPerExtraBit
+  ) {
+    return false;
+  }
+  if (
+    !Number.isInteger(a.baseZeroBits) ||
+    !Number.isInteger(b.baseZeroBits) ||
+    a.baseZeroBits !== b.baseZeroBits
+  ) {
+    return false;
+  }
+  const templeA = asAtoms(a.mintSplit?.temple);
+  const templeB = asAtoms(b.mintSplit?.temple);
+  if (templeA !== null && templeA !== WLOTUS_FELT_TEMPLE_ATOMS) return false;
+  if (templeB !== null && templeB !== WLOTUS_FELT_TEMPLE_ATOMS) return false;
+  if (
+    Number.isInteger(a.powBatonCount) &&
+    Number.isInteger(b.powBatonCount) &&
+    a.powBatonCount !== b.powBatonCount
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function isWlotusMooreTipCovenant(

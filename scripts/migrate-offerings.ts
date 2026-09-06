@@ -68,7 +68,7 @@ import {
   assertMigrateToTokenId,
   requireMigrateFromTokenId,
 } from '../src/params/wlotusTokens.js';
-import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { createWLotusCovenantContract } from '../src/covenant/powRemintGlotusTipScript.js';
 import { expectedGlotusMintOpReturnScript } from '../src/covenant/powRemintGlotusTipOutputs.js';
 import { buildMinedMooreTipRemintTx } from '../src/miner/remintMooreTip.js';
 import {
@@ -251,7 +251,7 @@ export async function remintMalaOnTip(opts: {
     live,
     locktimeGuesses,
     async tipLocktime => {
-      const c = await createPowRemintGlotusTipContract({
+      const c = await createWLotusCovenantContract({
         tokenId: dep.tokenId,
         mintAtoms,
         genesisUnix: dep.genesisUnix,
@@ -272,7 +272,7 @@ export async function remintMalaOnTip(opts: {
   if (locktime >= mtp) {
     throw new Error(`locktime ${locktime} ≥ MTP ${mtp}`);
   }
-  const nextContract = await createPowRemintGlotusTipContract({
+  const nextContract = await createWLotusCovenantContract({
     tokenId: dep.tokenId,
     mintAtoms,
     genesisUnix: dep.genesisUnix,

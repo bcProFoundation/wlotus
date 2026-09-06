@@ -7,7 +7,7 @@ Start at **[STATUS.md](./STATUS.md)** (live token ids + 102/6). Confirm `/api/st
 | [STATUS.md](./STATUS.md) | What’s live |
 | [VISION.md](./VISION.md) | Why W Lotus exists |
 | [SPEC.md](./SPEC.md) | Consensus knobs |
-| [ECONOMICS.md](./ECONOMICS.md) | 102/6, desk path, GLOTUS |
+| [ECONOMICS.md](./ECONOMICS.md) | WLotusCovenant, 1:1 forks, 102/6, GLOTUS |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Genesis → remint → burn |
 | [CLOCK.md](./CLOCK.md) | Moore calendar, sunset |
 | [ALTAR.md](./ALTAR.md) | On-chain memorial schema |

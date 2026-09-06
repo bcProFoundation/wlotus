@@ -25,7 +25,7 @@ import { getMedianTimePast } from '../../../src/network/medianTimePast.js';
 import { createPowRemintMooreTipMemoContract } from '../../../src/covenant/powRemintMooreTipMemoScript.js';
 import { createPowRemintMooreTipTempleContract } from '../../../src/covenant/powRemintMooreTipTempleScript.js';
 import { createPowRemintMooreTipContract } from '../../../src/covenant/powRemintMooreTipScript.js';
-import { createPowRemintGlotusTipContract } from '../../../src/covenant/powRemintGlotusTipScript.js';
+import { createWLotusCovenantContract } from '../../../src/covenant/powRemintGlotusTipScript.js';
 import { expectedGlotusMintOpReturnScript } from '../../../src/covenant/powRemintGlotusTipOutputs.js';
 import {
   buildMooreTipMemoRemintChallenge,
@@ -937,7 +937,7 @@ async function createChallengeOnce(opts: {
       })
     : felt
       ? await matchCovenantToBaton(live, locktimeGuesses, async tipLocktime => {
-          const c = await createPowRemintGlotusTipContract({
+          const c = await createWLotusCovenantContract({
             tokenId: dep.tokenId,
             mintAtoms,
             genesisUnix: dep.genesisUnix,
@@ -1053,9 +1053,9 @@ async function createChallengeOnce(opts: {
     : felt
       ? await (async () => {
           const glotus = contract as Awaited<
-            ReturnType<typeof createPowRemintGlotusTipContract>
+            ReturnType<typeof createWLotusCovenantContract>
           >;
-          const nextContract = await createPowRemintGlotusTipContract({
+          const nextContract = await createWLotusCovenantContract({
             ...glotus.params,
             tipLocktime: locktime,
           });
@@ -1235,7 +1235,7 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
       locktime: ch.locktime,
     });
   } else if (ch.mode === 'felt') {
-    const contract = await createPowRemintGlotusTipContract({
+    const contract = await createWLotusCovenantContract({
       tokenId: ch.tokenId,
       mintAtoms: BigInt(ch.mintAtoms),
       genesisUnix: ch.genesisUnix,
@@ -1243,7 +1243,7 @@ async function rebuildPrepared(ch: StoredChallenge): Promise<{
       secondsPerExtraBit: ch.secondsPerExtraBit,
       tipLocktime: ch.tipLocktime,
     });
-    const nextContract = await createPowRemintGlotusTipContract({
+    const nextContract = await createWLotusCovenantContract({
       ...contract.params,
       tipLocktime: ch.locktime,
     });

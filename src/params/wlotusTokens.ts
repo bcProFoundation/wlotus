@@ -10,6 +10,30 @@ export const LIVE_PROD_WLOTUS_TOKEN_ID =
   'a41bf9d03961a2be83f854c8cea0b3fddf7e275ff3695d9848046052d6db3df9';
 
 /**
+ * Baked `WLotusCovenant` `genesisUnix` on live prod (`a41bf9d0…`).
+ * 2026-08-31 22:27:22 UTC. Forks that reuse this clock + the same
+ * economics may exchange 1:1 with WLOTUS. Override with GENESIS_UNIX.
+ */
+export const LIVE_PROD_WLOTUS_GENESIS_UNIX = 1_788_215_242;
+
+const SCRIPT_SAFE_U32 = 0x80000000;
+
+/** Default: live prod clock. `GENESIS_UNIX` / `DRYRUN_GENESIS_UNIX` override. */
+export function resolveWlotusGenesisUnix(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const raw = (env.GENESIS_UNIX ?? env.DRYRUN_GENESIS_UNIX ?? '').trim();
+  if (!raw) return LIVE_PROD_WLOTUS_GENESIS_UNIX;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n >= SCRIPT_SAFE_U32) {
+    throw new Error(
+      `GENESIS_UNIX out of Script-safe u32 range: ${JSON.stringify(raw)}`,
+    );
+  }
+  return n;
+}
+
+/**
  * Old SPA fallback when `VITE_PRAYER_TOKEN_ID` was unset (dWLOTUS dryrun).
  * Never a live WLOTUS era — do not adopt this id as `wlotus.liveTokenId`.
  */

@@ -1,16 +1,20 @@
-// GLotus research remint — keep separate from WLotusCovenant.
-// Same felt body for now; own 845-day clock and genesisUnix at create time.
-// Edit with care: WLotusCovenant.spedn is the W Lotus fork reference.
-// GLotus remint: fixed mint, Moore 2× (felt +1 bit), hard next-P2SH.
+// WLotusCovenant — reference remint for W Lotus and forks.
+//
+// 108 miner, no temple tax, felt +1 bit / 500 days, ALP MINT only.
 // Redeem ≤520; non-push ops ≤201.
 // Felt +1 bit via 8×2-byte LE thresholds (no OP_MUL, no IF). remBits=0
 // limit is 256. Drop extra EMPP DANA tip — ALP MINT only — to fit 201.
 // Intra-era mantissa (8-slot / daily) does not fit with next-P2SH.
-// Bake secondsPerExtraBit = 845 * 86400 at genesis (Ergon 2× ≈ 2.31y).
+// Bake secondsPerExtraBit at genesis (W Lotus: 500 * 86400).
 // Layout: econHead(85) | 0x20 prefixHash | 0x04 tipLe | codeBytes
 // CODESEPARATOR keeps BIP143 preimage small.
+//
+// Live W Lotus JSON may still say GlotusPowRemintMooreTip (same body).
+// GLotus research keeps that old contract as its own token — do not
+// retarget dGLOTUS here. Forks that copy this redeem and bake the same
+// mint / Moore step / genesisUnix may exchange 1:1 value-wise.
 
-contract GlotusPowRemintMooreTip(
+contract WLotusCovenant(
     [byte;32] tokenIdRev,
     [byte;6] mintAtomsLe,
     [byte;4] genesisUnixLe,
