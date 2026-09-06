@@ -4,6 +4,9 @@
  *
  * Default: `WLotusCovenant` + ALP ticker WLOTUS / name "W Lotus".
  * 108 to miner, no temple ctor, felt +1 bit / 500 days, ALP MINT only.
+ * `genesisUnix` defaults to live prod (`LIVE_PROD_WLOTUS_GENESIS_UNIX`)
+ * so forks share the WLOTUS issuance clock (1:1). Override with
+ * `GENESIS_UNIX=` (or legacy `DRYRUN_GENESIS_UNIX=`).
  * Premine lands on the genesis wallet. Temple address is not required
  * at genesis; listing still uses TEMPLE_ADDRESS as a soft-tax sink.
  *
@@ -72,6 +75,7 @@ import {
   PROD_TOKEN_TICKER,
   TOKEN_URL,
 } from '../src/params/consensus.js';
+import { resolveWlotusGenesisUnix } from '../src/params/wlotusTokens.js';
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
@@ -186,9 +190,7 @@ async function main(): Promise<void> {
 
   const chronik = await createChronik('closest');
   const { mtp, tipHeight } = await getMedianTimePast(chronik);
-  const genesisUnix = Number(
-    process.env.DRYRUN_GENESIS_UNIX?.trim() || Math.max(0, mtp - 120),
-  );
+  const genesisUnix = resolveWlotusGenesisUnix();
   const tipLocktime = genesisUnix;
 
   const wallet = Wallet.fromSk(fromHex(skHex), chronik);

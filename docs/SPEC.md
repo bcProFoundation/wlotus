@@ -7,11 +7,12 @@ Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar:
 | Param | Value | Notes |
 |-------|-------|-------|
 | Ticker (prod) | `WLOTUS` | Live memorial / dana token |
-| Ticker (test) | `dWLOTUS` | Same covenant; separate genesis |
+| Ticker (test) | `dWLOTUS` | Same covenant; distinct tokenId; default same `genesisUnix` as prod |
 | Companion | `GLOTUS` | Golden Lotus — separate token when shipped |
 | Protocol | ALP standard (`SLP2`) | eCash |
 | Decimals | `0` | Whole tokens |
 | Covenant (live felt) | `WLotusCovenant` | 108 miner, felt +1 bit / 500 d — reference for forks |
+| Clock origin | `1788215242` | Live prod `genesisUnix` — default for new WLotusCovenant geneses |
 | Covenant (alias) | `GlotusPowRemintMooreTip` | Same bytecode; live JSON may still store this name |
 | Covenant (retired) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — previous tokenId |
 

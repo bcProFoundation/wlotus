@@ -131,8 +131,8 @@ Felt + remint DANA tip is **213 ops** — over the 201-op cap even after droppin
 |------------------|--------------|
 | Mint | **108** → miner; **0** temple tax |
 | Moore | felt +1 bit / **500** days; `baseZeroBits=0`; cap 128 |
-| Clock origin | `genesisUnix` |
+| Clock origin | live prod `genesisUnix` **1788215242** (2026-08-31 22:27:22 UTC) |
 
-Forks that use this covenant **and** bake the same economics **and** the same `genesisUnix` share the issuance clock. Those tokens may exchange **1:1** value-wise. ALP `tokenId`s stay distinct — 1:1 is a value convention, not a merge.
+Forks that use this covenant **and** bake the same economics **and** the same `genesisUnix` share the issuance clock. Those tokens may exchange **1:1** value-wise. ALP `tokenId`s stay distinct — 1:1 is a value convention, not a merge. `create-wlotus-token` defaults `genesisUnix` to the live prod clock (`1788215242`); override with `GENESIS_UNIX`. GLotus keeps its own research clock.
 
 A different genesis timestamp, mint size, Moore step, or temple split is a different clock — not 1:1. Helper: `isWLotusCovenantExchangePeer` in `src/params/wlotusMint.ts`. Live desks still accept the historical name `GlotusPowRemintMooreTip`.
