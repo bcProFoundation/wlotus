@@ -464,11 +464,14 @@ export function AltarSetupModal(props: {
   }
 
   function setAltarKind(next: AltarKind) {
+    const visible = personNameInput.trim() || draft.name;
     if (next === 'event') {
+      setPersonNameInput(visible);
       setDraft(d => ({
         ...d,
         kind: 'event',
         title: '',
+        name: visible,
         birthPlace: '',
         birthYear: '',
         funeralPlace: '',
@@ -476,7 +479,14 @@ export function AltarSetupModal(props: {
         relatedTxid: '',
       }));
     } else {
-      setDraft(d => ({ ...d, kind: '' }));
+      const parsed = parseAltarPersonName(visible);
+      setPersonNameInput(visible);
+      setDraft(d => ({
+        ...d,
+        kind: '',
+        title: parsed.title,
+        name: parsed.name || visible,
+      }));
     }
     setErrorKey(null);
   }
@@ -842,10 +852,14 @@ export function AltarSetupModal(props: {
                     id="altar-name"
                     type="text"
                     autoComplete="name"
-                    value={isEvent ? draft.name : personNameInput}
+                    value={personNameInput}
                     onChange={e => {
-                      if (isEvent) setField('name', e.target.value);
-                      else changePersonName(e.target.value);
+                      if (isEvent) {
+                        setPersonNameInput(e.target.value);
+                        setField('name', e.target.value);
+                      } else {
+                        changePersonName(e.target.value);
+                      }
                     }}
                     placeholder={
                       isEvent
