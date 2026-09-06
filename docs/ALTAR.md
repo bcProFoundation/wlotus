@@ -161,8 +161,8 @@ is `l` (or a later compact `l\x1f` list amend wins). Empty / missing / `u`
 = unlisted — every person altar already on-chain is unlisted until the
 creator lists it at setup or via a creator-only list/unlist star fragment
 (`l\x1f` / `u\x1f`). Visibility is latest-wins. Search, Ban thờ lookup,
-Recent, and Calendar giỗ (local + `/api/recent`, not Trending) are
-unchanged. Old clients ignore the extra trailing parts.
+Recent, and Calendar giỗ (this device's Recent only, selected day
+through month end — not Trending or `/api/recent`) are unchanged. Old clients ignore the extra trailing parts.
 
 ### Living profiles
 

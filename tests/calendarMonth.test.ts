@@ -18,9 +18,6 @@ import {
   defaultSelectedYmdForMonth,
   calendarEmptyKind,
   calendarMemorialFromAltar,
-  mergeCalendarMemorials,
-  nextMemorialYmd,
-  upcomingMemorialsOutsideMonth,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
 import { formatSpecialEventDateLabel, formatSpecialListName } from '../apps/web/src/lib/specialsUi.js';
@@ -497,36 +494,35 @@ describe('calendar person memorials', () => {
       deathYmd: '2001-02-30',
       parentTxid: tx,
     };
-    expect(nextMemorialYmd(bogus, '2026-09-06', 'vi')).toBeNull();
+    const sep = buildSolarMonthGrid(2026, 9, 'vi', new Date(2026, 8, 6));
+    expect(
+      memorialsInMonth(
+        [bogus],
+        sep.filter(d => d.inMonth),
+        '2026-09-06',
+        'vi',
+      ),
+    ).toEqual([]);
   });
 
-  it('merges local Recent ahead of the public index', () => {
-    const local = calendarMemorialFromAltar(
-      'Local name',
-      '2001-12-04',
-      qua.parentTxid,
-    )!;
-    const merged = mergeCalendarMemorials([local], [qua]);
-    expect(merged).toHaveLength(1);
-    expect(merged[0]!.name).toBe('Local name');
-  });
-
-  it('lists a later-month giỗ while September is open', () => {
-    // Solar 4 Dec also has a lunar twin (28 Nov 2026); take the next hit.
-    expect(nextMemorialYmd(qua, '2026-09-06', 'vi')).toBe('2026-11-28');
-    const later = upcomingMemorialsOutsideMonth(
-      [qua],
-      '2026-09-06',
-      2026,
-      9,
-      'vi',
-    );
-    expect(later.map(m => `${m.name}:${m.onYmd}`)).toEqual([
-      'Ông Cao Lâm Quả:2026-11-28',
-    ]);
+  it('lists a local giỗ only from the selected day through month end', () => {
+    const sep = buildSolarMonthGrid(2026, 9, 'vi', new Date(2026, 8, 6));
+    expect(
+      memorialsInMonth(
+        [qua],
+        sep.filter(d => d.inMonth),
+        '2026-09-06',
+        'vi',
+      ),
+    ).toEqual([]);
     const dec = buildSolarMonthGrid(2026, 12, 'vi', new Date(2026, 11, 1));
     const inMonth = dec.filter(d => d.inMonth);
     const listed = memorialsInMonth([qua], inMonth, '2026-12-01', 'vi');
     expect(listed.some(m => m.onYmd === '2026-12-04')).toBe(true);
+    expect(
+      memorialsInMonth([qua], inMonth, '2026-12-05', 'vi').some(
+        m => m.parentTxid === qua.parentTxid,
+      ),
+    ).toBe(false);
   });
 });
