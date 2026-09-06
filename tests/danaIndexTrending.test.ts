@@ -69,9 +69,10 @@ const listedPersonNote = encodeAltarNote({
 });
 const eventNote = encodeAltarNote({
   ...emptyAltarFields(),
-  name: 'Vu Lan hội',
-  deathDate: '2026-08-26',
-  kind: 'event',
+  name: 'Vu Lan',
+  note: 'Nguyện cho nhà nhà được bình an.',
+  birthPlace: 'Việt Nam',
+  deathDate: '2026-08-27',
 });
 
 const recentPayload = {

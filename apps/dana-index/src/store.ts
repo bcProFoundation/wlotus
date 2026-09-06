@@ -18,6 +18,7 @@ import {
 } from '../../../src/lib/trendingScore.js';
 import { loadDryrunCopiedTxids } from '../../../src/offering/migrateOfferings.js';
 import { sumLotusAtoms } from '../../../src/offering/lotusAtoms.js';
+import { loadTempleSpecialsFromEnv } from '../../../src/params/templeSpecials.js';
 
 export interface IndexedBurn {
   burnTxid: string;
@@ -107,16 +108,33 @@ function memorialGroupNotes(g: MemorialGroup): string[] {
   return notes;
 }
 
+function loadCatalogProfileIds(
+  env: NodeJS.ProcessEnv = process.env,
+): Set<string> {
+  const out = new Set<string>();
+  try {
+    for (const s of loadTempleSpecialsFromEnv(env)) {
+      const id = (s.profileId || '').trim().toLowerCase();
+      if (/^[0-9a-f]{64}$/.test(id)) out.add(id);
+    }
+  } catch {
+    /* catalog / JSON overlay is optional for trending */
+  }
+  return out;
+}
+
 export class BurnStore {
   private readonly path: string;
   private byTxid = new Map<string, IndexedBurn>();
   private readonly hiddenRoots: Set<string>;
+  private readonly catalogProfileIds: Set<string>;
 
   constructor(path: string, hiddenRoots?: Set<string>) {
     this.path = resolve(path);
     this.hiddenRoots =
       hiddenRoots ??
       new Set([...loadHiddenStarRoots(), ...loadDryrunCopiedTxids()]);
+    this.catalogProfileIds = loadCatalogProfileIds();
     this.load();
   }
 
@@ -249,7 +267,14 @@ export class BurnStore {
     const cutoff = nowMs - windowMs;
     const scored: TrendingGroup[] = [];
     for (const g of this.buildGroups()) {
-      if (!altarNotesAreTrendingEligible(memorialGroupNotes(g))) continue;
+      if (
+        !altarNotesAreTrendingEligible(memorialGroupNotes(g), {
+          rootTxid: g.originalBurnTxid,
+          catalogProfileIds: this.catalogProfileIds,
+        })
+      ) {
+        continue;
+      }
       const times = g.burns.map(activityMs);
       const score = trendingGroupScore(times, nowMs);
       if (score <= 0) continue;

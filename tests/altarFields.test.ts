@@ -23,6 +23,7 @@ import {
   isListAmendNote,
   isRelationshipAmendNote,
   altarIsTrendingEligible,
+  altarIsCatalogTrendingName,
   altarNotesAreTrendingEligible,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
@@ -698,6 +699,30 @@ describe('altarFields', () => {
     expect(altarIsTrendingEligible(parseAltarNote(listed))).toBe(true);
     expect(altarIsTrendingEligible(parseAltarNote(event))).toBe(true);
     expect(altarNotesAreTrendingEligible(['Cao Lâm Quả'])).toBe(false);
+    const catalogVuLan = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Vu Lan',
+      note: 'Nguyện cho nhà nhà được bình an.',
+      birthPlace: 'Việt Nam',
+      deathDate: '2026-08-27',
+    });
+    expect(parseAltarNote(catalogVuLan)?.kind).toBe('');
+    expect(altarIsTrendingEligible(parseAltarNote(catalogVuLan))).toBe(false);
+    expect(altarNotesAreTrendingEligible([catalogVuLan])).toBe(true);
+    expect(altarNotesAreTrendingEligible(['\u001fNepal 26/08'])).toBe(true);
+    expect(altarIsCatalogTrendingName("All Hallows' Eve")).toBe(true);
+    expect(altarIsCatalogTrendingName('Hồ Chí Minh')).toBe(true);
+    expect(altarIsCatalogTrendingName('Cao Lâm Quả')).toBe(false);
+    expect(
+      altarNotesAreTrendingEligible([
+        `${ALTAR_SEP}All Hallows' Eve${ALTAR_SEP}wow${ALTAR_SEP}${ALTAR_SEP}${ALTAR_SEP}2026-10-31`,
+      ]),
+    ).toBe(true);
+    expect(
+      altarNotesAreTrendingEligible([
+        `${ALTAR_SEP}Hồ Chí Minh${ALTAR_SEP}Giỗ Hồ Chí Minh${ALTAR_SEP}Kim Liên, Nam Đàn, Nghệ An${ALTAR_SEP}1890${ALTAR_SEP}2026-09-02`,
+      ]),
+    ).toBe(true);
   });
 
   it('lists and unlists a person altar latest-wins via compact fragments', () => {

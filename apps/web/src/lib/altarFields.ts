@@ -38,6 +38,7 @@ export {
   normalizeAltarListed,
   altarIsEvent,
   altarIsTrendingEligible,
+  altarIsCatalogTrendingName,
   altarNotesAreTrendingEligible,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
