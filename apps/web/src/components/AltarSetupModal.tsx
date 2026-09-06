@@ -45,7 +45,7 @@ import { TempleStory } from './TempleStory.js';
 import { OfferModal } from './OfferModal.js';
 
 type Step = 'edit' | 'review';
-type ModalVariant = 'setup' | 'relationship' | 'death';
+type ModalVariant = 'setup' | 'relationship' | 'death' | 'list';
 
 function defaultDateCalendar(locale: string): AltarDateCalendar {
   return locale.startsWith('en') ? 'solar' : 'lunar';
@@ -66,6 +66,7 @@ function normalizeFields(draft: AltarFields): AltarFields {
     relationships: draft.relationships ?? [],
     kind: normalizeAltarKind(draft.kind),
     dateCalendar: normalizeAltarDateCalendar(draft.dateCalendar),
+    listed: draft.listed === true ? true : draft.listed === false ? false : null,
   };
 }
 
@@ -128,6 +129,51 @@ function DateCalendarToggle(props: {
         <p className="hint altar-date-lunar-preview">{lunarPreview}</p>
       ) : null}
     </>
+  );
+}
+
+function ListedToggle(props: {
+  listed: boolean;
+  onChange: (listed: boolean) => void;
+}) {
+  const { t } = useLocale();
+  return (
+    <div className="field">
+      <span className="altar-honorific-label" id="altar-listed-label">
+        {t('altarListedLabel')}
+      </span>
+      <div
+        className="altar-honorific"
+        role="group"
+        aria-labelledby="altar-listed-label"
+      >
+        <button
+          type="button"
+          className={
+            !props.listed
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={!props.listed}
+          onClick={() => props.onChange(false)}
+        >
+          {t('altarListedNo')}
+        </button>
+        <button
+          type="button"
+          className={
+            props.listed
+              ? 'altar-honorific-btn is-selected'
+              : 'altar-honorific-btn'
+          }
+          aria-pressed={props.listed}
+          onClick={() => props.onChange(true)}
+        >
+          {t('altarListedYes')}
+        </button>
+      </div>
+      <p className="hint">{t('altarListedHint')}</p>
+    </div>
   );
 }
 
@@ -282,7 +328,7 @@ function ExistingRelationships(props: {
 export function AltarSetupModal(props: {
   initial: AltarFields | null;
   fallbackName?: string;
-  /** setup = new profile; relationship / death = star-fragment amend. */
+  /** setup = new profile; relationship / death / list = star-fragment amend. */
   variant?: ModalVariant;
   /** Overrides the default altar/profile hint (first-burn specials). */
   setupHint?: string;
@@ -299,13 +345,15 @@ export function AltarSetupModal(props: {
   const variant: ModalVariant = props.variant ?? 'setup';
   const relationshipOnly = variant === 'relationship';
   const deathOnly = variant === 'death';
+  const listOnly = variant === 'list';
+  const fragmentOnly = relationshipOnly || deathOnly || listOnly;
   const existingLinks = altarRelationships(props.initial ?? emptyAltarFields());
   const parentCount = existingLinks.filter(l => l.type === 'parent').length;
   const parentAtMax = parentCount >= MAX_PARENT_RELATIONSHIPS;
   const cardRef = useRef<HTMLDivElement>(null);
   const festivalSpecial = specialHidesAltarSectionLabel(props.special ?? null);
   const [step, setStep] = useState<Step>(() =>
-    festivalSpecial && !relationshipOnly && !deathOnly ? 'review' : 'edit',
+    festivalSpecial && !fragmentOnly ? 'review' : 'edit',
   );
   const [draft, setDraft] = useState<AltarFields>(() => {
     const calendarFallback = defaultDateCalendar(locale);
@@ -334,6 +382,18 @@ export function AltarSetupModal(props: {
         relationships: existingLinks,
       };
     }
+    if (listOnly) {
+      const initial = props.initial ?? emptyAltarFields();
+      return {
+        ...initial,
+        dateCalendar:
+          normalizeAltarDateCalendar(initial.dateCalendar) || calendarFallback,
+        listed: initial.listed === true,
+        relationshipType: '',
+        relatedTxid: '',
+        relationships: existingLinks,
+      };
+    }
     if (props.initial) {
       const input = fieldsForInput(props.initial, locale);
       return {
@@ -350,12 +410,13 @@ export function AltarSetupModal(props: {
       ...base,
       name,
       dateCalendar: calendarFallback,
+      listed: false,
       relationshipType: '',
       relatedTxid: '',
     };
   });
   const [review, setReview] = useState<AltarFields | null>(() => {
-    if (!festivalSpecial || relationshipOnly || deathOnly || !props.initial) {
+    if (!festivalSpecial || fragmentOnly || !props.initial) {
       return null;
     }
     return normalizeFields({
@@ -420,6 +481,7 @@ export function AltarSetupModal(props: {
         ...fields,
         kind,
         dateCalendar: calendar,
+        listed: null,
         title: '',
         birthPlace: '',
         birthYear: '',
@@ -432,6 +494,7 @@ export function AltarSetupModal(props: {
       ...fields,
       kind,
       dateCalendar: calendar,
+      listed: fields.listed === true,
     };
   }
 
@@ -465,6 +528,7 @@ export function AltarSetupModal(props: {
   function validateDraft(): string | null {
     if (relationshipOnly) return validateAdd();
     if (deathOnly) return validateDeathDateFields(draft);
+    if (listOnly) return null;
     return validateAltarFields(draft);
   }
 
@@ -475,7 +539,7 @@ export function AltarSetupModal(props: {
       return;
     }
     let fields = toWireFields(draft);
-    if (!relationshipOnly && !deathOnly) {
+    if (!fragmentOnly) {
       fields = {
         ...fields,
         relationshipType: '',
@@ -495,7 +559,7 @@ export function AltarSetupModal(props: {
     let fields = review ?? toWireFields(draft);
     // New profile/altar setup: never attach a relationship link (requires a
     // separate star-fragment burn and distracts from the first dedication).
-    if (!relationshipOnly && !deathOnly) {
+    if (!fragmentOnly) {
       fields = {
         ...fields,
         relationshipType: '',
@@ -514,6 +578,7 @@ export function AltarSetupModal(props: {
         });
       }
       if (deathOnly) return validateDeathDateFields(fields);
+      if (listOnly) return null;
       return validateAltarFields(fields);
     })();
     if (err) {
@@ -537,12 +602,14 @@ export function AltarSetupModal(props: {
     formatAltarPersonName(props.initial ?? draft, locale) ||
     t('offeringFallback');
 
-  const isEvent = !relationshipOnly && !deathOnly && altarIsEvent(draft);
+  const isEvent = !fragmentOnly && altarIsEvent(draft);
 
   const editTitle = relationshipOnly
     ? t('altarRelationshipTitle')
     : deathOnly
       ? t('firstOfferDeathTitle')
+      : listOnly
+        ? t('altarListTitle')
       : festivalSpecial && specialTitle
         ? specialTitle
         : isEvent
@@ -554,6 +621,8 @@ export function AltarSetupModal(props: {
     ? t('altarRelationshipHint')
     : deathOnly
       ? t('firstOfferDeathHint')
+      : listOnly
+        ? t('altarListHint')
       : props.setupHint
         ? props.setupHint
         : isEvent
@@ -561,12 +630,13 @@ export function AltarSetupModal(props: {
           : altarHasDeathDate(draft)
             ? t('altarHint')
             : t('profileHint');
-  const primaryCta =
-    relationshipOnly || deathOnly ? t('btnOffer') : t('btnSetup');
+  const primaryCta = fragmentOnly ? t('btnOffer') : t('btnSetup');
   const reviewTitle = relationshipOnly
     ? t('altarRelationshipTitle')
     : deathOnly
       ? t('firstOfferDeathTitle')
+      : listOnly
+        ? t('altarListTitle')
       : festivalSpecial && specialTitle
         ? specialTitle
         : altarIsEvent(review ?? draft)
@@ -596,7 +666,7 @@ export function AltarSetupModal(props: {
           <>
             <h2 id="altar-setup-title">{editTitle}</h2>
             <p className="hint">{editHint}</p>
-            {!relationshipOnly && !deathOnly ? (
+            {!fragmentOnly ? (
               <TempleStory
                 special={props.special}
                 omitPrayer
@@ -688,6 +758,16 @@ export function AltarSetupModal(props: {
                     placeholder={t('altarPlaceOptional')}
                   />
                 </div>
+              </>
+            ) : listOnly ? (
+              <>
+                <p className="offer-session-note offer-session-original">
+                  {personLabel}
+                </p>
+                <ListedToggle
+                  listed={draft.listed === true}
+                  onChange={next => setField('listed', next)}
+                />
               </>
             ) : (
               <>
@@ -943,6 +1023,13 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
+                {festivalSpecial || isEvent ? null : (
+                  <ListedToggle
+                    listed={draft.listed === true}
+                    onChange={next => setField('listed', next)}
+                  />
+                )}
+
               </>
             )}
 
@@ -960,7 +1047,7 @@ export function AltarSetupModal(props: {
         ) : (
           <>
             <h2 id="altar-setup-title">{reviewTitle}</h2>
-            {!relationshipOnly && !deathOnly ? (
+            {!fragmentOnly ? (
               <TempleStory
                 special={props.special}
                 omitPrayer
@@ -995,6 +1082,11 @@ export function AltarSetupModal(props: {
                             review.funeralPlace || props.initial.funeralPlace,
                           dateCalendar: review.dateCalendar,
                         }
+                      : listOnly && props.initial
+                        ? {
+                            ...props.initial,
+                            listed: review.listed === true,
+                          }
                       : review
                 }
                 relatedAltarOptions={props.relatedAltarOptions}

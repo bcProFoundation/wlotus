@@ -4,6 +4,10 @@ import {
   type IndexBurn,
   type IndexMemorialGroup,
 } from '../apps/web/src/lib/danaIndexApi.js';
+import {
+  encodeAltarNote,
+  emptyAltarFields,
+} from '../src/offering/altarFields.js';
 
 const nowMs = Date.parse('2026-08-27T12:00:00.000Z');
 const nowSec = Math.floor(nowMs / 1000);
@@ -56,11 +60,25 @@ const person = tx('1');
 const event = tx('2');
 const quiet = tx('3');
 
+const listedPersonNote = encodeAltarNote({
+  ...emptyAltarFields(),
+  title: 'mr',
+  name: 'Cao Lâm Quả',
+  deathDate: '2001-12-04',
+  listed: true,
+});
+const eventNote = encodeAltarNote({
+  ...emptyAltarFields(),
+  name: 'Vu Lan hội',
+  deathDate: '2026-08-26',
+  kind: 'event',
+});
+
 const recentPayload = {
   ok: true,
   items: [
-    group(person, 'Cao Lâm Quả', [nowSec - 3600, nowSec - 3 * 86_400]),
-    group(event, 'Vu Lan hội', [nowSec - 100, nowSec - 200, nowSec - 300]),
+    group(person, listedPersonNote, [nowSec - 3600, nowSec - 3 * 86_400]),
+    group(event, eventNote, [nowSec - 100, nowSec - 200, nowSec - 300]),
     group(quiet, 'Old altar', [nowSec - 5 * 86_400]),
   ],
 };
@@ -68,15 +86,10 @@ const recentPayload = {
 describe('rankGroupsByDayBurns', () => {
   it('ranks by decay and still includes altars quieter than 24 hours', () => {
     const ranked = rankGroupsByDayBurns(recentPayload.items, 8, nowMs);
-    expect(ranked.map(r => r.originalBurnTxid)).toEqual([
-      event,
-      person,
-      quiet,
-    ]);
-    expect(ranked.map(r => r.dayBurns)).toEqual([3, 1, 0]);
-    expect(ranked.map(r => r.totalBurns)).toEqual([3, 2, 1]);
+    expect(ranked.map(r => r.originalBurnTxid)).toEqual([event, person]);
+    expect(ranked.map(r => r.dayBurns)).toEqual([3, 1]);
+    expect(ranked.map(r => r.totalBurns)).toEqual([3, 2]);
     expect(ranked[0]!.score!).toBeGreaterThan(ranked[1]!.score!);
-    expect(ranked[1]!.score!).toBeGreaterThan(ranked[2]!.score!);
   });
 });
 
@@ -137,11 +150,7 @@ describe('fetchIndexTrending', () => {
     }) as typeof fetch;
 
     const results = await fetchIndexTrending(8, nowMs);
-    expect(results.map(r => r.originalBurnTxid)).toEqual([
-      event,
-      person,
-      quiet,
-    ]);
-    expect(results.map(r => r.dayBurns)).toEqual([3, 1, 0]);
+    expect(results.map(r => r.originalBurnTxid)).toEqual([event, person]);
+    expect(results.map(r => r.dayBurns)).toEqual([3, 1]);
   });
 });

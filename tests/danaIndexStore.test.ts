@@ -1,5 +1,9 @@
 import { BurnStore, type IndexedBurn } from '../apps/dana-index/src/store.js';
-import { ALTAR_SEP } from '../src/offering/altarFields.js';
+import {
+  ALTAR_SEP,
+  encodeAltarNote,
+  emptyAltarFields,
+} from '../src/offering/altarFields.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -221,29 +225,42 @@ describe('BurnStore', () => {
     expect(results.map(r => r.totalBurns)).toEqual([9, 4, 3]);
   });
 
-  it('ranks trending by gravity decay across person and event altars', () => {
-    const person =
+  it('ranks trending by gravity decay across listed person and event altars', () => {
+    const listed =
       '638825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const event =
       '738825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
-    const quiet =
+    const unlisted =
       '838825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
     const nowSec = 1_800_000_000;
     const nowMs = nowSec * 1000;
+    const listedNote = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      listed: true,
+    });
+    const eventNote = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Vu Lan hội',
+      deathDate: '2026-08-26',
+      kind: 'event',
+    });
 
     store.upsert(
       burn({
-        burnTxid: person,
-        note: 'Cao Lâm Quả',
+        burnTxid: listed,
+        note: listedNote,
         blockTimestamp: nowSec - 3600,
       }),
     );
     for (let i = 0; i < 8; i++) {
       store.upsert(
         burn({
-          burnTxid: `${person.slice(0, 62)}${i}${i}`,
+          burnTxid: `${listed.slice(0, 62)}${i}${i}`,
           note: '',
-          parentBurnTxid: person,
+          parentBurnTxid: listed,
           blockTimestamp: nowSec - 3 * 86_400 - i,
         }),
       );
@@ -251,7 +268,7 @@ describe('BurnStore', () => {
     store.upsert(
       burn({
         burnTxid: event,
-        note: `e${ALTAR_SEP}Vu Lan hội${ALTAR_SEP}`,
+        note: eventNote,
         blockTimestamp: nowSec - 100,
       }),
     );
@@ -267,22 +284,17 @@ describe('BurnStore', () => {
     }
     store.upsert(
       burn({
-        burnTxid: quiet,
-        note: 'Old altar',
+        burnTxid: unlisted,
+        note: 'Cao Lâm Quả',
         blockTimestamp: nowSec - 5 * 86_400,
       }),
     );
 
     const trending = store.trendingGroups(8, nowMs);
-    expect(trending.map(r => r.originalBurnTxid)).toEqual([
-      event,
-      person,
-      quiet,
-    ]);
-    expect(trending.map(r => r.dayBurns)).toEqual([4, 1, 0]);
-    expect(trending.map(r => r.totalBurns)).toEqual([4, 9, 1]);
+    expect(trending.map(r => r.originalBurnTxid)).toEqual([event, listed]);
+    expect(trending.map(r => r.dayBurns)).toEqual([4, 1]);
+    expect(trending.map(r => r.totalBurns)).toEqual([4, 9]);
     expect(trending[0]!.score).toBeGreaterThan(trending[1]!.score);
-    expect(trending[1]!.score).toBeGreaterThan(trending[2]!.score);
     expect(trending.every(r => r.burns.length === 0)).toBe(true);
   });
 
@@ -294,7 +306,12 @@ describe('BurnStore', () => {
     store.upsert(
       burn({
         burnTxid: root,
-        note: 'Nepal 26/08',
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          name: 'Nepal 26/08',
+          deathDate: '2026-08-26',
+          kind: 'event',
+        }),
         burnAtoms: '1',
         blockTimestamp: 1_700_000_000,
       }),
@@ -323,7 +340,12 @@ describe('BurnStore', () => {
     store.upsert(
       burn({
         burnTxid: root,
-        note: 'Nepal 26/08',
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          name: 'Nepal 26/08',
+          deathDate: '2026-08-26',
+          kind: 'event',
+        }),
         blockTimestamp: 1_700_000_000,
       }),
     );
@@ -331,7 +353,12 @@ describe('BurnStore', () => {
     store.upsert(
       burn({
         burnTxid: root,
-        note: 'Nepal 26/08',
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          name: 'Nepal 26/08',
+          deathDate: '2026-08-26',
+          kind: 'event',
+        }),
         burnAtoms: '102',
         blockTimestamp: 1_700_000_000,
       }),
@@ -353,14 +380,24 @@ describe('BurnStore', () => {
     store.upsert(
       burn({
         burnTxid: recent,
-        note: 'Within window',
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          name: 'Within window',
+          deathDate: '2026-08-26',
+          listed: true,
+        }),
         blockTimestamp: withinSec,
       }),
     );
     store.upsert(
       burn({
         burnTxid: stale,
-        note: 'Outside window',
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          name: 'Outside window',
+          deathDate: '2026-08-26',
+          listed: true,
+        }),
         blockTimestamp: outsideSec,
       }),
     );

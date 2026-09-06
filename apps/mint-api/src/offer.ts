@@ -62,6 +62,7 @@ import {
   prepareDanaNote,
   truncateUtf8Bytes,
   isDeathDateAmendNote,
+  isListAmendNote,
   isRelationshipAmendNote,
 } from '../../../src/offering/altarFields.js';
 import {
@@ -881,6 +882,13 @@ async function createChallengeOnce(opts: {
     if (!isKnownRootCreator(parentBurnTxid, opts.installId)) {
       throw new Error(
         'Only the profile creator can edit relationships on this dedication',
+      );
+    }
+  }
+  if (parentBurnTxid && isListAmendNote(opts.note)) {
+    if (!isKnownRootCreator(parentBurnTxid, opts.installId)) {
+      throw new Error(
+        'Only the profile creator can change Trending listing on this dedication',
       );
     }
   }

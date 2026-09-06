@@ -40,6 +40,12 @@ export type MessageKey =
   | 'altarKindLabel'
   | 'altarKindPerson'
   | 'altarKindEvent'
+  | 'altarListedLabel'
+  | 'altarListedYes'
+  | 'altarListedNo'
+  | 'altarListedHint'
+  | 'altarListTitle'
+  | 'altarListHint'
   | 'altarEventTitle'
   | 'altarEventHint'
   | 'altarEventNamePlaceholder'
@@ -132,7 +138,10 @@ export type MessageKey =
   | 'reofferExtraNotePlaceholder'
   | 'specialPrayerNoteLabel'
   | 'btnAmendAltar'
+  | 'btnListAltar'
+  | 'btnUnlistAltar'
   | 'amendRelationshipCreatorOnly'
+  | 'amendListCreatorOnly'
   | 'firstOfferDeathTitle'
   | 'firstOfferDeathHint'
   | 'btnOfferLotus'
@@ -253,6 +262,14 @@ const en: Dict = {
   altarKindLabel: 'Event',
   altarKindPerson: 'Person',
   altarKindEvent: 'Event',
+  altarListedLabel: 'Trending',
+  altarListedYes: 'List',
+  altarListedNo: 'Unlisted',
+  altarListedHint:
+    'Person altars stay off Trending unless you list them. You can change this later.',
+  altarListTitle: 'Trending',
+  altarListHint:
+    'List this person on Trending, or keep the altar unlisted. Only the creator can change this.',
   altarEventTitle: 'Event',
   altarEventHint:
     'Create an on-chain memorial for an event. The date is the event day, not a death date.',
@@ -354,8 +371,12 @@ const en: Dict = {
   reofferExtraNotePlaceholder: 'Optional…',
   specialPrayerNoteLabel: 'Wish',
   btnAmendAltar: 'Add relationship',
+  btnListAltar: 'Show on Trending',
+  btnUnlistAltar: 'Hide from Trending',
   amendRelationshipCreatorOnly:
     'Only the creator of this altar can add relationships.',
+  amendListCreatorOnly:
+    'Only the creator of this altar can change Trending listing.',
   firstOfferDeathTitle: 'Offer a flower',
   firstOfferDeathHint:
     'Date of death is required. This records it on-chain and offers a flower. Only the creator of this profile can do this.',
@@ -484,6 +505,14 @@ const vi: Dict = {
   altarKindLabel: 'Sự kiện',
   altarKindPerson: 'Người',
   altarKindEvent: 'Sự kiện',
+  altarListedLabel: 'Xu hướng',
+  altarListedYes: 'Hiện',
+  altarListedNo: 'Ẩn',
+  altarListedHint:
+    'Ban thờ người mặc định không hiện trên Xu hướng. Có thể chọn hiện khi lập hoặc sửa sau.',
+  altarListTitle: 'Xu hướng',
+  altarListHint:
+    'Hiện ban thờ này trên Xu hướng, hoặc giữ ẩn. Chỉ người lập ban thờ mới đổi được.',
   altarEventTitle: 'Sự kiện',
   altarEventHint:
     'Tạo ban thờ trên chuỗi cho một sự kiện. Ngày ở đây là ngày sự kiện, không phải ngày mất.',
@@ -584,8 +613,12 @@ const vi: Dict = {
   reofferExtraNotePlaceholder: 'Tuỳ chọn…',
   specialPrayerNoteLabel: 'Lời nguyện',
   btnAmendAltar: 'Thêm mối quan hệ',
+  btnListAltar: 'Hiện trên Xu hướng',
+  btnUnlistAltar: 'Ẩn khỏi Xu hướng',
   amendRelationshipCreatorOnly:
     'Chỉ người tạo ban thờ mới có thể thêm mối quan hệ.',
+  amendListCreatorOnly:
+    'Chỉ người lập ban thờ mới đổi được hiện trên Xu hướng.',
   firstOfferDeathTitle: 'Dâng hoa',
   firstOfferDeathHint:
     'Bắt buộc nhập ngày mất. Lần này ghi ngày mất trên chuỗi và dâng hoa. Chỉ người tạo hồ sơ mới làm được.',
@@ -715,6 +748,12 @@ const zh: Dict = {
   altarKindLabel: '事件',
   altarKindPerson: '人物',
   altarKindEvent: '事件',
+  altarListedLabel: '热门',
+  altarListedYes: '公开',
+  altarListedNo: '不公开',
+  altarListedHint: '人物灵位默认不出现在热门中。可在设立时公开，或之后再改。',
+  altarListTitle: '热门',
+  altarListHint: '将此人物公开到热门，或保持不公开。仅创建者可更改。',
   altarEventTitle: '事件',
   altarEventHint: '在链上为事件设立灵位。日期为事件日，而非忌日。',
   altarEventNamePlaceholder: '事件名称',
@@ -810,7 +849,10 @@ const zh: Dict = {
   reofferExtraNotePlaceholder: '可选…',
   specialPrayerNoteLabel: '心愿',
   btnAmendAltar: '添加关系',
+  btnListAltar: '公开到热门',
+  btnUnlistAltar: '从热门隐藏',
   amendRelationshipCreatorOnly: '仅档案创建者可添加关系。',
+  amendListCreatorOnly: '仅档案创建者可更改热门公开。',
   firstOfferDeathTitle: '献花',
   firstOfferDeathHint:
     '必须填写去世日期。本次会在链上记录去世日期并献花。仅档案创建者可操作。',

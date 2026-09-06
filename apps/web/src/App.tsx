@@ -40,6 +40,7 @@ import {
   emptyAltarFields,
   encodeAltarNote,
   encodeDeathDateNote,
+  encodeListNote,
   encodeRelationshipNote,
   formatAltarPersonName,
   isAltarPackedNote,
@@ -48,6 +49,7 @@ import {
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
   mergeAltarFields,
   altarHasDeathDate,
+  altarIsEvent,
   altarRelationships,
   normalizeAltarRelatedTxid,
   normalizeAltarRelationshipType,
@@ -350,13 +352,13 @@ export default function App() {
     isCreator: boolean;
   } | null>(null);
   /**
-   * Edit sheet for an EXISTING altar — relationship or death-date star
-   * fragment under the same root. Open for now; see docs/ALTAR.md.
+   * Edit sheet for an EXISTING altar — relationship, death-date, or
+   * list/unlist star fragment under the same root. See docs/ALTAR.md.
    */
   const [amendSheet, setAmendSheet] = useState<{
     parentBurnTxid: string;
     altar: AltarFields;
-    kind: 'relationship' | 'death';
+    kind: 'relationship' | 'death' | 'list';
   } | null>(null);
   /** rootBurnTxid → this installId is soft creator (API + local cache). */
   const [creatorByRoot, setCreatorByRoot] = useState<Map<string, boolean>>(
@@ -852,9 +854,10 @@ export default function App() {
     extraNote?: string;
     /**
      * Star-fragment under an existing altar (parent = root).
-     * `relationship` = link only; `death` = death date for a living profile.
+     * `relationship` = link only; `death` = death date for a living profile;
+     * `list` = Trending list / unlist.
      */
-    amend?: boolean | 'relationship' | 'death';
+    amend?: boolean | 'relationship' | 'death' | 'list';
     /** Related-altar meta for session AltarDetails (names + honorifics). */
     relatedOptions?: RelatedAltarOption[];
     /** Unbound temple special id (first burn). */
@@ -864,7 +867,9 @@ export default function App() {
     const amendKind =
       opts?.amend === true
         ? 'relationship'
-        : opts?.amend === 'relationship' || opts?.amend === 'death'
+        : opts?.amend === 'relationship' ||
+            opts?.amend === 'death' ||
+            opts?.amend === 'list'
           ? opts.amend
           : null;
     const isAmend = Boolean(parentBurnTxid) && Boolean(amendKind);
@@ -886,7 +891,9 @@ export default function App() {
           text:
             amendKind === 'death'
               ? t('firstOfferDeathHint')
-              : t('amendRelationshipCreatorOnly'),
+              : amendKind === 'list'
+                ? t('amendListCreatorOnly')
+                : t('amendRelationshipCreatorOnly'),
         });
         return;
       }
@@ -922,6 +929,12 @@ export default function App() {
         setMsg({ kind: 'err', text: t('altarErrDeathDate') });
         return;
       }
+      historyNote =
+        formatAltarPersonName(activeAltar, locale) ||
+        (opts?.displayNote ?? '').trim() ||
+        t('offeringFallback');
+    } else if (isAmend && amendKind === 'list' && activeAltar) {
+      challengeNote = encodeListNote(activeAltar.listed === true);
       historyNote =
         formatAltarPersonName(activeAltar, locale) ||
         (opts?.displayNote ?? '').trim() ||
@@ -1308,7 +1321,10 @@ export default function App() {
                 parentBurnTxid: burnTxid,
               };
             }
-          } else if (isAmend && amendKind === 'relationship') {
+          } else if (
+            isAmend &&
+            (amendKind === 'relationship' || amendKind === 'list')
+          ) {
             pendingRelationshipFollowUpRef.current = null;
             // Open profile/Ban thờ from local burns so the new link shows
             // immediately (dana-index may lag by minutes).
@@ -3006,6 +3022,32 @@ export default function App() {
                       {t('btnAmendAltar')}
                     </button>
                   ) : null}
+                  {dedicationSheet.isCreator &&
+                  dedicationSheet.parentBurnTxid &&
+                  !altarIsEvent(dedicationSheet.altar) &&
+                  !specialHidesAltarSectionLabel(
+                    specialForBurn(
+                      dedicationSheet.parentBurnTxid,
+                      dedicationSheet.specialId,
+                    ),
+                  ) ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        setAmendSheet({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          altar: dedicationSheet.altar,
+                          kind: 'list',
+                        })
+                      }
+                    >
+                      {dedicationSheet.altar.listed === true
+                        ? t('btnUnlistAltar')
+                        : t('btnListAltar')}
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ) : dedicationSheet.isCreator &&
@@ -3043,6 +3085,24 @@ export default function App() {
                   >
                     {t('btnAmendAltar')}
                   </button>
+                  {!altarIsEvent(dedicationSheet.altar) ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      disabled={!canOffer}
+                      onClick={() =>
+                        setAmendSheet({
+                          parentBurnTxid: dedicationSheet.parentBurnTxid,
+                          altar: dedicationSheet.altar,
+                          kind: 'list',
+                        })
+                      }
+                    >
+                      {dedicationSheet.altar.listed === true
+                        ? t('btnUnlistAltar')
+                        : t('btnListAltar')}
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -3052,7 +3112,13 @@ export default function App() {
 
       {amendSheet && !busy ? (
         <AltarSetupModal
-          variant={amendSheet.kind === 'death' ? 'death' : 'relationship'}
+          variant={
+            amendSheet.kind === 'death'
+              ? 'death'
+              : amendSheet.kind === 'list'
+                ? 'list'
+                : 'relationship'
+          }
           initial={amendSheet.altar}
           etaLabel={etaLabel}
           offerDisabled={!canOffer || shareLookingUp}
@@ -3089,6 +3155,21 @@ export default function App() {
                   dateCalendar: fields.dateCalendar,
                 },
                 amend: 'death',
+                relatedOptions: sessionRelatedOptions,
+              });
+              return;
+            }
+            if (kind === 'list') {
+              void onOffer({
+                parentBurnTxid,
+                displayNote:
+                  formatAltarPersonName(amendSheet.altar, locale) ||
+                  t('offeringFallback'),
+                altar: {
+                  ...amendSheet.altar,
+                  listed: fields.listed === true,
+                },
+                amend: 'list',
                 relatedOptions: sessionRelatedOptions,
               });
               return;
