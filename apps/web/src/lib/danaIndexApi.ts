@@ -2,6 +2,7 @@
 
 import {
   altarBareNameFromNote,
+  altarNotesAreTrendingEligible,
   altarSearchRelevance,
   memorialDisplayName,
   mergeAltarFields,
@@ -177,6 +178,7 @@ export function rankGroupsByTrendingScore(
   const scored: Array<IndexTrendingGroup & { score: number; atMs: number }> =
     [];
   for (const g of groups) {
+    if (!altarNotesAreTrendingEligible(indexMemorialNotes(g))) continue;
     const times = (g.burns ?? []).map(burnActivityMs);
     const score = trendingGroupScore(times, nowMs);
     if (score <= 0) continue;

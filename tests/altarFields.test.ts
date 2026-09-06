@@ -18,8 +18,12 @@ import {
   altarSearchRelevance,
   altarSpouseRelationshipLabel,
   encodeDeathDateNote,
+  encodeListNote,
   isDeathDateAmendNote,
+  isListAmendNote,
   isRelationshipAmendNote,
+  altarIsTrendingEligible,
+  altarNotesAreTrendingEligible,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
@@ -53,6 +57,7 @@ describe('altarFields', () => {
       relationships: [],
       kind: '',
       dateCalendar: '',
+      listed: null,
     };
     const packed = encodeAltarNote(fields);
     expect(isAltarPackedNote(packed)).toBe(true);
@@ -372,6 +377,7 @@ describe('altarFields', () => {
       relationships: [],
       kind: '',
       dateCalendar: '',
+      listed: null,
     };
     const packed = encodeAltarNote(fields, {
       maxBytes: MEMORIAL_NOTE_MAX_BYTES,
@@ -663,6 +669,61 @@ describe('altarFields', () => {
     const merged = mergeAltarFields([fragment, root]);
     expect(merged?.kind).toBe('event');
     expect(merged?.dateCalendar).toBe('lunar');
+  });
+
+  it('defaults person altars to unlisted and keeps events trending', () => {
+    const person = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+    });
+    const listed = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      listed: true,
+    });
+    const event = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Vu Lan hội',
+      deathDate: '2026-08-26',
+      kind: 'event',
+    });
+    expect(parseAltarNote(person)?.listed).toBeNull();
+    expect(listed.includes(`${ALTAR_SEP}l`)).toBe(true);
+    expect(parseAltarNote(listed)?.listed).toBe(true);
+    expect(altarIsTrendingEligible(parseAltarNote(person))).toBe(false);
+    expect(altarIsTrendingEligible(parseAltarNote(listed))).toBe(true);
+    expect(altarIsTrendingEligible(parseAltarNote(event))).toBe(true);
+    expect(altarNotesAreTrendingEligible(['Cao Lâm Quả'])).toBe(false);
+  });
+
+  it('lists and unlists a person altar latest-wins via compact fragments', () => {
+    const root = encodeAltarNote({
+      ...emptyAltarFields(),
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+    });
+    const list = encodeListNote(true);
+    const unlist = encodeListNote(false);
+    expect(list).toBe(`l${ALTAR_SEP}`);
+    expect(unlist).toBe(`u${ALTAR_SEP}`);
+    expect(isListAmendNote(list)).toBe(true);
+    expect(isListAmendNote(unlist)).toBe(true);
+    expect(isListAmendNote(root)).toBe(false);
+    expect(isRelationshipAmendNote(list)).toBe(false);
+    expect(isDeathDateAmendNote(list)).toBe(false);
+    expect(prepareDanaNote(list, true)).toBe(list);
+    expect(prepareDanaNote(unlist, true)).toBe(unlist);
+    const afterList = mergeAltarFields([list, root]);
+    expect(afterList?.listed).toBe(true);
+    expect(altarIsTrendingEligible(afterList)).toBe(true);
+    const afterUnlist = mergeAltarFields([unlist, list, root]);
+    expect(afterUnlist?.listed).toBe(false);
+    expect(altarIsTrendingEligible(afterUnlist)).toBe(false);
   });
 });
 

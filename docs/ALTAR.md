@@ -61,10 +61,11 @@ The UI only lets a user link to an altar already in **this device's Recent
 list** (`AltarSetupModal` `relatedAltarOptions`, sourced from `recentGroups`
 in `App.tsx`) — no free-text txid entry.
 
-**Enforced now (same as death-date):** mint-api rejects relationship star
-fragments unless `installId` matches the recorded root creator
-(`isKnownRootCreator` / `data/root-creators.json`). The web UI hides
-“Add relationship” for non-creators. This is a soft gate — see below.
+**Enforced now (same as death-date):** mint-api rejects relationship and
+list/unlist star fragments unless `installId` matches the recorded root
+creator (`isKnownRootCreator` / `data/root-creators.json`). The web UI hides
+“Add relationship” and Trending list/unlist for non-creators. This is a
+soft gate — see below.
 
 **Still open:** ≤ 10 amendments per altar (not counted yet).
 
@@ -75,8 +76,8 @@ fragments unless `installId` matches the recorded root creator
 cryptographically verifies. Two different properties matter here and are
 easy to conflate:
 
-- **As a secret gate against strangers** — in use for death-date and
-  relationship amends. mint-api records `creatorInstallId` per root at setup
+- **As a secret gate against strangers** — in use for death-date,
+  relationship, and list/unlist amends. mint-api records `creatorInstallId` per root at setup
   and rejects amendments from a different `installId`. A random third party
   has no way to *guess* the creator's id (it is never published on-chain or
   by `dana-index`).
@@ -126,11 +127,12 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 | 10 | Related altar txid (64-hex original burn, or empty) | optional | yes |
 | 11 | Kind (wire `e` = event; empty = person) | optional | yes |
 | 12 | Date calendar (wire `l` = lunar, `s` = solar; empty = legacy) | optional | yes |
+| 13 | Listed (wire `l` = show person on Trending; empty / `u` = unlisted) | optional | yes |
 
 Wire sketch (UTF-8):
 
 ```
-title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid \x1f kind \x1f dateCalendar
+title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid \x1f kind \x1f dateCalendar \x1f listed
 ```
 
 Fields 9–10 (`relationshipType` / `relatedTxid`, see `src/offering/altarFields.ts`)
@@ -149,8 +151,15 @@ Empty kind is a person (living profile or deceased altar). The date itself
 stays the solar civil day in field 6 so calendar matching and
 `altarHasDeathDate` keep working — same as temple specials. Lunar vs solar
 is a display preference (`l` / `s`); the setup field is always solar and
-the lunar line is calculated from it. Old clients ignore the extra trailing
-parts.
+the lunar line is calculated from it.
+
+Field 13 (`listed`) is **person-altar Trending opt-in**. Home Trending
+includes events always, and person altars only when this slot is `l` (or a
+later compact `l\x1f` list amend wins). Empty / missing / `u` = unlisted —
+every person altar already on-chain is unlisted until the creator lists it
+at setup or via a creator-only list/unlist star fragment (`l\x1f` / `u\x1f`).
+Visibility is latest-wins. Search, Ban thờ lookup, and Recent are unchanged.
+Old clients ignore the extra trailing parts.
 
 ### Living profiles
 

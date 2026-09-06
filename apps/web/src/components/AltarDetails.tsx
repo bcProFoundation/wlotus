@@ -174,6 +174,16 @@ export function AltarDetails(props: {
             value: altar.funeralPlace.trim(),
           },
         ]),
+    ...(hidePersonOnly
+      ? []
+      : [
+          {
+            key: 'listed',
+            label: t('altarListedLabel'),
+            value:
+              altar.listed === true ? t('altarListedYes') : t('altarListedNo'),
+          },
+        ]),
   ].filter(r => {
     if (typeof r.value === 'string') return r.value.length > 0;
     return Boolean(r.value);

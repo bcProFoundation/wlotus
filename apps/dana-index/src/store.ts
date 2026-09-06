@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, resolve } from 'node:path';
 import {
   altarBareNameFromNote,
+  altarNotesAreTrendingEligible,
   altarSearchRelevance,
   memorialDisplayName,
 } from '../../../src/offering/altarFields.js';
@@ -92,6 +93,18 @@ function loadHiddenStarRoots(
   } catch {
     return new Set();
   }
+}
+
+/** Latest-first notes under a star (burns already sorted by activity). */
+function memorialGroupNotes(g: MemorialGroup): string[] {
+  const notes: string[] = [];
+  for (const b of g.burns) {
+    const n = (b.note || '').trim();
+    if (n) notes.push(n);
+  }
+  const original = (g.originalNote || '').trim();
+  if (original) notes.push(original);
+  return notes;
 }
 
 export class BurnStore {
@@ -225,7 +238,8 @@ export class BurnStore {
   /**
    * Named star roots ranked by gravity-decayed offerings (each burn
    * scores `1 / (ageHours + 2)^G`). Lifetime `totalBurns` is unchanged.
-   * Groups with no dated burns are omitted.
+   * Groups with no dated burns are omitted. Person altars are omitted
+   * unless the creator listed them; events always qualify.
    */
   trendingGroups(
     limit: number,
@@ -235,6 +249,7 @@ export class BurnStore {
     const cutoff = nowMs - windowMs;
     const scored: TrendingGroup[] = [];
     for (const g of this.buildGroups()) {
+      if (!altarNotesAreTrendingEligible(memorialGroupNotes(g))) continue;
       const times = g.burns.map(activityMs);
       const score = trendingGroupScore(times, nowMs);
       if (score <= 0) continue;
