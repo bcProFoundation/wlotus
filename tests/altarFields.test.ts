@@ -5,6 +5,7 @@ import {
   emptyAltarFields,
   formatAltarDateInput,
   formatAltarPersonName,
+  parseAltarPersonName,
   formatDeathDateInput,
   isAltarPackedNote,
   memorialDisplayName,
@@ -71,6 +72,36 @@ describe('altarFields', () => {
     expect(memorialDisplayName(packed, 'vi')).toBe('Ông Cao Lâm Quả');
     expect(memorialDisplayName(packed, 'en')).toBe('Mr. Cao Lâm Quả');
     expect(formatAltarPersonName(fields, 'zh')).toBe('先生 Cao Lâm Quả');
+  });
+
+  it('parses a combined title+name back to wire honorific + bare name', () => {
+    expect(parseAltarPersonName('Ông Cao Lâm Quả')).toEqual({
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+    });
+    expect(parseAltarPersonName('Bà Nguyễn Thị Mân')).toEqual({
+      title: 'mrs',
+      name: 'Nguyễn Thị Mân',
+    });
+    expect(parseAltarPersonName('Mr. Cao Lâm Quả')).toEqual({
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+    });
+    expect(parseAltarPersonName('先生 Cao Lâm Quả')).toEqual({
+      title: 'mr',
+      name: 'Cao Lâm Quả',
+    });
+    expect(parseAltarPersonName('Cao Lâm Quả')).toEqual({
+      title: '',
+      name: 'Cao Lâm Quả',
+    });
+    expect(parseAltarPersonName('Ông')).toEqual({
+      title: '',
+      name: 'Ông',
+    });
+    expect(
+      formatAltarPersonName(parseAltarPersonName('Ông Cao Lâm Quả'), 'vi'),
+    ).toBe('Ông Cao Lâm Quả');
   });
 
   it('round-trips a spouse relationship link (compact wire code)', () => {

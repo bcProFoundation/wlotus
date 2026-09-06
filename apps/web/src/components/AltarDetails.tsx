@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import {
-  altarHonorificLabel,
   altarIsEvent,
   altarParentRelationshipLabel,
   altarRelationships,
   altarSpouseRelationshipLabel,
   formatAltarDateInput,
+  formatAltarPersonName,
   sortAltarRelationships,
   type AltarFields,
   type AltarHonorific,
@@ -75,16 +75,22 @@ export function AltarDetails(props: {
    * field and on-chain as DANA v2 extra text only (parent txid is the link).
    */
   hideNote?: boolean;
+  /** Creator-only: listed / unlisted on Ban thờ details. Never during offer. */
+  showListed?: boolean;
   onViewRelated?: (relatedTxid: string) => void;
   relatedAltarOptions?: RelatedAltarOption[];
 }) {
   const { locale, t } = useLocale();
   const { altar, specialKind, hideNote } = props;
+  const nameLocale: AltarLocale = locale.startsWith('zh')
+    ? 'zh'
+    : locale.startsWith('en')
+      ? 'en'
+      : 'vi';
   const hideCatalogFields = Boolean(specialKind);
   const userEvent = !hideCatalogFields && altarIsEvent(altar);
   const hidePersonOnly = hideCatalogFields || userEvent;
   const useEventDateLabel = hideCatalogFields || userEvent;
-  const honorific = altarHonorificLabel(altar.title, locale);
   const solarDeath = displayAltarDate(altar.deathDate);
   const lunarDeathDate = formatLunarDeathDate(altar.deathDate.trim(), locale);
   const [showLunarDeath, setShowLunarDeath] = useState(() => {
@@ -124,12 +130,11 @@ export function AltarDetails(props: {
     t('altarDeathDate')
   );
 
-  const nameText = hideCatalogFields ? '' : altar.name.trim();
+  const nameText = hideCatalogFields
+    ? ''
+    : formatAltarPersonName(altar, nameLocale);
 
   const rows: { key: string; label: ReactNode; value: ReactNode }[] = [
-    ...(hidePersonOnly
-      ? []
-      : [{ key: 'honorific', label: t('altarHonorific'), value: honorific }]),
     ...(hideCatalogFields || hideNote
       ? []
       : [{ key: 'note', label: t('altarNote'), value: altar.note.trim() }]),
@@ -174,7 +179,7 @@ export function AltarDetails(props: {
             value: altar.funeralPlace.trim(),
           },
         ]),
-    ...(hidePersonOnly
+    ...(hidePersonOnly || !props.showListed
       ? []
       : [
           {
