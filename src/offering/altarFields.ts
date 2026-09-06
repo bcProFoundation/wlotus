@@ -42,8 +42,15 @@
  * conversion from that day. Field 13 (`listed`) is person-altar Trending
  * opt-in (`l` = listed). Missing / empty / `u` = unlisted — every current
  * person altar is unlisted until the creator lists it. Old clients ignore
- * trailing extra parts.
+ * trailing extra parts. Temple catalog specials (packed before `kind=event`)
+ * still rank on Trending by catalog name / bound profileId.
  */
+
+import {
+  findCatalogEntryByName,
+  foldSpecialName,
+  templeSpecialCatalog,
+} from '../params/templeSpecialCatalog.js';
 
 export const ALTAR_SEP = '\u001f';
 
@@ -350,11 +357,50 @@ export function altarIsTrendingEligible(
   return fields.listed === true;
 }
 
+/**
+ * Temple catalog specials (Vu Lan, Nepal, All Hallows, HCM, …) were packed
+ * before `kind=event` existed. They stay on Trending; user person altars
+ * do not unless listed.
+ */
+export function altarIsCatalogTrendingName(
+  name: string | null | undefined,
+): boolean {
+  const raw = (name || '').trim();
+  if (!raw) return false;
+  if (findCatalogEntryByName(raw)) return true;
+  const key = foldSpecialName(raw);
+  if (!key) return false;
+  return templeSpecialCatalog().some(e => foldSpecialName(e.altarName) === key);
+}
+
 /** Merge packed notes (latest-first) then apply {@link altarIsTrendingEligible}. */
 export function altarNotesAreTrendingEligible(
   notes: Iterable<string>,
+  opts?: { rootTxid?: string; catalogProfileIds?: ReadonlySet<string> },
 ): boolean {
-  return altarIsTrendingEligible(mergeAltarFields(notes));
+  const list = [...notes];
+  const merged = mergeAltarFields(list);
+  if (altarIsTrendingEligible(merged)) return true;
+  const root = (opts?.rootTxid || '').trim().toLowerCase();
+  if (root && opts?.catalogProfileIds?.has(root)) return true;
+  const names = new Set<string>();
+  if (merged?.name) names.add(merged.name);
+  if (merged) {
+    const titled = formatAltarPersonName(merged);
+    if (titled) names.add(titled);
+  }
+  for (const raw of list) {
+    const t = raw.trim();
+    if (!t) continue;
+    const display = memorialDisplayName(t);
+    if (display) names.add(display);
+    const bare = altarBareNameFromNote(t);
+    if (bare) names.add(bare);
+  }
+  for (const name of names) {
+    if (altarIsCatalogTrendingName(name)) return true;
+  }
+  return false;
 }
 
 /** Lowercase 64-hex burn txid, or '' if not a valid shape. */

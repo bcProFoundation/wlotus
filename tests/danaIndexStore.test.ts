@@ -298,6 +298,41 @@ describe('BurnStore', () => {
     expect(trending.every(r => r.burns.length === 0)).toBe(true);
   });
 
+  it('keeps temple catalog specials on trending when they lack kind=event', () => {
+    const vuLan =
+      '938825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const person =
+      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    const nowSec = 1_800_000_000;
+    store.upsert(
+      burn({
+        burnTxid: vuLan,
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          name: 'Vu Lan',
+          note: 'Nguyện cho nhà nhà được bình an.',
+          birthPlace: 'Việt Nam',
+          deathDate: '2026-08-27',
+        }),
+        blockTimestamp: nowSec - 100,
+      }),
+    );
+    store.upsert(
+      burn({
+        burnTxid: person,
+        note: encodeAltarNote({
+          ...emptyAltarFields(),
+          title: 'mr',
+          name: 'Cao Lâm Quả',
+          deathDate: '2001-12-04',
+        }),
+        blockTimestamp: nowSec - 50,
+      }),
+    );
+    const trending = store.trendingGroups(8, nowSec * 1000);
+    expect(trending.map(r => r.originalBurnTxid)).toEqual([vuLan]);
+  });
+
   it('exposes summed lotus atoms on event groups, not offering count', () => {
     const root =
       'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
