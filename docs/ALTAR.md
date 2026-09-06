@@ -160,8 +160,9 @@ roots packed before `kind=event`), and person altars only when this slot
 is `l` (or a later compact `l\x1f` list amend wins). Empty / missing / `u`
 = unlisted — every person altar already on-chain is unlisted until the
 creator lists it at setup or via a creator-only list/unlist star fragment
-(`l\x1f` / `u\x1f`). Visibility is latest-wins. Search, Ban thờ lookup, and
-Recent are unchanged. Old clients ignore the extra trailing parts.
+(`l\x1f` / `u\x1f`). Visibility is latest-wins. Search, Ban thờ lookup,
+Recent, and Calendar giỗ (local + `/api/recent`, not Trending) are
+unchanged. Old clients ignore the extra trailing parts.
 
 ### Living profiles
 

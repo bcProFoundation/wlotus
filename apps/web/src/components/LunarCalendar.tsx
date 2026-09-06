@@ -10,6 +10,7 @@ import {
   lunarTimeZone,
   memorialsInMonth,
   memorialsOnYmd,
+  upcomingMemorialsOutsideMonth,
   orderMonthSpecials,
   parseYmd,
   specialCoversYmd,
@@ -73,6 +74,14 @@ export function LunarCalendar(props: {
     selected.ymd,
     locale,
   );
+  const laterMemorials = upcomingMemorialsOutsideMonth(
+    personalMemorials,
+    selected.ymd,
+    cursor.year,
+    cursor.month,
+    locale,
+  );
+  const listedMemorials = [...monthMemorials, ...laterMemorials];
   const selectedDaySpecials = specialsOnYmd(
     props.specials,
     selected.ymd,
@@ -84,7 +93,7 @@ export function LunarCalendar(props: {
     locale,
   );
   const emptyKind = calendarEmptyKind(
-    monthSpecials.length + monthMemorials.length,
+    monthSpecials.length + listedMemorials.length,
     selectedDaySpecials.length + selectedDayMemorials.length,
     selected.solarD === 1,
   );
@@ -282,11 +291,11 @@ export function LunarCalendar(props: {
           </ul>
         ) : null}
 
-        {monthMemorials.length > 0 ? (
+        {listedMemorials.length > 0 ? (
           <>
             <h4 className="calendar-day-sub">{t('calendarMemorialsHeading')}</h4>
             <ul className="calendar-day-list">
-              {monthMemorials.map(m => {
+              {listedMemorials.map(m => {
                 const onSelected = m.onYmd === selected.ymd;
                 const p = m.onYmd.split('-');
                 const dateLabel =

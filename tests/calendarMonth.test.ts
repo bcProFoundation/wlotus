@@ -17,6 +17,10 @@ import {
   ymdKey,
   defaultSelectedYmdForMonth,
   calendarEmptyKind,
+  calendarMemorialFromAltar,
+  mergeCalendarMemorials,
+  nextMemorialYmd,
+  upcomingMemorialsOutsideMonth,
 } from '../apps/web/src/lib/calendarMonth.js';
 import { solarToLunar } from '../apps/web/src/lib/lunarCalendar.js';
 import { formatSpecialEventDateLabel, formatSpecialListName } from '../apps/web/src/lib/specialsUi.js';
@@ -452,5 +456,77 @@ describe('calendarEmptyKind', () => {
 
   it('hides empty copy when the selected day has an observance', () => {
     expect(calendarEmptyKind(2, 1)).toBe(null);
+  });
+});
+
+describe('calendar person memorials', () => {
+  const qua = calendarMemorialFromAltar(
+    'Ông Cao Lâm Quả',
+    '2001-12-04',
+    '5a5b252af82c6870c55c4c551d26939a527e03825ac8edbec6543711509959c1',
+  )!;
+  const living = calendarMemorialFromAltar(
+    'Bà Đinh Thị Hồng Chăm',
+    '',
+    '4ff5e6b8cf432700836e76894e0ff49bb1e37b4d35a8f51cbdcb1feb1099f974',
+  );
+  const yearOnly = calendarMemorialFromAltar(
+    'Ông',
+    '1979',
+    'a'.repeat(64),
+  );
+
+  it('keeps full death days and drops living / year-only profiles', () => {
+    expect(qua.deathYmd).toBe('2001-12-04');
+    expect(living).toBeNull();
+    expect(yearOnly).toBeNull();
+  });
+
+  it('rejects impossible Gregorian death days', () => {
+    const tx = 'b'.repeat(64);
+    expect(calendarMemorialFromAltar('X', '2001-02-30', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2001-13-01', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2001-00-10', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2001-04-31', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '1900-02-29', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2000-02-29', tx)?.deathYmd).toBe(
+      '2000-02-29',
+    );
+    const bogus = {
+      name: 'X',
+      deathYmd: '2001-02-30',
+      parentTxid: tx,
+    };
+    expect(nextMemorialYmd(bogus, '2026-09-06', 'vi')).toBeNull();
+  });
+
+  it('merges local Recent ahead of the public index', () => {
+    const local = calendarMemorialFromAltar(
+      'Local name',
+      '2001-12-04',
+      qua.parentTxid,
+    )!;
+    const merged = mergeCalendarMemorials([local], [qua]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]!.name).toBe('Local name');
+  });
+
+  it('lists a later-month giỗ while September is open', () => {
+    // Solar 4 Dec also has a lunar twin (28 Nov 2026); take the next hit.
+    expect(nextMemorialYmd(qua, '2026-09-06', 'vi')).toBe('2026-11-28');
+    const later = upcomingMemorialsOutsideMonth(
+      [qua],
+      '2026-09-06',
+      2026,
+      9,
+      'vi',
+    );
+    expect(later.map(m => `${m.name}:${m.onYmd}`)).toEqual([
+      'Ông Cao Lâm Quả:2026-11-28',
+    ]);
+    const dec = buildSolarMonthGrid(2026, 12, 'vi', new Date(2026, 11, 1));
+    const inMonth = dec.filter(d => d.inMonth);
+    const listed = memorialsInMonth([qua], inMonth, '2026-12-01', 'vi');
+    expect(listed.some(m => m.onYmd === '2026-12-04')).toBe(true);
   });
 });
