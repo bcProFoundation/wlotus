@@ -131,7 +131,7 @@ Altar payload fields live **on-chain** inside the memorial note (or a future DAN
 
 Wire sketch (UTF-8):
 
-```
+```text
 title \x1f name \x1f note \x1f birthPlace \x1f birthYear \x1f deathDate \x1f deathPlace \x1f funeralPlace \x1f relationshipType \x1f relatedTxid \x1f kind \x1f dateCalendar \x1f listed
 ```
 

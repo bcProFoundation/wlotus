@@ -725,6 +725,48 @@ describe('altarFields', () => {
     expect(afterUnlist?.listed).toBe(false);
     expect(altarIsTrendingEligible(afterUnlist)).toBe(false);
   });
+
+  it('does not treat a legacy multi-slot root named l or u as a list amend', () => {
+    const legacyL = ['l', 'note', 'Hà Nội'].join(ALTAR_SEP);
+    const legacyU = ['u', 'remember', 'Quy Nhơn'].join(ALTAR_SEP);
+    expect(isListAmendNote(legacyL)).toBe(false);
+    expect(isListAmendNote(legacyU)).toBe(false);
+    expect(parseAltarNote(legacyL)).toMatchObject({
+      name: 'l',
+      note: 'note',
+      birthPlace: 'Hà Nội',
+      listed: null,
+    });
+    expect(parseAltarNote(legacyU)).toMatchObject({
+      name: 'u',
+      note: 'remember',
+      birthPlace: 'Quy Nhơn',
+      listed: null,
+    });
+  });
+
+  it('keeps listed when fitting a root note, and rejects if listed cannot fit', () => {
+    const listed = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Cao Lâm Quả',
+      deathDate: '2001-12-04',
+      note: 'n'.repeat(400),
+      listed: true,
+    });
+    expect(parseAltarNote(listed)?.listed).toBe(true);
+    expect(utf8ByteLength(listed)).toBeLessThanOrEqual(MEMORIAL_NOTE_MAX_BYTES);
+
+    const unlisted = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'A',
+    });
+    expect(() =>
+      encodeAltarNote(
+        { ...emptyAltarFields(), name: 'A', listed: true },
+        { maxBytes: utf8ByteLength(unlisted) },
+      ),
+    ).toThrow(/exceeds OP_RETURN budget/);
+  });
 });
 
 describe('altarSearchRelevance', () => {

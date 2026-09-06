@@ -519,10 +519,12 @@ const COMPACT_REL_RE =
 
 /**
  * Tight list / unlist star fragment: `l` or `u` + SEP (+ optional text).
- * Must be parsed before title-first / legacy so `name` is not `'l'` / `'u'`.
+ * Rest is a single field so a legacy name-first root named `l` / `u`
+ * with more slots falls through to packed parse. Must run before
+ * title-first / legacy so a true fragment is not read as `name='l'`.
  * Does not collide with {@link COMPACT_REL_RE} (`s`/`p`/`c` + 64-hex).
  */
-const COMPACT_LIST_RE = /^([lu])\u001f(.*)$/;
+const COMPACT_LIST_RE = /^([lu])\u001f([^\u001f]*)$/;
 
 function parseCompactListNote(raw: string): AltarFields | null {
   const m = COMPACT_LIST_RE.exec(raw);
@@ -983,9 +985,6 @@ export function encodeAltarNote(
     },
     () => {
       birthYear = '';
-    },
-    () => {
-      listed = '';
     },
   ];
 
