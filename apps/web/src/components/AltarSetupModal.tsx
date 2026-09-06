@@ -9,7 +9,6 @@ import {
   emptyAltarFields,
   formatAltarDateInput,
   formatAltarPersonName,
-  parseAltarPersonName,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   normalizeAltarDateCalendar,
@@ -428,11 +427,6 @@ export function AltarSetupModal(props: {
       relationships: props.initial.relationships ?? [],
     });
   });
-  const [personNameInput, setPersonNameInput] = useState(() => {
-    const seed = props.initial ?? emptyAltarFields();
-    const named = formatAltarPersonName(seed, locale);
-    return named || (props.fallbackName || '').trim();
-  });
   const [errorKey, setErrorKey] = useState<string | null>(null);
 
   const availableOptions = props.relatedAltarOptions.filter(
@@ -448,11 +442,8 @@ export function AltarSetupModal(props: {
     setErrorKey(null);
   }
 
-  function changePersonName(raw: string) {
-    setPersonNameInput(raw);
-    const parsed = parseAltarPersonName(raw);
-    setDraft(d => ({ ...d, title: parsed.title, name: parsed.name }));
-    setErrorKey(null);
+  function setHonorific(next: AltarHonorific) {
+    setField('title', draft.title === next ? '' : next);
   }
 
   function changeDateCalendar(next: AltarDateCalendar) {
@@ -464,14 +455,11 @@ export function AltarSetupModal(props: {
   }
 
   function setAltarKind(next: AltarKind) {
-    const visible = personNameInput.trim() || draft.name;
     if (next === 'event') {
-      setPersonNameInput(visible);
       setDraft(d => ({
         ...d,
         kind: 'event',
         title: '',
-        name: visible,
         birthPlace: '',
         birthYear: '',
         funeralPlace: '',
@@ -479,14 +467,7 @@ export function AltarSetupModal(props: {
         relatedTxid: '',
       }));
     } else {
-      const parsed = parseAltarPersonName(visible);
-      setPersonNameInput(visible);
-      setDraft(d => ({
-        ...d,
-        kind: '',
-        title: parsed.title,
-        name: parsed.name || visible,
-      }));
+      setDraft(d => ({ ...d, kind: '' }));
     }
     setErrorKey(null);
   }
@@ -509,17 +490,11 @@ export function AltarSetupModal(props: {
         relatedTxid: '',
       };
     }
-    const parsed =
-      !listOnly && !relationshipOnly && !deathOnly
-        ? parseAltarPersonName(personNameInput)
-        : { title: fields.title, name: fields.name };
     return {
       ...fields,
       kind,
       dateCalendar: calendar,
       listed: fields.listed === true,
-      title: parsed.title,
-      name: parsed.name || fields.name,
     };
   }
 
@@ -554,14 +529,6 @@ export function AltarSetupModal(props: {
     if (relationshipOnly) return validateAdd();
     if (deathOnly) return validateDeathDateFields(draft);
     if (listOnly) return null;
-    if (!altarIsEvent(draft)) {
-      const parsed = parseAltarPersonName(personNameInput);
-      return validateAltarFields({
-        ...draft,
-        title: parsed.title,
-        name: parsed.name,
-      });
-    }
     return validateAltarFields(draft);
   }
 
@@ -845,6 +812,47 @@ export function AltarSetupModal(props: {
                 </div>
                 )}
 
+                {festivalSpecial || isEvent ? null : (
+                <div className="field">
+                  <span
+                    className="altar-honorific-label"
+                    id="altar-honorific-label"
+                  >
+                    {t('altarHonorific')}
+                  </span>
+                  <div
+                    className="altar-honorific"
+                    role="group"
+                    aria-labelledby="altar-honorific-label"
+                  >
+                    <button
+                      type="button"
+                      className={
+                        draft.title === 'mr'
+                          ? 'altar-honorific-btn is-selected'
+                          : 'altar-honorific-btn'
+                      }
+                      aria-pressed={draft.title === 'mr'}
+                      onClick={() => setHonorific('mr')}
+                    >
+                      {t('altarHonorificMr')}
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        draft.title === 'mrs'
+                          ? 'altar-honorific-btn is-selected'
+                          : 'altar-honorific-btn'
+                      }
+                      aria-pressed={draft.title === 'mrs'}
+                      onClick={() => setHonorific('mrs')}
+                    >
+                      {t('altarHonorificMrs')}
+                    </button>
+                  </div>
+                </div>
+                )}
+
                 {festivalSpecial ? null : (
                 <div className="field">
                   <label htmlFor="altar-name">{t('altarName')}</label>
@@ -852,15 +860,8 @@ export function AltarSetupModal(props: {
                     id="altar-name"
                     type="text"
                     autoComplete="name"
-                    value={personNameInput}
-                    onChange={e => {
-                      if (isEvent) {
-                        setPersonNameInput(e.target.value);
-                        setField('name', e.target.value);
-                      } else {
-                        changePersonName(e.target.value);
-                      }
-                    }}
+                    value={draft.name}
+                    onChange={e => setField('name', e.target.value)}
                     placeholder={
                       isEvent
                         ? t('altarEventNamePlaceholder')
