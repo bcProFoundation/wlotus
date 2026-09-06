@@ -506,6 +506,111 @@ export interface CalendarMemorial {
   parentTxid: string;
 }
 
+const CALENDAR_TXID_RE = /^[0-9a-f]{64}$/;
+const CALENDAR_YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Person / user-event giỗ. Living profiles (no full death day) are omitted. */
+export function calendarMemorialFromAltar(
+  name: string,
+  deathYmd: string,
+  parentTxid: string,
+): CalendarMemorial | null {
+  const death = deathYmd.trim();
+  const txid = parentTxid.trim().toLowerCase();
+  const label = name.trim();
+  if (!CALENDAR_YMD_RE.test(death) || !CALENDAR_TXID_RE.test(txid) || !label) {
+    return null;
+  }
+  return { name: label, deathYmd: death, parentTxid: txid };
+}
+
+/** Local Recent first; later lists fill gaps (index recent, not Trending). */
+export function mergeCalendarMemorials(
+  ...lists: readonly CalendarMemorial[][]
+): CalendarMemorial[] {
+  const byTxid = new Map<string, CalendarMemorial>();
+  for (const list of lists) {
+    for (const m of list) {
+      const key = m.parentTxid.trim().toLowerCase();
+      if (!key || byTxid.has(key)) continue;
+      byTxid.set(key, { ...m, parentTxid: key });
+    }
+  }
+  return [...byTxid.values()];
+}
+
+function calendarDayFromYmd(ymd: string, locale: string): CalendarDay | null {
+  const p = parseYmd(ymd);
+  if (!p) return null;
+  const tz = lunarTimeZone(locale);
+  return {
+    solarY: p.y,
+    solarM: p.m,
+    solarD: p.d,
+    ymd,
+    inMonth: true,
+    isToday: false,
+    lunar: solarToLunar(p.d, p.m, p.y, tz),
+  };
+}
+
+/** Next solar day on or after `fromYmd` where this giỗ falls. */
+export function nextMemorialYmd(
+  memorial: CalendarMemorial,
+  fromYmd: string,
+  locale: string,
+  horizonDays = 366,
+): string | null {
+  const start = parseYmd(fromYmd);
+  if (!start) return null;
+  for (let i = 0; i <= horizonDays; i++) {
+    const dt = new Date(start.y, start.m - 1, start.d + i);
+    const ymd = ymdKey(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    const day = calendarDayFromYmd(ymd, locale);
+    if (day && memorialOnYmd(memorial, day, locale)) return ymd;
+  }
+  return null;
+}
+
+/**
+ * Next giỗ after this month (or after `fromYmd` if that is later).
+ * One row per altar so Recent people still appear when their day is
+ * not in the open month.
+ */
+function ymdPlusDays(ymd: string, days: number): string | null {
+  const p = parseYmd(ymd);
+  if (!p) return null;
+  const n = new Date(p.y, p.m - 1, p.d + days);
+  return ymdKey(n.getFullYear(), n.getMonth() + 1, n.getDate());
+}
+
+export function upcomingMemorialsOutsideMonth(
+  memorials: CalendarMemorial[],
+  fromYmd: string,
+  year: number,
+  month: number,
+  locale: string,
+): MonthMemorial[] {
+  const { start: monthStart, end: monthEnd } = monthStartEnd(year, month);
+  const after =
+    fromYmd > monthEnd ? fromYmd : ymdPlusDays(monthEnd, 1) ?? fromYmd;
+  const out: MonthMemorial[] = [];
+  const seen = new Set<string>();
+  for (const m of memorials) {
+    const key = m.parentTxid.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    const onYmd = nextMemorialYmd(m, after, locale);
+    if (!onYmd || (onYmd >= monthStart && onYmd <= monthEnd)) continue;
+    seen.add(key);
+    out.push({ ...m, onYmd });
+  }
+  out.sort(
+    (a, b) =>
+      a.onYmd.localeCompare(b.onYmd) || a.name.localeCompare(b.name, 'vi'),
+  );
+  return out;
+}
+
 function catalogYearFromSpecial(special: TempleSpecialProfileUi): number {
   return (
     parseYmd(

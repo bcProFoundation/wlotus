@@ -79,8 +79,10 @@ import { mineInWorker } from './lib/mineRunner.js';
 import { MineElapsedClock } from './lib/mineElapsedClock.js';
 import { waitMinPray } from './lib/minPraySeconds.js';
 import {
+  calendarMemorialFromAltar,
   calendarYmdFromHash,
   hashForCalendar,
+  mergeCalendarMemorials,
   tabFromHash,
   todayYmd,
   type AppTab,
@@ -376,6 +378,7 @@ export default function App() {
     [],
   );
   const [indexTrendingLoading, setIndexTrendingLoading] = useState(false);
+  const [indexRecent, setIndexRecent] = useState<IndexMemorialGroup[]>([]);
   const [maxOffersPerDay, setMaxOffersPerDay] = useState(20);
   const [tokenId, setTokenId] = useState<string | null>(null);
   const [ticker, setTicker] = useState(PRAYER_TICKER);
@@ -1752,6 +1755,22 @@ export default function App() {
   );
 
   useEffect(() => {
+    if (!tokenId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const items = await fetchIndexRecent(80);
+        if (!cancelled) setIndexRecent(items);
+      } catch {
+        if (!cancelled) setIndexRecent([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tokenId]);
+
+  useEffect(() => {
     if (homeEventsSort !== 'trending') return;
     let cancelled = false;
     setIndexTrendingLoading(true);
@@ -1845,22 +1864,37 @@ export default function App() {
     countryCode,
     locale,
   });
-  const calendarMemorials = recentGroups.flatMap(g => {
+  const localCalendarMemorials = recentGroups.flatMap(g => {
     const a = altarFromOfferGroup(g);
-    const deathYmd = (a.deathDate || '').trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(deathYmd)) return [];
     const name =
       memorialDisplayName(g.note, locale) ||
       a.name ||
       t('offeringFallback');
-    return [
-      {
-        name,
-        deathYmd,
-        parentTxid: g.original.burnTxid,
-      },
-    ];
+    const row = calendarMemorialFromAltar(
+      name,
+      a.deathDate,
+      g.original.burnTxid,
+    );
+    return row ? [row] : [];
   });
+  const indexCalendarMemorials = indexRecent.flatMap(g => {
+    const a = altarFieldsFromIndexMemorial(g);
+    if (!a) return [];
+    const name =
+      memorialDisplayName(g.originalNote || g.latestNote || '', locale) ||
+      a.name ||
+      t('offeringFallback');
+    const row = calendarMemorialFromAltar(
+      name,
+      a.deathDate,
+      g.originalBurnTxid,
+    );
+    return row ? [row] : [];
+  });
+  const calendarMemorials = mergeCalendarMemorials(
+    localCalendarMemorials,
+    indexCalendarMemorials,
+  );
 
   // Soft-ownership prefetch for living profiles in Recent (creator sees Dâng hoa).
   useEffect(() => {
