@@ -29,9 +29,16 @@ export const WLOTUS_MOORE_TIP_MODE = 'moore-tip-hard-bind';
  * 1:1 value-wise (distinct ALP `tokenId`s).
  */
 export const WLOTUS_FELT_COVENANT = 'WLotusCovenant';
-/** Live felt JSON still stores the historical compile name. */
+/**
+ * Live W Lotus JSON may still store this compile name. GLotus research
+ * tokens also use it as *their* covenant — distinguish with
+ * {@link GLOTUS_FELT_MODE} / `tier: 'glotus'`.
+ */
 export const WLOTUS_FELT_COVENANT_LEGACY = 'GlotusPowRemintMooreTip';
 export const WLOTUS_FELT_MODE = 'wlotus-moore-felt-bit';
+/** GLotus research token — own clock (845 d/bit), not a WLotusCovenant fork. */
+export const GLOTUS_COVENANT = 'GlotusPowRemintMooreTip';
+export const GLOTUS_FELT_MODE = 'glotus-moore-felt-bit';
 /** One mala, all to miner. */
 export const WLOTUS_FELT_MINER_ATOMS = 108n;
 export const WLOTUS_FELT_TEMPLE_ATOMS = 0n;
@@ -71,15 +78,21 @@ export function resolveWlotusGenesisRegime(
   return 'felt';
 }
 
-export function isWlotusFeltCovenant(
-  dep: { covenant?: string; mode?: string } | null | undefined,
+export function isGlotusResearchCovenant(
+  dep: { covenant?: string; mode?: string; tier?: string } | null | undefined,
 ): boolean {
   if (!dep) return false;
+  return dep.mode === GLOTUS_FELT_MODE || dep.tier === 'glotus';
+}
+
+export function isWlotusFeltCovenant(
+  dep: { covenant?: string; mode?: string; tier?: string } | null | undefined,
+): boolean {
+  if (!dep || isGlotusResearchCovenant(dep)) return false;
   return (
     dep.covenant === WLOTUS_FELT_COVENANT ||
     dep.covenant === WLOTUS_FELT_COVENANT_LEGACY ||
-    dep.mode === WLOTUS_FELT_MODE ||
-    dep.mode === 'glotus-moore-felt-bit'
+    dep.mode === WLOTUS_FELT_MODE
   );
 }
 

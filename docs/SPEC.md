@@ -13,7 +13,8 @@ Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar:
 | Decimals | `0` | Whole tokens |
 | Covenant (live felt) | `WLotusCovenant` | 108 miner, felt +1 bit / 500 d — reference for forks |
 | Clock origin | `1788215242` | Live prod `genesisUnix` — default for new WLotusCovenant geneses |
-| Covenant (alias) | `GlotusPowRemintMooreTip` | Same bytecode; live JSON may still store this name |
+| Covenant (W Lotus JSON alias) | `GlotusPowRemintMooreTip` | Live W Lotus JSON may still store this name |
+| Covenant (GLotus research) | `GlotusPowRemintMooreTip` | Separate token; 845 d/bit; not 1:1 with WLOTUS |
 | Covenant (retired) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — previous tokenId |
 
 ## PoW remint
@@ -77,7 +78,7 @@ k = floor(elapsed_days since genesis)
 | PoW / Moore | Own schedule (may use higher base bits) |
 | Role | Event burns / later commerce |
 
-Details TBD at GLOTUS launch; see [ECONOMICS.md](./ECONOMICS.md). A GLOTUS that reuses `WLotusCovenant` but bakes a different `genesisUnix` or Moore step is **not** 1:1 with WLOTUS.
+Research dogfood (`dGLOTUS`) keeps **`GlotusPowRemintMooreTip`** and the 845-day clock. Do not retarget it at `WLotusCovenant` or the live WLOTUS `genesisUnix`. Production GLOTUS details TBD; see [ECONOMICS.md](./ECONOMICS.md).
 
 ## Explicit non-goals
 

@@ -2,7 +2,7 @@ import { GLOTUS_MOORE_DAYS_PER_EXTRA_BIT } from '../src/params/consensus.js';
 import { ergonDaysForWorkFactor } from '../src/params/pricing.js';
 import { meetsPowBits } from '../src/covenant/wldf.js';
 
-/** LE 2-byte remBits limits baked in WLotusCovenant.spedn. */
+/** LE 2-byte remBits limits baked in GlotusPowRemintMooreTip.spedn. */
 const GLOTUS_REM_LIMITS = Buffer.from(
   '00018000400020001000080004000200',
   'hex',

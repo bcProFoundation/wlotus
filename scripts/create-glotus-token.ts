@@ -1,11 +1,13 @@
 #!/usr/bin/env tsx
 /**
- * Genesis for dogfood GLotus (`WLotusCovenant`; 845-day clock).
+ * Genesis for the GLotus **research** token (`GlotusPowRemintMooreTip`).
+ * Separate from `WLotusCovenant` — 845-day Ergon clock, own genesisUnix
+ * (MTP−120, not the live WLOTUS clock). Not 1:1 with WLOTUS.
  *
  *   GLOTUS_MNEMONIC='…' npm run create-glotus-token
  *
  * Ticker default DGLOTUS (docs: dGLOTUS). Override TICKER=GLOTUS if intended.
- * Mint 108 → miner only. Moore 2×: +1 bit / 845 days. Felt remBits, ALP MINT only.
+ * Mint 108 → miner only. Felt remBits, ALP MINT only.
  */
 import { resolve } from 'node:path';
 import { writeFileSync, mkdirSync, renameSync, existsSync } from 'node:fs';
@@ -18,8 +20,8 @@ import {
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
-import { createWLotusCovenantContract } from '../src/covenant/powRemintGlotusTipScript.js';
-import { WLOTUS_FELT_COVENANT } from '../src/params/wlotusMint.js';
+import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { GLOTUS_COVENANT } from '../src/params/wlotusMint.js';
 import {
   GLOTUS_MINT_ATOMS,
   GLOTUS_MOORE_DAYS_PER_EXTRA_BIT,
@@ -88,7 +90,7 @@ async function main(): Promise<void> {
         batons,
         tipHeight,
         mtp,
-        covenant: WLOTUS_FELT_COVENANT,
+        covenant: GLOTUS_COVENANT,
       },
       null,
       2,
@@ -113,7 +115,7 @@ async function main(): Promise<void> {
   });
   console.log('Genesis', genesis.tokenId);
 
-  const contract = await createWLotusCovenantContract({
+  const contract = await createPowRemintGlotusTipContract({
     tokenId: genesis.tokenId,
     mintAtoms: GLOTUS_MINT_ATOMS,
     genesisUnix,
@@ -188,7 +190,7 @@ async function main(): Promise<void> {
     tokenId: genesis.tokenId,
     mode: 'glotus-moore-felt-bit',
     role: 'incubation-glotus',
-    covenant: WLOTUS_FELT_COVENANT,
+    covenant: GLOTUS_COVENANT,
     decimals: 0,
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,

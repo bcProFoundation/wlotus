@@ -9,9 +9,10 @@
 // Layout: econHead(85) | 0x20 prefixHash | 0x04 tipLe | codeBytes
 // CODESEPARATOR keeps BIP143 preimage small.
 //
-// Historical compile name: GlotusPowRemintMooreTip (same body / bytecode).
-// Forks that copy this redeem and bake the same mint / Moore step /
-// genesisUnix share the issuance clock and may exchange 1:1 value-wise.
+// Live W Lotus JSON may still say GlotusPowRemintMooreTip (same body).
+// GLotus research keeps that old contract as its own token — do not
+// retarget dGLOTUS here. Forks that copy this redeem and bake the same
+// mint / Moore step / genesisUnix may exchange 1:1 value-wise.
 
 contract WLotusCovenant(
     [byte;32] tokenIdRev,

@@ -54,7 +54,7 @@ import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createPowRemintMooreTipContract } from '../src/covenant/powRemintMooreTipScript.js';
 import { createPowRemintMooreTipTempleContract } from '../src/covenant/powRemintMooreTipTempleScript.js';
-import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { createWLotusCovenantContract } from '../src/covenant/powRemintGlotusTipScript.js';
 import {
   WLOTUS_FELT_COVENANT,
   WLOTUS_FELT_MODE,
@@ -255,7 +255,7 @@ async function main(): Promise<void> {
   console.log('Initial mint →', initialMintAddress);
 
   const contract = felt
-    ? await createPowRemintGlotusTipContract({
+    ? await createWLotusCovenantContract({
         tokenId: genesis.tokenId,
         mintAtoms: WLOTUS_MINT_ATOMS,
         genesisUnix,
@@ -392,7 +392,7 @@ async function main(): Promise<void> {
       ? [
           'Hard next-P2SH via codeHash + tipLocktime anti-rewind.',
           `Felt +1 bit / ${daysPerBit} days (2× / ~1.4 y from bits=0). Cap bits ≤ 128. ALP MINT only (no remint DANA tip). baseZeroBits=0.`,
-          `W Lotus on GLotus felt redeem: mint ${WLOTUS_MINT_ATOMS} → miner only (no temple tax). initialMintAtoms=${WLOTUS_MINT_ATOMS} → ${initialMintAddress}.`,
+          `WLotusCovenant: mint ${WLOTUS_MINT_ATOMS} → miner only (no temple tax). initialMintAtoms=${WLOTUS_MINT_ATOMS} → ${initialMintAddress}.`,
           isProdTicker
             ? `Ticker ${PROD_TOKEN_TICKER} writes mainnet-wlotus.json — this is the production token. Dogfood on test, then retarget prod at the same tokenId. Do not genesis a second WLOTUS.`
             : `Test/dryrun genesis ticker ${ticker} — same covenant as prod; only ticker/metadata differ. Not the felt cutover path.`,

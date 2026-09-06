@@ -1,5 +1,6 @@
-// Historical alias of WLotusCovenant (same body / bytecode).
-// Edit contracts/WLotusCovenant.spedn; keep this file identical.
+// GLotus research remint — keep separate from WLotusCovenant.
+// Same felt body for now; own 845-day clock and genesisUnix at create time.
+// Edit with care: WLotusCovenant.spedn is the W Lotus fork reference.
 // GLotus remint: fixed mint, Moore 2× (felt +1 bit), hard next-P2SH.
 // Redeem ≤520; non-push ops ≤201.
 // Felt +1 bit via 8×2-byte LE thresholds (no OP_MUL, no IF). remBits=0

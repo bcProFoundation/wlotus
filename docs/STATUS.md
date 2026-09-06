@@ -18,7 +18,7 @@ exchange 1:1 — [ECONOMICS.md](./ECONOMICS.md).
 | **Old test** | `dWLOTUS` | retired | `ffc15eb40711fbf069370a4f90ca44ce7913968a6d5940df9890343066f119ec` | **Abandon** |
 | **Retired prod** | `WLOTUS` | retired | `154d229bab3cf228a2d40b507e1fc5f21a09542ec66776d3e797b455ab77a091` | **Abandon** |
 | **GLOTUS** | `GLOTUS` | — | not minted | Design — [ECONOMICS.md](./ECONOMICS.md) |
-| **dGLOTUS** | `DGLOTUS` | dogfood | `baaf918ba8c863941c4e5d0b826071e42a2f225baac5b33f729f8a3b8cdcbbdb` | 2026-08-30 · 28 batons · `WLotusCovenant` (845 d/bit — not 1:1 with WLOTUS) |
+| **dGLOTUS** | `DGLOTUS` | research | `baaf918ba8c863941c4e5d0b826071e42a2f225baac5b33f729f8a3b8cdcbbdb` | 2026-08-30 · 28 batons · `GlotusPowRemintMooreTip` (845 d/bit — not WLotusCovenant) |
 
 ALP stores the test ticker uppercase (`DWLOTUS`); docs write `dWLOTUS`. On-chain name is **W Lotus**.
 
@@ -47,7 +47,7 @@ Chronik: `https://chronik.e.cash` · `https://xec.paybutton.org` · `https://chr
 
 Local: `npm run mint-api` + `npm run web`. Hosting: [test](../deploy/contabo/README.md) · [prod](../deploy/contabo/PROD.md). The 1/107 → 102/6 recut is **done** ([runbook](../deploy/contabo/PROD_CUTOVER_102_6.md)).
 
-Dogfood only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`, **dGLOTUS** (`WLotusCovenant`, 845-day clock).
+Research only: `WlotusPowRemintErgon`, legacy `WlotusPowRemintMoore`, **dGLOTUS** (`GlotusPowRemintMooreTip`, 845-day clock).
 
 ## Next
 

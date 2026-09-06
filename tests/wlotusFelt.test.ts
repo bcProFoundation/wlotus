@@ -16,6 +16,9 @@ import {
   WLOTUS_SOFT_TEMPLE_ATOMS,
   WLOTUS_MOORE_TIP_COVENANT,
   WLOTUS_MOORE_TIP_MODE,
+  GLOTUS_COVENANT,
+  GLOTUS_FELT_MODE,
+  isGlotusResearchCovenant,
   isWLotusCovenantExchangePeer,
   isWlotusDeskCovenant,
   isWlotusFeltCovenant,
@@ -79,6 +82,14 @@ describe('WLotus felt no-tax recut', () => {
     expect(
       isWlotusFeltCovenant({ covenant: WLOTUS_FELT_COVENANT_LEGACY }),
     ).toBe(true);
+    const glotus = {
+      covenant: GLOTUS_COVENANT,
+      mode: GLOTUS_FELT_MODE,
+      tier: 'glotus',
+    };
+    expect(isGlotusResearchCovenant(glotus)).toBe(true);
+    expect(isWlotusFeltCovenant(glotus)).toBe(false);
+    expect(isWlotusDeskCovenant(glotus)).toBe(false);
   });
 
   it('treats same-econ same-genesisUnix forks as 1:1 exchange peers', () => {
@@ -123,9 +134,22 @@ describe('WLotus felt no-tax recut', () => {
         fork,
       ),
     ).toBe(false);
+    expect(
+      isWLotusCovenantExchangePeer(live, {
+        covenant: GLOTUS_COVENANT,
+        mode: GLOTUS_FELT_MODE,
+        tier: 'glotus',
+        genesisUnix: 1_700_000_000,
+        mintAtomsPerRemint: '108',
+        secondsPerExtraBit: 845 * 86_400,
+        baseZeroBits: 0,
+        mintSplit: { miner: '108', temple: '0' },
+        powBatonCount: 28,
+      }),
+    ).toBe(false);
   });
 
-  it('keeps the historical Glotus alias bytecode-identical to WLotusCovenant', () => {
+  it('keeps GLotus research bytecode matching WLotusCovenant for now', () => {
     const strip = (src: string) =>
       src
         .replace(/^\/\/.*$/gm, '')

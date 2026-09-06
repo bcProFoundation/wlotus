@@ -1,7 +1,7 @@
 /**
- * WLotusCovenant factory — felt +1 bit (no whole-byte guard), ALP MINT only.
- * Same econHead layout as WlotusPowRemintMooreTip. Historical compile name
- * was GlotusPowRemintMooreTip (identical bytecode).
+ * Felt +1 bit remint factories (no whole-byte guard), ALP MINT only.
+ * `WLotusCovenant` is the W Lotus reference. `GlotusPowRemintMooreTip` is
+ * the GLotus research token (845-day clock) — keep them separate.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -28,18 +28,19 @@ import {
 
 export type PowRemintGlotusTipContract = PowRemintMooreTipContract;
 
-let cachedPortable: PortableModule | undefined;
+type FeltCtorName = 'WLotusCovenant' | 'GlotusPowRemintMooreTip';
 
-async function loadPortable(): Promise<PortableModule> {
-  if (cachedPortable) return cachedPortable;
+const portableCache = new Map<string, PortableModule>();
+
+async function loadPortable(file: string): Promise<PortableModule> {
+  const hit = portableCache.get(file);
+  if (hit) return hit;
   const spedn = new Spedn();
   try {
-    const code = readFileSync(
-      resolve(process.cwd(), 'contracts/WLotusCovenant.spedn'),
-      'utf8',
-    );
-    cachedPortable = await spedn.compileCode('xec', code);
-    return cachedPortable;
+    const code = readFileSync(resolve(process.cwd(), file), 'utf8');
+    const portable = await spedn.compileCode('xec', code);
+    portableCache.set(file, portable);
+    return portable;
   } finally {
     spedn.dispose();
   }
@@ -90,21 +91,24 @@ function instantiate(
   params: PowRemintMooreTipParams,
   codeHash: Buffer,
   prefixHash: Buffer,
+  ctorName: FeltCtorName,
 ): PowMooreTipInstance {
   const factory = new ModuleFactory(new BchJsRts('mainnet'));
-  const Ctor = factory.make(portable).WLotusCovenant;
+  const Ctor = factory.make(portable)[ctorName];
   return new Ctor(
     ctorArgs(params, codeHash, prefixHash),
   ) as PowMooreTipInstance;
 }
 
-export async function createWLotusCovenantContract(
+async function createFeltContract(
   params: PowRemintMooreTipParams,
+  file: string,
+  ctorName: FeltCtorName,
 ): Promise<PowRemintGlotusTipContract> {
-  const portable = await loadPortable();
+  const portable = await loadPortable(file);
   const z = Buffer.alloc(32, 0);
 
-  const probe = instantiate(portable, params, z, z);
+  const probe = instantiate(portable, params, z, z, ctorName);
   const tipOff = findTipValueOffset(
     probe.redeemScript as Buffer,
     params.tipLocktime,
@@ -117,7 +121,13 @@ export async function createWLotusCovenantContract(
   const codeHash = Buffer.from(sha256(codeBytes));
   const prefixHash = Buffer.from(sha256(buildEconHead(params, codeHash)));
 
-  const instance = instantiate(portable, params, codeHash, prefixHash);
+  const instance = instantiate(
+    portable,
+    params,
+    codeHash,
+    prefixHash,
+    ctorName,
+  );
   const redeemScriptBuf = instance.redeemScript as Buffer;
   const tipValueOffset = findTipValueOffset(
     redeemScriptBuf,
@@ -174,7 +184,25 @@ export async function createWLotusCovenantContract(
   };
 }
 
-/** Historical name — same factory as `createWLotusCovenantContract`. */
-export const createPowRemintGlotusTipContract = createWLotusCovenantContract;
+export function createWLotusCovenantContract(
+  params: PowRemintMooreTipParams,
+): Promise<PowRemintGlotusTipContract> {
+  return createFeltContract(
+    params,
+    'contracts/WLotusCovenant.spedn',
+    'WLotusCovenant',
+  );
+}
+
+/** GLotus research token — own spedn, 845-day clock, not WLotusCovenant. */
+export function createPowRemintGlotusTipContract(
+  params: PowRemintMooreTipParams,
+): Promise<PowRemintGlotusTipContract> {
+  return createFeltContract(
+    params,
+    'contracts/GlotusPowRemintMooreTip.spedn',
+    'GlotusPowRemintMooreTip',
+  );
+}
 
 export { reconstructNextRedeem };
