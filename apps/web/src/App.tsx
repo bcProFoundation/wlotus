@@ -2885,6 +2885,7 @@ export default function App() {
                 )?.kind ?? null
               }
               hideNote
+              showListed={dedicationSheet.isCreator}
               onViewRelated={txid => void viewRelatedAltar(txid)}
               relatedAltarOptions={dedicationSheet.relatedOptions}
             />

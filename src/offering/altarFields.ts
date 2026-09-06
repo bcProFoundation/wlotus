@@ -537,6 +537,35 @@ export function formatAltarPersonName(
   return prefix ? `${prefix} ${name}` : name;
 }
 
+/**
+ * Split a combined person line (`Ông Cao Lâm Quả` / `Mr. Name`) back into
+ * wire title + bare name. A lone honorific stays in `name` so typing is
+ * not eaten. Unknown prefixes stay in `name`.
+ */
+export function parseAltarPersonName(raw: string): {
+  title: AltarHonorific;
+  name: string;
+} {
+  const text = scrub(raw);
+  if (!text) return { title: '', name: '' };
+  const prefixes: { re: RegExp; title: 'mr' | 'mrs' }[] = [
+    { re: /^(mrs\.?)\s+/i, title: 'mrs' },
+    { re: /^(mr\.?)\s+/i, title: 'mr' },
+    { re: /^(bà|ba)\s+/i, title: 'mrs' },
+    { re: /^(ông|ong)\s+/i, title: 'mr' },
+    { re: /^(女士)\s*/, title: 'mrs' },
+    { re: /^(先生)\s*/, title: 'mr' },
+  ];
+  for (const p of prefixes) {
+    const m = p.re.exec(text);
+    if (!m) continue;
+    const name = scrub(text.slice(m[0].length));
+    if (!name) return { title: '', name: text };
+    return { title: p.title, name };
+  }
+  return { title: '', name: text };
+}
+
 /** True when the on-chain note uses altar separator packing. */
 export function isAltarPackedNote(raw: string): boolean {
   return raw.includes(ALTAR_SEP);

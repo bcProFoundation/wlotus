@@ -159,8 +159,9 @@ Hallows, HCM, … — matched by catalog name or bound `profileId`, including
 roots packed before `kind=event`), and person altars only when this slot
 is `l` (or a later compact `l\x1f` list amend wins). Empty / missing / `u`
 = unlisted — every person altar already on-chain is unlisted until the
-creator lists it at setup or via a creator-only list/unlist star fragment
-(`l\x1f` / `u\x1f`). Visibility is latest-wins. Search, Ban thờ lookup,
+creator lists it via a creator-only list/unlist star fragment
+(`l\x1f` / `u\x1f`). Setup / offering never shows listed. Ban thờ details
+show listed only to the creator. Visibility is latest-wins. Search, Ban thờ lookup,
 Recent, and Calendar giỗ (this device's Recent only, selected day
 through month end — not Trending or `/api/recent`) are unchanged. Old clients ignore the extra trailing parts.
 

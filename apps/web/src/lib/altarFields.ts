@@ -23,6 +23,7 @@ export {
   encodeRelationshipNote,
   formatAltarDateInput,
   formatAltarPersonName,
+  parseAltarPersonName,
   formatDeathDateInput,
   isAltarPackedNote,
   isDeathDateAmendNote,
