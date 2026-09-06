@@ -507,7 +507,21 @@ export interface CalendarMemorial {
 }
 
 const CALENDAR_TXID_RE = /^[0-9a-f]{64}$/;
-const CALENDAR_YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function daysInGregorianMonth(year: number, month: number): number {
+  if (month === 2) {
+    const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    return leap ? 29 : 28;
+  }
+  return [31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] ?? 0;
+}
+
+/** Full YYYY-MM-DD that exists on the Gregorian calendar. */
+export function isValidGregorianYmd(ymd: string): boolean {
+  const p = parseYmd(ymd);
+  if (!p || p.m < 1 || p.m > 12) return false;
+  return p.d >= 1 && p.d <= daysInGregorianMonth(p.y, p.m);
+}
 
 /** Person / user-event giỗ. Living profiles (no full death day) are omitted. */
 export function calendarMemorialFromAltar(
@@ -518,7 +532,7 @@ export function calendarMemorialFromAltar(
   const death = deathYmd.trim();
   const txid = parentTxid.trim().toLowerCase();
   const label = name.trim();
-  if (!CALENDAR_YMD_RE.test(death) || !CALENDAR_TXID_RE.test(txid) || !label) {
+  if (!isValidGregorianYmd(death) || !CALENDAR_TXID_RE.test(txid) || !label) {
     return null;
   }
   return { name: label, deathYmd: death, parentTxid: txid };
@@ -706,7 +720,7 @@ export function memorialOnYmd(
   locale: string,
 ): boolean {
   const p = parseYmd(memorial.deathYmd);
-  if (!p) return false;
+  if (!p || !isValidGregorianYmd(memorial.deathYmd)) return false;
   if (p.m === day.solarM && p.d === day.solarD) return true;
   const deathLunar = solarToLunar(p.d, p.m, p.y, lunarTimeZone(locale));
   return (

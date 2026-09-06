@@ -482,6 +482,24 @@ describe('calendar person memorials', () => {
     expect(yearOnly).toBeNull();
   });
 
+  it('rejects impossible Gregorian death days', () => {
+    const tx = 'b'.repeat(64);
+    expect(calendarMemorialFromAltar('X', '2001-02-30', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2001-13-01', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2001-00-10', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2001-04-31', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '1900-02-29', tx)).toBeNull();
+    expect(calendarMemorialFromAltar('X', '2000-02-29', tx)?.deathYmd).toBe(
+      '2000-02-29',
+    );
+    const bogus = {
+      name: 'X',
+      deathYmd: '2001-02-30',
+      parentTxid: tx,
+    };
+    expect(nextMemorialYmd(bogus, '2026-09-06', 'vi')).toBeNull();
+  });
+
   it('merges local Recent ahead of the public index', () => {
     const local = calendarMemorialFromAltar(
       'Local name',
