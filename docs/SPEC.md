@@ -11,8 +11,9 @@ Economics: [ECONOMICS.md](./ECONOMICS.md). Clock: [CLOCK.md](./CLOCK.md). Altar:
 | Companion | `GLOTUS` | Golden Lotus — separate token when shipped |
 | Protocol | ALP standard (`SLP2`) | eCash |
 | Decimals | `0` | Whole tokens |
-| Covenant (live) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — **this tokenId** |
-| Covenant (recut) | `GlotusPowRemintMooreTip` | 108 miner, felt +1 bit / 500 d — **new tokenId** |
+| Covenant (live felt) | `WLotusCovenant` | 108 miner, felt +1 bit / 500 d — reference for forks |
+| Covenant (alias) | `GlotusPowRemintMooreTip` | Same bytecode; live JSON may still store this name |
+| Covenant (retired) | `WlotusPowRemintMooreTipTemple` | 102/6 + whole-byte PoW — previous tokenId |
 
 ## PoW remint
 
@@ -75,7 +76,7 @@ k = floor(elapsed_days since genesis)
 | PoW / Moore | Own schedule (may use higher base bits) |
 | Role | Event burns / later commerce |
 
-Details TBD at GLOTUS launch; see [ECONOMICS.md](./ECONOMICS.md).
+Details TBD at GLOTUS launch; see [ECONOMICS.md](./ECONOMICS.md). A GLOTUS that reuses `WLotusCovenant` but bakes a different `genesisUnix` or Moore step is **not** 1:1 with WLOTUS.
 
 ## Explicit non-goals
 

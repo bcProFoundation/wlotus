@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Genesis for dogfood GLotus (GlotusPowRemintMooreTip).
+ * Genesis for dogfood GLotus (`WLotusCovenant`; 845-day clock).
  *
  *   GLOTUS_MNEMONIC='…' npm run create-glotus-token
  *
@@ -18,7 +18,8 @@ import {
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
-import { createPowRemintGlotusTipContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { createWLotusCovenantContract } from '../src/covenant/powRemintGlotusTipScript.js';
+import { WLOTUS_FELT_COVENANT } from '../src/params/wlotusMint.js';
 import {
   GLOTUS_MINT_ATOMS,
   GLOTUS_MOORE_DAYS_PER_EXTRA_BIT,
@@ -87,7 +88,7 @@ async function main(): Promise<void> {
         batons,
         tipHeight,
         mtp,
-        covenant: 'GlotusPowRemintMooreTip',
+        covenant: WLOTUS_FELT_COVENANT,
       },
       null,
       2,
@@ -112,7 +113,7 @@ async function main(): Promise<void> {
   });
   console.log('Genesis', genesis.tokenId);
 
-  const contract = await createPowRemintGlotusTipContract({
+  const contract = await createWLotusCovenantContract({
     tokenId: genesis.tokenId,
     mintAtoms: GLOTUS_MINT_ATOMS,
     genesisUnix,
@@ -187,7 +188,7 @@ async function main(): Promise<void> {
     tokenId: genesis.tokenId,
     mode: 'glotus-moore-felt-bit',
     role: 'incubation-glotus',
-    covenant: 'GlotusPowRemintMooreTip',
+    covenant: WLOTUS_FELT_COVENANT,
     decimals: 0,
     powAddress: contract.address,
     redeemScriptHex: contract.redeemHex,

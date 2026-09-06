@@ -2,7 +2,7 @@
 /**
  * Genesis for W Lotus — **same covenant for prod and dryrun**.
  *
- * Default: `GlotusPowRemintMooreTip` + ALP ticker WLOTUS / name "W Lotus".
+ * Default: `WLotusCovenant` + ALP ticker WLOTUS / name "W Lotus".
  * 108 to miner, no temple ctor, felt +1 bit / 500 days, ALP MINT only.
  * Premine lands on the genesis wallet. Temple address is not required
  * at genesis; listing still uses TEMPLE_ADDRESS as a soft-tax sink.

@@ -36,7 +36,7 @@ were never in `temple-special-claims.json` still attach.
 
 | | Live (`f4e452ef…`) | Recut |
 |--|--|--|
-| Covenant | `WlotusPowRemintMooreTipTemple` | `GlotusPowRemintMooreTip` |
+| Covenant | `WlotusPowRemintMooreTipTemple` | `WLotusCovenant` (was `GlotusPowRemintMooreTip`) |
 | Split | 102 + 6 | **108 miner** |
 | Felt D | 256× / ~11 y | **2× / ~1.4 y** (500 d/bit, felt every bit) |
 | Remint EMPP | ALP + DANA tip | ALP MINT only |

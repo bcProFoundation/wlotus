@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-/** Smoke: compile GlotusPowRemintMooreTip and report redeem size / op count. */
+/** Smoke: compile WLotusCovenant and report redeem size / op count. */
 import { readFileSync } from 'node:fs';
 import { Spedn } from '@spedn/sdk';
 import { ModuleFactory } from '@spedn/rts';
@@ -30,12 +30,12 @@ async function main() {
   const spedn = new Spedn();
   try {
     const code = readFileSync(
-      'contracts/GlotusPowRemintMooreTip.spedn',
+      'contracts/WLotusCovenant.spedn',
       'utf8',
     );
     const portable = await spedn.compileCode('xec', code);
     const factory = new ModuleFactory(new BchJsRts('mainnet'));
-    const Ctor = factory.make(portable).GlotusPowRemintMooreTip;
+    const Ctor = factory.make(portable).WLotusCovenant;
     const z = Buffer.alloc(32, 0);
     const inst = new Ctor({
       tokenIdRev: Buffer.from(

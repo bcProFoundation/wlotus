@@ -2,7 +2,7 @@
 # Copy a public snapshot of W Lotus into github.com/danaverse/wlotus.
 #
 # Bare minimum:
-#   - live covenant (102 miner + 6 temple MooreTipTemple)
+#   - WLotusCovenant (reference remint) + retired temple covenant
 #   - apps/web source (reference; not a standalone build)
 #   - README + LICENSE
 #
@@ -34,6 +34,7 @@ fi
 
 FILES=(
   LICENSE
+  contracts/WLotusCovenant.spedn
   contracts/WlotusPowRemintMooreTipTemple.spedn
   src/covenant/mooreTip.ts
   src/covenant/powRemintMooreTipTempleOutputs.ts
@@ -118,19 +119,20 @@ Burnable white lotus on [eCash](https://e.cash) — offered in memory of the dea
 | Explorer | https://danaverse.org |
 | Ticker | **${TICKER}** |
 | Token id | \`${TOKEN_ID}\` |
-| Covenant | mint **108** = **102** miner + **6** temple |
-| Clock | base **0** bits; +1 bit / **500** days; cap **128** |
+| Covenant | **WLotusCovenant** — mint **108** miner, no temple tax |
+| Clock | base **0** bits; felt +1 bit / **500** days; cap **128** |
 
-This repository is a **public snapshot** of the live covenant and the offerings web UI. It is not the full desk (mint-api, deploy, historical experiments stay private).
+This repository is a **public snapshot** of the reference covenant and the offerings web UI. It is not the full desk (mint-api, deploy, historical experiments stay private). Forks that copy \`WLotusCovenant\` with the same economics and \`genesisUnix\` may exchange 1:1 value-wise.
 
 Snapshot from \`${REF}\` (\`${SHA}\`).
 
 ## Layout
 
 \`\`\`
-contracts/WlotusPowRemintMooreTipTemple.spedn   # on-chain covenant
-src/covenant/                                   # TypeScript loaders for that covenant
-src/params/wlotusMint.ts                        # 102 / 6 / 108
+contracts/WLotusCovenant.spedn                  # reference remint (forks copy this)
+contracts/WlotusPowRemintMooreTipTemple.spedn   # retired 102/6 temple covenant
+src/covenant/                                   # TypeScript loaders
+src/params/wlotusMint.ts                        # 108 felt / 102/6 temple constants
 apps/web/                                       # offerings PWA source (reference)
 \`\`\`
 

@@ -28,7 +28,7 @@ Short-term UX is **`VITE_MIN_PRAY_SECONDS`** (attention after remint). Moore is 
 
 Product intent: **base 0** at genesis (PoW free — presence is soft pray + fees). The live token still uses the **500-day** arhat clock **and** `bits % 8 == 0`, so felt D jumps **256× every ~11 years**. That trade bought the remint DANA tip + temple split under the 201-op budget. It is too steep and too slow.
 
-The felt recut (`GlotusPowRemintMooreTip`, ALP MINT only) drops the whole-byte guard. Formula tick = felt tick. WLotus is ceremonial, not a currency — keep the aggressive **500-day** arhat clock from bits=0:
+The felt recut (`WLotusCovenant`, ALP MINT only) drops the whole-byte guard. Formula tick = felt tick. WLotus is ceremonial, not a currency — keep the aggressive **500-day** arhat clock from bits=0:
 
 | Period | Felt step | Role |
 |--------|-----------|------|

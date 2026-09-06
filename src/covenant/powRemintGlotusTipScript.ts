@@ -1,6 +1,7 @@
 /**
- * GLotus MooreTip factory — same econHead layout as WlotusPowRemintMooreTip,
- * felt +1 bit (no whole-byte guard), ALP MINT only.
+ * WLotusCovenant factory — felt +1 bit (no whole-byte guard), ALP MINT only.
+ * Same econHead layout as WlotusPowRemintMooreTip. Historical compile name
+ * was GlotusPowRemintMooreTip (identical bytecode).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -34,7 +35,7 @@ async function loadPortable(): Promise<PortableModule> {
   const spedn = new Spedn();
   try {
     const code = readFileSync(
-      resolve(process.cwd(), 'contracts/GlotusPowRemintMooreTip.spedn'),
+      resolve(process.cwd(), 'contracts/WLotusCovenant.spedn'),
       'utf8',
     );
     cachedPortable = await spedn.compileCode('xec', code);
@@ -91,13 +92,13 @@ function instantiate(
   prefixHash: Buffer,
 ): PowMooreTipInstance {
   const factory = new ModuleFactory(new BchJsRts('mainnet'));
-  const Ctor = factory.make(portable).GlotusPowRemintMooreTip;
+  const Ctor = factory.make(portable).WLotusCovenant;
   return new Ctor(
     ctorArgs(params, codeHash, prefixHash),
   ) as PowMooreTipInstance;
 }
 
-export async function createPowRemintGlotusTipContract(
+export async function createWLotusCovenantContract(
   params: PowRemintMooreTipParams,
 ): Promise<PowRemintGlotusTipContract> {
   const portable = await loadPortable();
@@ -172,5 +173,8 @@ export async function createPowRemintGlotusTipContract(
     tipValueOffset,
   };
 }
+
+/** Historical name — same factory as `createWLotusCovenantContract`. */
+export const createPowRemintGlotusTipContract = createWLotusCovenantContract;
 
 export { reconstructNextRedeem };
