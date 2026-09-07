@@ -780,37 +780,88 @@ export function normalizeAltarSearchText(raw: string): string {
     .trim();
 }
 
+/** Ông/Bà / Mr./Mrs. — stripped so "ông" does not match every man. */
+const SEARCH_HONORIFIC_TOKENS = new Set([
+  'ong',
+  'ba',
+  'mr',
+  'mrs',
+  'mister',
+  'missus',
+  '先生',
+  '女士',
+]);
+
+/** Honorific-stripped name tokens used for search matching. */
+export function altarSearchTokens(raw: string): string[] {
+  return normalizeAltarSearchText(raw)
+    .replace(/[.]/g, ' ')
+    .split(/[^\p{L}\p{N}]+/u)
+    .map(t => t.trim())
+    .filter(t => t.length > 0 && !SEARCH_HONORIFIC_TOKENS.has(t));
+}
+
+function tokenSubsequenceScore(
+  nameTokens: string[],
+  queryTokens: string[],
+): number {
+  if (!queryTokens.length || !nameTokens.length) return 0;
+  let i = 0;
+  const at: number[] = [];
+  for (const qt of queryTokens) {
+    let found = -1;
+    for (let j = i; j < nameTokens.length; j++) {
+      if (nameTokens[j]!.startsWith(qt)) {
+        found = j;
+        break;
+      }
+    }
+    if (found < 0) return 0;
+    at.push(found);
+    i = found + 1;
+  }
+  if (
+    queryTokens.length === nameTokens.length &&
+    queryTokens.every((t, idx) => nameTokens[idx] === t)
+  ) {
+    return 3;
+  }
+  // Prefix of the token list, or family+given with a skipped middle name.
+  if (at[0] === 0) return 2;
+  return 1;
+}
+
 /**
  * Relevance tier for name search — used to rank search results before
  * falling back to offering count: `3` exact match, `2` prefix, `1` contains,
  * `0` no match.
  *
- * When `bareName` is given (person name without honorific), prefix/contains
- * are also checked against it so "cao" matches "Ông Cao Lâm Quả" at prefix
- * tier, not demoted to contains because of the honorific prefix.
+ * Honorifics are ignored, and query tokens may skip middle names so
+ * "Cao Quả" matches "Cao Lâm Quả" / "Ông Cao Lâm Quả".
  */
 export function altarSearchRelevance(
   name: string,
   query: string,
   bareName?: string,
 ): number {
-  const q = normalizeAltarSearchText(query);
-  if (!q) return 0;
+  const queryTokens = altarSearchTokens(query);
+  if (!queryTokens.length) return 0;
+  const qHay = queryTokens.join(' ');
 
   const score = (raw: string): number => {
-    const n = normalizeAltarSearchText(raw);
-    if (!n) return 0;
-    if (n === q) return 3;
-    if (n.startsWith(q)) return 2;
-    if (n.includes(q)) return 1;
-    return 0;
+    const nameTokens = altarSearchTokens(raw);
+    if (!nameTokens.length) return 0;
+    const nHay = nameTokens.join(' ');
+    let best = 0;
+    if (nHay === qHay) best = 3;
+    else if (nHay.startsWith(qHay)) best = 2;
+    else if (nHay.includes(qHay)) best = 1;
+    return Math.max(best, tokenSubsequenceScore(nameTokens, queryTokens));
   };
 
   let best = score(name);
   const bare = bareName?.trim();
-  if (bare && normalizeAltarSearchText(bare) !== normalizeAltarSearchText(name)) {
-    best = Math.max(best, score(bare));
-  }
+  if (bare) best = Math.max(best, score(bare));
   return best;
 }
 

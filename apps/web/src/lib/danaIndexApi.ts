@@ -327,7 +327,11 @@ export async function searchIndexMemorials(
     if (!res.ok || body.ok === false) {
       return fallbackViaRecent();
     }
-    return body.items ?? [];
+    const items = body.items ?? [];
+    // Empty index hits: rank /api/recent locally so skipped-middle-name
+    // queries still work before dana-index is redeployed.
+    if (items.length === 0) return fallbackViaRecent();
+    return items;
   } catch {
     return fallbackViaRecent();
   }

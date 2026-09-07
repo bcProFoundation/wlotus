@@ -225,6 +225,21 @@ describe('BurnStore', () => {
     expect(results.map(r => r.totalBurns)).toEqual([9, 4, 3]);
   });
 
+  it('matches family + given when the middle name is omitted', () => {
+    const root =
+      'a38825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';
+    store.upsert(
+      burn({
+        burnTxid: root,
+        note: `mr${ALTAR_SEP}Cao Lâm Quả${ALTAR_SEP}`,
+      }),
+    );
+    expect(store.searchGroups('Cao Quả', 10).map(r => r.originalBurnTxid)).toEqual(
+      [root],
+    );
+    expect(store.searchGroups('cao qua', 10)).toHaveLength(1);
+  });
+
   it('ranks trending by gravity decay across listed person and event altars', () => {
     const listed =
       '638825a5afae52895126a77287a1f2480f0a8813699b824a5cbfc390cc0d2838';

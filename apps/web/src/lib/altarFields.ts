@@ -10,6 +10,7 @@ export {
   altarParentRelationshipLabel,
   altarBareNameFromNote,
   altarSearchRelevance,
+  altarSearchTokens,
   altarSpouseRelationshipLabel,
   altarRelationships,
   birthYearSortKey,
