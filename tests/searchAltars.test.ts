@@ -76,6 +76,29 @@ describe('rankSearchCandidates', () => {
     );
     expect(rows.map(r => r.txid)).toEqual(['a', 'b', 'c']);
   });
+
+  it('matches skipped middle names (Cao Quả → Cao Lâm Quả)', () => {
+    const rows = rankSearchCandidates(
+      [
+        {
+          txid: 'a',
+          name: 'Ông Cao Lâm Quả',
+          bareName: 'Cao Lâm Quả',
+          totalBurns: 11,
+          atMs: 1,
+        },
+        {
+          txid: 'b',
+          name: 'Ông Cao Lâm Thanh',
+          bareName: 'Cao Lâm Thanh',
+          totalBurns: 5,
+          atMs: 1,
+        },
+      ],
+      'Cao Quả',
+    );
+    expect(rows.map(r => r.txid)).toEqual(['a']);
+  });
 });
 
 describe('mergeSearchResults', () => {

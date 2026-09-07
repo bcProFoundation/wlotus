@@ -1989,11 +1989,18 @@ export default function App() {
     setSearchLoading(true);
     setSearchError('');
 
-    const { rows, indexUnavailable } = await fetchNameSearchRows(query);
-    if (searchGenRef.current !== gen) return;
-    setSearchResults(rows);
-    setSearchError(indexUnavailable ? t('searchIndexUnavailable') : '');
-    setSearchLoading(false);
+    try {
+      const { rows, indexUnavailable } = await fetchNameSearchRows(query);
+      if (searchGenRef.current !== gen) return;
+      setSearchResults(rows);
+      setSearchError(indexUnavailable ? t('searchIndexUnavailable') : '');
+    } catch {
+      if (searchGenRef.current !== gen) return;
+      setSearchResults([]);
+      setSearchError(t('searchIndexUnavailable'));
+    } finally {
+      if (searchGenRef.current === gen) setSearchLoading(false);
+    }
   }
 
   function openSearch() {

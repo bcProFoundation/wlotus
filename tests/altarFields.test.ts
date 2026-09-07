@@ -829,6 +829,19 @@ describe('altarSearchRelevance', () => {
   it('treats honorific-prefixed display names as prefix match on bare name', () => {
     expect(altarSearchRelevance('Ông Cao Lâm Quả', 'cao', 'Cao Lâm Quả')).toBe(2);
     expect(altarSearchRelevance('Cao Lâm Quả', 'cao')).toBe(2);
-    expect(altarSearchRelevance('Ông Cao Lâm Quả', 'cao')).toBe(1);
+    expect(altarSearchRelevance('Ông Cao Lâm Quả', 'cao')).toBe(2);
+  });
+
+  it('matches family + given when a middle name is skipped', () => {
+    expect(altarSearchRelevance('Cao Lâm Quả', 'Cao Quả')).toBe(2);
+    expect(altarSearchRelevance('Ông Cao Lâm Quả', 'cao qua')).toBe(2);
+    expect(altarSearchRelevance('Nguyễn Thị Mân', 'Nguyễn Mân')).toBe(2);
+    expect(altarSearchRelevance('Đinh Văn Phấn', 'dinh phan')).toBe(2);
+  });
+
+  it('does not treat an honorific-only query as a match', () => {
+    expect(altarSearchRelevance('Ông Cao Lâm Quả', 'ông')).toBe(0);
+    expect(altarSearchRelevance('Bà Nguyễn Thị Mân', 'bà')).toBe(0);
+    expect(altarSearchRelevance('Mr. Cao Lâm Quả', 'mr')).toBe(0);
   });
 });
