@@ -172,6 +172,20 @@ jobs:
             echo "On the VM as root: sudo chown -R $ME:$ME $REPO"
             exit 1
           fi
+          if ! command -v node >/dev/null; then
+            echo "::error::node is not installed on the VM (need Node >= 24, same as onest)."
+            exit 1
+          fi
+          NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+          echo "node on VM: $(node --version)"
+          if [ "$NODE_MAJOR" -lt 24 ]; then
+            echo "::error::VM node is $(node --version) — need Node >= 24 (same as onest)."
+            echo "On the VM as root:"
+            echo "  curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -"
+            echo "  sudo apt-get install -y nodejs"
+            echo "  sudo systemctl restart wlotus-mint-api wlotus-dana-index"
+            exit 1
+          fi
           npm ci
           apply_nginx() {
             local script="$REPO/deploy/contabo/apply-nginx-hardening.sh"

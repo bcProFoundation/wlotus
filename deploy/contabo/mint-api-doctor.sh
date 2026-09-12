@@ -7,6 +7,9 @@ systemctl is-enabled wlotus-mint-api 2>/dev/null || true
 systemctl is-active wlotus-mint-api 2>/dev/null || true
 systemctl status wlotus-mint-api --no-pager -l || true
 echo
+echo "=== node (need >= 24, same as onest) ==="
+node --version 2>/dev/null || echo "MISSING node"
+echo
 echo "=== :8787 ==="
 ss -lntp 2>/dev/null | grep 8787 || netstat -lntp 2>/dev/null | grep 8787 || echo "nothing listening on 8787"
 echo

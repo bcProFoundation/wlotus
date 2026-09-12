@@ -208,6 +208,20 @@ sudo bash deploy/contabo/bootstrap-opt-wlotus.sh
 # Optional: OLD_REPO=/root/wlotus/wlotus BRANCH=master
 ```
 
+### Node 24 (same as onest)
+
+`package.json` requires **Node >= 24** (`.nvmrc` pins `24`). The deploy
+workflow refuses to `npm ci` on older runtimes — a VM still on Node 18
+fails fast with the upgrade command. Upgrade once as root:
+
+```bash
+node --version   # if < v24:
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node --version   # want v24.x
+sudo systemctl restart wlotus-mint-api wlotus-dana-index
+```
+
 That script: stops services → backs up `deployments/*.json` + `.env` → fresh clone
 at `/opt/wlotus` as `deploy` → restores genesis JSON → `npm ci` → installs
 `wlotus-mint-api` + `wlotus-dana-index` units → writes `/etc/wlotus/dana-index.env`
