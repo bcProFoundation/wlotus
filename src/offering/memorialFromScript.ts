@@ -5,21 +5,30 @@
 
 import { fromHex, parseEmppScript, Script } from 'ecash-lib';
 import {
+  DANA_VERSION,
+  DANA_VERSION_PARENT,
+  DANA_VERSION_PAW,
   parseMemorialPushdata,
   type MemorialFields,
 } from './wlbrMemorial.js';
 
-/** Find DANA memorial (v1/v2) among EMPP pushes; skip tip ads (v4). */
+/** Find DANA memorial (v1/v2, or onest.pet v5) among EMPP pushes; skip tip ads (v4). */
 export function memorialFromEmppPushes(
   pushes: Uint8Array[],
 ): MemorialFields | null {
   for (const push of pushes) {
     if (push.length < 5) continue;
-    // DANA tip v4 is fixed 15 bytes — skip; memorials use ver 1/2.
+    // DANA tip v4 is fixed 15 bytes — skip; memorials use ver 1/2/5.
     if (push.length === 15 && push[4] === 4) continue;
     try {
       const parsed = parseMemorialPushdata(push);
-      if (parsed.version === 1 || parsed.version === 2) return parsed;
+      if (
+        parsed.version === DANA_VERSION ||
+        parsed.version === DANA_VERSION_PARENT ||
+        parsed.version === DANA_VERSION_PAW
+      ) {
+        return parsed;
+      }
     } catch {
       /* not a memorial push */
     }

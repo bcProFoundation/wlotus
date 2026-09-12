@@ -13,6 +13,10 @@
  *       Amendments: minter-only, max 10 (software). Off-chain = LotusHeart only.
  *
  * Tip-state layout (ver=4, 15 bytes) lives in `src/covenant/mooreTip.ts`.
+ *
+ * onest.pet PAW memorials (decode-only; built by onest.pet, not here):
+ *   v5: DANA | ver=5 | idLen | id | noteLen | note | creatorHash160 (20 bytes)
+ *       | parentLen | parentTxid (0 or 32 bytes)
  */
 
 import {
@@ -24,6 +28,9 @@ export const DANA_LOKAD = new TextEncoder().encode('DANA');
 
 export const DANA_VERSION = 1;
 export const DANA_VERSION_PARENT = 2;
+/** onest.pet memorial version (decode-only). */
+export const DANA_VERSION_PAW = 5;
+export const DANA_CREATOR_HASH_LEN = 20;
 export const DANA_PARENT_TXID_LEN = 32;
 
 export const OFFERING_ID_PRAYER = 'prayer' as const;
@@ -74,8 +81,10 @@ export interface MemorialFields {
   version: number;
   offeringId: string;
   note: string;
-  /** Prior burn txid (hex), when v2 parent present. */
+  /** Prior burn txid (hex), when v2/v5 parent present. */
   parentBurnTxid?: string;
+  /** onest.pet v5: raw 20-byte creator hash160 after the note. */
+  creatorHash160?: string;
   lokad: 'DANA';
 }
 
@@ -132,14 +141,18 @@ export function memorialPushdata(
   return out;
 }
 
-/** Decode a DANA EMPP memorial payload (v1 or v2). */
+/** Decode a DANA EMPP memorial payload (v1, v2, or onest.pet v5). */
 export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
   if (data.length < 6) throw new Error('memorial too short');
   if (!lokadEquals(data, DANA_LOKAD)) throw new Error('not DANA');
 
   let o = 4;
   const version = data[o++]!;
-  if (version !== DANA_VERSION && version !== DANA_VERSION_PARENT) {
+  if (
+    version !== DANA_VERSION &&
+    version !== DANA_VERSION_PARENT &&
+    version !== DANA_VERSION_PAW
+  ) {
     throw new Error(`unsupported DANA memorial version ${version}`);
   }
   const idLen = data[o++]!;
@@ -153,6 +166,16 @@ export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
   o += noteLen;
 
   let parentBurnTxid: string | undefined;
+  let creatorHash160: string | undefined;
+  if (version === DANA_VERSION_PAW) {
+    if (o + DANA_CREATOR_HASH_LEN > data.length) {
+      throw new Error('creator truncated');
+    }
+    creatorHash160 = bytesToHex(
+      data.subarray(o, o + DANA_CREATOR_HASH_LEN),
+    );
+    o += DANA_CREATOR_HASH_LEN;
+  }
   if (version >= DANA_VERSION_PARENT) {
     if (o >= data.length) throw new Error('parentLen missing');
     const parentLen = data[o++]!;
@@ -166,5 +189,5 @@ export function parseMemorialPushdata(data: Uint8Array): MemorialFields {
     }
   }
 
-  return { version, offeringId, note, parentBurnTxid, lokad: 'DANA' };
+  return { version, offeringId, note, parentBurnTxid, creatorHash160, lokad: 'DANA' };
 }
