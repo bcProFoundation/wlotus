@@ -26,6 +26,8 @@ import {
   altarIsTrendingEligible,
   altarIsCatalogTrendingName,
   altarNotesAreTrendingEligible,
+  normalizePetSpecies,
+  petSpeciesLabel,
   MAX_PARENT_RELATIONSHIPS,
   MEMORIAL_NOTE_MAX_BYTES,
   MEMORIAL_NOTE_MAX_BYTES_WITH_PARENT,
@@ -50,6 +52,8 @@ describe('altarFields', () => {
       name: 'Cao Lâm Quả',
       note: 'Kính bố',
       birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
+      species: '',
+      breed: '',
       birthYear: '1945',
       deathDate: '2001-10-20',
       deathPlace: 'Bình Định',
@@ -400,6 +404,8 @@ describe('altarFields', () => {
       name: 'Cao Lâm Quả',
       note: '',
       birthPlace: 'Mỹ Thành, Phù Mỹ, Bình Định',
+      species: '',
+      breed: '',
       birthYear: '1945-09-02',
       deathDate: '2001-12-04',
       deathPlace: 'Hải Cảng, Quy Nhơn, Bình Định',
@@ -843,5 +849,39 @@ describe('altarSearchRelevance', () => {
     expect(altarSearchRelevance('Ông Cao Lâm Quả', 'ông')).toBe(0);
     expect(altarSearchRelevance('Bà Nguyễn Thị Mân', 'bà')).toBe(0);
     expect(altarSearchRelevance('Mr. Cao Lâm Quả', 'mr')).toBe(0);
+  });
+});
+
+describe('onest.pet memorial notes', () => {
+  it('reads pet slots: species, name, message, breed, birth (Laika)', () => {
+    const note = [
+      'dog',
+      'Laika',
+      'Laika forever.',
+      '',
+      '2010-02-01',
+      '',
+      '',
+      '',
+      '',
+      '',
+      'memorial',
+      '',
+    ].join(ALTAR_SEP);
+    const altar = parseAltarNote(note);
+    expect(altar?.species).toBe('dog');
+    expect(altar?.name).toBe('Laika');
+    expect(altar?.note).toBe('Laika forever.');
+    expect(altar?.birthYear).toBe('2010-02-01');
+    expect(altar?.deathDate).toBe('');
+    expect(memorialDisplayName(note, 'vi')).toBe('Laika');
+    expect(normalizePetSpecies('dog')).toBe('dog');
+    expect(normalizePetSpecies('Ông')).toBe('');
+    expect(petSpeciesLabel('dog', 'vi')).toBe('🐕 Chó');
+    expect(petSpeciesLabel('dog', 'en')).toBe('🐕 Dog');
+    expect(petSpeciesLabel('dog', 'zh')).toBe('🐕 狗');
+    const merged = mergeAltarFields([note]);
+    expect(merged?.species).toBe('dog');
+    expect(merged?.name).toBe('Laika');
   });
 });

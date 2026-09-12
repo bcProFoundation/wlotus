@@ -5,6 +5,7 @@ import {
   DANA_LOKAD,
   DANA_VERSION,
   DANA_VERSION_PARENT,
+  DANA_VERSION_PAW,
   OFFERING_ID_WLOTUS,
 } from '../src/offering/wlbrMemorial.js';
 
@@ -68,5 +69,41 @@ describe('DANA memorial pushdata', () => {
     expect(parseParentBurnTxidHex(undefined)).toBeUndefined();
     expect(parseParentBurnTxidHex('')).toBeUndefined();
     expect(() => parseParentBurnTxidHex('deadbeef')).toThrow(/64 hex/);
+  });
+
+  test('v5 (onest.pet) decodes note, creator hash, and parent', () => {
+    const enc = new TextEncoder();
+    const id = enc.encode('paw');
+    const note = enc.encode('Laika forever.');
+    const creator = new Uint8Array(20).fill(7);
+    const parentHex =
+      '7ab478bcfddf6eb5130d33395846012c20b92ac48f19025ef8d53ba3d7d5e359';
+    const parent = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+      parent[i] = parseInt(parentHex.slice(i * 2, i * 2 + 2), 16);
+    }
+    const raw = new Uint8Array(
+      4 + 1 + 1 + id.length + 1 + note.length + 20 + 1 + 32,
+    );
+    let o = 0;
+    raw.set(enc.encode('DANA'), o);
+    o += 4;
+    raw[o++] = DANA_VERSION_PAW;
+    raw[o++] = id.length;
+    raw.set(id, o);
+    o += id.length;
+    raw[o++] = note.length;
+    raw.set(note, o);
+    o += note.length;
+    raw.set(creator, o);
+    o += 20;
+    raw[o++] = 32;
+    raw.set(parent, o);
+    const parsed = parseMemorialPushdata(raw);
+    expect(parsed.version).toBe(5);
+    expect(parsed.offeringId).toBe('paw');
+    expect(parsed.note).toBe('Laika forever.');
+    expect(parsed.creatorHash160).toBe('07'.repeat(20));
+    expect(parsed.parentBurnTxid).toBe(parentHex);
   });
 });
