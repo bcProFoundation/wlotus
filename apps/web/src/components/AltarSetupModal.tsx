@@ -57,6 +57,8 @@ function normalizeFields(draft: AltarFields): AltarFields {
     name: draft.name.trim(),
     note: draft.note.trim(),
     birthPlace: draft.birthPlace.trim(),
+    species: draft.species ?? '',
+    breed: draft.breed ?? '',
     birthYear: draft.birthYear.trim(),
     deathDate: draft.deathDate.trim(),
     deathPlace: draft.deathPlace.trim(),
