@@ -491,10 +491,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tết Trung Thu',
         body:
-          'Rằm tháng Tám, Tết Trung Thu. Nhiều nhà lễ từ chiều 14, thắp hương ông bà dưới trăng.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện trăng rằm còn chỗ cho ông bà, nguyện cho nhà nhà được bình an.',
+          'Rằm tháng Tám, Tết Trung Thu. Nhiều nhà lễ từ chiều 14, thắp hương ông bà dưới trăng.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho nhà nhà cùng sum họp dưới trăng rằm, nguyện cho nhà nhà được bình an.',
         titleEn: 'Mid-Autumn Festival',
         bodyEn:
-          'The fifteenth of the eighth lunar month is Tết Trung Thu. Many households begin on the afternoon of the fourteenth and offer incense under the moon.\n\nEach lotus offered today is also a prayer: that the full moon still has a place for those who came before, and that every home may find peace.',
+          'The fifteenth of the eighth lunar month is Tết Trung Thu. Many households begin on the afternoon of the fourteenth and offer incense under the moon.\n\nEach lotus offered today is also a prayer: that those who came before gather with us under the full moon, and that every home may find peace.',
       },
     },
     {
@@ -742,7 +742,7 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
           '八月十四到十五，中秋。各家团圆，也给祖先上香。\n\n今日每一朵莲花，也是一句愿：愿圆月仍给先人留位，愿家家得安宁。',
         titleEn: 'Mid-Autumn Festival',
         bodyEn:
-          'The fourteenth to fifteenth of the eighth lunar month is Mid-Autumn. Households gather, and many also offer incense to ancestors.\n\nEach lotus offered today is also a prayer: that the full moon still has a place for those who came before, and that every home may find peace.',
+          'The fourteenth to fifteenth of the eighth lunar month is Mid-Autumn. Households gather, and many also offer incense to ancestors.\n\nEach lotus offered today is also a prayer: that those who came before gather with us under the full moon, and that every home may find peace.',
       },
     },
     {
