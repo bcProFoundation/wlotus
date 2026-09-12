@@ -51,7 +51,7 @@
     "build-og": "python3 scripts/build-og-image.py"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "@spedn/rts": "^5.0.0",
