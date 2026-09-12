@@ -12,5 +12,6 @@ These notes are **historical / technical**. Product tickers and launch params li
 | [alp-token-burn-on-ecash.md](./alp-token-burn-on-ecash.md) | Intentional ALP burns (vàng mã) on eCash |
 | [ergon-style-issuance-on-ecash.md](./ergon-style-issuance-on-ecash.md) | Ergon-like elastic issuance via ALP PoW remint |
 | [alp-empp-difficulty-state.md](./alp-empp-difficulty-state.md) | EMPP vs stateful redeem for fine-grained Moore-on-work |
+| [glotus-ergon-multiinput-daa.md](./glotus-ergon-multiinput-daa.md) | Ergon daily δ for GLotus via split covenant inputs (budgets measured) |
 | [cashtab-lokad-dana.md](./cashtab-lokad-dana.md) | Register `DANA` so Cashtab stops showing Unknown App |
 | [phone-webgpu-wasm-mining.md](./phone-webgpu-wasm-mining.md) | Experimental phone WebGPU / multi-core PoW |
