@@ -491,7 +491,7 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Tết Trung Thu',
         body:
-          'Rằm tháng Tám, Tết Trung Thu. Nhiều nhà lễ từ chiều 14, thắp hương ông bà dưới trăng.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện ông bà cùng sum họp dưới trăng rằm, nguyện cho nhà nhà được bình an.',
+          'Rằm tháng Tám, Tết Trung Thu. Nhiều nhà lễ từ chiều 14, thắp hương ông bà dưới trăng.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện cho nhà nhà cùng sum họp dưới trăng rằm, nguyện cho nhà nhà được bình an.',
         titleEn: 'Mid-Autumn Festival',
         bodyEn:
           'The fifteenth of the eighth lunar month is Tết Trung Thu. Many households begin on the afternoon of the fourteenth and offer incense under the moon.\n\nEach lotus offered today is also a prayer: that those who came before gather with us under the full moon, and that every home may find peace.',
