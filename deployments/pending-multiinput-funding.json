@@ -1,0 +1,17 @@
+{
+  "network": "mainnet-dogfood (or ectest testnet via faucet)",
+  "experiment": "multi-input two-shard (M+C) K=3 prototype",
+  "research": "docs/research/glotus-ergon-multiinput-daa.md",
+  "mainnetAddress": "ecash:qztglkp40zjpfk0km9zndgy54gc53xz4h5d2lypd6p",
+  "testnetAddress": "ectest:qztglkp40zjpfk0km9zndgy54gc53xz4h5tppyxqes",
+  "testnetFaucet": "https://texplorer.e.cash/testnet-faucet",
+  "suggestedXec": 50,
+  "why": "ALP genesis (2 batons: M+C shards) + 2 handoffs + remint/tick fees; dust=546 sats, fee=1000 sats/kB — 50 XEC is a generous buffer, unspent funds sweepable",
+  "nextStep": "Fund mainnetAddress, then: prototype shards → genesis → mine-and-mint",
+  "chronikUrls": [
+    "https://chronik.e.cash",
+    "https://xec.paybutton.org",
+    "https://chronik.pay2stay.com/xec"
+  ],
+  "warning": "Throwaway key — the SK lives in VM .env (gitignored, never committed). Do not reuse for real funds."
+}
