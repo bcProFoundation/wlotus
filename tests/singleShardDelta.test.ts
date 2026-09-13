@@ -1,17 +1,20 @@
 /**
- * Single-shard δ v3 (VLOTUS — k==1-only, no branch) pure tests —
- * jest-safe (no ecash-lib: the math module imports only the pure
- * twoShardMath, since jest cannot load ecash-lib's WASM glue).
+ * Single-shard δ v4 (ELOTUS — miner-paced slots, k>=1, one micro-step per
+ * block) pure tests — jest-safe (no ecash-lib: the math module imports
+ * only the pure twoShardMath, since jest cannot load ecash-lib's WASM).
  *
- * Covers: push encoders, the depth simulator (green path + each rejection
- * mode), the v3 policy (deriveUdeltaV3: k=1 ok, k=0/k=2 rejected), WLDF v4
- * layout, and op-list invariants (no MUL, exactly one CODESEPARATOR, no
- * introspection, no branch). Consensus semantics (execution) are covered
+ * Covers: push encoders (incl. the sign byte on 14400000), the depth
+ * simulator (green path + each rejection mode), the v3 policy (kept for
+ * VLOTUS history), the v4 policy (deriveUdeltaV4: k=1/k=7 ok with the
+ * SAME single step, k=0/negative rejected), WLDF v5 layout, and op-list
+ * invariants (no MUL, exactly one CODESEPARATOR, no introspection, no
+ * branch, exactly two GTEs). Consensus semantics (execution) are covered
  * by scripts/verify-singleshard-vm.ts (libauth XEC VM, offline).
  */
 import {
   assemble,
   deriveUdeltaV3,
+  deriveUdeltaV4,
   encodeNum,
   encodePush,
   OP,
@@ -22,8 +25,10 @@ import {
   UDELTA_HEAD_LEN,
   UDELTA_K,
   UDELTA_NUMERATOR,
-  wldfV4Pushdata,
-  WLDF_VERSION_UDELTA_V3,
+  UDELTA_SLOT_SECONDS,
+  wldfUdeltaPushdata,
+  WLDF_VERSION_UDELTA_V4,
+  WLDF_VERSION_UDELTA_V5,
   type AsmUnit,
 } from '../src/covenant/singleShardDeltaMath.js';
 
@@ -35,6 +40,11 @@ describe('single-shard δ push encoders', () => {
     expect(encodeNum(40)).toEqual(new Uint8Array([0x01, 0x28]));
     expect(encodeNum(100000)).toEqual(new Uint8Array([0x03, 0xa0, 0x86, 0x01]));
     expect(() => encodeNum(-1)).toThrow();
+  });
+
+  test('encodeNum appends a sign byte when the high bit is set', () => {
+    // v4 denominator 14400000 = 0xDBBA00 → LE 00 BA DB + 00 sign byte.
+    expect([...encodeNum(14400000)]).toEqual([0x04, 0x00, 0xba, 0xdb, 0x00]);
   });
 
   test('encodePush sizes', () => {
@@ -67,12 +77,13 @@ describe('single-shard δ layout constants', () => {
     expect(UDELTA_HEAD_LEN).toBe(83 + 33 + 9);
     expect(UDELTA_K).toBe(1);
     expect(UDELTA_NUMERATOR).toBe(82);
-    expect(UDELTA_DENOMINATOR).toBe(100000);
+    expect(UDELTA_DENOMINATOR).toBe(14400000);
+    expect(UDELTA_SLOT_SECONDS).toBe(600);
   });
 
-  test('SUB-form δ matches the covenant arithmetic (t − t·82/100000)', () => {
+  test('SUB-form micro-δ matches the covenant arithmetic (t − t·82/14400000)', () => {
     const t = 2 ** 24;
-    expect(t - Math.floor((t * 82) / 100000)).toBe(16763459);
+    expect(t - Math.floor((t * 82) / 14400000)).toBe(16777121);
   });
 });
 
@@ -148,16 +159,70 @@ describe('single-shard δ v3 policy (k==1-only)', () => {
     ).toThrow(/k=1|stale baton/);
   });
 
-  test('WLDF v4 pushdata layout', () => {
-    const w = wldfV4Pushdata({
-      newDay: 1,
-      newTarget: 16763459,
-      locktime: 1_784_300_000 + 86_400,
-    });
+  test('WLDF v4 pushdata layout (VLOTUS history)', () => {
+    const w = wldfUdeltaPushdata(
+      {
+        newDay: 1,
+        newTarget: 16763459,
+        locktime: 1_784_300_000 + 86_400,
+      },
+      4,
+    );
     expect(w.length).toBe(17);
     expect([...w.slice(0, 4)]).toEqual([0x57, 0x4c, 0x44, 0x46]);
     expect(w[4]).toBe(4);
-    expect(WLDF_VERSION_UDELTA_V3).toBe(4);
+    expect(WLDF_VERSION_UDELTA_V4).toBe(4);
+  });
+});
+
+describe('single-shard δ v4 policy (miner-paced, k>=1)', () => {
+  const genesis = {
+    genesisUnix: 1_784_300_000,
+    daySeconds: 600,
+    genesisTarget: 2 ** 24,
+  };
+  const tip = { tipDay: 0, target: 2 ** 24 };
+
+  test('deriveUdeltaV4 accepts k=1 with one micro-step', () => {
+    const d = deriveUdeltaV4(genesis, tip, 1_784_300_000 + 600);
+    expect(d.steps).toBe(1);
+    expect(d.newDay).toBe(1);
+    expect(d.newTarget).toBe(16777121);
+  });
+
+  test('deriveUdeltaV4 accepts k=7 with the SAME single step (one-step-per-block)', () => {
+    const d = deriveUdeltaV4(genesis, tip, 1_784_300_000 + 7 * 600);
+    expect(d.steps).toBe(7);
+    expect(d.newDay).toBe(7);
+    expect(d.newTarget).toBe(16777121);
+  });
+
+  test('deriveUdeltaV4 rejects k=0 (same-slot re-mine forbidden)', () => {
+    expect(() => deriveUdeltaV4(genesis, tip, 1_784_300_000)).toThrow(/k>=1/);
+  });
+
+  test('deriveUdeltaV4 rejects negative k (past slots)', () => {
+    expect(() =>
+      deriveUdeltaV4(genesis, { tipDay: 5, target: 2 ** 24 }, 1_784_300_000),
+    ).toThrow(/k>=1/);
+  });
+
+  test('WLDF v5 pushdata layout (v4 history intact)', () => {
+    const w = wldfUdeltaPushdata(
+      {
+        newDay: 7,
+        newTarget: 16777121,
+        locktime: 1_784_300_000 + 7 * 600,
+      },
+      5,
+    );
+    expect(w.length).toBe(17);
+    expect(w[4]).toBe(5);
+    expect(WLDF_VERSION_UDELTA_V5).toBe(5);
+    expect(WLDF_VERSION_UDELTA_V4).toBe(4);
+    expect(() =>
+      wldfUdeltaPushdata({ newDay: 1, newTarget: 1, locktime: 1 }, 9),
+    ).toThrow(/unknown single-shard WLDF version/);
   });
 });
 
@@ -182,10 +247,14 @@ describe('single-shard δ op-list invariants', () => {
     expect(scan(op => op >= 0xc0 && op <= 0xcd)).toBe(0);
   });
 
-  test('no branch at all in v3 (k==1-only — the k-select IF is gone)', () => {
+  test('no branch at all (k>=1 floor needs no IF — stays deleted)', () => {
     expect(scan(op => op === OP.OP_IF)).toBe(0);
     expect(scan(op => op === OP.OP_ELSE)).toBe(0);
     expect(scan(op => op === OP.OP_ENDIF)).toBe(0);
+  });
+
+  test('exactly two GTEs (k-floor + PoW head>=0)', () => {
+    expect(scan(op => op === OP.OP_GREATERTHANOREQUAL)).toBe(2);
   });
 
   test('ends with bare CHECKSIG (TRUE on top — no trailing VERIFY)', () => {

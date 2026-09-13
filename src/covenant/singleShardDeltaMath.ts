@@ -1,12 +1,16 @@
 /**
  * Single-shard δ (ULOTUS) — PURE covenant definition, zero deps.
  *
- * Hand-assembled single redeem (404B / 164 ops) doing what the two-shard
- * experiment split across C+M: PoW + k==1-only SUB-form δ derivation (v3:
- * every remint advances exactly 1 day; k=0 farming is forbidden because
- * under race economics it strictly dominates and would freeze the
- * schedule) + WLDF v4 / ALP output pins + Moore-style VERIFIED successors
- * + schnorr auth.
+ * Hand-assembled single redeem (406B / 165 ops) doing what the two-shard
+ * experiment split across C+M: PoW + miner-paced SUB-form micro-δ (v4:
+ * 10-minute slots, k>=1 skip-tolerant, EXACTLY ONE micro-step per block
+ * regardless of k — difficulty tracks WORK, time tracks TIME — so the v3
+ * daily schedule survives as the full-utilization ceiling) + WLDF v5 /
+ * ALP output pins + Moore-style VERIFIED successors + schnorr auth.
+ *
+ * Field pun (documented, v4): "day" fields carry SLOT indices and
+ * daySeconds is the SLOT length (600). Renaming is deferred until the
+ * design settles — the wire layout is unchanged (8B state).
  *
  * Deliberately imports nothing (not even ecash-lib): jest cannot load
  * ecash-lib's WASM glue, so the op list, push encoders, depth simulator,
@@ -47,13 +51,23 @@ export const UDELTA_HEAD_LEN =
   UDELTA_ECON_LEN + UDELTA_PREFIX_SKIP + UDELTA_STATE_PUSH_LEN;
 /** δ numerator pieces: 82 = 64 + 16 + 2 (double-and-add, no OP_MUL). */
 export const UDELTA_NUMERATOR = 82;
-export const UDELTA_DENOMINATOR = 100000;
 /**
- * Step policy v3: EXACTLY k=1 per remint (k=0 forbidden). Rationale: with
- * k∈{0,1}, k=0 (same reward, marginally easier PoW, always available via
- * ancient locktimes) strictly dominates, so rational miners farm k=0
- * forever and the schedule never advances. k==1 makes every win advance
- * the chain one day; horizontal scale comes from baton count, not farming.
+ * v4 micro-δ denominator: 14400000 = 100000 × 144 (10-min slots). One
+ * step per BLOCK (not per slot): a full-cap day (144 blocks) steps
+ * −0.0815%, i.e. the v3 daily schedule is the full-utilization ceiling.
+ * q=95 at genesis target. WITHOUT this rescale a sprint day would step
+ * −11% and brick the chain within days (δ never adjusts down).
+ */
+export const UDELTA_DENOMINATOR = 14400000;
+/** v4 slot length in seconds (one Lotus block per eCash block, MTP-aligned). */
+export const UDELTA_SLOT_SECONDS = 600;
+/**
+ * Advance floor v4: k>=1 per remint (skip-tolerant — no upper bound;
+ * locktime≤MTP bounds k in practice). Same-slot re-mine (k=0) stays
+ * forbidden (it would strictly dominate and freeze the schedule), but
+ * miners may jump any number of open slots: small backlogs get backfilled
+ * by profit miners (supply smoothing), deep ones get jumped (supply
+ * scarcity). Difficulty is unaffected by k (one micro-step per block).
  */
 export const UDELTA_K = 1;
 
@@ -180,10 +194,9 @@ export function assemble(units: AsmUnit[]): Uint8Array {
  * The hand-assembled redeem CODE (fixed bytes — every param arrives via
  * the stack). Phases:
  *  1. preimage tail → stash powcommit + hashOutputs + locktime
- *  2. newDay/k derivation + k==1 EXACT (v3: k=0 forbidden — same-day
- *     farming is strictly dominant under race economics and would freeze
- *     the δ schedule forever, so every remint must advance exactly 1 day)
- *  3. δ step (exactly one, always) → newTarget = s1 (no k-branch)
+ *  2. newSlot/k derivation + k>=1 FLOOR (v4: skip-tolerant — miners may
+ *     jump any number of open slots; k=0 same-slot re-mine stays dead)
+ *  3. micro-δ (exactly one step, always, regardless of k) → newTarget = s1
  *  4. PoW head∈[0,newTarget)
  *  5. WLDF v3 + ALP MINT pins, out0..out2 concat
  *  6. successor verify (econ hash + 9B state + code hash)
@@ -219,12 +232,18 @@ export function udeltaCodeUnits(): AsmUnit[] {
   u.push(op(OP.OP_BIN2NUM)); // locktime → number
   u.push(num(6), op(OP.OP_ROLL), op(OP.OP_BIN2NUM), op(OP.OP_SUB));
   u.push(num(5), op(OP.OP_ROLL), op(OP.OP_BIN2NUM), op(OP.OP_DIV)); // newDay
-  u.push(op(D), num(3), op(OP.OP_ROLL), op(OP.OP_SUB)); // k (newDay kept)
-  // v3: k == 1 EXACTLY. k=0 (same-day re-mint) is forbidden: under race
-  // economics it strictly dominates k=1 (same 100 mint, easier target,
-  // always available) and would freeze the schedule forever.
-  u.push(num(1), op(OP.OP_EQUALVERIFY));
-  // [newDay, tipTarget, prefixHash, codeHash, mintAtoms, tokenId, ...]
+  u.push(op(D), num(3), op(OP.OP_ROLL), op(OP.OP_SUB)); // k (newSlot kept)
+  // v4: k >= 1 FLOOR ([k] → push 1 → [1,k] → GTE: second(k) >= top(1)).
+  // NO SWAP: GTE compares second-to-top >= top (like the proven PoW
+  // LESSTHAN compares second < top) — [k,1] would test 1>=k (the VM
+  // gate caught exactly this: k=1 passed symmetrically, k=7 failed).
+  // Skip-tolerant: any forward jump is legal (backlog policy is the
+  // miners' business — backfill for revenue, jump for scarcity). k=0
+  // (same-slot re-mine) stays forbidden: always-available + same reward
+  // would strictly dominate and freeze the schedule.
+  u.push(num(1), op(OP.OP_GREATERTHANOREQUAL));
+  u.push(op(OP.OP_VERIFY));
+  // [newSlot, tipTarget, prefixHash, codeHash, mintAtoms, tokenId, ...]
   // --- phase 3: δ (82 = 64+16+2), exactly one step → s1 ---
   u.push(num(1), op(OP.OP_ROLL)); // [t0, newDay, ...]
   u.push(op(D), op(OP.OP_TOALTSTACK)); // stash t0
@@ -280,11 +299,11 @@ export function udeltaCodeUnits(): AsmUnit[] {
   // target in WLDF and in the successor check; caught by the VM gate.)
   u.push(num(4), op(OP.OP_NUM2BIN)); // NT → NTB ([NTB, ND])
   u.push(op(OP.OP_SWAP), num(4), op(OP.OP_NUM2BIN)); // ND → NDB ([NDB, NTB])
-  // wldf = 574c4446.04.NDB.NTB.locktime (v4: v3 states are k==1-only, so
-  // v4-attested days are unambiguous). NDB/NTB copies are stashed for
-  // the successor state check at ROLL time; locktimeDup rides the main
-  // stack (never on alt here) and is ROLL-consumed last.
-  u.push(hexd('574c4446'), num(4), op(OP.OP_CAT));
+  // wldf = 574c4446.05.NDB.NTB.locktime (v5: miner-paced slot states;
+  // v4-attested days were k==1-only, v5 slots are k>=1). NDB/NTB copies
+  // are stashed for the successor state check at ROLL time; locktimeDup
+  // rides the main stack (never on alt here) and is ROLL-consumed last.
+  u.push(hexd('574c4446'), num(5), op(OP.OP_CAT));
   u.push(num(1), op(OP.OP_ROLL)); // NDB
   u.push(op(D), op(OP.OP_TOALTSTACK), op(OP.OP_CAT));
   u.push(num(1), op(OP.OP_ROLL)); // NTB
@@ -506,8 +525,12 @@ export function simulateUdeltaCode(
   return { ops, maxMain, maxAlt };
 }
 
-/** WLDF version attested by v3 (k==1-only) states. */
-export const WLDF_VERSION_UDELTA_V3 = 4;
+/**
+ * WLDF versions attested by single-shard states (own sequence, distinct
+ * from the covenant versions: v4 = k==1-only days, v5 = miner-paced slots).
+ */
+export const WLDF_VERSION_UDELTA_V4 = 4;
+export const WLDF_VERSION_UDELTA_V5 = 5;
 const WLDF_LOKAD = new TextEncoder().encode('WLDF');
 
 function u32LeBytes(n: number): Uint8Array {
@@ -523,15 +546,27 @@ function u32LeBytes(n: number): Uint8Array {
   ]);
 }
 
-/** 17-byte WLDF v4 push: LOKAD | 0x04 | day u32 | target u32 | locktime u32. */
-export function wldfV4Pushdata(state: {
-  newDay: number;
-  newTarget: number;
-  locktime: number;
-}): Uint8Array {
+/**
+ * 17-byte WLDF push: LOKAD | version | slot u32 | target u32 | locktime u32.
+ * (v4 kept for VLOTUS history; miners build v5.)
+ */
+export function wldfUdeltaPushdata(
+  state: {
+    newDay: number;
+    newTarget: number;
+    locktime: number;
+  },
+  version: number,
+): Uint8Array {
+  if (
+    version !== WLDF_VERSION_UDELTA_V4 &&
+    version !== WLDF_VERSION_UDELTA_V5
+  ) {
+    throw new Error(`unknown single-shard WLDF version: ${version}`);
+  }
   const out = new Uint8Array(17);
   out.set(WLDF_LOKAD, 0);
-  out[4] = WLDF_VERSION_UDELTA_V3;
+  out[4] = version;
   out.set(u32LeBytes(state.newDay), 5);
   out.set(u32LeBytes(state.newTarget), 9);
   out.set(u32LeBytes(state.locktime), 13);
@@ -555,4 +590,49 @@ export function deriveUdeltaV3(
     );
   }
   return d;
+}
+
+/**
+ * v4 state derivation: miner-paced slots. k>=1 (skip-tolerant — stale
+ * slots are jumped, miners decide backfill-vs-jump), EXACTLY ONE micro-δ
+ * step per block regardless of k (difficulty tracks WORK, time tracks
+ * TIME — what makes idle/backlog non-toxic). Cannot reuse
+ * deriveTwoShardState (K=1 cap + k-stepped target); the SUB form is
+ * mirrored with the v4 denominator.
+ *
+ * Field pun (documented): reuses TwoShard* types with "day" = slot index
+ * and daySeconds = slot length (600). Wire layout unchanged (8B state).
+ */
+export function deriveUdeltaV4(
+  genesis: TwoShardGenesis,
+  tip: TwoShardTip,
+  locktime: number,
+): TwoShardDerived {
+  if (!Number.isInteger(locktime) || locktime < 0 || locktime >= 0x80000000) {
+    throw new Error(`locktime out of Script-safe u32 range: ${locktime}`);
+  }
+  if (genesis.daySeconds <= 0) throw new Error('daySeconds must be positive');
+  if (!Number.isInteger(tip.target) || tip.target <= 0) {
+    throw new Error(`tip target must be a positive int, got ${tip.target}`);
+  }
+  const newDay = Math.floor(
+    (locktime - genesis.genesisUnix) / genesis.daySeconds,
+  );
+  const steps = newDay - tip.tipDay;
+  if (steps < 1) {
+    throw new Error(
+      `v4 requires k>=1 (tip slot ${tip.tipDay} → locktime slot ${newDay}, steps=${steps}); same-slot re-mine is forbidden`,
+    );
+  }
+  const newTarget =
+    tip.target -
+    Math.floor((tip.target * UDELTA_NUMERATOR) / UDELTA_DENOMINATOR);
+  return {
+    tipDay: tip.tipDay,
+    target: tip.target,
+    newDay,
+    newTarget,
+    steps,
+    locktime,
+  };
 }

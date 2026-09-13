@@ -1,10 +1,10 @@
 #!/usr/bin/env tsx
 /**
- * Consensus-level gate for the hand-assembled single-shard δ v3 (VLOTUS —
- * k==1-only) remint: builds the EXACT tx the miner builds (fake
- * outpoints/keys, real PoW + sigs) and evaluates it with libauth's XEC VM
- * (full P2SH + CODESEPARATOR + Schnorr), plus manual schnorr verification
- * of the covenant sig and successor-attack demos. Offline. No sats.
+ * Consensus-level gate for the hand-assembled single-shard δ v4 (ELOTUS —
+ * miner-paced slots, k>=1) remint: builds the EXACT tx the miner builds
+ * (fake outpoints/keys, real PoW + sigs) and evaluates it with libauth's
+ * XEC VM (full P2SH + CODESEPARATOR + Schnorr), plus manual schnorr
+ * verification of the covenant sig and successor-attack demos. Offline.
  *
  * Known libauth gap (documented, covered by parity — same as twoshard):
  * libauth slices coveredBytecode at the wrong offset for CODESEPARATOR
@@ -14,10 +14,12 @@
  * sig — asserted by trace position + the ergon parity control — while
  * the sig itself is verified manually over the witness preimage.
  *
- * The v3 payoff, proven here: successor attacks (k=0 same-state re-mint,
- * target reset, day jump, code tamper, econ tamper) must fail BEFORE the
- * separator, proving the k==1 gate + Moore-style successor verification
- * are load-bearing — the v2 hole (same-day farming) is now closed.
+ * The v4 payoff, proven here: honest k=1 AND honest k=7 jumps pass with
+ * the SAME single micro-step (one-step-per-block), while successor
+ * attacks (k=0 same-slot, target reset, off-by-one, slot smuggling,
+ * k-step claiming, code tamper, econ tamper) must fail BEFORE the
+ * separator — the k>=1 floor + Moore-style successor verification are
+ * load-bearing, and miners cannot smuggle extra steps into a jump.
  *
  *   npm run verify-singleshard-vm          # synthetic params (pure gate)
  *   npm run verify-singleshard-vm -- --live # live deployment params (pre-flight)
@@ -38,6 +40,10 @@ import {
   createSingleShardDeltaContract,
   type SingleShardDeltaParams,
 } from '../src/covenant/singleShardDeltaScript.js';
+import {
+  UDELTA_DENOMINATOR,
+  UDELTA_NUMERATOR,
+} from '../src/covenant/singleShardDeltaMath.js';
 import { buildMinedUdeltaRemintTx } from '../src/miner/remintSingleShard.js';
 import { createPowRemintErgonContract } from '../src/covenant/powRemintErgonScript.js';
 import { buildMinedErgonRemintTx } from '../src/miner/remintErgon.js';
@@ -140,7 +146,7 @@ async function main(): Promise<void> {
         'd9004b411d4cbcd2ec16235d506efd6e266186153bd1a2b1db3a1d5118c2ca5b',
       mintAtoms: 100n,
       genesisUnix: 1_784_300_000,
-      daySeconds: 86_400,
+      daySeconds: 600,
       genesisTarget: 2 ** 24,
       tipDay: 0,
       tipTarget: 2 ** 24,
@@ -157,8 +163,9 @@ async function main(): Promise<void> {
     debug(p: unknown): { error?: string }[];
   };
 
-  // v3 honest case is k=1 ONLY (k=0 is tested below as an attack).
-  for (const dayOff of [1]) {
+  // v4 honest cases: k=1 AND k=7 (skip path) — both must pass with the
+  // SAME single micro-step (one-step-per-block regardless of k).
+  for (const dayOff of [1, 7]) {
     const locktime = base.genesisUnix + dayOff * base.daySeconds;
     const contract = createSingleShardDeltaContract({ ...base });
     const built = await buildMinedUdeltaRemintTx({
@@ -244,8 +251,8 @@ async function main(): Promise<void> {
     }
 
     // Successor attacks must fail BEFORE the separator (lastCodeSeparator
-    // stays -1): the state/code/econ pins are load-bearing.
-    if (dayOff === 1) {
+    // stays -1): the k>=1 floor + state/code/econ pins are load-bearing.
+    if (dayOff === 1 || dayOff === 7) {
       const [honestNr, minerPk, sig65, nonce, preimage, redeem] = pushes as [
         Buffer,
         Buffer,
@@ -276,30 +283,65 @@ async function main(): Promise<void> {
         c[off]! ^= 0x01;
         return c;
       };
-      const poisoned: [string, Buffer][] = [
-        [
-          'k=0 same-state re-mint (the v2 honest case, now forbidden)',
-          createSingleShardDeltaContract({ ...base }).redeem,
-        ],
-        [
-          'target reset (2^30)',
-          createSingleShardDeltaContract({
-            ...base,
-            tipDay: built.derived.newDay,
-            tipTarget: 2 ** 30,
-          }).redeem,
-        ],
-        [
-          'day jump (tip+2)',
-          createSingleShardDeltaContract({
-            ...base,
-            tipDay: base.tipDay + 2,
-            tipTarget: base.tipTarget,
-          }).redeem,
-        ],
-        ['code byte flip', flip(honestNr, honestNr.length - 10)],
-        ['econ byte flip (tokenId)', flip(honestNr, 5)],
-      ];
+      const microStep = (t: number): number =>
+        t - Math.floor((t * UDELTA_NUMERATOR) / UDELTA_DENOMINATOR);
+      const microSteps = (t: number, n: number): number => {
+        let x = t;
+        for (let i = 0; i < n; i++) x = microStep(x);
+        return x;
+      };
+      const poisoned: [string, Buffer][] =
+        dayOff === 1
+          ? [
+              [
+                'k=0 same-state re-mint (the v2 honest case, now forbidden)',
+                createSingleShardDeltaContract({ ...base }).redeem,
+              ],
+              [
+                'target reset (2^30)',
+                createSingleShardDeltaContract({
+                  ...base,
+                  tipDay: built.derived.newDay,
+                  tipTarget: 2 ** 30,
+                }).redeem,
+              ],
+              [
+                'off-by-one target (s1+1 — exact-step enforcement)',
+                createSingleShardDeltaContract({
+                  ...base,
+                  tipDay: built.derived.newDay,
+                  tipTarget: built.derived.newTarget + 1,
+                }).redeem,
+              ],
+              [
+                'slot jump (tip+2 state, k=1 locktime)',
+                createSingleShardDeltaContract({
+                  ...base,
+                  tipDay: base.tipDay + 2,
+                  tipTarget: base.tipTarget,
+                }).redeem,
+              ],
+              ['code byte flip', flip(honestNr, honestNr.length - 10)],
+              ['econ byte flip (tokenId)', flip(honestNr, 5)],
+            ]
+          : [
+              [
+                'k=7 claiming 7 δ steps (one-step-per-block enforcement)',
+                createSingleShardDeltaContract({
+                  ...base,
+                  tipDay: built.derived.newDay,
+                  tipTarget: microSteps(base.tipTarget, 7),
+                }).redeem,
+              ],
+              [
+                'k=7 smuggling k=1 state (slot-commitment)',
+                createSingleShardDeltaContract({
+                  ...base,
+                  tipDay: base.tipDay + 1,
+                  tipTarget: built.derived.newTarget,
+                }).redeem,
+              ],
+            ];
       for (const [name, badNr] of poisoned) {
         const badDecoded = decodeTransaction(hexToBin(rebuildPoison(badNr)));
         if (typeof badDecoded === 'string') throw new Error(badDecoded);

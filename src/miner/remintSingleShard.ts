@@ -1,12 +1,12 @@
 /**
- * Single-shard δ v3 (VLOTUS) miner: builds the 2-input remint
+ * Single-shard δ v4 (ELOTUS) miner: builds the 2-input remint
  * [covenant baton + fuel] → [OP_RETURN | miner | baton'].
  *
- * v3 settles the race-economics question: k==1 EXACTLY (same-day k=0 is
- * forbidden — it would strictly dominate and freeze the δ schedule).
- * Consensus math is REUSED (not forked): deriveUdeltaV3 (SUB-form δ,
- * exactly 1 step), minePowErgonTarget (sha256-preimage commit), WLDF v4
- * pushdata. The only single-shard delta is numBatons=1 in ALP MINT.
+ * v4 is miner-paced: 10-minute slots, k>=1 skip-tolerant (miners decide
+ * backfill-vs-jump; same-slot k=0 stays forbidden), EXACTLY ONE micro-δ
+ * step per block regardless of k (difficulty tracks WORK). Consensus math:
+ * deriveUdeltaV4 (SUB-form micro-δ), minePowErgonTarget
+ * (sha256-preimage commit), WLDF v5 pushdata, numBatons=1 in ALP MINT.
  */
 import {
   ALL_BIP143,
@@ -33,8 +33,9 @@ import {
 } from '../covenant/singleShardDeltaScript.js';
 import { minePowErgonTarget } from '../covenant/minePow.js';
 import {
-  deriveUdeltaV3,
-  wldfV4Pushdata,
+  deriveUdeltaV4,
+  wldfUdeltaPushdata,
+  WLDF_VERSION_UDELTA_V5,
 } from '../covenant/singleShardDeltaMath.js';
 import { type TwoShardDerived } from '../covenant/twoShardMath.js';
 
@@ -65,23 +66,23 @@ export const UDELTA_FEE_SATS_PER_KB = 2000n;
 export function udeltaMinerBanner(contract: SingleShardDeltaContract): string {
   const p = contract.params;
   return [
-    'SingleShardδ v3 (VLOTUS) PoW remint miner — k==1-only',
+    'SingleShardδ v4 (ELOTUS) PoW remint miner — miner-paced slots, k>=1',
     `genesisTarget=${p.genesisTarget}`,
     `daySeconds=${p.daySeconds}`,
-    'δ SUB-form: t − floor(t·82/100000), exactly 1 step/remint, verified successors',
+    'micro-δ SUB-form: t − floor(t·82/14400000), 1 step/block, verified successors',
     `mintAtoms=${p.mintAtoms}`,
-    'covenant: hand-assembled single redeem + WLDF v4',
+    'covenant: hand-assembled single redeem + WLDF v5',
   ].join(' | ');
 }
 
-/** eMPP OP_RETURN: WLDF v4 state + ALP MINT (atoms → out1, 1 baton → out2). */
+/** eMPP OP_RETURN: WLDF v5 state + ALP MINT (atoms → out1, 1 baton → out2). */
 export function expectedUdeltaMintOpReturnScript(
   tokenId: string,
   mintAtoms: bigint,
   state: { newDay: number; newTarget: number; locktime: number },
 ): Script {
   return emppScript([
-    wldfV4Pushdata(state),
+    wldfUdeltaPushdata(state, WLDF_VERSION_UDELTA_V5),
     alpMint(tokenId, ALP_STANDARD, {
       atomsArray: [mintAtoms],
       numBatons: 1,
@@ -109,7 +110,7 @@ export async function buildMinedUdeltaRemintTx(opts: {
   const locktime =
     opts.locktime ??
     Math.max(base.genesisUnix, Math.floor(Date.now() / 1000) - 600);
-  const derived = deriveUdeltaV3(
+  const derived = deriveUdeltaV4(
     {
       genesisUnix: base.genesisUnix,
       daySeconds: base.daySeconds,

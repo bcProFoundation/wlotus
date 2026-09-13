@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
 /**
- * Mine one single-shard δ v3 (k==1-only) remint. Dep file via UDELTA_DEP
- * (default deployments/mainnet-ulotus.json).
+ * Mine one single-shard δ v4 (miner-paced, k>=1) remint. Dep file via
+ * UDELTA_DEP (default deployments/mainnet-ulotus.json).
  *
  *   npm run mine-singleshard-once
  *
- * v3 locktime targeting: the remint must land EXACTLY in the next slot
- * (tipDay+1). Default = clamp(MTP-60, slotStart, slotEnd-1): a current tip
- * mines near MTP; a stale tip catches up one day per remint. If the next
- * slot has not opened yet (MTP-60 < slotStart) the script errors — wait
- * for MTP to advance. UDELTA_LOCKTIME overrides (deriveUdeltaV3 validates).
+ * v4 locktime policy: the reference miner targets the LATEST open slot
+ * (default MTP-60 — a jump when backlogged). Backfill any open backlog
+ * slot-by-slot with explicit UDELTA_LOCKTIME (k>=1 validates;
+ * deriveUdeltaV4 enforces the floor). If no slot is open yet the script
+ * errors — wait for MTP to advance.
  */
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -19,7 +19,7 @@ import { DEFAULT_DUST_SATS, fromHex, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createSingleShardDeltaContract } from '../src/covenant/singleShardDeltaScript.js';
-import { deriveUdeltaV3 } from '../src/covenant/singleShardDeltaMath.js';
+import { deriveUdeltaV4 } from '../src/covenant/singleShardDeltaMath.js';
 import {
   buildMinedUdeltaRemintTx,
   udeltaMinerBanner,
@@ -136,22 +136,21 @@ async function main(): Promise<void> {
   const { mtp, tipHeight, tipUnix } = await getMedianTimePast(chronik);
   void tipHeight;
   void tipUnix;
-  // v3: the remint must land EXACTLY in slot tipDay+1 (k==1-only).
-  const slotStart = dep.genesisUnix + (dep.tipDay + 1) * dep.daySeconds;
-  const slotEnd = slotStart + dep.daySeconds;
+  // v4: reference policy targets the LATEST open slot (jump — backlog
+  // policy is the miners' business). Backfill via explicit UDELTA_LOCKTIME
+  // (any locktime with k>=1 validates; deriveUdeltaV4 enforces the floor).
+  const nextStart = dep.genesisUnix + (dep.tipDay + 1) * dep.daySeconds;
   const override = process.env.UDELTA_LOCKTIME?.trim();
-  const locktime = override
-    ? Number(override)
-    : Math.min(Math.max(mtp - 60, slotStart), slotEnd - 1);
-  if (!override && mtp - 60 < slotStart) {
+  const locktime = override ? Number(override) : mtp - 60;
+  if (!override && mtp - 60 < nextStart) {
     throw new Error(
-      `day ${dep.tipDay + 1} not open yet (slotStart ${slotStart} > MTP-60 ${mtp - 60}) — wait for MTP to advance`,
+      `slot ${dep.tipDay + 1} not open yet (slotStart ${nextStart} > MTP-60 ${mtp - 60}) — wait for MTP to advance`,
     );
   }
   if (locktime > mtp) {
     throw new Error(`locktime ${locktime} > MTP ${mtp}`);
   }
-  const preview = deriveUdeltaV3(
+  const preview = deriveUdeltaV4(
     {
       genesisUnix: dep.genesisUnix,
       daySeconds: dep.daySeconds,

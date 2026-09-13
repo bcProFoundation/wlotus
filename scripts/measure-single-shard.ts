@@ -1,14 +1,15 @@
 #!/usr/bin/env tsx
 /**
- * Static gates for the hand-assembled single-shard δ v3 (VLOTUS,
- * k==1-only) redeem.
+ * Static gates for the hand-assembled single-shard δ v4 (ELOTUS,
+ * miner-paced slots, k>=1) redeem.
  *
  * Limits: P2SH redeem ≤520B, eCash MAX_OPS_PER_SCRIPT = 201.
  * Gates: depth-simulator green, exactly one CODESEPARATOR, no OP_MUL,
  * no introspection opcodes (0xc0–0xcd are BCH-only), head layout
  * econ(83) | prefixHash push(33) | state push(9), state-change isolation
- * (tip day 0 vs day 1 — the k=1 pair — differ ONLY in the 8 state bytes),
- * P2SH ratchet, WLDF v4 version byte,
+ * (slot 0 vs slot 1 AND slot 0 vs slot 7 — both differ ONLY in the 8
+ * state bytes; the jump carries the same single micro-step),
+ * P2SH ratchet, WLDF v5 version byte,
  * eMPP lengths (0x11/0x32/0x47), numBatons 0x01 (diffed against the
  * two-shard 0x02 template), and tx-size estimates. Does not broadcast.
  */
@@ -24,7 +25,7 @@ import {
   UDELTA_STATE_PUSH_LEN,
   OP,
 } from '../src/covenant/singleShardDeltaMath.js';
-import { wldfV4Pushdata, WLDF_VERSION_UDELTA_V3 } from '../src/covenant/singleShardDeltaMath.js';
+import { wldfUdeltaPushdata, WLDF_VERSION_UDELTA_V5 } from '../src/covenant/singleShardDeltaMath.js';
 import { expectedUdeltaMintOpReturnScript } from '../src/miner/remintSingleShard.js';
 
 const MAX_OPS = 201;
@@ -62,7 +63,7 @@ async function main(): Promise<void> {
     tokenId,
     mintAtoms: 100n,
     genesisUnix: 1_784_300_000,
-    daySeconds: 86_400,
+    daySeconds: 600,
     genesisTarget: 2 ** 24,
     tipDay: 0,
     tipTarget: 2 ** 24,
@@ -117,12 +118,13 @@ async function main(): Promise<void> {
   );
 
   // State-change isolation: advance to day 1 — ONLY the 8 state bytes change.
-  const stepped = 2 ** 24 - Math.floor(((2 ** 24) * 82) / 100000);
+  // v4 micro-step: q = floor(2^24·82/14400000) = 95 → 16777121.
+  const stepped = 2 ** 24 - Math.floor(((2 ** 24) * 82) / 14400000);
   const c1 = createSingleShardDeltaContract({
     tokenId,
     mintAtoms: 100n,
     genesisUnix: 1_784_300_000,
-    daySeconds: 86_400,
+    daySeconds: 600,
     genesisTarget: 2 ** 24,
     tipDay: 1,
     tipTarget: stepped,
@@ -143,16 +145,44 @@ async function main(): Promise<void> {
   );
   gate(c1.address !== c0.address, `P2SH ratchets (${c1.address.slice(0, 18)}…)`);
 
-  // eMPP / ALP encoding gates (prove covenant literals).
-  const wldf = wldfV4Pushdata({
-    newDay: 1,
-    newTarget: stepped,
-    locktime: 1_784_300_000 + 86_400,
+  // Jump isolation: slot 0 → slot 7 carries the SAME single micro-step
+  // (one-step-per-block) and still touches only the 8 state bytes.
+  const c7 = createSingleShardDeltaContract({
+    tokenId,
+    mintAtoms: 100n,
+    genesisUnix: 1_784_300_000,
+    daySeconds: 600,
+    genesisTarget: 2 ** 24,
+    tipDay: 7,
+    tipTarget: stepped,
   });
+  const diffs7: number[] = [];
+  for (let i = 0; i < c0.redeem.length; i++) {
+    if (c0.redeem[i] !== c7.redeem[i]) diffs7.push(i);
+  }
+  gate(
+    diffs7.length > 0 &&
+      diffs7.every(d => d >= stateOff + 1 && d < stateOff + 9),
+    `k=7 touches only state bytes [${stateOff + 1},${stateOff + 9}) (got ${diffs7.length} @${diffs7[0]})`,
+  );
+  gate(
+    c7.address !== c0.address && c7.address !== c1.address,
+    'jump ratchets to a third address',
+  );
+
+  // eMPP / ALP encoding gates (prove covenant literals).
+  const wldf = wldfUdeltaPushdata(
+    {
+      newDay: 1,
+      newTarget: stepped,
+      locktime: 1_784_300_000 + 600,
+    },
+    WLDF_VERSION_UDELTA_V5,
+  );
   gate(wldf.length === 0x11, `wldf len ${wldf.length} == 0x11`);
   gate(
-    wldf[4] === WLDF_VERSION_UDELTA_V3 && WLDF_VERSION_UDELTA_V3 === 4,
-    'wldf version byte is 0x04 (v3 states)',
+    wldf[4] === WLDF_VERSION_UDELTA_V5 && WLDF_VERSION_UDELTA_V5 === 5,
+    'wldf version byte is 0x05 (v4 slot states)',
   );
   const mint1 = Buffer.from(
     alpMint(tokenId, ALP_STANDARD, { atomsArray: [100n], numBatons: 1 }),
@@ -171,7 +201,7 @@ async function main(): Promise<void> {
   const opret = expectedUdeltaMintOpReturnScript(tokenId, 100n, {
     newDay: 1,
     newTarget: stepped,
-    locktime: 1_784_300_000 + 86_400,
+    locktime: 1_784_300_000 + 600,
   });
   gate(
     opret.bytecode.length === 0x47,

@@ -1,14 +1,14 @@
 #!/usr/bin/env tsx
 /**
- * Create the single-shard δ experiment token (VLOTUS v3, research —
- * k==1-only: every remint advances exactly 1 day).
+ * Create the single-shard δ experiment token (ELOTUS v4, research —
+ * miner-paced 10-minute slots, k>=1, one micro-δ step per block).
  *
  * ALP genesis with 1 mint baton, handed off to the hand-assembled shard
- * P2SH at tip (day 0, genesisTarget). Fund GENESIS_ADDRESS first.
+ * P2SH at tip (slot 0, genesisTarget). Fund GENESIS_ADDRESS first.
  *
  * Env overrides: UDELTA_TICKER, UDELTA_NAME, UDELTA_DEP, UDELTA_GENESIS_UNIX,
- * UDELTA_DAY_SECONDS, UDELTA_GENESIS_TARGET (must be ≤ 2^24 — same
- * 32-bit-arithmetic safety invariant as the two-shard experiment).
+ * UDELTA_DAY_SECONDS (slot length; default 600), UDELTA_GENESIS_TARGET
+ * (must be ≤ 2^24 — same 32-bit-arithmetic safety invariant as ever).
  */
 import { resolve } from 'node:path';
 import {
@@ -29,10 +29,8 @@ import {
 import { createChronik } from '../src/network/createChronik.js';
 import { broadcastAlpGenesis } from '../src/genesis/broadcastGenesis.js';
 import { createSingleShardDeltaContract } from '../src/covenant/singleShardDeltaScript.js';
-import {
-  TWO_SHARD_DAY_SECONDS_DEFAULT,
-  TWO_SHARD_GENESIS_TARGET_DEFAULT,
-} from '../src/covenant/twoShardMath.js';
+import { TWO_SHARD_GENESIS_TARGET_DEFAULT } from '../src/covenant/twoShardMath.js';
+import { UDELTA_SLOT_SECONDS } from '../src/covenant/singleShardDeltaMath.js';
 import {
   BASE_MINT_ATOMS,
   TOKEN_DECIMALS,
@@ -41,8 +39,8 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-const UDELTA_TICKER_DEFAULT = 'VLOTUS';
-const UDELTA_NAME_DEFAULT = 'Velocity Lotus v3 (k=1-only experiment)';
+const UDELTA_TICKER_DEFAULT = 'ELOTUS';
+const UDELTA_NAME_DEFAULT = 'Elastic Lotus v4 (miner-paced experiment)';
 
 async function main(): Promise<void> {
   const skHex = process.env.GENESIS_SK_HEX?.trim();
@@ -54,16 +52,15 @@ async function main(): Promise<void> {
   const ticker =
     process.env.UDELTA_TICKER?.trim() || UDELTA_TICKER_DEFAULT;
   const name = process.env.UDELTA_NAME?.trim() || UDELTA_NAME_DEFAULT;
-  const depName = process.env.UDELTA_DEP?.trim() || 'mainnet-vlotus.json';
+  const depName = process.env.UDELTA_DEP?.trim() || 'mainnet-elotus.json';
   const daySeconds = Number(
-    process.env.UDELTA_DAY_SECONDS?.trim() ||
-      TWO_SHARD_DAY_SECONDS_DEFAULT,
+    process.env.UDELTA_DAY_SECONDS?.trim() || UDELTA_SLOT_SECONDS,
   );
-  // v3 default: born ~49h stale so slots 1 AND 2 are already open — the
-  // first two k=1 ticks demo catch-up (2 sequential advances + ratchets)
-  // in one session. Override with UDELTA_GENESIS_UNIX for a fresh tip.
+  // v4 default: born ~2h stale so ~7 slots are open at birth — the first
+  // blocks demo the backlog choice (backfill-then-jump) in one session.
+  // Override with UDELTA_GENESIS_UNIX for a fresh tip.
   const genesisUnix = Number(
-    process.env.UDELTA_GENESIS_UNIX?.trim() || nowUnix - 176400,
+    process.env.UDELTA_GENESIS_UNIX?.trim() || nowUnix - 7200,
   );
   const genesisTarget = Number(
     process.env.UDELTA_GENESIS_TARGET?.trim() ||
@@ -88,7 +85,7 @@ async function main(): Promise<void> {
       {
         address: wallet.address,
         balanceXec: Number(wallet.balanceSats) / 100,
-        mode: 'single-shard-delta-v3',
+        mode: 'single-shard-delta-v4',
         ticker,
         genesisUnix,
         daySeconds,
@@ -147,8 +144,8 @@ async function main(): Promise<void> {
     ticker,
     name,
     tokenId: genesis.tokenId,
-    mode: 'single-shard-delta-v3',
-    role: 'experiment-multiinput-v3',
+    mode: 'single-shard-delta-v4',
+    role: 'experiment-multiinput-v4',
     decimals: TOKEN_DECIMALS,
     powAddress: shard.address,
     redeemScriptHex: shard.redeemHex,
@@ -157,11 +154,12 @@ async function main(): Promise<void> {
     genesisUnix,
     daySeconds,
     genesisTarget,
-    stepCapK: 1,
+    minAdvanceK: 1,
+    maxAdvanceK: null,
     stepNote:
-      'SUB form: t ← t − floor(t·82/100000), explicit double-and-add, no OP_MUL; EXACTLY k=1/remint (k=0 forbidden — race economics)',
+      'SUB form: t ← t − floor(t·82/14400000), explicit double-and-add, no OP_MUL; k>=1 skip-tolerant, EXACTLY ONE micro-step per block regardless of k (difficulty tracks WORK)',
     difficultyNote:
-      'Single-shard δ v3: hand-assembled 404B/164-op redeem — PoW + k==1-only δ derivation + WLDF v4/ALP pins + VERIFIED successors (Moore econ trick, 9B state) + schnorr auth.',
+      'Single-shard δ v4: hand-assembled 406B/165-op redeem — PoW + miner-paced micro-δ (10-min slots, k>=1, 1 step/block) + WLDF v5/ALP pins + VERIFIED successors (Moore econ trick, 9B state) + schnorr auth.',
     mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
     tokensPerRemint: Number(BASE_MINT_ATOMS),
     initialMintAtoms: '1000',
