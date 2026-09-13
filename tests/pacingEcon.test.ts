@@ -2,7 +2,7 @@
  * Pacing-econ simulator tests — pure, seeded, deterministic.
  */
 import {
-  energyPerBlock,
+  energyPerEntrant,
   feeUsd,
   microStep,
   mulberry32,
@@ -20,9 +20,16 @@ describe('pacing-econ kernels', () => {
     expect(feeUsd(1750, 0.000007)).toBeCloseTo(0.0001225, 10);
   });
 
-  test('energyPerBlock scales with 1/target (physics)', () => {
-    expect(energyPerBlock(0.3, 2 ** 24, 2 ** 24)).toBeCloseTo(0.3, 10);
-    expect(energyPerBlock(0.3, 2 ** 24, 2 ** 23)).toBeCloseTo(0.6, 10);
+  test('energyPerEntrant derives Wc0 from share, scales with 1/target', () => {
+    // share=30%, o=$0.005 → Wc0 = 0.3*0.005/0.7 ≈ $0.00214.
+    expect(energyPerEntrant(0.3, 0.005, 2 ** 24, 2 ** 24)).toBeCloseTo(
+      0.002142857,
+      9,
+    );
+    expect(energyPerEntrant(0.3, 0.005, 2 ** 24, 2 ** 23)).toBeCloseTo(
+      0.004285714,
+      9,
+    );
   });
 
   test('strategyTarget routes backfill/jump/threshold', () => {
@@ -58,7 +65,7 @@ describe('pacing-econ runSim', () => {
     expect(r.idleSlots).toBe(0);
   });
 
-  test('reward below energy+fee idles every slot, backlog grows', () => {
+  test('reward below Wc+o idles every slot, backlog grows', () => {
     const r = runSim({
       slots: 5,
       rewardUsd: () => 0.001,
@@ -72,21 +79,21 @@ describe('pacing-econ runSim', () => {
     expect(r.utilization).toBe(0);
   });
 
-  test('entry obeys the M*=(R-F-E)/o boundary exactly', () => {
+  test('entry obeys the M*=(R-F)/(Wc+o) boundary exactly', () => {
     const mk = (reward: number) =>
       runSim({
         slots: 1,
         rewardUsd: () => reward,
         xecUsd: () => 0.000007,
         population: { backfill: 1, jump: 0, threshold: 0 },
-        energy0Usd: 0.3,
+        energyShare: 0.3,
         opportunityUsd: 0.005,
         seed: 3,
       });
-    // F ≈ 0.0001225, E = 0.30: (0.31-F-E)/0.005 = 1.97 → M*=1 mines;
-    // (0.304-F-E)/0.005 = 0.77 → M*=0 idles.
-    expect(mk(0.31).blocks).toBe(1);
-    expect(mk(0.304).blocks).toBe(0);
+    // F ≈ 0.0001225, Wc+o ≈ 0.007142857: R=0.0073 → M*=1 mines;
+    // R=0.0072 → M*=0 idles.
+    expect(mk(0.0073).blocks).toBe(1);
+    expect(mk(0.0072).blocks).toBe(0);
   });
 
   test('conservation: filled + destroyed = elapsed; steps = blocks', () => {

@@ -1,29 +1,30 @@
 /**
  * Miner-paced issuance economics (ELOTUS v4 research simulator) — PURE.
  *
- * Answers: what happens to issuance / difficulty-lag / miner P&L when
- * miners choose backfill-vs-jump under varying block-reward value ($1 vs
- * $100 per 100-token block), token crashes, and REAL energy costs?
+ * Energy model (all-pay-full, sequential-puzzle): every entrant burns full
+ * work Wc per race (no early exit — the structure a constant energy share
+ * REQUIRES: lottery puzzles fix total work/block, so their energy share
+ * collapses at high prices; sequential work scales with entry). Wc0 is
+ * derived from the energy share: Wc0 = share·o/(1−share) ($0.00214 at
+ * share=30%, o=$0.005), scaling with 1/target (treadmill). Total network
+ * energy/block = M*·Wc = 30% of R at ANY price ($0.30 @ $1, $30 @ $100).
+ * Production corollary: the puzzle must be sequential-ish (all-pay-full),
+ * ~2e8x today's 128-sha256 placeholder (~$1e-11) — TBD, now sharply
+ * specified instead of vaguely "harder".
  *
- * Energy model (the point of the sim — unforgeable costliness, not
- * printing out of thin air): network energy per block E = E0·G/target,
- * with E0 = $0.30 at genesis target (30% of a $1 block). E0 is an
- * explicit PRODUCTION-PUZZLE ASSUMPTION: today's 128-sha256 placeholder
- * costs ~$1e-11 (eleven orders short); production needs sequential or
- * memory-hard work ~2e8x harder (TBD). E scales with 1/target (physics),
- * independent of token price — so the energy share is highest at LOW
- * prices (30% @ $1) and collapses at high ones (0.3% @ $100).
- * Consequence baked in: monotonic difficulty + real energy = a treadmill
- * (E grows 0.0815%/day; flat $1 exhausts margin in ~4 years — the sim's
- * R7 runs show it; only rising prices or the crash/resurrect cobweb
- * outrun it).
+ * Entry M* = (R−F)/(Wc+o) (rent dissipation). Viability floor ≈ Wc+o
+ * ≈ $0.007 (MARGINAL single-miner cost — sequential degrades gracefully:
+ * energy scales down with entry, unlike lottery's fixed overhead, so the
+ * treadmill binds in ~20y at flat $1, not ~4y). Treadmill persists
+ * (Wc grows 0.0815%/day; flat prices centralize then kill — R7 runs).
  *
- * Races: entry M* = (R−F−E)/o (rent dissipation — miners enter until
- * per-miner expected cash ≈ opportunity cost); winner uniform (symmetric
- * first-seen; fee-bidding NOT modeled). Losers burn E/M* each (all-pay).
- * P&L attributes loser energy by population fractions (expected-value,
- * exact in expectation; keeps rounds O(1)). Strategies: backfill (tip+1),
- * jump (latest), threshold (backfill iff backlog ≤ 12).
+ * Strategies as stakeholder behavior: backfill = sustain-the-mine
+ * (patient going-concern miners preserving future races); jump = drain
+ * (greedy extractors/holders destroying backlog for scarcity + quick
+ * tokens — zero-sum vs miners over the contested backlog); threshold =
+ * the miner-faithful default (sustain when feasible, drain only when
+ * unbackfillable). Races are symmetric → no selective pressure → norms
+ * (software defaults, pool coordination) decide the mix.
  *
  * Seeded (mulberry32) → fully reproducible trajectories.
  */
@@ -49,8 +50,8 @@ export interface SimParams {
   population: SimPopulation;
   /** Protocol fee in sats (default 1750 — measured single-shard remint). */
   feeSats?: number;
-  /** Network energy $/block at genesis target (default 0.30). */
-  energy0Usd?: number;
+  /** Network energy share of block reward (default 0.30). */
+  energyShare?: number;
   roundsPerSlot?: number;
   /** Per-race fixed cost in USD (default 0.005 ≈ $21/mo always-on infra). */
   opportunityUsd?: number;
@@ -100,13 +101,21 @@ export function feeUsd(feeSats: number, xecUsdRate: number): number {
   return (feeSats / 100) * xecUsdRate;
 }
 
-/** Network energy $/block at the current target (scales with 1/target). */
-export function energyPerBlock(
-  energy0Usd: number,
+/**
+ * Per-entrant energy $/race at the current target. Wc0 = share·o/(1−share)
+ * at genesis, scaling with 1/target (treadmill: harder puzzle = pricier
+ * entry over time).
+ */
+export function energyPerEntrant(
+  energyShare: number,
+  opportunityUsd: number,
   genesisTarget: number,
   target: number,
 ): number {
-  return (energy0Usd * genesisTarget) / target;
+  return (
+    ((energyShare * opportunityUsd) / (1 - energyShare)) *
+    (genesisTarget / target)
+  );
 }
 
 export function strategyTarget(
@@ -128,7 +137,7 @@ const zeroStrategies = (): Record<PacingStrategy, number> => ({
 
 export function runSim(p: SimParams): SimResult {
   const feeSats = p.feeSats ?? 1750;
-  const energy0 = p.energy0Usd ?? 0.3;
+  const share = p.energyShare ?? 0.3;
   const roundsPerSlot = p.roundsPerSlot ?? 30;
   const o = p.opportunityUsd ?? 0.005;
   const threshold = p.threshold ?? 12;
@@ -138,6 +147,11 @@ export function runSim(p: SimParams): SimResult {
     p.population.backfill + p.population.jump + p.population.threshold;
   const fracB = p.population.backfill / popTotal;
   const fracJ = p.population.jump / popTotal;
+  const frac: Record<PacingStrategy, number> = {
+    backfill: fracB,
+    jump: fracJ,
+    threshold: 1 - fracB - fracJ,
+  };
 
   let tip = 0;
   let target = genesis;
@@ -160,19 +174,17 @@ export function runSim(p: SimParams): SimResult {
     if (backlogStart > maxBacklog) maxBacklog = backlogStart;
     const R = p.rewardUsd(slot);
     const F = feeUsd(feeSats, p.xecUsd(slot));
-    const Eslot = energyPerBlock(energy0, genesis, target);
+    const wcSlot = energyPerEntrant(share, o, genesis, target);
     const mStarSlot =
-      R - F - Eslot > 0
-        ? Math.min(popTotal, Math.floor((R - F - Eslot) / o))
-        : 0;
+      R - F > 0 ? Math.min(popTotal, Math.floor((R - F) / (wcSlot + o))) : 0;
     if (backlogStart > 1 && mStarSlot > 0) recoverySlots++;
     let rounds = 0;
     let minedThisSlot = false;
     while (tip < latest && rounds < roundsPerSlot) {
       rounds++;
-      const E = energyPerBlock(energy0, genesis, target);
+      const wc = energyPerEntrant(share, o, genesis, target);
       const mStar =
-        R - F - E > 0 ? Math.min(popTotal, Math.floor((R - F - E) / o)) : 0;
+        R - F > 0 ? Math.min(popTotal, Math.floor((R - F) / (wc + o))) : 0;
       if (mStar === 0) break;
       minedThisSlot = true;
       entrantsSum += mStar;
@@ -191,16 +203,10 @@ export function runSim(p: SimParams): SimResult {
       blocks++;
       wins[w]++;
       feesUsd += F;
-      energyUsd += E;
-      const eShare = E / mStar;
-      profit[w] += R - F - eShare;
-      const frac: Record<PacingStrategy, number> = {
-        backfill: fracB,
-        jump: fracJ,
-        threshold: 1 - fracB - fracJ,
-      };
+      energyUsd += mStar * wc;
+      profit[w] += R - F - wc;
       for (const s of ['backfill', 'jump', 'threshold'] as const) {
-        profit[s] -= eShare * (mStar * frac[s] - (s === w ? 1 : 0));
+        profit[s] -= wc * (mStar * frac[s] - (s === w ? 1 : 0));
       }
       target = microStep(target);
     }

@@ -1,20 +1,22 @@
 #!/usr/bin/env tsx
 /**
- * Miner-paced issuance scenarios with REAL energy costs (E0=$0.30/block
- * at genesis = 30% of a $1 block — the unforgeable-costliness goal).
+ * Miner-paced issuance scenarios with all-pay-full energy (30% of block
+ * reward at ANY price: $0.30 @ $1, $30 @ $100 — miners scale hashpower
+ * with the prize, dissipating a constant share).
  *
  *   npm run sim-pacing-econ
  *
- * Calibration (Sep 2026): XEC ≈ $7e-6 → fee ≈ $0.00012 (dust); energy
- * dominates cost (2500x fees). Entry M* = (R−F−E)/o with E growing
- * 0.0815%/day (treadmill) and o = $0.005/race.
+ * Entry M*=(R−F)/(Wc+o); viability floor ≈ Wc+o ≈ $0.007 (marginal
+ * single-miner cost — sequential degrades gracefully). Wc grows
+ * 0.0815%/day (treadmill: flat $1 dies ~20y, flat $100 ~36y).
  *
- * R1/R2: $1/$100 constant, calm — cap binds?
- * R3/R4: 90% token crash d20-40 — $1→$0.10 idles (below ~$0.30 energy
- *   floor), $100→$10 mines on. Same depth, different fate.
- * R6-*: R3 path x all-backfill/all-jump/all-threshold — which norm wins?
- * R7a/R7b: 5 years flat $1/$100 — treadmill: $1 dies ~4y (margin
- *   exhausted, sudden full idle), $100 barely notices (dies ~20y).
+ * R1/R2: $1/$100 constant, calm — cap binds? (140 vs 14K racers.)
+ * R3/R4: 99.9% token crash d20-40 — $1→$0.001 idles, $100→$0.10 mines on.
+ * R6-*: R3 path x all-sustain(all-backfill)/all-drain(all-jump)/
+ *   all-threshold — sustain keeps schedule via grinding, drain recovers
+ *   instantly at −33%; symmetric races → norms decide.
+ * R7a/R7b: 25 years flat $1/$100 — treadmill death (~20y) vs durable
+ *   squeeze ($100 centralizes 14K→~26 over 25y but survives).
  *
  * Pure simulation (seeded, reproducible). No chain, no sats.
  */
@@ -45,10 +47,10 @@ const ALL_THRESHOLD: SimPopulation = {
   threshold: 100000,
 };
 
-/** 90% token crash during days 20-40 of a 60-day run. */
+/** 99.9% token crash during days 20-40 of a 60-day run. */
 function tokenCrash(base: number): (slot: number) => number {
   return slot =>
-    slot <= 20 * DAY || slot > 40 * DAY ? base : base * 0.1;
+    slot <= 20 * DAY || slot > 40 * DAY ? base : base * 0.001;
 }
 
 interface Scenario {
@@ -75,28 +77,28 @@ const SCENARIOS: Scenario[] = [
     population: THIRDS,
   },
   {
-    name: 'R3 $1/blk, 90% crash d20-40, thirds',
+    name: 'R3 $1/blk, 99.9% crash d20-40, thirds',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R4 $100/blk, 90% crash d20-40, thirds',
+    name: 'R4 $100/blk, 99.9% crash d20-40, thirds',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(100),
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R6a R3-path, all backfill',
+    name: 'R6a R3-path, all sustain',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
     population: ALL_BACKFILL,
   },
   {
-    name: 'R6b R3-path, all jump',
+    name: 'R6b R3-path, all drain',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
@@ -110,15 +112,15 @@ const SCENARIOS: Scenario[] = [
     population: ALL_THRESHOLD,
   },
   {
-    name: 'R7a 5y flat $1, thirds (treadmill)',
-    slots: 5 * YEAR,
+    name: 'R7a 25y flat $1, thirds (treadmill)',
+    slots: 25 * YEAR,
     rewardUsd: () => 1,
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R7b 5y flat $100, thirds (treadmill)',
-    slots: 5 * YEAR,
+    name: 'R7b 25y flat $100, thirds (treadmill)',
+    slots: 25 * YEAR,
     rewardUsd: () => 100,
     xecUsd: () => XEC_REAL,
     population: THIRDS,
