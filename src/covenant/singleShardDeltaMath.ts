@@ -1,9 +1,12 @@
 /**
  * Single-shard δ (ULOTUS) — PURE covenant definition, zero deps.
  *
- * Hand-assembled single redeem (~420B / ~169 ops) doing what the two-shard
- * experiment split across C+M: PoW + K=1 SUB-form δ derivation + WLDF v3 /
- * ALP output pins + Moore-style VERIFIED successors + schnorr auth.
+ * Hand-assembled single redeem (404B / 164 ops) doing what the two-shard
+ * experiment split across C+M: PoW + k==1-only SUB-form δ derivation (v3:
+ * every remint advances exactly 1 day; k=0 farming is forbidden because
+ * under race economics it strictly dominates and would freeze the
+ * schedule) + WLDF v4 / ALP output pins + Moore-style VERIFIED successors
+ * + schnorr auth.
  *
  * Deliberately imports nothing (not even ecash-lib): jest cannot load
  * ecash-lib's WASM glue, so the op list, push encoders, depth simulator,
@@ -26,6 +29,13 @@
  * s, minerPk, nextRedeem.
  */
 
+import {
+  deriveTwoShardState,
+  type TwoShardDerived,
+  type TwoShardGenesis,
+  type TwoShardTip,
+} from './twoShardMath.js';
+
 /** Length of the hashed econ head (tokenId+mintAtoms+genesis+daySeconds+codeHash pushes). */
 export const UDELTA_ECON_LEN = 83;
 /** Bytes skipped after econ (the constant prefixHash push). */
@@ -38,7 +48,13 @@ export const UDELTA_HEAD_LEN =
 /** δ numerator pieces: 82 = 64 + 16 + 2 (double-and-add, no OP_MUL). */
 export const UDELTA_NUMERATOR = 82;
 export const UDELTA_DENOMINATOR = 100000;
-/** Step cap: K=1 (matches the two-shard experiment). */
+/**
+ * Step policy v3: EXACTLY k=1 per remint (k=0 forbidden). Rationale: with
+ * k∈{0,1}, k=0 (same reward, marginally easier PoW, always available via
+ * ancient locktimes) strictly dominates, so rational miners farm k=0
+ * forever and the schedule never advances. k==1 makes every win advance
+ * the chain one day; horizontal scale comes from baton count, not farming.
+ */
 export const UDELTA_K = 1;
 
 /** eCash opcodes used by the hand-assembled redeem. */
@@ -164,8 +180,10 @@ export function assemble(units: AsmUnit[]): Uint8Array {
  * The hand-assembled redeem CODE (fixed bytes — every param arrives via
  * the stack). Phases:
  *  1. preimage tail → stash powcommit + hashOutputs + locktime
- *  2. newDay/k derivation + k∈{0,1} (ROLL indices verified in comments)
- *  3. δ step (always computed) + k-branch select → newTarget
+ *  2. newDay/k derivation + k==1 EXACT (v3: k=0 forbidden — same-day
+ *     farming is strictly dominant under race economics and would freeze
+ *     the δ schedule forever, so every remint must advance exactly 1 day)
+ *  3. δ step (exactly one, always) → newTarget = s1 (no k-branch)
  *  4. PoW head∈[0,newTarget)
  *  5. WLDF v3 + ALP MINT pins, out0..out2 concat
  *  6. successor verify (econ hash + 9B state + code hash)
@@ -202,11 +220,13 @@ export function udeltaCodeUnits(): AsmUnit[] {
   u.push(num(6), op(OP.OP_ROLL), op(OP.OP_BIN2NUM), op(OP.OP_SUB));
   u.push(num(5), op(OP.OP_ROLL), op(OP.OP_BIN2NUM), op(OP.OP_DIV)); // newDay
   u.push(op(D), num(3), op(OP.OP_ROLL), op(OP.OP_SUB)); // k (newDay kept)
-  u.push(op(D), num(0), op(OP.OP_GREATERTHANOREQUAL), op(OP.OP_VERIFY));
-  u.push(op(D), num(1), op(OP.OP_LESSTHANOREQUAL), op(OP.OP_VERIFY));
-  // [k, newDay, tipTarget, prefixHash, codeHash, mintAtoms, tokenId, ...]
-  // --- phase 3: δ (82 = 64+16+2) + k-select ---
-  u.push(num(2), op(OP.OP_ROLL)); // [t0, k, newDay, ...]
+  // v3: k == 1 EXACTLY. k=0 (same-day re-mint) is forbidden: under race
+  // economics it strictly dominates k=1 (same 100 mint, easier target,
+  // always available) and would freeze the schedule forever.
+  u.push(num(1), op(OP.OP_EQUALVERIFY));
+  // [newDay, tipTarget, prefixHash, codeHash, mintAtoms, tokenId, ...]
+  // --- phase 3: δ (82 = 64+16+2), exactly one step → s1 ---
+  u.push(num(1), op(OP.OP_ROLL)); // [t0, newDay, ...]
   u.push(op(D), op(OP.OP_TOALTSTACK)); // stash t0
   u.push(op(D), op(OP.OP_ADD)); // t2
   u.push(op(D), op(OP.OP_TOALTSTACK)); // stash t2
@@ -219,16 +239,10 @@ export function udeltaCodeUnits(): AsmUnit[] {
   u.push(op(OP.OP_FROMALTSTACK), op(OP.OP_ADD)); // t64+t16
   u.push(op(OP.OP_FROMALTSTACK), op(OP.OP_ADD)); // t82
   u.push(num(UDELTA_DENOMINATOR), op(OP.OP_DIV)); // q
-  // s1 = t0 - q, keeping t0 for the k-select: [q] → FROMALT t0, DUP,
-  // ROLL q on top, SUB, SWAP → [t0, s1, k, newDay, ...]
-  u.push(op(OP.OP_FROMALTSTACK), op(D));
-  u.push(num(2), op(OP.OP_ROLL), op(OP.OP_SUB), op(OP.OP_SWAP));
-  u.push(num(2), op(OP.OP_ROLL)); // [k, t0, s1, newDay, ...]
-  // k=1 → s1 (drop top t0); k=0 → t0 (drop second s1). Arms verified
-  // against VM stacks: [t0, s1] top-first — IF:DROP ELSE:NIP (the
-  // intuitive IF:NIP ELSE:DROP is BACKWARDS here; caught by the VM gate).
-  u.push(op(OP.OP_IF), op(OP.OP_DROP), op(OP.OP_ELSE), op(OP.OP_NIP));
-  u.push(op(OP.OP_ENDIF)); // [newTarget, newDay, ...]
+  // s1 = t0 - q: [q] → FROMALT t0 → [t0, q] → SWAP → [q, t0] → SUB.
+  // No k-select in v3 (k==1 always): newTarget is unconditionally s1.
+  u.push(op(OP.OP_FROMALTSTACK), op(OP.OP_SWAP), op(OP.OP_SUB));
+  // [newTarget, newDay, ...]
   // --- phase 4: PoW ---
   // alt: [locktimeDup, hashOutputs, powcommit] → want powcommit on main.
   // hashOutputs goes back to alt; locktimeDup STAYS ON MAIN (below
@@ -266,10 +280,11 @@ export function udeltaCodeUnits(): AsmUnit[] {
   // target in WLDF and in the successor check; caught by the VM gate.)
   u.push(num(4), op(OP.OP_NUM2BIN)); // NT → NTB ([NTB, ND])
   u.push(op(OP.OP_SWAP), num(4), op(OP.OP_NUM2BIN)); // ND → NDB ([NDB, NTB])
-  // wldf = 574c4446.03.NDB.NTB.locktime. NDB/NTB copies are stashed for
+  // wldf = 574c4446.04.NDB.NTB.locktime (v4: v3 states are k==1-only, so
+  // v4-attested days are unambiguous). NDB/NTB copies are stashed for
   // the successor state check at ROLL time; locktimeDup rides the main
   // stack (never on alt here) and is ROLL-consumed last.
-  u.push(hexd('574c4446'), num(3), op(OP.OP_CAT));
+  u.push(hexd('574c4446'), num(4), op(OP.OP_CAT));
   u.push(num(1), op(OP.OP_ROLL)); // NDB
   u.push(op(D), op(OP.OP_TOALTSTACK), op(OP.OP_CAT));
   u.push(num(1), op(OP.OP_ROLL)); // NTB
@@ -489,4 +504,55 @@ export function simulateUdeltaCode(
   if (main !== 1) throw new Error(`final main depth ${main} != 1 (TRUE on top)`);
   if (alt !== 0) throw new Error(`final alt depth ${alt} != 0`);
   return { ops, maxMain, maxAlt };
+}
+
+/** WLDF version attested by v3 (k==1-only) states. */
+export const WLDF_VERSION_UDELTA_V3 = 4;
+const WLDF_LOKAD = new TextEncoder().encode('WLDF');
+
+function u32LeBytes(n: number): Uint8Array {
+  if (!Number.isInteger(n) || n < 0 || n >= 0x80000000) {
+    throw new Error(`wldf field out of Script-safe u32 range: ${n}`);
+  }
+  const v = n >>> 0;
+  return new Uint8Array([
+    v & 0xff,
+    (v >>> 8) & 0xff,
+    (v >>> 16) & 0xff,
+    (v >>> 24) & 0xff,
+  ]);
+}
+
+/** 17-byte WLDF v4 push: LOKAD | 0x04 | day u32 | target u32 | locktime u32. */
+export function wldfV4Pushdata(state: {
+  newDay: number;
+  newTarget: number;
+  locktime: number;
+}): Uint8Array {
+  const out = new Uint8Array(17);
+  out.set(WLDF_LOKAD, 0);
+  out[4] = WLDF_VERSION_UDELTA_V3;
+  out.set(u32LeBytes(state.newDay), 5);
+  out.set(u32LeBytes(state.newTarget), 9);
+  out.set(u32LeBytes(state.locktime), 13);
+  return out;
+}
+
+/**
+ * v3 state derivation: SUB-form δ + EXACTLY k=1. Same-day (k=0) and
+ * multi-day (k≥2) locktimes are rejected — the miner fails fast instead
+ * of building a tx the covenant will reject.
+ */
+export function deriveUdeltaV3(
+  genesis: TwoShardGenesis,
+  tip: TwoShardTip,
+  locktime: number,
+): TwoShardDerived {
+  const d = deriveTwoShardState(genesis, tip, locktime);
+  if (d.steps !== 1) {
+    throw new Error(
+      `v3 requires exactly k=1 (tipDay ${tip.tipDay} → locktime day ${d.newDay}, steps=${d.steps}); same-day k=0 is forbidden`,
+    );
+  }
+  return d;
 }

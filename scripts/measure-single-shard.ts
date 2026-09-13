@@ -1,12 +1,14 @@
 #!/usr/bin/env tsx
 /**
- * Static gates for the hand-assembled single-shard δ (ULOTUS) redeem.
+ * Static gates for the hand-assembled single-shard δ v3 (VLOTUS,
+ * k==1-only) redeem.
  *
  * Limits: P2SH redeem ≤520B, eCash MAX_OPS_PER_SCRIPT = 201.
  * Gates: depth-simulator green, exactly one CODESEPARATOR, no OP_MUL,
  * no introspection opcodes (0xc0–0xcd are BCH-only), head layout
  * econ(83) | prefixHash push(33) | state push(9), state-change isolation
- * (k=0 vs k=1 redeems differ ONLY in the 8 state bytes), P2SH ratchet,
+ * (tip day 0 vs day 1 — the k=1 pair — differ ONLY in the 8 state bytes),
+ * P2SH ratchet, WLDF v4 version byte,
  * eMPP lengths (0x11/0x32/0x47), numBatons 0x01 (diffed against the
  * two-shard 0x02 template), and tx-size estimates. Does not broadcast.
  */
@@ -22,7 +24,7 @@ import {
   UDELTA_STATE_PUSH_LEN,
   OP,
 } from '../src/covenant/singleShardDeltaMath.js';
-import { wldfTwoShardPushdata } from '../src/covenant/twoShardMath.js';
+import { wldfV4Pushdata, WLDF_VERSION_UDELTA_V3 } from '../src/covenant/singleShardDeltaMath.js';
 import { expectedUdeltaMintOpReturnScript } from '../src/miner/remintSingleShard.js';
 
 const MAX_OPS = 201;
@@ -142,12 +144,16 @@ async function main(): Promise<void> {
   gate(c1.address !== c0.address, `P2SH ratchets (${c1.address.slice(0, 18)}…)`);
 
   // eMPP / ALP encoding gates (prove covenant literals).
-  const wldf = wldfTwoShardPushdata({
-    newDay: 0,
-    newTarget: 2 ** 24,
-    locktime: 1_784_300_000,
+  const wldf = wldfV4Pushdata({
+    newDay: 1,
+    newTarget: stepped,
+    locktime: 1_784_300_000 + 86_400,
   });
   gate(wldf.length === 0x11, `wldf len ${wldf.length} == 0x11`);
+  gate(
+    wldf[4] === WLDF_VERSION_UDELTA_V3 && WLDF_VERSION_UDELTA_V3 === 4,
+    'wldf version byte is 0x04 (v3 states)',
+  );
   const mint1 = Buffer.from(
     alpMint(tokenId, ALP_STANDARD, { atomsArray: [100n], numBatons: 1 }),
   );
@@ -163,19 +169,25 @@ async function main(): Promise<void> {
     'numBatons 0x01-vs-0x02 differ only in the last byte (two-shard template)',
   );
   const opret = expectedUdeltaMintOpReturnScript(tokenId, 100n, {
-    newDay: 0,
-    newTarget: 2 ** 24,
-    locktime: 1_784_300_000,
+    newDay: 1,
+    newTarget: stepped,
+    locktime: 1_784_300_000 + 86_400,
   });
   gate(
     opret.bytecode.length === 0x47,
     `opReturn len ${opret.bytecode.length} == 0x47`,
   );
 
-  // Size estimate: scriptSig ≈ pushes(nr 421 + pk 33 + sig 65 + nonce 4 +
-  // preimage ~200 + redeem 421) + push overhead ≈ 1.2KB; tx ≈ 1.6KB.
+  // Size estimate: scriptSig ≈ pushes(nr + pk 33 + sig 65 + nonce 4 +
+  // preimage ~200 + redeem) + push overhead ≈ 1.2KB; tx ≈ 1.6KB.
   const scriptSigEst =
-    (2 + 421) + (1 + 33) + (1 + 65) + (1 + 4) + (3 + 200) + (3 + 421);
+    2 +
+    c0.redeem.length +
+    (1 + 33) +
+    (1 + 65) +
+    (1 + 4) +
+    (3 + 200) +
+    (3 + c0.redeem.length);
   console.log(
     JSON.stringify(
       {

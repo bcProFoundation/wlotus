@@ -1,10 +1,10 @@
 #!/usr/bin/env tsx
 /**
- * Consensus-level gate for the hand-assembled single-shard δ (ULOTUS)
- * remint: builds the EXACT tx the miner builds (fake outpoints/keys,
- * real PoW + sigs) and evaluates it with libauth's XEC VM (full P2SH +
- * CODESEPARATOR + Schnorr), plus manual schnorr verification of the
- * covenant sig and successor-attack demos. Offline. No network, no sats.
+ * Consensus-level gate for the hand-assembled single-shard δ v3 (VLOTUS —
+ * k==1-only) remint: builds the EXACT tx the miner builds (fake
+ * outpoints/keys, real PoW + sigs) and evaluates it with libauth's XEC VM
+ * (full P2SH + CODESEPARATOR + Schnorr), plus manual schnorr verification
+ * of the covenant sig and successor-attack demos. Offline. No sats.
  *
  * Known libauth gap (documented, covered by parity — same as twoshard):
  * libauth slices coveredBytecode at the wrong offset for CODESEPARATOR
@@ -14,10 +14,10 @@
  * sig — asserted by trace position + the ergon parity control — while
  * the sig itself is verified manually over the witness preimage.
  *
- * The v2 payoff, proven here: successor attacks (state reset, day jump,
- * code tamper, econ tamper) must fail BEFORE the separator, proving the
- * Moore-style successor verification is load-bearing — the hole the
- * two-shard research posture left open.
+ * The v3 payoff, proven here: successor attacks (k=0 same-state re-mint,
+ * target reset, day jump, code tamper, econ tamper) must fail BEFORE the
+ * separator, proving the k==1 gate + Moore-style successor verification
+ * are load-bearing — the v2 hole (same-day farming) is now closed.
  *
  *   npm run verify-singleshard-vm          # synthetic params (pure gate)
  *   npm run verify-singleshard-vm -- --live # live deployment params (pre-flight)
@@ -118,9 +118,10 @@ async function main(): Promise<void> {
   const live = process.argv.includes('--live');
   let base: SingleShardDeltaParams;
   if (live) {
-    const depPath = resolve(process.cwd(), 'deployments/mainnet-ulotus.json');
+    const depName = process.env.UDELTA_DEP?.trim() || 'mainnet-ulotus.json';
+    const depPath = resolve(process.cwd(), 'deployments', depName);
     if (!existsSync(depPath)) {
-      throw new Error('Missing deployments/mainnet-ulotus.json');
+      throw new Error(`Missing deployments/${depName}`);
     }
     const dep = JSON.parse(readFileSync(depPath, 'utf8'));
     base = {
@@ -156,7 +157,8 @@ async function main(): Promise<void> {
     debug(p: unknown): { error?: string }[];
   };
 
-  for (const dayOff of [0, 1]) {
+  // v3 honest case is k=1 ONLY (k=0 is tested below as an attack).
+  for (const dayOff of [1]) {
     const locktime = base.genesisUnix + dayOff * base.daySeconds;
     const contract = createSingleShardDeltaContract({ ...base });
     const built = await buildMinedUdeltaRemintTx({
@@ -205,6 +207,11 @@ async function main(): Promise<void> {
       `k=${dayOff} nextRedeem push matches derived successor`,
       Buffer.from(pushes[0]!).equals(Buffer.from(built.nextContract.redeem)),
     );
+    check(
+      `k=${dayOff} successor ratchets address`,
+      built.nextContract.address !== contract.address,
+      `${contract.address.slice(0, 20)}… → ${built.nextContract.address.slice(0, 20)}…`,
+    );
     const program = { transaction: decoded, sourceOutputs, inputIndex: 0 };
     const st = vm.evaluate(program);
     const trace = vm.debug(program);
@@ -238,7 +245,7 @@ async function main(): Promise<void> {
 
     // Successor attacks must fail BEFORE the separator (lastCodeSeparator
     // stays -1): the state/code/econ pins are load-bearing.
-    if (dayOff === 0) {
+    if (dayOff === 1) {
       const [honestNr, minerPk, sig65, nonce, preimage, redeem] = pushes as [
         Buffer,
         Buffer,
@@ -270,6 +277,10 @@ async function main(): Promise<void> {
         return c;
       };
       const poisoned: [string, Buffer][] = [
+        [
+          'k=0 same-state re-mint (the v2 honest case, now forbidden)',
+          createSingleShardDeltaContract({ ...base }).redeem,
+        ],
         [
           'target reset (2^30)',
           createSingleShardDeltaContract({

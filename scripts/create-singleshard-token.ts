@@ -1,11 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * Create the single-shard δ experiment token (ULOTUS, research).
+ * Create the single-shard δ experiment token (VLOTUS v3, research —
+ * k==1-only: every remint advances exactly 1 day).
  *
  * ALP genesis with 1 mint baton, handed off to the hand-assembled shard
  * P2SH at tip (day 0, genesisTarget). Fund GENESIS_ADDRESS first.
  *
- * Env overrides: UDELTA_TICKER, UDELTA_GENESIS_UNIX,
+ * Env overrides: UDELTA_TICKER, UDELTA_NAME, UDELTA_DEP, UDELTA_GENESIS_UNIX,
  * UDELTA_DAY_SECONDS, UDELTA_GENESIS_TARGET (must be ≤ 2^24 — same
  * 32-bit-arithmetic safety invariant as the two-shard experiment).
  */
@@ -40,8 +41,8 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-const UDELTA_TICKER_DEFAULT = 'ULOTUS';
-const UDELTA_NAME_DEFAULT = 'Unity Lotus Experiment';
+const UDELTA_TICKER_DEFAULT = 'VLOTUS';
+const UDELTA_NAME_DEFAULT = 'Velocity Lotus v3 (k=1-only experiment)';
 
 async function main(): Promise<void> {
   const skHex = process.env.GENESIS_SK_HEX?.trim();
@@ -52,12 +53,17 @@ async function main(): Promise<void> {
   const nowUnix = Math.floor(Date.now() / 1000);
   const ticker =
     process.env.UDELTA_TICKER?.trim() || UDELTA_TICKER_DEFAULT;
+  const name = process.env.UDELTA_NAME?.trim() || UDELTA_NAME_DEFAULT;
+  const depName = process.env.UDELTA_DEP?.trim() || 'mainnet-vlotus.json';
   const daySeconds = Number(
     process.env.UDELTA_DAY_SECONDS?.trim() ||
       TWO_SHARD_DAY_SECONDS_DEFAULT,
   );
+  // v3 default: born ~49h stale so slots 1 AND 2 are already open — the
+  // first two k=1 ticks demo catch-up (2 sequential advances + ratchets)
+  // in one session. Override with UDELTA_GENESIS_UNIX for a fresh tip.
   const genesisUnix = Number(
-    process.env.UDELTA_GENESIS_UNIX?.trim() || nowUnix - 3600,
+    process.env.UDELTA_GENESIS_UNIX?.trim() || nowUnix - 176400,
   );
   const genesisTarget = Number(
     process.env.UDELTA_GENESIS_TARGET?.trim() ||
@@ -82,7 +88,7 @@ async function main(): Promise<void> {
       {
         address: wallet.address,
         balanceXec: Number(wallet.balanceSats) / 100,
-        mode: 'single-shard-delta',
+        mode: 'single-shard-delta-v3',
         ticker,
         genesisUnix,
         daySeconds,
@@ -96,7 +102,7 @@ async function main(): Promise<void> {
 
   const genesis = await broadcastAlpGenesis(wallet, {
     ticker,
-    name: UDELTA_NAME_DEFAULT,
+    name,
     url: TOKEN_URL,
     decimals: TOKEN_DECIMALS,
     initialMintAtoms: 1_000n,
@@ -124,11 +130,14 @@ async function main(): Promise<void> {
 
   const depDir = resolve(process.cwd(), 'deployments');
   mkdirSync(depDir, { recursive: true });
-  const livePath = resolve(depDir, 'mainnet-ulotus.json');
+  const livePath = resolve(depDir, depName);
   if (existsSync(livePath)) {
     renameSync(
       livePath,
-      resolve(depDir, `mainnet-ulotus-archived-${Date.now()}.json`),
+      resolve(
+        depDir,
+        `${depName.replace(/\.json$/, '')}-archived-${Date.now()}.json`,
+      ),
     );
   }
 
@@ -136,10 +145,10 @@ async function main(): Promise<void> {
   // script completes from this file instead of burning a fresh genesis.
   const partial = {
     ticker,
-    name: UDELTA_NAME_DEFAULT,
+    name,
     tokenId: genesis.tokenId,
-    mode: 'single-shard-delta',
-    role: 'experiment-multiinput-v2',
+    mode: 'single-shard-delta-v3',
+    role: 'experiment-multiinput-v3',
     decimals: TOKEN_DECIMALS,
     powAddress: shard.address,
     redeemScriptHex: shard.redeemHex,
@@ -150,9 +159,9 @@ async function main(): Promise<void> {
     genesisTarget,
     stepCapK: 1,
     stepNote:
-      'SUB form: t ← t − floor(t·82/100000), explicit double-and-add, no OP_MUL',
+      'SUB form: t ← t − floor(t·82/100000), explicit double-and-add, no OP_MUL; EXACTLY k=1/remint (k=0 forbidden — race economics)',
     difficultyNote:
-      'Single-shard δ: hand-assembled 421B/177-op redeem — PoW + K=1 δ derivation + WLDF v3/ALP pins + VERIFIED successors (Moore econ trick, 9B state) + schnorr auth.',
+      'Single-shard δ v3: hand-assembled 404B/164-op redeem — PoW + k==1-only δ derivation + WLDF v4/ALP pins + VERIFIED successors (Moore econ trick, 9B state) + schnorr auth.',
     mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
     tokensPerRemint: Number(BASE_MINT_ATOMS),
     initialMintAtoms: '1000',
@@ -209,7 +218,7 @@ async function main(): Promise<void> {
   delete (record as { partial?: boolean }).partial;
 
   writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
-  console.log('\nULOTUS ready');
+  console.log(`\n${ticker} ready`);
   console.log(JSON.stringify(record, null, 2));
 }
 

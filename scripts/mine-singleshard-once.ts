@@ -1,10 +1,15 @@
 #!/usr/bin/env tsx
 /**
- * Mine one single-shard δ remint against deployments/mainnet-ulotus.json.
+ * Mine one single-shard δ v3 (k==1-only) remint. Dep file via UDELTA_DEP
+ * (default deployments/mainnet-ulotus.json).
  *
  *   npm run mine-singleshard-once
  *
- * Env: UDELTA_LOCKTIME (default max(genesisUnix, MTP-60)).
+ * v3 locktime targeting: the remint must land EXACTLY in the next slot
+ * (tipDay+1). Default = clamp(MTP-60, slotStart, slotEnd-1): a current tip
+ * mines near MTP; a stale tip catches up one day per remint. If the next
+ * slot has not opened yet (MTP-60 < slotStart) the script errors — wait
+ * for MTP to advance. UDELTA_LOCKTIME overrides (deriveUdeltaV3 validates).
  */
 import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -14,7 +19,7 @@ import { DEFAULT_DUST_SATS, fromHex, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createSingleShardDeltaContract } from '../src/covenant/singleShardDeltaScript.js';
-import { deriveTwoShardState } from '../src/covenant/twoShardMath.js';
+import { deriveUdeltaV3 } from '../src/covenant/singleShardDeltaMath.js';
 import {
   buildMinedUdeltaRemintTx,
   udeltaMinerBanner,
@@ -25,12 +30,13 @@ loadEnv({ path: resolve(process.cwd(), '.env') });
 // Fuel sizing: the remint has NO change output (raw TxBuilder with fixed
 // outputs only), so the ENTIRE fuel UTXO minus dust flows to fees. Tx is
 // ~1.6KB (single covenant input); eCash min relay is 1000 sats/KB.
-// Target ~2600 (fee ~2050 ≈ 1280 sats/KB — comfortable margin).
-const REMINT_FUEL_SATS = 2600n;
+// v3: 2300 (fee ~1750 ≈ 1200 sats/KB — safe margin, and leaves room for
+// 2 catch-up ticks on a thin wallet).
+const REMINT_FUEL_SATS = 2300n;
 /** Use a fuel UTXO as-is at or below this; split bigger ones down. */
-const REMINT_FUEL_SPLIT_ABOVE = 3200n;
+const REMINT_FUEL_SPLIT_ABOVE = 2800n;
 /** Floor: below this the build can't cover outputs + 1000/KB min relay. */
-const REMINT_FUEL_MIN = 2300n;
+const REMINT_FUEL_MIN = 2200n;
 
 async function ensureSmallFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();
@@ -59,9 +65,10 @@ async function ensureSmallFuel(wallet: Wallet): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const depPath = resolve(process.cwd(), 'deployments/mainnet-ulotus.json');
+  const depName = process.env.UDELTA_DEP?.trim() || 'mainnet-ulotus.json';
+  const depPath = resolve(process.cwd(), 'deployments', depName);
   if (!existsSync(depPath)) {
-    throw new Error('Missing deployments/mainnet-ulotus.json');
+    throw new Error(`Missing deployments/${depName}`);
   }
   const dep = JSON.parse(readFileSync(depPath, 'utf8'));
   const skHex = process.env.GENESIS_SK_HEX?.trim();
@@ -129,14 +136,22 @@ async function main(): Promise<void> {
   const { mtp, tipHeight, tipUnix } = await getMedianTimePast(chronik);
   void tipHeight;
   void tipUnix;
-  const locktime = Number(
-    process.env.UDELTA_LOCKTIME?.trim() ||
-      Math.max(dep.genesisUnix, mtp - 60),
-  );
+  // v3: the remint must land EXACTLY in slot tipDay+1 (k==1-only).
+  const slotStart = dep.genesisUnix + (dep.tipDay + 1) * dep.daySeconds;
+  const slotEnd = slotStart + dep.daySeconds;
+  const override = process.env.UDELTA_LOCKTIME?.trim();
+  const locktime = override
+    ? Number(override)
+    : Math.min(Math.max(mtp - 60, slotStart), slotEnd - 1);
+  if (!override && mtp - 60 < slotStart) {
+    throw new Error(
+      `day ${dep.tipDay + 1} not open yet (slotStart ${slotStart} > MTP-60 ${mtp - 60}) — wait for MTP to advance`,
+    );
+  }
   if (locktime > mtp) {
     throw new Error(`locktime ${locktime} > MTP ${mtp}`);
   }
-  const preview = deriveTwoShardState(
+  const preview = deriveUdeltaV3(
     {
       genesisUnix: dep.genesisUnix,
       daySeconds: dep.daySeconds,
@@ -188,7 +203,7 @@ async function main(): Promise<void> {
   );
 
   const broadcast = await chronik.broadcastTx(built.txHex);
-  console.log('\nULOTUS remint OK', broadcast.txid);
+  console.log(`\n${dep.ticker ?? 'Udelta'} remint OK`, broadcast.txid);
 
   const updated = {
     ...dep,
@@ -201,7 +216,10 @@ async function main(): Promise<void> {
   };
   writeFileSync(depPath, `${JSON.stringify(updated, null, 2)}\n`);
   writeFileSync(
-    resolve(process.cwd(), 'deployments/mainnet-last-ulotus-remint.json'),
+    resolve(
+      process.cwd(),
+      `deployments/mainnet-last-${String(dep.ticker ?? 'udelta').toLowerCase()}-remint.json`,
+    ),
     `${JSON.stringify(
       {
         tokenId: dep.tokenId,

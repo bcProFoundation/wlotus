@@ -25,12 +25,17 @@ async function main(): Promise<void> {
   if (!skHex || !/^[0-9a-fA-F]{64}$/.test(skHex)) {
     throw new Error('GENESIS_SK_HEX missing');
   }
-  const depPath = resolve(process.cwd(), 'deployments/mainnet-ulotus.json');
+  const depName = process.env.UDELTA_DEP?.trim() || 'mainnet-ulotus.json';
+  const depPath = resolve(process.cwd(), 'deployments', depName);
   if (!existsSync(depPath)) {
-    throw new Error('Missing deployments/mainnet-ulotus.json (nothing to resume)');
+    throw new Error(`Missing deployments/${depName} (nothing to resume)`);
   }
   const dep = JSON.parse(readFileSync(depPath, 'utf8'));
-  if (dep.mode !== 'single-shard-delta' || !dep.tokenId) {
+  if (
+    typeof dep.mode !== 'string' ||
+    !dep.mode.startsWith('single-shard-delta') ||
+    !dep.tokenId
+  ) {
     throw new Error('Live dep record is not a single-shard partial (aborting)');
   }
   const shard = createSingleShardDeltaContract({
@@ -111,7 +116,7 @@ async function main(): Promise<void> {
   };
   delete record.partial;
   writeFileSync(depPath, `${JSON.stringify(record, null, 2)}\n`);
-  console.log('\nULOTUS ready');
+  console.log(`\n${dep.ticker ?? 'Udelta'} ready`);
 }
 
 main().catch(err => {

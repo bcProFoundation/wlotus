@@ -1,14 +1,17 @@
 /**
- * Single-shard δ (ULOTUS) pure tests — jest-safe (no ecash-lib: the math
- * module imports nothing, since jest cannot load ecash-lib's WASM glue).
+ * Single-shard δ v3 (VLOTUS — k==1-only, no branch) pure tests —
+ * jest-safe (no ecash-lib: the math module imports only the pure
+ * twoShardMath, since jest cannot load ecash-lib's WASM glue).
  *
  * Covers: push encoders, the depth simulator (green path + each rejection
- * mode), and op-list invariants (no MUL, exactly one CODESEPARATOR, no
- * introspection, IF-arm convergence). Consensus semantics (execution) are
- * covered by scripts/verify-singleshard-vm.ts (libauth XEC VM, offline).
+ * mode), the v3 policy (deriveUdeltaV3: k=1 ok, k=0/k=2 rejected), WLDF v4
+ * layout, and op-list invariants (no MUL, exactly one CODESEPARATOR, no
+ * introspection, no branch). Consensus semantics (execution) are covered
+ * by scripts/verify-singleshard-vm.ts (libauth XEC VM, offline).
  */
 import {
   assemble,
+  deriveUdeltaV3,
   encodeNum,
   encodePush,
   OP,
@@ -19,6 +22,8 @@ import {
   UDELTA_HEAD_LEN,
   UDELTA_K,
   UDELTA_NUMERATOR,
+  wldfV4Pushdata,
+  WLDF_VERSION_UDELTA_V3,
   type AsmUnit,
 } from '../src/covenant/singleShardDeltaMath.js';
 
@@ -118,6 +123,44 @@ describe('single-shard δ depth simulator', () => {
   });
 });
 
+describe('single-shard δ v3 policy (k==1-only)', () => {
+  const genesis = {
+    genesisUnix: 1_784_300_000,
+    daySeconds: 86_400,
+    genesisTarget: 2 ** 24,
+  };
+  const tip = { tipDay: 0, target: 2 ** 24 };
+
+  test('deriveUdeltaV3 accepts exactly k=1', () => {
+    const d = deriveUdeltaV3(genesis, tip, 1_784_300_000 + 86_400);
+    expect(d.steps).toBe(1);
+    expect(d.newDay).toBe(1);
+    expect(d.newTarget).toBe(16763459);
+  });
+
+  test('deriveUdeltaV3 rejects k=0 (same-day farming forbidden)', () => {
+    expect(() => deriveUdeltaV3(genesis, tip, 1_784_300_000)).toThrow(/k=1/);
+  });
+
+  test('deriveUdeltaV3 rejects k=2 (no multi-day jumps)', () => {
+    expect(() =>
+      deriveUdeltaV3(genesis, tip, 1_784_300_000 + 2 * 86_400),
+    ).toThrow(/k=1|stale baton/);
+  });
+
+  test('WLDF v4 pushdata layout', () => {
+    const w = wldfV4Pushdata({
+      newDay: 1,
+      newTarget: 16763459,
+      locktime: 1_784_300_000 + 86_400,
+    });
+    expect(w.length).toBe(17);
+    expect([...w.slice(0, 4)]).toEqual([0x57, 0x4c, 0x44, 0x46]);
+    expect(w[4]).toBe(4);
+    expect(WLDF_VERSION_UDELTA_V3).toBe(4);
+  });
+});
+
 describe('single-shard δ op-list invariants', () => {
   function scan(pred: (op: number) => boolean): number {
     let n = 0;
@@ -139,10 +182,10 @@ describe('single-shard δ op-list invariants', () => {
     expect(scan(op => op >= 0xc0 && op <= 0xcd)).toBe(0);
   });
 
-  test('single IF/ELSE/ENDIF (simulator supports no nesting)', () => {
-    expect(scan(op => op === OP.OP_IF)).toBe(1);
-    expect(scan(op => op === OP.OP_ELSE)).toBe(1);
-    expect(scan(op => op === OP.OP_ENDIF)).toBe(1);
+  test('no branch at all in v3 (k==1-only — the k-select IF is gone)', () => {
+    expect(scan(op => op === OP.OP_IF)).toBe(0);
+    expect(scan(op => op === OP.OP_ELSE)).toBe(0);
+    expect(scan(op => op === OP.OP_ENDIF)).toBe(0);
   });
 
   test('ends with bare CHECKSIG (TRUE on top — no trailing VERIFY)', () => {
