@@ -3,27 +3,27 @@
  *
  * Answers: what happens to issuance / difficulty-lag / miner P&L when
  * miners choose backfill-vs-jump under varying block-reward value ($1 vs
- * $100 per 100-token block) and XEC-price shocks (fee pressure)?
+ * $100 per 100-token block), token crashes, and REAL energy costs?
  *
- * Model (documented approximations):
- * - Discrete 10-minute slots. Each slot opens one latest slot; miners race
- *   in rounds (~20s each, ≤30/slot) until the tip catches up or all idle.
- * - Entry: miner i enters a race iff R − F·multᵢ > o (block reward minus
- *   all-in cost beats the per-race opportunity cost). Losers pay ~compute
- *   only (unconfirmed txs never pay fees) — mildly optimistic entry, which
- *   matches real race over-entry.
- * - Fees are dust at real XEC (~$7e-6): 1750 sats ≈ $0.00012. The idle
- *   driver is the REWARD side (token crashes vs opportunity cost o), never
- *   the fee side — an XEC x1000 moon would be needed for fees to bind at
- *   $1 rewards. o defaults to $0.005/race (≈$21/mo always-on infra).
- * - Winner uniform among entrants (symmetric first-seen/propagation;
- *   fee-bidding wars are NOT modeled — extension point).
- * - Strategies: backfill (always tip+1), jump (always latest), threshold
- *   (backfill iff backlog ≤ 12, else jump).
- * - Difficulty: exactly one SUB-form micro-step per block from the current
- *   tip target (mirrors the covenant via the shared UDELTA consts).
- * - PoW compute: symmetric race costs one block's expected hashes total
- *   (≈2³¹/target × hash price — negligible at these targets; fees dominate).
+ * Energy model (the point of the sim — unforgeable costliness, not
+ * printing out of thin air): network energy per block E = E0·G/target,
+ * with E0 = $0.30 at genesis target (30% of a $1 block). E0 is an
+ * explicit PRODUCTION-PUZZLE ASSUMPTION: today's 128-sha256 placeholder
+ * costs ~$1e-11 (eleven orders short); production needs sequential or
+ * memory-hard work ~2e8x harder (TBD). E scales with 1/target (physics),
+ * independent of token price — so the energy share is highest at LOW
+ * prices (30% @ $1) and collapses at high ones (0.3% @ $100).
+ * Consequence baked in: monotonic difficulty + real energy = a treadmill
+ * (E grows 0.0815%/day; flat $1 exhausts margin in ~4 years — the sim's
+ * R7 runs show it; only rising prices or the crash/resurrect cobweb
+ * outrun it).
+ *
+ * Races: entry M* = (R−F−E)/o (rent dissipation — miners enter until
+ * per-miner expected cash ≈ opportunity cost); winner uniform (symmetric
+ * first-seen; fee-bidding NOT modeled). Losers burn E/M* each (all-pay).
+ * P&L attributes loser energy by population fractions (expected-value,
+ * exact in expectation; keeps rounds O(1)). Strategies: backfill (tip+1),
+ * jump (latest), threshold (backfill iff backlog ≤ 12).
  *
  * Seeded (mulberry32) → fully reproducible trajectories.
  */
@@ -34,25 +34,26 @@ import {
 
 export type PacingStrategy = 'backfill' | 'jump' | 'threshold';
 
-export interface SimMiner {
-  strategy: PacingStrategy;
-  /** All-in cost multiplier on the protocol fee (efficiency spread). */
-  costMult: number;
+export interface SimPopulation {
+  backfill: number;
+  jump: number;
+  threshold: number;
 }
 
 export interface SimParams {
   slots: number;
   /** Block reward (100 tokens) in USD per slot. */
   rewardUsd: (slot: number) => number;
-  /** XEC/USD per slot (fee pressure channel). */
+  /** XEC/USD per slot (fee channel — dust at real prices). */
   xecUsd: (slot: number) => number;
-  miners: SimMiner[];
+  population: SimPopulation;
   /** Protocol fee in sats (default 1750 — measured single-shard remint). */
   feeSats?: number;
+  /** Network energy $/block at genesis target (default 0.30). */
+  energy0Usd?: number;
   roundsPerSlot?: number;
   /** Per-race fixed cost in USD (default 0.005 ≈ $21/mo always-on infra). */
   opportunityUsd?: number;
-  hashCostUsd?: number;
   threshold?: number;
   genesisTarget?: number;
   seed?: number;
@@ -70,7 +71,7 @@ export interface SimResult {
   /** Share of the full-utilization schedule movement lost to lag (0–1). */
   lagShare: number;
   feesUsd: number;
-  computeUsd: number;
+  energyUsd: number;
   profitByStrategy: Record<PacingStrategy, number>;
   winsByStrategy: Record<PacingStrategy, number>;
   avgEntrants: number;
@@ -99,9 +100,13 @@ export function feeUsd(feeSats: number, xecUsdRate: number): number {
   return (feeSats / 100) * xecUsdRate;
 }
 
-/** Expected sha256 attempts to clear an Ergon head target (~2³¹/t). */
-export function expectedAttempts(target: number): number {
-  return 2 ** 31 / target;
+/** Network energy $/block at the current target (scales with 1/target). */
+export function energyPerBlock(
+  energy0Usd: number,
+  genesisTarget: number,
+  target: number,
+): number {
+  return (energy0Usd * genesisTarget) / target;
 }
 
 export function strategyTarget(
@@ -123,12 +128,16 @@ const zeroStrategies = (): Record<PacingStrategy, number> => ({
 
 export function runSim(p: SimParams): SimResult {
   const feeSats = p.feeSats ?? 1750;
+  const energy0 = p.energy0Usd ?? 0.3;
   const roundsPerSlot = p.roundsPerSlot ?? 30;
   const o = p.opportunityUsd ?? 0.005;
-  const hashCost = p.hashCostUsd ?? 1e-9;
   const threshold = p.threshold ?? 12;
   const genesis = p.genesisTarget ?? 2 ** 24;
   const rng = mulberry32(p.seed ?? 1);
+  const popTotal =
+    p.population.backfill + p.population.jump + p.population.threshold;
+  const fracB = p.population.backfill / popTotal;
+  const fracJ = p.population.jump / popTotal;
 
   let tip = 0;
   let target = genesis;
@@ -139,7 +148,7 @@ export function runSim(p: SimParams): SimResult {
   let recoverySlots = 0;
   let maxBacklog = 0;
   let feesUsd = 0;
-  let computeUsd = 0;
+  let energyUsd = 0;
   let entrantsSum = 0;
   let roundCount = 0;
   const profit = zeroStrategies();
@@ -148,29 +157,30 @@ export function runSim(p: SimParams): SimResult {
   for (let slot = 1; slot <= p.slots; slot++) {
     const latest = slot;
     const backlogStart = latest - tip;
-    if (backlogStart > 0) {
-      if (backlogStart > maxBacklog) maxBacklog = backlogStart;
-    }
+    if (backlogStart > maxBacklog) maxBacklog = backlogStart;
     const R = p.rewardUsd(slot);
     const F = feeUsd(feeSats, p.xecUsd(slot));
-    if (
-      backlogStart > 1 &&
-      p.miners.some(m => R - F * m.costMult > o)
-    ) {
-      recoverySlots++;
-    }
+    const Eslot = energyPerBlock(energy0, genesis, target);
+    const mStarSlot =
+      R - F - Eslot > 0
+        ? Math.min(popTotal, Math.floor((R - F - Eslot) / o))
+        : 0;
+    if (backlogStart > 1 && mStarSlot > 0) recoverySlots++;
     let rounds = 0;
     let minedThisSlot = false;
     while (tip < latest && rounds < roundsPerSlot) {
       rounds++;
-      const entrants = p.miners.filter(m => R - F * m.costMult > o);
-      if (entrants.length === 0) break;
+      const E = energyPerBlock(energy0, genesis, target);
+      const mStar =
+        R - F - E > 0 ? Math.min(popTotal, Math.floor((R - F - E) / o)) : 0;
+      if (mStar === 0) break;
       minedThisSlot = true;
-      entrantsSum += entrants.length;
+      entrantsSum += mStar;
       roundCount++;
-      computeUsd += expectedAttempts(target) * hashCost;
-      const w = entrants[Math.floor(rng() * entrants.length)]!;
-      const t = strategyTarget(w.strategy, tip, latest, threshold);
+      const r = rng();
+      const w: PacingStrategy =
+        r < fracB ? 'backfill' : r < fracB + fracJ ? 'jump' : 'threshold';
+      const t = strategyTarget(w, tip, latest, threshold);
       if (t === tip + 1) {
         filled++;
       } else {
@@ -179,9 +189,19 @@ export function runSim(p: SimParams): SimResult {
       }
       tip = t;
       blocks++;
-      wins[w.strategy]++;
-      profit[w.strategy] += R - F * w.costMult;
+      wins[w]++;
       feesUsd += F;
+      energyUsd += E;
+      const eShare = E / mStar;
+      profit[w] += R - F - eShare;
+      const frac: Record<PacingStrategy, number> = {
+        backfill: fracB,
+        jump: fracJ,
+        threshold: 1 - fracB - fracJ,
+      };
+      for (const s of ['backfill', 'jump', 'threshold'] as const) {
+        profit[s] -= eShare * (mStar * frac[s] - (s === w ? 1 : 0));
+      }
       target = microStep(target);
     }
     if (!minedThisSlot && tip < latest) idleSlots++;
@@ -203,7 +223,7 @@ export function runSim(p: SimParams): SimResult {
     scheduleTarget: schedule,
     lagShare,
     feesUsd,
-    computeUsd,
+    energyUsd,
     profitByStrategy: profit,
     winsByStrategy: wins,
     avgEntrants: roundCount > 0 ? entrantsSum / roundCount : 0,

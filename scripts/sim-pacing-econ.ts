@@ -1,65 +1,54 @@
 #!/usr/bin/env tsx
 /**
- * Miner-paced issuance scenarios: $1 vs $100 block rewards, token-crash
- * shocks, XEC fee-side (non-)shocks, backfill/jump/threshold mixes.
+ * Miner-paced issuance scenarios with REAL energy costs (E0=$0.30/block
+ * at genesis = 30% of a $1 block — the unforgeable-costliness goal).
  *
  *   npm run sim-pacing-econ
  *
- * Calibration (Sep 2026): XEC ≈ $7e-6 → 1750-sat remint fee ≈ $0.00012.
- * Fees NEVER bind at $1/$100 rewards — the idle driver is the REWARD
- * side (token crashes vs ~$0.005/race opportunity cost ≈ $21/mo infra).
+ * Calibration (Sep 2026): XEC ≈ $7e-6 → fee ≈ $0.00012 (dust); energy
+ * dominates cost (2500x fees). Entry M* = (R−F−E)/o with E growing
+ * 0.0815%/day (treadmill) and o = $0.005/race.
  *
- * R1/R2: constant reward, calm — does reward size change pace?
- * R3/R4: 99.9% token crash d20-40 — who survives ($100→$0.10 vs $1→$0.001)?
- * R5: $1 + XEC x10 d20-40 — fee-side shock binds nothing (control).
- * R6-*: R3 price path x strategy mix — which behavior wins?
+ * R1/R2: $1/$100 constant, calm — cap binds?
+ * R3/R4: 90% token crash d20-40 — $1→$0.10 idles (below ~$0.30 energy
+ *   floor), $100→$10 mines on. Same depth, different fate.
+ * R6-*: R3 path x all-backfill/all-jump/all-threshold — which norm wins?
+ * R7a/R7b: 5 years flat $1/$100 — treadmill: $1 dies ~4y (margin
+ *   exhausted, sudden full idle), $100 barely notices (dies ~20y).
  *
  * Pure simulation (seeded, reproducible). No chain, no sats.
  */
 import {
-  mulberry32,
   runSim,
-  type PacingStrategy,
-  type SimMiner,
+  type SimPopulation,
   type SimResult,
 } from '../src/sim/pacingEcon.js';
 
 const DAY = 144; // 10-min slots per day
+const YEAR = 365 * DAY;
 const XEC_REAL = 0.000007;
-const XEC_X10 = 0.00007; // fee $0.00012 -> $0.0012: still dust vs $1
 
-function population(
-  mix: [number, number, number],
-  n: number,
-  seed: number,
-): SimMiner[] {
-  const rng = mulberry32(seed);
-  const out: SimMiner[] = [];
-  const strategies: PacingStrategy[] = ['backfill', 'jump', 'threshold'];
-  const total = mix[0]! + mix[1]! + mix[2]!;
-  for (let i = 0; i < n; i++) {
-    const r = rng() * total;
-    const strategy =
-      r < mix[0]!
-        ? strategies[0]!
-        : r < mix[0]! + mix[1]!
-          ? strategies[1]!
-          : strategies[2]!;
-    out.push({ strategy, costMult: 0.5 + rng() * 2.0 });
-  }
-  return out;
-}
+const THIRDS: SimPopulation = {
+  backfill: 33334,
+  jump: 33333,
+  threshold: 33333,
+};
+const ALL_BACKFILL: SimPopulation = {
+  backfill: 100000,
+  jump: 0,
+  threshold: 0,
+};
+const ALL_JUMP: SimPopulation = { backfill: 0, jump: 100000, threshold: 0 };
+const ALL_THRESHOLD: SimPopulation = {
+  backfill: 0,
+  jump: 0,
+  threshold: 100000,
+};
 
-/** 99.9% token crash during days 20-40 of a 60-day run. */
+/** 90% token crash during days 20-40 of a 60-day run. */
 function tokenCrash(base: number): (slot: number) => number {
   return slot =>
-    slot <= 20 * DAY || slot > 40 * DAY ? base : base * 0.001;
-}
-
-function xecShock(slot: number): number {
-  if (slot <= 20 * DAY) return XEC_REAL;
-  if (slot <= 40 * DAY) return XEC_X10;
-  return XEC_REAL;
+    slot <= 20 * DAY || slot > 40 * DAY ? base : base * 0.1;
 }
 
 interface Scenario {
@@ -67,66 +56,72 @@ interface Scenario {
   slots: number;
   rewardUsd: (slot: number) => number;
   xecUsd: (slot: number) => number;
-  mix: [number, number, number];
+  population: SimPopulation;
 }
 
-const THIRDS: [number, number, number] = [1, 1, 1];
 const SCENARIOS: Scenario[] = [
   {
     name: 'R1 $1/blk, calm, thirds',
     slots: 30 * DAY,
     rewardUsd: () => 1,
     xecUsd: () => XEC_REAL,
-    mix: THIRDS,
+    population: THIRDS,
   },
   {
     name: 'R2 $100/blk, calm, thirds',
     slots: 30 * DAY,
     rewardUsd: () => 100,
     xecUsd: () => XEC_REAL,
-    mix: THIRDS,
+    population: THIRDS,
   },
   {
-    name: 'R3 $1/blk, 99.9% crash d20-40, thirds',
+    name: 'R3 $1/blk, 90% crash d20-40, thirds',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
-    mix: THIRDS,
+    population: THIRDS,
   },
   {
-    name: 'R4 $100/blk, 99.9% crash d20-40, thirds',
+    name: 'R4 $100/blk, 90% crash d20-40, thirds',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(100),
     xecUsd: () => XEC_REAL,
-    mix: THIRDS,
-  },
-  {
-    name: 'R5 $1/blk, XEC x10 d20-40, thirds',
-    slots: 60 * DAY,
-    rewardUsd: () => 1,
-    xecUsd: xecShock,
-    mix: THIRDS,
+    population: THIRDS,
   },
   {
     name: 'R6a R3-path, all backfill',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
-    mix: [1, 0, 0],
+    population: ALL_BACKFILL,
   },
   {
     name: 'R6b R3-path, all jump',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
-    mix: [0, 1, 0],
+    population: ALL_JUMP,
   },
   {
     name: 'R6c R3-path, all threshold',
     slots: 60 * DAY,
     rewardUsd: tokenCrash(1),
     xecUsd: () => XEC_REAL,
-    mix: [0, 0, 1],
+    population: ALL_THRESHOLD,
+  },
+  {
+    name: 'R7a 5y flat $1, thirds (treadmill)',
+    slots: 5 * YEAR,
+    rewardUsd: () => 1,
+    xecUsd: () => XEC_REAL,
+    population: THIRDS,
+  },
+  {
+    name: 'R7b 5y flat $100, thirds (treadmill)',
+    slots: 5 * YEAR,
+    rewardUsd: () => 100,
+    xecUsd: () => XEC_REAL,
+    population: THIRDS,
   },
 ];
 
@@ -139,54 +134,31 @@ function fmt(n: number, digits = 0): string {
 
 async function main(): Promise<void> {
   const seed = Number(process.env.SIM_SEED?.trim() || 1);
-  const rows: { name: string; r: SimResult }[] = SCENARIOS.map(s => ({
-    name: s.name,
-    r: runSim({
+  for (const s of SCENARIOS) {
+    const r: SimResult = runSim({
       slots: s.slots,
       rewardUsd: s.rewardUsd,
       xecUsd: s.xecUsd,
-      miners: population(s.mix, 500, 777),
+      population: s.population,
       seed,
-    }),
-  }));
-
-  const header = [
-    'run',
-    'blocks',
-    'U%',
-    'destroyed',
-    'issuance',
-    'lag%',
-    'fees$',
-    'profit$ B/J/T',
-    'avgN',
-    'idle',
-    'recov',
-    'maxBack',
-  ];
-  console.log(header.join(' | '));
-  for (const { name, r } of rows) {
+    });
     const p = r.profitByStrategy;
     console.log(
       [
-        name,
-        fmt(r.blocks),
-        (r.utilization * 100).toFixed(1),
-        fmt(r.destroyed),
-        fmt(r.issuance),
-        (r.lagShare * 100).toFixed(1),
-        fmt(r.feesUsd, 2),
-        `${fmt(p.backfill, 0)}/${fmt(p.jump, 0)}/${fmt(p.threshold, 0)}`,
-        r.avgEntrants.toFixed(1),
-        fmt(r.idleSlots),
-        fmt(r.recoverySlots),
-        fmt(r.maxBacklog),
+        s.name,
+        `blocks=${fmt(r.blocks)}`,
+        `U%=${(r.utilization * 100).toFixed(1)}`,
+        `destroyed=${fmt(r.destroyed)}`,
+        `issuance=${fmt(r.issuance)}`,
+        `lag%=${(r.lagShare * 100).toFixed(1)}`,
+        `nrg$=${fmt(r.energyUsd, 0)}`,
+        `profitB/J/T=${fmt(p.backfill, 0)}/${fmt(p.jump, 0)}/${fmt(p.threshold, 0)}`,
+        `avgN=${r.avgEntrants.toFixed(1)}`,
+        `idle=${fmt(r.idleSlots)}`,
+        `recov=${fmt(r.recoverySlots)}`,
+        `maxBack=${fmt(r.maxBacklog)}`,
       ].join(' | '),
     );
-  }
-
-  if (process.env.SIM_JSON === '1') {
-    console.log(JSON.stringify(rows, null, 2));
   }
 }
 

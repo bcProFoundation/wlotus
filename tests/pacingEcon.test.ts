@@ -2,7 +2,7 @@
  * Pacing-econ simulator tests — pure, seeded, deterministic.
  */
 import {
-  expectedAttempts,
+  energyPerBlock,
   feeUsd,
   microStep,
   mulberry32,
@@ -18,12 +18,11 @@ describe('pacing-econ kernels', () => {
   test('feeUsd converts sats via XEC price (100 sats/XEC)', () => {
     // Real XEC ~$7e-6 (Sep 2026): single-shard remint fee ≈ $0.00012.
     expect(feeUsd(1750, 0.000007)).toBeCloseTo(0.0001225, 10);
-    expect(feeUsd(1750, 0.00007)).toBeCloseTo(0.001225, 10);
   });
 
-  test('expectedAttempts scales inversely with target', () => {
-    expect(expectedAttempts(2 ** 24)).toBe(128);
-    expect(expectedAttempts(2 ** 23)).toBe(256);
+  test('energyPerBlock scales with 1/target (physics)', () => {
+    expect(energyPerBlock(0.3, 2 ** 24, 2 ** 24)).toBeCloseTo(0.3, 10);
+    expect(energyPerBlock(0.3, 2 ** 24, 2 ** 23)).toBeCloseTo(0.6, 10);
   });
 
   test('strategyTarget routes backfill/jump/threshold', () => {
@@ -41,18 +40,14 @@ describe('pacing-econ kernels', () => {
 });
 
 describe('pacing-econ runSim', () => {
-  const trio = [
-    { strategy: 'backfill' as const, costMult: 1 },
-    { strategy: 'jump' as const, costMult: 1 },
-    { strategy: 'threshold' as const, costMult: 1 },
-  ];
+  const trio = { backfill: 1, jump: 1, threshold: 1 };
 
   test('profitable constant reward fills every slot, destroys nothing', () => {
     const r = runSim({
       slots: 5,
       rewardUsd: () => 100,
       xecUsd: () => 0.000007,
-      miners: trio,
+      population: trio,
       seed: 3,
     });
     expect(r.blocks).toBe(5);
@@ -63,12 +58,12 @@ describe('pacing-econ runSim', () => {
     expect(r.idleSlots).toBe(0);
   });
 
-  test('reward below cost idles every slot, backlog grows', () => {
+  test('reward below energy+fee idles every slot, backlog grows', () => {
     const r = runSim({
       slots: 5,
       rewardUsd: () => 0.001,
       xecUsd: () => 0.000007,
-      miners: trio,
+      population: trio,
       seed: 3,
     });
     expect(r.blocks).toBe(0);
@@ -77,28 +72,29 @@ describe('pacing-econ runSim', () => {
     expect(r.utilization).toBe(0);
   });
 
-  test('entry obeys the R - F.mult > o boundary exactly', () => {
+  test('entry obeys the M*=(R-F-E)/o boundary exactly', () => {
     const mk = (reward: number) =>
       runSim({
         slots: 1,
         rewardUsd: () => reward,
         xecUsd: () => 0.000007,
-        miners: [{ strategy: 'backfill', costMult: 1 }],
+        population: { backfill: 1, jump: 0, threshold: 0 },
+        energy0Usd: 0.3,
         opportunityUsd: 0.005,
         seed: 3,
       });
-    // F ≈ 0.0001225: 0.0052-0.0001225=0.0050775>0.005 enters;
-    // 0.0051-0.0001225=0.0049775<0.005 idles.
-    expect(mk(0.0052).blocks).toBe(1);
-    expect(mk(0.0051).blocks).toBe(0);
+    // F ≈ 0.0001225, E = 0.30: (0.31-F-E)/0.005 = 1.97 → M*=1 mines;
+    // (0.304-F-E)/0.005 = 0.77 → M*=0 idles.
+    expect(mk(0.31).blocks).toBe(1);
+    expect(mk(0.304).blocks).toBe(0);
   });
 
-  test('conservation: filled + destroyed + backlog = elapsed; steps = blocks', () => {
+  test('conservation: filled + destroyed = elapsed; steps = blocks', () => {
     const r = runSim({
       slots: 9,
       rewardUsd: slot => (slot <= 4 ? 0.001 : 100),
       xecUsd: () => 0.000007,
-      miners: trio,
+      population: trio,
       seed: 11,
     });
     // Bust slots 1-4 idle (backlog 4), recovery from slot 5; tip catches
@@ -116,7 +112,7 @@ describe('pacing-econ runSim', () => {
         slots: 60,
         rewardUsd: slot => (slot % 20 < 10 ? 100 : 0.001),
         xecUsd: () => 0.000007,
-        miners: trio,
+        population: trio,
         seed: 42,
       });
     expect(JSON.stringify(mk())).toBe(JSON.stringify(mk()));
