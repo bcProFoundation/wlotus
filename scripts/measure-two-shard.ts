@@ -4,23 +4,21 @@
  * GATE on every consensus-critical invariant (exit 1 on violation).
  *
  * Limits: P2SH redeem ≤520B, eCash MAX_OPS_PER_SCRIPT = 201 (opcode > OP_16).
- * Gates: no executed OP_MUL (0x95), no 0xc0–0xcd inside Spedn bodies
- * (introspection lives only in the TS-assembled 28B prefix), exact
- * prefix templates + sibling body-hash holes, state bytes at asserted
- * offsets, cross-state body stability (C: only 10 state bytes change;
- * M: fully static), ratcheting P2SH addresses, eMPP lengths matching
- * the covenant literals (0x11/0x32/0x47), and the ALP numBatons 0x02
- * encoding proven by diff against the live 0x01 template.
+ * Gates: no executed OP_MUL (0x95), no 0xc0–0xcd executed anywhere
+ * (introspection is BCH-only — undefined on eCash), exactly one executed
+ * CODESEPARATOR per redeem (the miner cuts scriptCode at index 0), uniform
+ * 60B heads with 10 state bytes at offset 50 (both shards stateful),
+ * cross-state body stability (only the 10 state bytes change), ratcheting
+ * P2SH addresses, eMPP lengths matching the covenant literals
+ * (0x11/0x32/0x47), and the ALP numBatons 0x02 encoding proven by diff
+ * against the live 0x01 template.
  * Does not broadcast.
  */
-import { ALP_STANDARD, alpMint, shaRmd160, toHex } from 'ecash-lib';
+import { ALP_STANDARD, alpMint, toHex } from 'ecash-lib';
 import {
-  buildShardPrefix,
   createTwoShardPair,
-  TWOSHARD_C_HEAD_LEN,
-  TWOSHARD_C_STATE_OFF,
-  TWOSHARD_M_HEAD_LEN,
-  TWOSHARD_PREFIX_LEN,
+  TWOSHARD_HEAD_LEN,
+  TWOSHARD_STATE_OFF,
   type TwoShardShardParams,
 } from '../src/covenant/twoShardScript.js';
 import {
@@ -32,6 +30,7 @@ import {
 const MAX_OPS = 201;
 const MAX_REDEEM = 520;
 const OP_MUL = 0x95;
+const OP_CODESEPARATOR = 0xab;
 
 const failures: string[] = [];
 function gate(cond: boolean, msg: string): void {
@@ -62,6 +61,14 @@ function countOps(script: Buffer): number {
     if (op > 0x60) ops++;
   });
   return ops;
+}
+
+function countExecuted(script: Buffer, want: number): number {
+  let n = 0;
+  scanOps(script, op => {
+    if (op === want) n++;
+  });
+  return n;
 }
 
 function hasExecuted(script: Buffer, pred: (op: number) => boolean): boolean {
@@ -123,25 +130,6 @@ async function main(): Promise<void> {
     'opReturn must carry LE6(100) + 0x02 baton count',
   );
 
-  // --- prefix template gate (zero hole) ---
-  const z = Buffer.alloc(20, 0);
-  gate(
-    buildShardPrefix('C', z).toString('hex') ===
-      `c0009d51c7a914${'00'.repeat(20)}88`,
-    'C prefix template mismatch',
-  );
-  gate(
-    buildShardPrefix('M', z).toString('hex') ===
-      `c0519d00c7a914${'00'.repeat(20)}88`,
-    'M prefix template mismatch',
-  );
-  try {
-    buildShardPrefix('C', Buffer.alloc(19, 0));
-    gate(false, 'buildShardPrefix must reject non-20B holes');
-  } catch {
-    /* expected */
-  }
-
   // --- compile + budget gates at k=0 and k=1 states ---
   const rows = [];
   const pairs = [];
@@ -161,86 +149,95 @@ async function main(): Promise<void> {
     });
     pairs.push(pair);
     for (const shard of [pair.c, pair.m]) {
-      const bodyOps = countOps(shard.body);
-      const fullOps = countOps(shard.redeem);
-      const bodyMul = hasExecuted(shard.body, op => op === OP_MUL);
+      const ops = countOps(shard.redeem);
+      const bodyMul = hasExecuted(shard.redeem, op => op === OP_MUL);
       const bodyIntro = hasExecuted(
-        shard.body,
+        shard.redeem,
         op => op >= 0xc0 && op <= 0xcd,
       );
-      gate(fullOps <= MAX_OPS, `${label} ${shard.id}: ${fullOps} ops > 201`);
+      const seps = countExecuted(shard.redeem, OP_CODESEPARATOR);
+      gate(ops <= MAX_OPS, `${label} ${shard.id}: ${ops} ops > 201`);
       gate(
         shard.redeem.length <= MAX_REDEEM,
         `${label} ${shard.id}: ${shard.redeem.length}B > 520`,
       );
-      gate(!bodyMul, `${label} ${shard.id}: OP_MUL in body`);
-      gate(!bodyIntro, `${label} ${shard.id}: introspection in body`);
+      gate(!bodyMul, `${label} ${shard.id}: OP_MUL in redeem`);
+      gate(!bodyIntro, `${label} ${shard.id}: introspection in redeem`);
+      gate(seps === 1, `${label} ${shard.id}: ${seps} CODESEPARATORs != 1`);
       gate(
-        shard.prefix.length === TWOSHARD_PREFIX_LEN,
-        `${label} ${shard.id}: prefix len`,
+        shard.redeem === shard.body,
+        `${label} ${shard.id}: redeem must be the Spedn body (no splice)`,
       );
       rows.push({
         state: label,
         shard: shard.id,
         address: shard.address,
-        bodyLen: shard.body.length,
-        bodyOps,
-        fullLen: shard.redeem.length,
-        fullOps,
-        headroomOps: MAX_OPS - fullOps,
+        redeemLen: shard.redeem.length,
+        ops,
+        headroomOps: MAX_OPS - ops,
         headroomBytes: MAX_REDEEM - shard.redeem.length,
         feasible:
-          fullOps <= MAX_OPS &&
+          ops <= MAX_OPS &&
           shard.redeem.length <= MAX_REDEEM &&
           !bodyMul &&
-          !bodyIntro,
+          !bodyIntro &&
+          seps === 1,
       });
     }
   }
 
-  // --- cross-state + hole gates ---
+  // --- cross-state + head-uniformity gates ---
   const [p0, p1] = pairs as [
     Awaited<ReturnType<typeof createTwoShardPair>>,
     Awaited<ReturnType<typeof createTwoShardPair>>,
   ];
-  gate(p0.c.body[TWOSHARD_C_STATE_OFF] === 0x04, 'C state tag byte');
-  gate(p0.c.body.readUInt32LE(TWOSHARD_C_STATE_OFF + 1) === 0, 'C state day0');
+  for (const [label, pair] of [
+    ['k=0', p0],
+    ['k=1', p1],
+  ] as const) {
+    for (const shard of [pair.c, pair.m]) {
+      gate(
+        shard.body[TWOSHARD_STATE_OFF] === 0x04,
+        `${label} ${shard.id}: state tag byte`,
+      );
+    }
+    gate(
+      p0.c.body.readUInt32LE(TWOSHARD_STATE_OFF + 1) === 0,
+      'C state day0',
+    );
+    gate(
+      p0.c.body.readUInt32LE(TWOSHARD_STATE_OFF + 6) === 2 ** 24,
+      'C state target0',
+    );
+    gate(
+      p0.m.body
+        .subarray(0, TWOSHARD_HEAD_LEN)
+        .equals(p0.c.body.subarray(0, TWOSHARD_HEAD_LEN)),
+      `${label}: M head must equal C head (uniform 60B state)`,
+    );
+  }
+  gate(p1.c.body.readUInt32LE(TWOSHARD_STATE_OFF + 1) === 1, 'C state day1');
   gate(
-    p0.c.body.readUInt32LE(TWOSHARD_C_STATE_OFF + 6) === 2 ** 24,
-    'C state target0',
+    p1.m.body.readUInt32LE(TWOSHARD_STATE_OFF + 1) === 1,
+    'M state day1 (M carries tips too)',
   );
-  gate(p1.c.body.readUInt32LE(TWOSHARD_C_STATE_OFF + 1) === 1, 'C state day1');
-  gate(
-    p1.c.body.subarray(0, TWOSHARD_C_STATE_OFF).equals(
-      p0.c.body.subarray(0, TWOSHARD_C_STATE_OFF),
-    ) &&
-      p1.c.body.subarray(TWOSHARD_C_HEAD_LEN).equals(
-        p0.c.body.subarray(TWOSHARD_C_HEAD_LEN),
-      ),
-    'C bodies must differ only in the 10 state bytes',
-  );
-  gate(p1.m.body.equals(p0.m.body), 'M body must be static across states');
-  gate(
-    p0.m.body.subarray(0, TWOSHARD_M_HEAD_LEN).equals(
-      p0.c.body.subarray(0, TWOSHARD_M_HEAD_LEN),
-    ),
-    'M head must match C head prefix (tokenId + mintAtoms)',
-  );
+  for (const id of ['c', 'm'] as const) {
+    const b0 = p0[id].body;
+    const b1 = p1[id].body;
+    gate(
+      b1.subarray(0, TWOSHARD_STATE_OFF).equals(
+        b0.subarray(0, TWOSHARD_STATE_OFF),
+      ) &&
+        b1.subarray(TWOSHARD_HEAD_LEN).equals(
+          b0.subarray(TWOSHARD_HEAD_LEN),
+        ),
+      `${id.toUpperCase()} bodies must differ only in the 10 state bytes`,
+    );
+  }
   gate(
     p1.c.address !== p0.c.address && p1.m.address !== p0.m.address,
     'P2SH addresses must ratchet across states',
   );
-  for (const [shard, sib] of [
-    [p0.c, p0.m],
-    [p0.m, p0.c],
-  ] as const) {
-    gate(
-      Buffer.from(shard.prefix.subarray(7, 27)).equals(
-        Buffer.from(shaRmd160(new Uint8Array(sib.body))),
-      ),
-      `${shard.id} prefix hole must be hash160(sibling body)`,
-    );
-  }
 
   console.log(JSON.stringify({ maxOps: MAX_OPS, maxRedeem: MAX_REDEEM, rows }, null, 2));
   if (failures.length > 0) {

@@ -105,6 +105,8 @@ async function main(): Promise<void> {
     decimals: TOKEN_DECIMALS,
     initialMintAtoms: 1_000n,
     powBatonCount: TWOSHARD_BATON_COUNT,
+    // Thin experiment wallet: real fees are ~10 sats (dust dominates).
+    feeHeadroomSats: 500n,
   });
   console.log('Genesis', genesis.tokenId);
 

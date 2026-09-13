@@ -22,7 +22,7 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-const REMINT_FUEL_SATS = 3_000n;
+const REMINT_FUEL_SATS = 500n; // real fee is ~7 sats; 500 is ample margin
 
 async function ensureSmallFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();

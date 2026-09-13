@@ -1,19 +1,33 @@
 // GlotusMintShard — two-shard Ergon-δ MINT shard (M), mint-only v1.
 //
-// Stateless head (tokenId + mint atoms only): M derives nothing. Checks
-// PoW against witness (newDay, newTarget), pins the full 4-output set
-// byte-identical to C. (newDay, newTarget) are bound to C's derived
-// values through identical output pins — any mismatch makes the tx
-// unsatisfiable. Sibling pin (index 1, sibling C at index 0, sibling
-// BODY hash) hand-spliced by TS; see src/covenant/twoShardScript.ts.
+// Stateless-vs-derived M: M bakes the SAME (tipDay, tipTarget) state as C
+// and windows/caps its (newDay, newTarget) witness — it does NOT re-derive
+// the δ step (no room beside PoW in Spedn output). Checks PoW against the
+// witness, pins the full 4-output set byte-identical to C.
 //
-// v1 DIET: successors unverified witness (ergon-dogfood posture — see
-// GlotusComputeShard.spedn); length literals 0x11/0x32/0x47; single
-// tail split. Full successor verification deferred to v2.
+// NO sibling pin: eCash never activated native introspection (0xc0–0xcd —
+// BCH-only since May 2022; absent from every eCash upgrade through 2025,
+// and disabled in libauth's XEC VM), so no input can observe its siblings.
+// Cross-shard binding is (identical output pins) + (ALP ≥1-baton rule):
+// with C co-present the pins force (newDay, newTarget) == C's derived
+// values exactly; a lone-M mint is honest-adjacent (schedule-bound via the
+// day window, no target reset via monotonicity, no u32 overflow) and costs
+// full PoW. Known hole (documented, research-accepted): a lone-C mint
+// skips PoW (C cannot fit the PoW check beside the derivation) — still
+// schedule-bound with honest δ state. Successors unverified witness
+// (ergon-dogfood posture — see GlotusComputeShard.spedn).
+//
+// v1 DIET: length literals 0x11/0x32/0x47 (NOT 0x00 — bare zero compiles
+// to OP_0/empty; the ALP version byte uses num2bin(0, 1), the live ergon
+// form); single tail split. Full successor verification deferred to v2.
 
 contract GlotusMintShard(
     [byte;32] tokenIdRev,
-    [byte;6] mintAtomsLe
+    [byte;6] mintAtomsLe,
+    [byte;4] genesisUnixLe,
+    [byte;4] daySecondsLe,
+    [byte;4] tipDayLe,
+    [byte;4] tipTargetLe
 ) {
     challenge remint(
         [byte;4] nonce,
@@ -26,6 +40,15 @@ contract GlotusMintShard(
         [byte] nextCRedeem,
         [byte] nextMRedeem
     ) {
+        int tipDay = bin2num(tipDayLe);
+        int tipTarget = bin2num(tipTargetLe);
+        // Day window + target monotonicity (see header): lone-M mints
+        // stay honest-adjacent. genesisUnix/daySeconds ride along for a
+        // uniform 60B head with C (M never derives, so never reads them).
+        verify newDay >= tipDay;
+        verify newDay <= tipDay + 1;
+        verify newTarget <= tipTarget;
+
         [byte] solhash = hash256(sha256(preimage) . nonce);
         ([byte] head, _) = solhash @ 4;
         verify bin2num(head) >= 0;
@@ -45,7 +68,12 @@ contract GlotusMintShard(
 
         [byte] mintSection =
             0x534c5032 .
-            0x00 .
+            // WARNING: bare 0x00 compiles to OP_0 (EMPTY push), silently
+            // dropping the ALP version byte and bricking the outputs pin
+            // (genesis 1–3 postmortem). num2bin(0, 1) emits a real 0x00
+            // byte — the live ergon form. 0x01–0x04 are safe (OP_1..OP_4
+            // push their byte correctly); only zero is special.
+            num2bin(0, 1) .
             0x04 . 0x4d494e54 .
             tokenIdRev .
             0x01 .

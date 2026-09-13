@@ -1,24 +1,21 @@
 /**
  * Two-shard (C + M) covenant assembly, mint-only v1.
  *
- * Spedn 5.0 cannot emit native introspection (0xc0–0xcd), so each full
- * redeem = hand-assembled 28B prefix + Spedn-compiled body:
+ * Pure Spedn, NO hand assembly: eCash never activated native introspection
+ * (0xc0–0xcd — BCH-only since May 2022), so the genesis 1–3 hand-spliced
+ * sibling-pin prefix is gone. (It never executed anyway: P2SH commits to
+ * the full redeem while RTS signs with the Spedn body, so every pre-v2
+ * spend died at the P2SH hash check with a false top stack — and the
+ * opcodes are undefined on eCash regardless.) Each shard's redeem IS its
+ * Spedn body, so stock RTS builds correct scriptSigs with zero hacks.
+ * Cross-shard binding is (identical output pins) + (ALP ≥1-baton rule) +
+ * (M's day window / target monotonicity); see the contract headers.
  *
- *   prefix(shard s, sibling hole h):
- *     OP_INPUTINDEX <selfIdx> OP_NUMEQUALVERIFY
- *     <sibIdx> OP_UTXOBYTECODE OP_HASH160 <h:20> OP_EQUALVERIFY
- *   with h = hash160(sibling BODY at the same state) — bodies are known
- *   before prefixes, so there is no hash cycle. (Outputs pin the FULL
- *   sibling redeems, closing the loop.)
- *
- * v1 has NO successor shell verification (ergon-dogfood posture — the
- * next redeems are unverified witness, like ergon's batonHash). Heads
- * are still layout-asserted: TS reconstructs the expected head bytes
- * and requires the compiled body to start with them.
- *
- * C head (60B): 0x20 tokenIdRev | 0x06 mintAtomsLe | 0x04 genesisUnixLe
- *   | 0x04 daySecondsLe | 0x04 tipDayLe | 0x04 tipTargetLe (STATE at 50).
- * M head (40B): 0x20 tokenIdRev | 0x06 mintAtomsLe (stateless).
+ * Uniform 60B head, both shards (STATE at 50):
+ *   0x20 tokenIdRev | 0x06 mintAtomsLe | 0x04 genesisUnixLe
+ *   | 0x04 daySecondsLe | 0x04 tipDayLe | 0x04 tipTargetLe
+ * (M never derives, so it never reads genesisUnix/daySeconds — they ride
+ * along for one shared head layout. TS layout-asserts every compile.)
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -37,26 +34,14 @@ import {
   toHex,
   Script as EcashScript,
 } from 'ecash-lib';
-import { OP_INPUTINDEX, OP_UTXOBYTECODE } from './opcodes.js';
 
 export type TwoShardId = 'C' | 'M';
 
-/** OP_0/OP_1/…/OP_16 as single minimal bytes (0x00/0x51+). */
-function smallNum(n: number): number {
-  if (n === 0) return 0x00;
-  if (n >= 1 && n <= 16) return 0x50 + n;
-  throw new Error(`smallNum out of range: ${n}`);
-}
+export const TWOSHARD_HEAD_LEN = 60;
+export const TWOSHARD_STATE_OFF = 50;
+export const TWOSHARD_STATE_LEN = 10;
 
-const OP_NUMEQUALVERIFY = 0x9d;
-const OP_HASH160 = 0xa9;
-const OP_EQUALVERIFY = 0x88;
-
-export const TWOSHARD_PREFIX_LEN = 28;
-export const TWOSHARD_C_STATE_OFF = 50;
-export const TWOSHARD_C_STATE_LEN = 10;
-export const TWOSHARD_C_HEAD_LEN = 60;
-export const TWOSHARD_M_HEAD_LEN = 40;
+const OP_CODESEPARATOR = 0xab;
 
 export interface TwoShardShardParams {
   tokenId: string;
@@ -74,7 +59,7 @@ export interface TwoShardShard {
   id: TwoShardId;
   params: TwoShardShardParams;
   body: Buffer;
-  prefix: Buffer;
+  /** Full P2SH redeem — always identical to body (pure Spedn, no splice). */
   redeem: Buffer;
   redeemHex: string;
   scriptHash: Uint8Array;
@@ -129,25 +114,19 @@ function push(b: Buffer): Buffer {
   return Buffer.concat([Buffer.from([b.length]), b]);
 }
 
-/** Reconstruct the exact expected head bytes for a shard + params. */
-export function expectedShardHead(
-  id: TwoShardId,
-  params: TwoShardShardParams,
-): Buffer {
+/** Reconstruct the exact expected 60B head bytes for params (both shards). */
+export function expectedShardHead(params: TwoShardShardParams): Buffer {
   const head = Buffer.concat([
     push(Buffer.from(fromHexRev(params.tokenId))),
     push(mintAtomsLe6(params.mintAtoms)),
-    ...(id === 'C'
-      ? [
-          push(u32LeBuf(params.genesisUnix, 'genesisUnix')),
-          push(u32LeBuf(params.daySeconds, 'daySeconds')),
-          push(u32LeBuf(params.tipDay, 'tipDay')),
-          push(u32LeBuf(params.tipTarget, 'tipTarget')),
-        ]
-      : []),
+    push(u32LeBuf(params.genesisUnix, 'genesisUnix')),
+    push(u32LeBuf(params.daySeconds, 'daySeconds')),
+    push(u32LeBuf(params.tipDay, 'tipDay')),
+    push(u32LeBuf(params.tipTarget, 'tipTarget')),
   ]);
-  const want = id === 'C' ? TWOSHARD_C_HEAD_LEN : TWOSHARD_M_HEAD_LEN;
-  if (head.length !== want) throw new Error(`head ${head.length}B != ${want}B`);
+  if (head.length !== TWOSHARD_HEAD_LEN) {
+    throw new Error(`head ${head.length}B != ${TWOSHARD_HEAD_LEN}B`);
+  }
   return head;
 }
 
@@ -159,79 +138,81 @@ function instantiate(
   const factory = new ModuleFactory(new BchJsRts('mainnet'));
   const name = id === 'C' ? 'GlotusComputeShard' : 'GlotusMintShard';
   const Ctor = factory.make(portable)[name];
-  const args: Record<string, Buffer> =
-    id === 'C'
-      ? {
-          tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
-          mintAtomsLe: mintAtomsLe6(params.mintAtoms),
-          genesisUnixLe: u32LeBuf(params.genesisUnix, 'genesisUnix'),
-          daySecondsLe: u32LeBuf(params.daySeconds, 'daySeconds'),
-          tipDayLe: u32LeBuf(params.tipDay, 'tipDay'),
-          tipTargetLe: u32LeBuf(params.tipTarget, 'tipTarget'),
-        }
-      : {
-          tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
-          mintAtomsLe: mintAtomsLe6(params.mintAtoms),
-        };
+  const args: Record<string, Buffer> = {
+    tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
+    mintAtomsLe: mintAtomsLe6(params.mintAtoms),
+    genesisUnixLe: u32LeBuf(params.genesisUnix, 'genesisUnix'),
+    daySecondsLe: u32LeBuf(params.daySeconds, 'daySeconds'),
+    tipDayLe: u32LeBuf(params.tipDay, 'tipDay'),
+    tipTargetLe: u32LeBuf(params.tipTarget, 'tipTarget'),
+  };
   return new Ctor(args) as TwoShardInstance;
 }
 
-/** 28B prefix: index pin + sibling-body-hash pin. */
-export function buildShardPrefix(
-  id: TwoShardId,
-  siblingBodyHash: Buffer,
-): Buffer {
-  if (siblingBodyHash.length !== 20) {
+/**
+ * Push-aware redeem shape check: exactly one executed CODESEPARATOR (the
+ * miner cuts scriptCode at raw index 0 — ecash-lib's cut is push-aware,
+ * but a second separator, or none, would still desync the sighash), and
+ * no 0xc0–0xcd executed anywhere (undefined on eCash — fail fast if a
+ * future Spedn ever emits introspection).
+ */
+function assertRedeemShape(id: TwoShardId, redeem: Buffer): void {
+  let seps = 0;
+  let i = 0;
+  while (i < redeem.length) {
+    const op = redeem[i]!;
+    if (op >= 1 && op <= 75) {
+      i += 1 + op;
+      continue;
+    }
+    if (op === 0x4c) {
+      i += 2 + redeem[i + 1]!;
+      continue;
+    }
+    if (op === 0x4d) {
+      i += 3 + (redeem[i + 1]! | (redeem[i + 2]! << 8));
+      continue;
+    }
+    if (op === OP_CODESEPARATOR) seps++;
+    if (op >= 0xc0 && op <= 0xcd) {
+      throw new Error(
+        `${id} redeem executes 0x${op.toString(16)} (introspection is BCH-only — eCash would reject)`,
+      );
+    }
+    i += 1;
+  }
+  if (seps !== 1) {
     throw new Error(
-      `siblingBodyHash must be 20B, got ${siblingBodyHash.length}`,
+      `${id} redeem has ${seps} executed CODESEPARATORs, need exactly 1`,
     );
   }
-  const selfIdx = id === 'C' ? 0 : 1;
-  const sibIdx = id === 'C' ? 1 : 0;
-  return Buffer.concat([
-    Buffer.from([
-      OP_INPUTINDEX,
-      smallNum(selfIdx),
-      OP_NUMEQUALVERIFY,
-      smallNum(sibIdx),
-      OP_UTXOBYTECODE,
-      OP_HASH160,
-      0x14,
-    ]),
-    siblingBodyHash,
-    Buffer.from([OP_EQUALVERIFY]),
-  ]);
 }
 
 function assembleShard(
   id: TwoShardId,
   params: TwoShardShardParams,
   instance: TwoShardInstance,
-  siblingBody: Buffer,
 ): TwoShardShard {
   const body = Buffer.from(instance.redeemScript as Buffer);
-  const head = expectedShardHead(id, params);
+  const head = expectedShardHead(params);
   if (!body.subarray(0, head.length).equals(head)) {
     throw new Error(
       `${id} body head mismatch (Spedn layout drift?) — ` +
         `got ${body.subarray(0, head.length).toString('hex')} want ${head.toString('hex')}`,
     );
   }
-  const prefix = buildShardPrefix(
-    id,
-    Buffer.from(shaRmd160(new Uint8Array(siblingBody))),
-  );
-  if (prefix.length !== TWOSHARD_PREFIX_LEN) {
-    throw new Error(`prefix ${prefix.length}B != ${TWOSHARD_PREFIX_LEN}B`);
+  // Pure Spedn: redeem IS the body (no splice). Push-aware shape gate.
+  const redeem = body;
+  assertRedeemShape(id, redeem);
+  if (redeem.length > 520) {
+    throw new Error(`${id} redeem ${redeem.length}B exceeds 520B push limit`);
   }
-  const redeem = Buffer.concat([prefix, body]);
   const scriptHash = shaRmd160(new Uint8Array(redeem));
   const p2shScript = EcashScript.p2sh(scriptHash);
   return {
     id,
     params,
     body,
-    prefix,
     redeem,
     redeemHex: toHex(new Uint8Array(redeem)),
     scriptHash,
@@ -242,9 +223,9 @@ function assembleShard(
 }
 
 /**
- * Build the full C+M pair at one state: compile both bodies (layout
- * asserted), then prefixes (sibling BODY hashes — no cycle), then full
- * redeems + P2SH addresses.
+ * Build the C+M pair at one state: compile both bodies (layout asserted).
+ * No cross-pins (eCash has no introspection) — binding is co-pinned
+ * outputs + ALP batons + M's window/cap; see the contract headers.
  */
 export async function createTwoShardPair(
   params: TwoShardShardParams,
@@ -255,12 +236,8 @@ export async function createTwoShardPair(
       loadPortable(spedn, 'C'),
       loadPortable(spedn, 'M'),
     ]);
-    const instC = instantiate(portC, 'C', params);
-    const instM = instantiate(portM, 'M', params);
-    const bodyC = Buffer.from(instC.redeemScript as Buffer);
-    const bodyM = Buffer.from(instM.redeemScript as Buffer);
-    const c = assembleShard('C', params, instC, bodyM);
-    const m = assembleShard('M', params, instM, bodyC);
+    const c = assembleShard('C', params, instantiate(portC, 'C', params));
+    const m = assembleShard('M', params, instantiate(portM, 'M', params));
     return { c, m };
   } finally {
     spedn.dispose();

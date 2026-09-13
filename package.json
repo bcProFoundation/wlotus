@@ -54,7 +54,8 @@
     "sweep-temple-to-cold": "tsx scripts/sweep-temple-to-cold.ts",
     "create-temple-specials": "tsx scripts/create-temple-specials.ts",
     "build-icons": "python3 scripts/build-wlotus-icons.py",
-    "build-og": "python3 scripts/build-og-image.py"
+    "build-og": "python3 scripts/build-og-image.py",
+    "verify-twoshard-vm": "tsx scripts/verify-twoshard-vm.ts"
   },
   "engines": {
     "node": ">=24"
@@ -70,6 +71,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@bitauth/libauth": "^3.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.0",
     "@types/web-push": "^3.6.4",

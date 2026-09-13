@@ -100,17 +100,49 @@ describe('two-shard covenant sources', () => {
 
   it('C and M build byte-identical output blocks', () => {
     // Guards copy drift: the cross-shard soundness argument requires
-    // both shards to pin the same out0..out3 bytes.
+    // both shards to pin the same out0..out3 bytes. The span covers the
+    // wldf/mint/opReturn/out0..out3 construction only — separator and
+    // pin placement legitimately differ (C separates late for a small
+    // scriptCode, M separates after the pin).
     const span = (s: string): string => {
       const a = s.indexOf('[byte] wldf =');
-      const b = s.indexOf('== Sha256(hashOutputs);');
+      const b = s.indexOf('[byte] out3 =');
       expect(a).toBeGreaterThan(0);
       expect(b).toBeGreaterThan(a);
-      return s.slice(a, b);
+      const end = s.indexOf(';', b);
+      expect(end).toBeGreaterThan(b);
+      return s.slice(a, end + 1);
     };
     expect(span(src('GlotusMintShard.spedn'))).toBe(
       span(src('GlotusComputeShard.spedn')),
     );
+  });
+
+  it('no bare 0x00 data literal (genesis 1–3 postmortem)', () => {
+    // Spedn compiles a bare 0x00 to OP_0 (EMPTY push), silently dropping
+    // the byte. The ALP version byte must use num2bin(0, 1) (live ergon
+    // form); 0x01–0x04 are safe (OP_1..OP_4 push their byte). This test
+    // fails loudly if anyone reintroduces a bare zero literal.
+    for (const f of ['GlotusComputeShard.spedn', 'GlotusMintShard.spedn']) {
+      const lines = src(f).split('\n');
+      const bareZero = lines.filter(l => /^\s*0x00\s*\./.test(l));
+      expect(bareZero).toEqual([]);
+      expect(src(f)).toContain('num2bin(0, 1)');
+    }
+  });
+
+  it('no introspection opcodes in shard sources', () => {
+    // eCash never activated 0xc0–0xcd (BCH-only). The shards must be
+    // pure pre-introspection Spedn; sibling binding is co-pinned outputs
+    // + ALP batons + M window/cap (see contract headers). Scans code
+    // lines only (headers document the 0xc0–0xcd absence in prose).
+    for (const f of ['GlotusComputeShard.spedn', 'GlotusMintShard.spedn']) {
+      const code = src(f)
+        .split('\n')
+        .filter(l => !l.trim().startsWith('//'))
+        .join('\n');
+      expect(code).not.toMatch(/0xc[0-9a-d]/i);
+    }
   });
 
   it('C step-cap literal matches TS TWO_SHARD_K', () => {
