@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { config as loadEnv } from 'dotenv';
 import { Wallet } from 'ecash-wallet';
-import { fromHex, toHex } from 'ecash-lib';
+import { DEFAULT_DUST_SATS, fromHex, toHex } from 'ecash-lib';
 import { createChronik } from '../src/network/createChronik.js';
 import { getMedianTimePast } from '../src/network/medianTimePast.js';
 import { createTwoShardPair } from '../src/covenant/twoShardScript.js';
@@ -22,22 +22,31 @@ import {
 
 loadEnv({ path: resolve(process.cwd(), '.env') });
 
-const REMINT_FUEL_SATS = 500n; // real fee is ~7 sats; 500 is ample margin
+// Fuel sizing: the remint has NO change output (raw TxBuilder with fixed
+// outputs only), so the ENTIRE fuel UTXO minus dust flows to fees. Minimum
+// viable fuel is 546+fee (batons 546+546 + fuel must cover outputs 1638 +
+// policy fee). Target ~1600 (fee ~1050 ≈ 320 sats/KB — broadcast rejections
+// are free, so start here and bump on min-relay complaints).
+const REMINT_FUEL_SATS = 1600n;
+/** Use a fuel UTXO as-is at or below this; split bigger ones down. */
+const REMINT_FUEL_SPLIT_ABOVE = 2600n;
+/** Floor: below this the build can't cover its own outputs. */
+const REMINT_FUEL_MIN = 600n;
 
 async function ensureSmallFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();
-  // Any pure UTXO ≥ fuel size works directly as the fuel input (change
-  // returns automatically); split only to break a bigger UTXO down.
-  const usable = wallet.utxos.find(u => !u.token && u.sats >= REMINT_FUEL_SATS);
-  if (usable) return;
-  const big = wallet.utxos
-    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 1_000n)
-    .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
-  if (!big) {
+  const pure = wallet.utxos
+    .filter(u => !u.token && u.sats >= REMINT_FUEL_MIN)
+    .sort((a, b) => (a.sats < b.sats ? -1 : 1));
+  if (pure.length === 0) {
     throw new Error(
-      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS} sats for remint fuel`,
+      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_MIN} sats for remint fuel`,
     );
   }
+  // Right-sized UTXOs work directly as the fuel input (no change output
+  // exists, so keep the whole-UTXO fee small by splitting big ones down).
+  if (pure[0]!.sats <= REMINT_FUEL_SPLIT_ABOVE) return;
+  const big = pure[0]!;
   console.log(`Splitting fuel: ${big.sats} → ${REMINT_FUEL_SATS}`);
   const resp = await wallet
     .action({
@@ -140,7 +149,7 @@ async function main(): Promise<void> {
 
   await wallet.sync();
   const fuelUtxo = wallet.utxos
-    .filter(u => !u.token && u.sats >= REMINT_FUEL_SATS)
+    .filter(u => !u.token && u.sats >= REMINT_FUEL_MIN)
     .sort((a, c) => (a.sats < c.sats ? -1 : 1))[0];
   if (!fuelUtxo) throw new Error('Need remint fuel UTXO');
 
@@ -194,13 +203,19 @@ async function main(): Promise<void> {
     locktime,
   });
 
+  const txSize = built.txHex.length / 2;
+  // No change output: fee is inputs minus the fixed dust outputs.
+  const feeSats =
+    batonC.sats + batonM.sats + fuelUtxo.sats - DEFAULT_DUST_SATS * 3n;
   console.log(
     JSON.stringify(
       {
         powAttempts: built.powAttempts,
         nonceHex: built.nonceHex,
         derived: built.derived,
-        txSize: built.txHex.length / 2,
+        txSize,
+        feeSats: feeSats.toString(),
+        feePerKb: Math.round((Number(feeSats) * 1000) / txSize),
         nextPowAddressC: built.nextPair.c.address,
         nextPowAddressM: built.nextPair.m.address,
       },

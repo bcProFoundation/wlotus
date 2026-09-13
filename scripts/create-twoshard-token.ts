@@ -129,6 +129,57 @@ async function main(): Promise<void> {
     }
   }
 
+  const depDir = resolve(process.cwd(), 'deployments');
+  mkdirSync(depDir, { recursive: true });
+  const livePath = resolve(depDir, 'mainnet-twoshard-shard.json');
+  if (existsSync(livePath)) {
+    renameSync(
+      livePath,
+      resolve(depDir, `mainnet-twoshard-shard-archived-${Date.now()}.json`),
+    );
+  }
+
+  // Partial record FIRST (durable): if a handoff fails (wallet sync lag,
+  // empty fee pot), resume-twoshard-handoffs.ts completes from this file
+  // instead of burning a fresh genesis.
+  const partial = {
+    ticker,
+    name: TWOSHARD_NAME_DEFAULT,
+    tokenId: genesis.tokenId,
+    mode: 'two-shard-c+m',
+    role: 'experiment-multiinput-v1',
+    decimals: TOKEN_DECIMALS,
+    powAddressC: pair.c.address,
+    powAddressM: pair.m.address,
+    redeemScriptHexC: pair.c.redeemHex,
+    redeemScriptHexM: pair.m.redeemHex,
+    genesisUnix,
+    daySeconds,
+    genesisTarget,
+    stepCapK: 1,
+    stepNote:
+      'SUB form: t ← t − floor(t·82/100000), explicit double-and-add, no OP_MUL',
+    difficultyNote:
+      'Two-shard Ergon δ: C derives (newDay,newTarget) K=1-bounded; M checks PoW vs witness; identical 4-output pins bind them. Successors unverified witness (ergon-dogfood posture).',
+    mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
+    tokensPerRemint: Number(BASE_MINT_ATOMS),
+    initialMintAtoms: '1000',
+    powBatonCount: TWOSHARD_BATON_COUNT,
+    genesisTxid: genesis.tokenId,
+    handoffTxids: [] as string[],
+    pendingHandoffs: true,
+    partial: true,
+    tipDay: 0,
+    tipTarget: genesisTarget,
+    lastRemintTxid: null,
+    authPubkey: toHex(wallet.pk),
+    genesisAddress: wallet.address,
+    createdAt: new Date().toISOString(),
+    explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
+    cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
+  };
+  writeFileSync(livePath, `${JSON.stringify(partial, null, 2)}\n`);
+
   const shards = [pair.c, pair.m];
   const handoffTxids: string[] = [];
   for (let i = 0; i < TWOSHARD_BATON_COUNT; i++) {
@@ -154,7 +205,13 @@ async function main(): Promise<void> {
     };
     const resp = await wallet.action(action).build().broadcast();
     if (!resp.success || !resp.broadcasted?.length) {
-      throw new Error(`Handoff ${i} failed: ${JSON.stringify(resp)}`);
+      writeFileSync(
+        livePath,
+        `${JSON.stringify({ ...partial, handoffTxids }, null, 2)}\n`,
+      );
+      throw new Error(
+        `Handoff ${i} failed: ${JSON.stringify(resp)} (partial dep saved — run resume-twoshard-handoffs)`,
+      );
     }
     handoffTxids.push(resp.broadcasted[0]);
     console.log(
@@ -162,50 +219,13 @@ async function main(): Promise<void> {
     );
   }
 
-  const depDir = resolve(process.cwd(), 'deployments');
-  mkdirSync(depDir, { recursive: true });
-  const livePath = resolve(depDir, 'mainnet-twoshard-shard.json');
-  if (existsSync(livePath)) {
-    renameSync(
-      livePath,
-      resolve(depDir, `mainnet-twoshard-shard-archived-${Date.now()}.json`),
-    );
-  }
-
   const record = {
-    ticker,
-    name: TWOSHARD_NAME_DEFAULT,
-    tokenId: genesis.tokenId,
-    mode: 'two-shard-c+m',
-    role: 'experiment-multiinput-v1',
-    decimals: TOKEN_DECIMALS,
-    powAddressC: pair.c.address,
-    powAddressM: pair.m.address,
-    redeemScriptHexC: pair.c.redeemHex,
-    redeemScriptHexM: pair.m.redeemHex,
-    genesisUnix,
-    daySeconds,
-    genesisTarget,
-    stepCapK: 1,
-    stepNote:
-      'SUB form: t ← t − floor(t·82/100000), explicit double-and-add, no OP_MUL',
-    difficultyNote:
-      'Two-shard Ergon δ: C derives (newDay,newTarget) K=1-bounded; M checks PoW vs witness; identical 4-output pins bind them. Successors unverified witness (ergon-dogfood posture).',
-    mintAtomsPerRemint: BASE_MINT_ATOMS.toString(),
-    tokensPerRemint: Number(BASE_MINT_ATOMS),
-    initialMintAtoms: '1000',
-    powBatonCount: TWOSHARD_BATON_COUNT,
-    genesisTxid: genesis.tokenId,
+    ...partial,
     handoffTxids,
-    tipDay: 0,
-    tipTarget: genesisTarget,
-    lastRemintTxid: null,
-    authPubkey: toHex(wallet.pk),
-    genesisAddress: wallet.address,
-    createdAt: new Date().toISOString(),
-    explorer: `https://explorer.e.cash/tx/${genesis.tokenId}`,
-    cashtab: `https://cashtab.com/#/token/${genesis.tokenId}`,
+    pendingHandoffs: false,
+    completedAt: new Date().toISOString(),
   };
+  delete (record as { partial?: boolean }).partial;
 
   writeFileSync(livePath, `${JSON.stringify(record, null, 2)}\n`);
   console.log('\nTwoShard SHARD ready');
