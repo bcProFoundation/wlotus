@@ -34,12 +34,22 @@
  *
  * Calibration chain (design scale): Wc0=$0.0021/entrant/race,
  * M*=140 entrants -> total energy $0.30/block, the design spec.
- * Treadmill reframe (HYPOTHESIS, needs hardware data): if hardware
- * $/hash improves ~35%/yr, the delta schedule eats efficiency gains
- * to HOLD the $1 anchor (anti-deflation), with the quantization
- * floor as the backstop era. Sticky-demand fixture here (D
- * exogenous); adaptive demand (buyers tracking cost up the
- * treadmill = 35%/yr anchor inflation) is deferred to v3.
+ * ASIC calibration (Sep 2026 data): frontier J/TH 98 (S9, 2016) ->
+ * 9.5 (S23 Hydro, 2025) = ~25%/yr mature-era energy gains, slowing
+ * at the 3nm wall (sub-10 J/TH is hydro-only); hardware $/TH
+ * ~$250 (2018) -> ~$15 (2025) = ~45%/yr, highly cyclical
+ * (bull-market spikes 3-5x). Blended $/hash at 30/70 energy/capex
+ * is ~40%/yr IF the puzzle ASIC-ifies (~20%/yr on general
+ * hardware). Verdict: the 35%/yr delta schedule sits AT the
+ * ASIC-era rate (mild ~5%/yr anchor deflation = benign margin
+ * expansion) and over-eats general-hardware gains by ~15%/yr
+ * (anchor inflates / M* squeezes if no ASICs emerge). Keep 35%:
+ * $1 blocks WILL ASIC-ify their puzzle, and delta is a per-
+ * deployment parameter (future revs can ship 25% variants).
+ * Capex cycles don't break the anchor: hardware is sunk, so only
+ * ENERGY-price shocks idle miners (entry M* dips, liveness holds).
+ * Sticky-demand fixture here (D exogenous); adaptive demand
+ * (buyers tracking cost up the treadmill) is deferred to v3.
  *
  * Strategies as stakeholder behavior: backfill = sustain-the-mine
  * (patient going-concern miners preserving future races); jump = drain
