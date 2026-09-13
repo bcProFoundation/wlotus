@@ -1,8 +1,8 @@
 {
   "tokenId": "dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf",
-  "txid": "ae7413a31952ba8ec93642ff855ec55dd2d2425eebc3e9bc44a2332f7ed97177",
-  "powAttempts": 44,
-  "nonceHex": "2c000000",
+  "txid": "28ef2f4fe29344334f284d2f62d0c0c24c05bcfea48286050adfef8a1dbad050",
+  "powAttempts": 560,
+  "nonceHex": "30020000",
   "derived": {
     "tipDay": 0,
     "target": 16777216,
@@ -14,6 +14,6 @@
   "locktime": 1789273869,
   "nextPowAddressC": "ecash:pqxvfxms8055u5rujd2p2jv63cfe6cfzsc4pdkejks",
   "nextPowAddressM": "ecash:pzskezrmzz3jmxuumc05m6myhe37c3fe95a5sr0tu8",
-  "minedAt": "2026-09-13T05:05:16.559Z",
-  "explorer": "https://explorer.e.cash/tx/ae7413a31952ba8ec93642ff855ec55dd2d2425eebc3e9bc44a2332f7ed97177"
+  "minedAt": "2026-09-13T05:06:09.027Z",
+  "explorer": "https://explorer.e.cash/tx/28ef2f4fe29344334f284d2f62d0c0c24c05bcfea48286050adfef8a1dbad050"
 }

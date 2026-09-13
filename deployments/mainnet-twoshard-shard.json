@@ -27,12 +27,12 @@
   "pendingHandoffs": false,
   "tipDay": 0,
   "tipTarget": 16777216,
-  "lastRemintTxid": "ae7413a31952ba8ec93642ff855ec55dd2d2425eebc3e9bc44a2332f7ed97177",
+  "lastRemintTxid": "28ef2f4fe29344334f284d2f62d0c0c24c05bcfea48286050adfef8a1dbad050",
   "genesisAddress": "ecash:qztglkp40zjpfk0km9zndgy54gc53xz4h5d2lypd6p",
   "createdAt": "2026-09-13T01:11:17.397Z",
   "explorer": "https://explorer.e.cash/tx/dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf",
   "cashtab": "https://cashtab.com/#/token/dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf",
   "authPubkey": "02413e343ab6d620875c049b7ef5b0befa97134316430ed34bbe6b6984b44ef24c",
   "completedAt": "2026-09-13T05:04:31.678Z",
-  "updatedAt": "2026-09-13T05:05:16.559Z"
+  "updatedAt": "2026-09-13T05:06:09.026Z"
 }
