@@ -26,6 +26,7 @@
     "resume-singleshard-handoff": "tsx scripts/resume-singleshard-handoff.ts",
     "mine-singleshard-once": "tsx scripts/mine-singleshard-once.ts",
     "sim-pacing-econ": "tsx scripts/sim-pacing-econ.ts",
+    "sim-family-econ": "tsx scripts/sim-family-econ.ts",
     "dryrun-twoshard-tx": "tsx scripts/dryrun-twoshard-tx.ts",
     "create-twoshard-token": "tsx scripts/create-twoshard-token.ts",
     "mine-twoshard-once": "tsx scripts/mine-twoshard-once.ts",
