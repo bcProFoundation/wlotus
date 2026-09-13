@@ -147,7 +147,7 @@ async function main(): Promise<void> {
   );
   console.log(
     JSON.stringify(
-      { tokenId: dep.tokenId, powAddress: shard.address, locktime, mtp, ...preview },
+      { tokenId: dep.tokenId, powAddress: shard.address, mtp, ...preview },
       null,
       2,
     ),
