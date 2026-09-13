@@ -20,6 +20,8 @@
     "new-wallet": "tsx scripts/new-wallet.ts",
     "new-experiment-wallet": "tsx scripts/new-experiment-wallet.ts",
     "measure-two-shard": "tsx scripts/measure-two-shard.ts",
+    "measure-single-shard": "tsx scripts/measure-single-shard.ts",
+    "verify-singleshard-vm": "tsx scripts/verify-singleshard-vm.ts",
     "dryrun-twoshard-tx": "tsx scripts/dryrun-twoshard-tx.ts",
     "create-twoshard-token": "tsx scripts/create-twoshard-token.ts",
     "mine-twoshard-once": "tsx scripts/mine-twoshard-once.ts",
