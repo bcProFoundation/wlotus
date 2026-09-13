@@ -101,6 +101,7 @@ async function main(): Promise<void> {
     decimals: TOKEN_DECIMALS,
     initialMintAtoms: 1_000n,
     powBatonCount: 1,
+    allowSingleBaton: true,
     feeHeadroomSats: 500n,
   });
   console.log('Genesis', genesis.tokenId);
