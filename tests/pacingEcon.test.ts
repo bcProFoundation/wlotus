@@ -16,8 +16,9 @@ describe('pacing-econ kernels', () => {
   });
 
   test('feeUsd converts sats via XEC price (100 sats/XEC)', () => {
-    expect(feeUsd(1750, 0.03)).toBeCloseTo(0.525, 10);
-    expect(feeUsd(1750, 0.12)).toBeCloseTo(2.1, 10);
+    // Real XEC ~$7e-6 (Sep 2026): single-shard remint fee ≈ $0.00012.
+    expect(feeUsd(1750, 0.000007)).toBeCloseTo(0.0001225, 10);
+    expect(feeUsd(1750, 0.00007)).toBeCloseTo(0.001225, 10);
   });
 
   test('expectedAttempts scales inversely with target', () => {
@@ -50,7 +51,7 @@ describe('pacing-econ runSim', () => {
     const r = runSim({
       slots: 5,
       rewardUsd: () => 100,
-      xecUsd: () => 0.03,
+      xecUsd: () => 0.000007,
       miners: trio,
       seed: 3,
     });
@@ -65,8 +66,8 @@ describe('pacing-econ runSim', () => {
   test('reward below cost idles every slot, backlog grows', () => {
     const r = runSim({
       slots: 5,
-      rewardUsd: () => 0.01,
-      xecUsd: () => 0.03,
+      rewardUsd: () => 0.001,
+      xecUsd: () => 0.000007,
       miners: trio,
       seed: 3,
     });
@@ -81,21 +82,22 @@ describe('pacing-econ runSim', () => {
       runSim({
         slots: 1,
         rewardUsd: () => reward,
-        xecUsd: () => 0.03,
+        xecUsd: () => 0.000007,
         miners: [{ strategy: 'backfill', costMult: 1 }],
-        opportunityUsd: 0.1,
+        opportunityUsd: 0.005,
         seed: 3,
       });
-    // F = 0.525: 0.63-0.525=0.105>0.1 enters; 0.62-0.525=0.095 idles.
-    expect(mk(0.63).blocks).toBe(1);
-    expect(mk(0.62).blocks).toBe(0);
+    // F ≈ 0.0001225: 0.0052-0.0001225=0.0050775>0.005 enters;
+    // 0.0051-0.0001225=0.0049775<0.005 idles.
+    expect(mk(0.0052).blocks).toBe(1);
+    expect(mk(0.0051).blocks).toBe(0);
   });
 
   test('conservation: filled + destroyed + backlog = elapsed; steps = blocks', () => {
     const r = runSim({
       slots: 9,
-      rewardUsd: slot => (slot <= 4 ? 0.01 : 100),
-      xecUsd: () => 0.03,
+      rewardUsd: slot => (slot <= 4 ? 0.001 : 100),
+      xecUsd: () => 0.000007,
       miners: trio,
       seed: 11,
     });
@@ -112,8 +114,8 @@ describe('pacing-econ runSim', () => {
     const mk = () =>
       runSim({
         slots: 60,
-        rewardUsd: slot => (slot % 20 < 10 ? 100 : 0.01),
-        xecUsd: () => 0.03,
+        rewardUsd: slot => (slot % 20 < 10 ? 100 : 0.001),
+        xecUsd: () => 0.000007,
         miners: trio,
         seed: 42,
       });

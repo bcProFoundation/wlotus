@@ -1,13 +1,18 @@
 #!/usr/bin/env tsx
 /**
- * Miner-paced issuance scenarios: $1 vs $100 block rewards, flat vs
- * XEC-shock fee pressure, backfill/jump/threshold strategy mixes.
+ * Miner-paced issuance scenarios: $1 vs $100 block rewards, token-crash
+ * shocks, XEC fee-side (non-)shocks, backfill/jump/threshold mixes.
  *
  *   npm run sim-pacing-econ
  *
- * R1/R2: constant reward, calm XEC — does reward size change pace?
- * R3/R4: constant reward, 20-day XEC x4 shock mid-run — who idles?
- * R5-*: R3 price path x strategy mix — which behavior wins?
+ * Calibration (Sep 2026): XEC ≈ $7e-6 → 1750-sat remint fee ≈ $0.00012.
+ * Fees NEVER bind at $1/$100 rewards — the idle driver is the REWARD
+ * side (token crashes vs ~$0.005/race opportunity cost ≈ $21/mo infra).
+ *
+ * R1/R2: constant reward, calm — does reward size change pace?
+ * R3/R4: 99.9% token crash d20-40 — who survives ($100→$0.10 vs $1→$0.001)?
+ * R5: $1 + XEC x10 d20-40 — fee-side shock binds nothing (control).
+ * R6-*: R3 price path x strategy mix — which behavior wins?
  *
  * Pure simulation (seeded, reproducible). No chain, no sats.
  */
@@ -20,8 +25,8 @@ import {
 } from '../src/sim/pacingEcon.js';
 
 const DAY = 144; // 10-min slots per day
-const XEC_CALM = 0.03;
-const XEC_SHOCK = 0.12; // x4 fee pressure: $0.525 -> $2.10/block cost base
+const XEC_REAL = 0.000007;
+const XEC_X10 = 0.00007; // fee $0.00012 -> $0.0012: still dust vs $1
 
 function population(
   mix: [number, number, number],
@@ -45,10 +50,16 @@ function population(
   return out;
 }
 
-function shockXec(slot: number): number {
-  if (slot <= 20 * DAY) return XEC_CALM;
-  if (slot <= 40 * DAY) return XEC_SHOCK;
-  return XEC_CALM;
+/** 99.9% token crash during days 20-40 of a 60-day run. */
+function tokenCrash(base: number): (slot: number) => number {
+  return slot =>
+    slot <= 20 * DAY || slot > 40 * DAY ? base : base * 0.001;
+}
+
+function xecShock(slot: number): number {
+  if (slot <= 20 * DAY) return XEC_REAL;
+  if (slot <= 40 * DAY) return XEC_X10;
+  return XEC_REAL;
 }
 
 interface Scenario {
@@ -62,52 +73,59 @@ interface Scenario {
 const THIRDS: [number, number, number] = [1, 1, 1];
 const SCENARIOS: Scenario[] = [
   {
-    name: 'R1 $1/blk, calm XEC, thirds',
+    name: 'R1 $1/blk, calm, thirds',
     slots: 30 * DAY,
     rewardUsd: () => 1,
-    xecUsd: () => XEC_CALM,
+    xecUsd: () => XEC_REAL,
     mix: THIRDS,
   },
   {
-    name: 'R2 $100/blk, calm XEC, thirds',
+    name: 'R2 $100/blk, calm, thirds',
     slots: 30 * DAY,
     rewardUsd: () => 100,
-    xecUsd: () => XEC_CALM,
+    xecUsd: () => XEC_REAL,
     mix: THIRDS,
   },
   {
-    name: 'R3 $1/blk, XEC x4 shock d20-40, thirds',
+    name: 'R3 $1/blk, 99.9% crash d20-40, thirds',
+    slots: 60 * DAY,
+    rewardUsd: tokenCrash(1),
+    xecUsd: () => XEC_REAL,
+    mix: THIRDS,
+  },
+  {
+    name: 'R4 $100/blk, 99.9% crash d20-40, thirds',
+    slots: 60 * DAY,
+    rewardUsd: tokenCrash(100),
+    xecUsd: () => XEC_REAL,
+    mix: THIRDS,
+  },
+  {
+    name: 'R5 $1/blk, XEC x10 d20-40, thirds',
     slots: 60 * DAY,
     rewardUsd: () => 1,
-    xecUsd: shockXec,
+    xecUsd: xecShock,
     mix: THIRDS,
   },
   {
-    name: 'R4 $100/blk, XEC x4 shock d20-40, thirds',
+    name: 'R6a R3-path, all backfill',
     slots: 60 * DAY,
-    rewardUsd: () => 100,
-    xecUsd: shockXec,
-    mix: THIRDS,
-  },
-  {
-    name: 'R5a R3-path, all backfill',
-    slots: 60 * DAY,
-    rewardUsd: () => 1,
-    xecUsd: shockXec,
+    rewardUsd: tokenCrash(1),
+    xecUsd: () => XEC_REAL,
     mix: [1, 0, 0],
   },
   {
-    name: 'R5b R3-path, all jump',
+    name: 'R6b R3-path, all jump',
     slots: 60 * DAY,
-    rewardUsd: () => 1,
-    xecUsd: shockXec,
+    rewardUsd: tokenCrash(1),
+    xecUsd: () => XEC_REAL,
     mix: [0, 1, 0],
   },
   {
-    name: 'R5c R3-path, all threshold',
+    name: 'R6c R3-path, all threshold',
     slots: 60 * DAY,
-    rewardUsd: () => 1,
-    xecUsd: shockXec,
+    rewardUsd: tokenCrash(1),
+    xecUsd: () => XEC_REAL,
     mix: [0, 0, 1],
   },
 ];
@@ -157,7 +175,7 @@ async function main(): Promise<void> {
         fmt(r.destroyed),
         fmt(r.issuance),
         (r.lagShare * 100).toFixed(1),
-        fmt(r.feesUsd, 0),
+        fmt(r.feesUsd, 2),
         `${fmt(p.backfill, 0)}/${fmt(p.jump, 0)}/${fmt(p.threshold, 0)}`,
         r.avgEntrants.toFixed(1),
         fmt(r.idleSlots),

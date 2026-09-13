@@ -12,6 +12,10 @@
  *   all-in cost beats the per-race opportunity cost). Losers pay ~compute
  *   only (unconfirmed txs never pay fees) — mildly optimistic entry, which
  *   matches real race over-entry.
+ * - Fees are dust at real XEC (~$7e-6): 1750 sats ≈ $0.00012. The idle
+ *   driver is the REWARD side (token crashes vs opportunity cost o), never
+ *   the fee side — an XEC x1000 moon would be needed for fees to bind at
+ *   $1 rewards. o defaults to $0.005/race (≈$21/mo always-on infra).
  * - Winner uniform among entrants (symmetric first-seen/propagation;
  *   fee-bidding wars are NOT modeled — extension point).
  * - Strategies: backfill (always tip+1), jump (always latest), threshold
@@ -43,8 +47,10 @@ export interface SimParams {
   /** XEC/USD per slot (fee pressure channel). */
   xecUsd: (slot: number) => number;
   miners: SimMiner[];
+  /** Protocol fee in sats (default 1750 — measured single-shard remint). */
   feeSats?: number;
   roundsPerSlot?: number;
+  /** Per-race fixed cost in USD (default 0.005 ≈ $21/mo always-on infra). */
   opportunityUsd?: number;
   hashCostUsd?: number;
   threshold?: number;
@@ -118,7 +124,7 @@ const zeroStrategies = (): Record<PacingStrategy, number> => ({
 export function runSim(p: SimParams): SimResult {
   const feeSats = p.feeSats ?? 1750;
   const roundsPerSlot = p.roundsPerSlot ?? 30;
-  const o = p.opportunityUsd ?? 0.1;
+  const o = p.opportunityUsd ?? 0.005;
   const hashCost = p.hashCostUsd ?? 1e-9;
   const threshold = p.threshold ?? 12;
   const genesis = p.genesisTarget ?? 2 ** 24;
