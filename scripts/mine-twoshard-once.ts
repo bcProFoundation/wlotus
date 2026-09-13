@@ -25,13 +25,13 @@ loadEnv({ path: resolve(process.cwd(), '.env') });
 // Fuel sizing: the remint has NO change output (raw TxBuilder with fixed
 // outputs only), so the ENTIRE fuel UTXO minus dust flows to fees. Minimum
 // viable fuel is 546+fee (batons 546+546 + fuel must cover outputs 1638 +
-// policy fee). Target ~1600 (fee ~1050 ≈ 320 sats/KB — broadcast rejections
-// are free, so start here and bump on min-relay complaints).
-const REMINT_FUEL_SATS = 1600n;
+// policy fee). Target ~4200 (fee ~3650 ≈ 1110 sats/KB — eCash min relay is
+// 1000 sats/KB, proven by a 1054-fee rejection on the first v2 attempt).
+const REMINT_FUEL_SATS = 4200n;
 /** Use a fuel UTXO as-is at or below this; split bigger ones down. */
-const REMINT_FUEL_SPLIT_ABOVE = 2600n;
-/** Floor: below this the build can't cover its own outputs. */
-const REMINT_FUEL_MIN = 600n;
+const REMINT_FUEL_SPLIT_ABOVE = 5200n;
+/** Floor: below this the build can't cover outputs + 1000/KB min relay. */
+const REMINT_FUEL_MIN = 3900n;
 
 async function ensureSmallFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();

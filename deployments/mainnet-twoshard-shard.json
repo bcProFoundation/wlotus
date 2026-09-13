@@ -20,14 +20,19 @@
   "initialMintAtoms": "1000",
   "powBatonCount": 2,
   "genesisTxid": "dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf",
-  "handoffTxids": [],
-  "pendingHandoffs": true,
-  "partial": true,
+  "handoffTxids": [
+    "cc1a3d9a95c0af5339fb281aba952beca8df067747b27cf0656186f10b2c3bc5",
+    "6709316df0c4aa4c10bbac7c7671aed30cdaf7d0faa9ac02efcfa8f2c34c991d"
+  ],
+  "pendingHandoffs": false,
   "tipDay": 0,
   "tipTarget": 16777216,
-  "lastRemintTxid": null,
+  "lastRemintTxid": "ae7413a31952ba8ec93642ff855ec55dd2d2425eebc3e9bc44a2332f7ed97177",
   "genesisAddress": "ecash:qztglkp40zjpfk0km9zndgy54gc53xz4h5d2lypd6p",
   "createdAt": "2026-09-13T01:11:17.397Z",
   "explorer": "https://explorer.e.cash/tx/dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf",
-  "cashtab": "https://cashtab.com/#/token/dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf"
+  "cashtab": "https://cashtab.com/#/token/dec5786d76f57f8bfde846f7aec354edb81256e34eb6d6756cfb69edb48747bf",
+  "authPubkey": "02413e343ab6d620875c049b7ef5b0befa97134316430ed34bbe6b6984b44ef24c",
+  "completedAt": "2026-09-13T05:04:31.678Z",
+  "updatedAt": "2026-09-13T05:05:16.559Z"
 }
