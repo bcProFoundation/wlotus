@@ -26,19 +26,16 @@ const REMINT_FUEL_SATS = 3_000n;
 
 async function ensureSmallFuel(wallet: Wallet): Promise<void> {
   await wallet.sync();
-  const small = wallet.utxos.find(
-    u =>
-      !u.token &&
-      u.sats >= REMINT_FUEL_SATS &&
-      u.sats <= REMINT_FUEL_SATS + 2_000n,
-  );
-  if (small) return;
+  // Any pure UTXO ≥ fuel size works directly as the fuel input (change
+  // returns automatically); split only to break a bigger UTXO down.
+  const usable = wallet.utxos.find(u => !u.token && u.sats >= REMINT_FUEL_SATS);
+  if (usable) return;
   const big = wallet.utxos
-    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 5_000n)
+    .filter(u => !u.token && u.sats > REMINT_FUEL_SATS + 1_000n)
     .sort((a, b) => (a.sats < b.sats ? 1 : -1))[0];
   if (!big) {
     throw new Error(
-      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS + 5_000n} sats to split remint fuel`,
+      `Need a pure XEC UTXO ≥ ${REMINT_FUEL_SATS} sats for remint fuel`,
     );
   }
   console.log(`Splitting fuel: ${big.sats} → ${REMINT_FUEL_SATS}`);

@@ -110,13 +110,14 @@ export async function buildMinedTwoShardRemintTx(opts: {
   let minedNonce: Uint8Array | undefined;
   let minedAttempts = 0;
 
-  const mkUnlockC = (preimage: Uint8Array): Script => {
+  const mkUnlockC = (sig65: Uint8Array, preimage: Uint8Array): Script => {
     const scriptSigBuf = pair.c.instance.challenges.remint({
       minerPk: Buffer.from(miner.pk),
       newTarget: derived.newTarget,
       preimage: Buffer.from(preimage),
       nextCRedeem: nextPair.c.redeem,
       nextMRedeem: nextPair.m.redeem,
+      sc: Buffer.from(sig65),
     }) as Buffer;
     return new Script(new Uint8Array(scriptSigBuf));
   };
@@ -142,9 +143,10 @@ export async function buildMinedTwoShardRemintTx(opts: {
   };
 
   // Input 0: C shard (late CODESEPARATOR keeps the preimage small).
-  const cSignatory: Signatory = (_eccCtx, input) => {
+  const cSignatory: Signatory = (eccCtx, input) => {
     const pre = input.sigHashPreimage(ALL_BIP143, TWOSHARD_CODESEP_INDEX);
-    return mkUnlockC(pre.bytes);
+    const rawSigC = eccCtx.schnorrSign(miner.sk, sha256d(pre.bytes));
+    return mkUnlockC(flagSignature(rawSigC, ALL_BIP143), pre.bytes);
   };
 
   // Input 1: M shard (CODESEPARATOR suffix) + PoW mining + sigs.

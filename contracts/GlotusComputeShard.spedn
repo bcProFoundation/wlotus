@@ -42,7 +42,8 @@ contract GlotusComputeShard(
         int newTarget,
         [byte] preimage,
         [byte] nextCRedeem,
-        [byte] nextMRedeem
+        [byte] nextMRedeem,
+        Sig sc
     ) {
         int genesisUnix = bin2num(genesisUnixLe);
         int daySeconds = bin2num(daySecondsLe);
@@ -105,10 +106,12 @@ contract GlotusComputeShard(
         [byte] out3 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextMRedeem) . 0x87;
 
         // Late separator: scriptCode (hence the witness preimage, hence
-        // the scriptSig) stays small. C has no sig checks, so placement
-        // is semantics-free; without it the scriptSig exceeds the 1650B
-        // standardness limit. Miner replicates with codesep index 0.
+        // the scriptSig) stays small. Miner replicates with codesep index 0.
         separator;
         verify hash256(out0 . out1 . out2 . out3) == Sha256(hashOutputs);
+        // Trailing sig check: Spedn compiles this to a BARE CHECKSIG,
+        // leaving TRUE on top for consensus (a consuming EQUALVERIFY
+        // ending fails with empty top stack — seen live on first fire).
+        verify checkSig(sc, minerPk);
     }
 }
