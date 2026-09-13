@@ -21,6 +21,7 @@ import {
   simulateUdeltaCode,
   udeltaCodeUnits,
   UDELTA_DENOMINATOR,
+  UDELTA_DAY_SECONDS,
   UDELTA_ECON_LEN,
   UDELTA_HEAD_LEN,
   UDELTA_K,
@@ -84,6 +85,18 @@ describe('single-shard δ layout constants', () => {
   test('SUB-form micro-δ matches the covenant arithmetic (t − t·82/14400000)', () => {
     const t = 2 ** 24;
     expect(t - Math.floor((t * 82) / 14400000)).toBe(16777121);
+  });
+
+  test('denom↔slots alignment identity (the brick-risk guard)', () => {
+    // The v3 daily schedule survives as the full-utilization ceiling ONLY
+    // if denom = 100000 × slots/day. Nothing in consensus checks this
+    // deploy-time invariant — this test is the enforcement. If slots
+    // change without rescaling the denom, a full-cap day steps wildly
+    // off-schedule (600s slots + v3 denom = −11.8%/day → bricks in days).
+    expect(UDELTA_DAY_SECONDS / UDELTA_SLOT_SECONDS).toBe(144);
+    expect(
+      UDELTA_DENOMINATOR / (UDELTA_DAY_SECONDS / UDELTA_SLOT_SECONDS),
+    ).toBe(100000);
   });
 });
 

@@ -61,6 +61,8 @@ export const UDELTA_NUMERATOR = 82;
 export const UDELTA_DENOMINATOR = 14400000;
 /** v4 slot length in seconds (one Lotus block per eCash block, MTP-aligned). */
 export const UDELTA_SLOT_SECONDS = 600;
+/** Unix day in seconds — the δ schedule's numeraire (denomination only; v4 has no day-boundary rule). */
+export const UDELTA_DAY_SECONDS = 86400;
 /**
  * Advance floor v4: k>=1 per remint (skip-tolerant — no upper bound;
  * locktime≤MTP bounds k in practice). Same-slot re-mine (k=0) stays
