@@ -14,7 +14,7 @@
   "genesisTarget": 16777216,
   "stepCapK": 1,
   "stepNote": "SUB form: t ← t − floor(t·82/100000), explicit double-and-add, no OP_MUL",
-  "difficultyNote": "Single-shard δ: hand-assembled 421B/177-op redeem — PoW + K=1 δ derivation + WLDF v3/ALP pins + VERIFIED successors (Moore econ trick, 9B state) + schnorr auth.",
+  "difficultyNote": "Single-shard δ: hand-assembled 420B/177-op redeem — PoW + K=1 δ derivation + WLDF v3/ALP pins + VERIFIED successors (Moore econ trick, 9B state) + schnorr auth.",
   "mintAtomsPerRemint": "100",
   "tokensPerRemint": 100,
   "initialMintAtoms": "1000",
@@ -26,11 +26,12 @@
   "pendingHandoffs": false,
   "tipDay": 0,
   "tipTarget": 16777216,
-  "lastRemintTxid": null,
+  "lastRemintTxid": "1d831c645145e83c71486959ec42899b33d4f07711a3a1c2a83420d3a7dde901",
   "authPubkey": "02413e343ab6d620875c049b7ef5b0befa97134316430ed34bbe6b6984b44ef24c",
   "genesisAddress": "ecash:qztglkp40zjpfk0km9zndgy54gc53xz4h5d2lypd6p",
   "createdAt": "2026-09-13T08:43:43.005Z",
   "explorer": "https://explorer.e.cash/tx/05fab4ce3e0b5e57ab55b6bf4bba0d8acee4b275b5a5f1048d493a45fcce275c",
   "cashtab": "https://cashtab.com/#/token/05fab4ce3e0b5e57ab55b6bf4bba0d8acee4b275b5a5f1048d493a45fcce275c",
-  "completedAt": "2026-09-13T08:43:43.364Z"
+  "completedAt": "2026-09-13T08:43:43.364Z",
+  "updatedAt": "2026-09-13T08:50:26.230Z"
 }
