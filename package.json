@@ -19,6 +19,8 @@
     "dana-index": "tsx apps/dana-index/src/server.ts",
     "new-wallet": "tsx scripts/new-wallet.ts",
     "new-experiment-wallet": "tsx scripts/new-experiment-wallet.ts",
+    "measure-two-shard": "tsx scripts/measure-two-shard.ts",
+    "check-experiment-funding": "tsx scripts/check-experiment-funding.ts",
     "create-test-token": "tsx scripts/create-test-token.ts",
     "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
     "mine-once": "tsx scripts/mine-once.ts",

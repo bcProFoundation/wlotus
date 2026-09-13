@@ -1,5 +1,5 @@
 /**
- * Two-shard (C + M) covenant assembly.
+ * Two-shard (C + M) covenant assembly, mint-only v1.
  *
  * Spedn 5.0 cannot emit native introspection (0xc0–0xcd), so each full
  * redeem = hand-assembled 28B prefix + Spedn-compiled body:
@@ -11,16 +11,14 @@
  *   before prefixes, so there is no hash cycle. (Outputs pin the FULL
  *   sibling redeems, closing the loop.)
  *
- * Body layout (98B head + code), all offsets asserted at load:
- *   [0:33]   0x20 tokenIdRev
- *   [33:40]  0x06 mintAtomsLe
- *   [40:45]  0x04 genesisUnixLe
- *   [45:50]  0x04 daySecondsLe
- *   [50:55]  0x04 genesisTargetLe
- *   [55:65]  0x04 tipDayLe | 0x04 tipTargetLe   (STATE hole)
- *   [65:98]  0x20 bodyShellHash
- *   [98:]    code
- * bodyShell = sha256(body[0:55] . body[98:]).
+ * v1 has NO successor shell verification (ergon-dogfood posture — the
+ * next redeems are unverified witness, like ergon's batonHash). Heads
+ * are still layout-asserted: TS reconstructs the expected head bytes
+ * and requires the compiled body to start with them.
+ *
+ * C head (60B): 0x20 tokenIdRev | 0x06 mintAtomsLe | 0x04 genesisUnixLe
+ *   | 0x04 daySecondsLe | 0x04 tipDayLe | 0x04 tipTargetLe (STATE at 50).
+ * M head (40B): 0x20 tokenIdRev | 0x06 mintAtomsLe (stateless).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -35,7 +33,6 @@ import { BchJsRts } from '@spedn/rts-bchjs';
 import {
   Address,
   fromHexRev,
-  sha256,
   shaRmd160,
   toHex,
   Script as EcashScript,
@@ -56,9 +53,10 @@ const OP_HASH160 = 0xa9;
 const OP_EQUALVERIFY = 0x88;
 
 export const TWOSHARD_PREFIX_LEN = 28;
-export const TWOSHARD_BODY_STATE_OFF = 55;
-export const TWOSHARD_BODY_STATE_LEN = 10;
-export const TWOSHARD_BODY_HEAD_LEN = 98;
+export const TWOSHARD_C_STATE_OFF = 50;
+export const TWOSHARD_C_STATE_LEN = 10;
+export const TWOSHARD_C_HEAD_LEN = 60;
+export const TWOSHARD_M_HEAD_LEN = 40;
 
 export interface TwoShardShardParams {
   tokenId: string;
@@ -76,13 +74,14 @@ export interface TwoShardShard {
   id: TwoShardId;
   params: TwoShardShardParams;
   body: Buffer;
-  bodyShellHash: Buffer;
   prefix: Buffer;
   redeem: Buffer;
   redeemHex: string;
   scriptHash: Uint8Array;
   p2shScript: EcashScript;
   address: string;
+  /** Live challenge entry (scriptSig builder for the miner). */
+  instance: TwoShardInstance;
 }
 
 export interface TwoShardPair {
@@ -125,90 +124,56 @@ function mintAtomsLe6(atoms: bigint): Buffer {
   return buf;
 }
 
-function ctorArgs(
+function push(b: Buffer): Buffer {
+  if (b.length > 75) throw new Error('push too long for single opcode');
+  return Buffer.concat([Buffer.from([b.length]), b]);
+}
+
+/** Reconstruct the exact expected head bytes for a shard + params. */
+export function expectedShardHead(
+  id: TwoShardId,
   params: TwoShardShardParams,
-  bodyShellHash: Buffer,
-): Record<string, Buffer> {
-  return {
-    tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
-    mintAtomsLe: mintAtomsLe6(params.mintAtoms),
-    genesisUnixLe: u32LeBuf(params.genesisUnix, 'genesisUnix'),
-    daySecondsLe: u32LeBuf(params.daySeconds, 'daySeconds'),
-    genesisTargetLe: u32LeBuf(params.genesisTarget, 'genesisTarget'),
-    tipDayLe: u32LeBuf(params.tipDay, 'tipDay'),
-    tipTargetLe: u32LeBuf(params.tipTarget, 'tipTarget'),
-    bodyShellHash,
-  };
+): Buffer {
+  const head = Buffer.concat([
+    push(Buffer.from(fromHexRev(params.tokenId))),
+    push(mintAtomsLe6(params.mintAtoms)),
+    ...(id === 'C'
+      ? [
+          push(u32LeBuf(params.genesisUnix, 'genesisUnix')),
+          push(u32LeBuf(params.daySeconds, 'daySeconds')),
+          push(u32LeBuf(params.tipDay, 'tipDay')),
+          push(u32LeBuf(params.tipTarget, 'tipTarget')),
+        ]
+      : []),
+  ]);
+  const want = id === 'C' ? TWOSHARD_C_HEAD_LEN : TWOSHARD_M_HEAD_LEN;
+  if (head.length !== want) throw new Error(`head ${head.length}B != ${want}B`);
+  return head;
 }
 
 function instantiate(
   portable: PortableModule,
   id: TwoShardId,
   params: TwoShardShardParams,
-  bodyShellHash: Buffer,
 ): TwoShardInstance {
   const factory = new ModuleFactory(new BchJsRts('mainnet'));
   const name = id === 'C' ? 'GlotusComputeShard' : 'GlotusMintShard';
   const Ctor = factory.make(portable)[name];
-  return new Ctor(ctorArgs(params, bodyShellHash)) as TwoShardInstance;
-}
-
-/** Locate the 0x20||hash anchor; state starts 10B earlier. */
-function findBodyStateOff(body: Buffer, hash: Buffer): number {
-  const marker = Buffer.concat([Buffer.from([0x20]), hash]);
-  const at = body.indexOf(marker);
-  if (at < 0) throw new Error('body shell-hash anchor not found');
-  const off = at - TWOSHARD_BODY_STATE_LEN;
-  if (off !== TWOSHARD_BODY_STATE_OFF) {
-    throw new Error(
-      `body state offset ${off} != ${TWOSHARD_BODY_STATE_OFF} (Spedn layout drift?)`,
-    );
-  }
-  return off;
-}
-
-function compileBody(
-  portable: PortableModule,
-  id: TwoShardId,
-  params: TwoShardShardParams,
-): { body: Buffer; bodyShellHash: Buffer } {
-  const z = Buffer.alloc(32, 0);
-  const probe = Buffer.from(
-    instantiate(portable, id, params, z).redeemScript as Buffer,
-  );
-  findBodyStateOff(probe, z);
-  if (probe[TWOSHARD_BODY_STATE_OFF + TWOSHARD_BODY_STATE_LEN] !== 0x20) {
-    throw new Error('shell push is not 0x20-prefixed (layout drift?)');
-  }
-  const stablePre = probe.subarray(0, TWOSHARD_BODY_STATE_OFF);
-  const stableCode = probe.subarray(TWOSHARD_BODY_HEAD_LEN);
-  const bodyShellHash = Buffer.from(
-    sha256(Buffer.concat([stablePre, stableCode])),
-  );
-
-  const body = Buffer.from(
-    instantiate(portable, id, params, bodyShellHash)
-      .redeemScript as Buffer,
-  );
-  findBodyStateOff(body, bodyShellHash);
-  if (
-    !Buffer.from(body.subarray(0, TWOSHARD_BODY_STATE_OFF)).equals(stablePre) ||
-    !Buffer.from(body.subarray(TWOSHARD_BODY_HEAD_LEN)).equals(stableCode)
-  ) {
-    throw new Error('body layout changed after shell commit');
-  }
-  const check = Buffer.from(
-    sha256(
-      Buffer.concat([
-        body.subarray(0, TWOSHARD_BODY_STATE_OFF),
-        body.subarray(TWOSHARD_BODY_HEAD_LEN),
-      ]),
-    ),
-  );
-  if (!check.equals(bodyShellHash)) {
-    throw new Error('bodyShellHash mismatch');
-  }
-  return { body, bodyShellHash };
+  const args: Record<string, Buffer> =
+    id === 'C'
+      ? {
+          tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
+          mintAtomsLe: mintAtomsLe6(params.mintAtoms),
+          genesisUnixLe: u32LeBuf(params.genesisUnix, 'genesisUnix'),
+          daySecondsLe: u32LeBuf(params.daySeconds, 'daySeconds'),
+          tipDayLe: u32LeBuf(params.tipDay, 'tipDay'),
+          tipTargetLe: u32LeBuf(params.tipTarget, 'tipTarget'),
+        }
+      : {
+          tokenIdRev: Buffer.from(fromHexRev(params.tokenId)),
+          mintAtomsLe: mintAtomsLe6(params.mintAtoms),
+        };
+  return new Ctor(args) as TwoShardInstance;
 }
 
 /** 28B prefix: index pin + sibling-body-hash pin. */
@@ -241,10 +206,17 @@ export function buildShardPrefix(
 function assembleShard(
   id: TwoShardId,
   params: TwoShardShardParams,
-  body: Buffer,
-  bodyShellHash: Buffer,
+  instance: TwoShardInstance,
   siblingBody: Buffer,
 ): TwoShardShard {
+  const body = Buffer.from(instance.redeemScript as Buffer);
+  const head = expectedShardHead(id, params);
+  if (!body.subarray(0, head.length).equals(head)) {
+    throw new Error(
+      `${id} body head mismatch (Spedn layout drift?) — ` +
+        `got ${body.subarray(0, head.length).toString('hex')} want ${head.toString('hex')}`,
+    );
+  }
   const prefix = buildShardPrefix(
     id,
     Buffer.from(shaRmd160(new Uint8Array(siblingBody))),
@@ -259,20 +231,20 @@ function assembleShard(
     id,
     params,
     body,
-    bodyShellHash,
     prefix,
     redeem,
     redeemHex: toHex(new Uint8Array(redeem)),
     scriptHash,
     p2shScript,
     address: Address.p2sh(scriptHash, 'ecash').toString(),
+    instance,
   };
 }
 
 /**
- * Build the full C+M pair at one state. Bodies are compiled (two-phase
- * shell commit), then prefixes (sibling BODY hashes — no cycle), then
- * full redeems + P2SH addresses.
+ * Build the full C+M pair at one state: compile both bodies (layout
+ * asserted), then prefixes (sibling BODY hashes — no cycle), then full
+ * redeems + P2SH addresses.
  */
 export async function createTwoShardPair(
   params: TwoShardShardParams,
@@ -283,22 +255,12 @@ export async function createTwoShardPair(
       loadPortable(spedn, 'C'),
       loadPortable(spedn, 'M'),
     ]);
-    const cBody = compileBody(portC, 'C', params);
-    const mBody = compileBody(portM, 'M', params);
-    const c = assembleShard(
-      'C',
-      params,
-      cBody.body,
-      cBody.bodyShellHash,
-      mBody.body,
-    );
-    const m = assembleShard(
-      'M',
-      params,
-      mBody.body,
-      mBody.bodyShellHash,
-      cBody.body,
-    );
+    const instC = instantiate(portC, 'C', params);
+    const instM = instantiate(portM, 'M', params);
+    const bodyC = Buffer.from(instC.redeemScript as Buffer);
+    const bodyM = Buffer.from(instM.redeemScript as Buffer);
+    const c = assembleShard('C', params, instC, bodyM);
+    const m = assembleShard('M', params, instM, bodyC);
     return { c, m };
   } finally {
     spedn.dispose();
