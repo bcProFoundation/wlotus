@@ -49,10 +49,10 @@ describe('pacing-econ kernels', () => {
 describe('pacing-econ runSim', () => {
   const trio = { backfill: 1, jump: 1, threshold: 1 };
 
-  test('profitable constant reward fills every slot, destroys nothing', () => {
+  test('profitable constant demand fills every slot, destroys nothing', () => {
     const r = runSim({
       slots: 5,
-      rewardUsd: () => 100,
+      demandUsd: () => 100,
       xecUsd: () => 0.000007,
       population: trio,
       seed: 3,
@@ -65,10 +65,10 @@ describe('pacing-econ runSim', () => {
     expect(r.idleSlots).toBe(0);
   });
 
-  test('reward below Wc+o idles every slot, backlog grows', () => {
+  test('demand below Wc+o idles every slot, backlog grows', () => {
     const r = runSim({
       slots: 5,
-      rewardUsd: () => 0.001,
+      demandUsd: () => 0.001,
       xecUsd: () => 0.000007,
       population: trio,
       seed: 3,
@@ -79,27 +79,45 @@ describe('pacing-econ runSim', () => {
     expect(r.utilization).toBe(0);
   });
 
-  test('entry obeys the M*=(R-F)/(Wc+o) boundary exactly', () => {
-    const mk = (reward: number) =>
+  test('entry obeys the M*=(D-F)/(Wc+o) boundary exactly', () => {
+    const mk = (demand: number) =>
       runSim({
         slots: 1,
-        rewardUsd: () => reward,
+        demandUsd: () => demand,
         xecUsd: () => 0.000007,
         population: { backfill: 1, jump: 0, threshold: 0 },
         energyShare: 0.3,
         opportunityUsd: 0.005,
         seed: 3,
       });
-    // F ≈ 0.0001225, Wc+o ≈ 0.007142857: R=0.0073 → M*=1 mines;
-    // R=0.0072 → M*=0 idles.
+    // F ≈ 0.0001225, Wc+o ≈ 0.007142857: D=0.0073 → M*=1 mines;
+    // D=0.0072 → M*=0 idles.
     expect(mk(0.0073).blocks).toBe(1);
     expect(mk(0.0072).blocks).toBe(0);
+  });
+
+  test('premium tracks trade-price/design: 1x anchored, 100x over-cap', () => {
+    const mk = (demand: number) =>
+      runSim({
+        slots: 3,
+        demandUsd: () => demand,
+        xecUsd: () => 0.000007,
+        population: trio,
+        designUsd: 1,
+        seed: 3,
+      });
+    const anchored = mk(1);
+    expect(anchored.meanPremium).toBeCloseTo(1, 10);
+    expect(anchored.maxPremium).toBeCloseTo(1, 10);
+    const overCap = mk(100);
+    expect(overCap.meanPremium).toBeCloseTo(100, 10);
+    expect(overCap.maxPremium).toBeCloseTo(100, 10);
   });
 
   test('conservation: filled + destroyed = elapsed; steps = blocks', () => {
     const r = runSim({
       slots: 9,
-      rewardUsd: slot => (slot <= 4 ? 0.001 : 100),
+      demandUsd: slot => (slot <= 4 ? 0.001 : 100),
       xecUsd: () => 0.000007,
       population: trio,
       seed: 11,
@@ -117,7 +135,7 @@ describe('pacing-econ runSim', () => {
     const mk = () =>
       runSim({
         slots: 60,
-        rewardUsd: slot => (slot % 20 < 10 ? 100 : 0.001),
+        demandUsd: slot => (slot % 20 < 10 ? 100 : 0.001),
         xecUsd: () => 0.000007,
         population: trio,
         seed: 42,

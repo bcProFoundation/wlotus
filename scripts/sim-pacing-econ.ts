@@ -1,22 +1,30 @@
 #!/usr/bin/env tsx
 /**
- * Miner-paced issuance scenarios with all-pay-full energy (30% of block
- * reward at ANY price: $0.30 @ $1, $30 @ $100 — miners scale hashpower
- * with the prize, dissipating a constant share).
+ * Miner-paced issuance scenarios — ELASTIC-CASH framing.
+ *
+ * Demand D ($/slot) is exogenous; the block trades at P=D and fills iff
+ * D covers production cost (~$1 design: Wc+o per entrant, M*=140,
+ * $0.30/block total energy). Premium P/P_design ~ 1 = ANCHORED (elastic
+ * regime); sustained premium >> 1 = ABOVE-CAP (Bitcoin-like regime:
+ * premium burned as entry-race energy waste).
  *
  *   npm run sim-pacing-econ
  *
- * Entry M*=(R−F)/(Wc+o); viability floor ≈ Wc+o ≈ $0.007 (marginal
- * single-miner cost — sequential degrades gracefully). Wc grows
- * 0.0815%/day (treadmill: flat $1 dies ~20y, flat $100 ~36y).
- *
- * R1/R2: $1/$100 constant, calm — cap binds? (140 vs 14K racers.)
- * R3/R4: 99.9% token crash d20-40 — $1→$0.001 idles, $100→$0.10 mines on.
- * R6-*: R3 path x all-sustain(all-backfill)/all-drain(all-jump)/
- *   all-threshold — sustain keeps schedule via grinding, drain recovers
- *   instantly at −33%; symmetric races → norms decide.
- * R7a/R7b: 25 years flat $1/$100 — treadmill death (~20y) vs durable
- *   squeeze ($100 centralizes 14K→~26 over 25y but survives).
+ * R1: D=$1 flat, calm — anchored, zero premium, U=100%.
+ * R2: D=$100 SUSTAINED on the $1 design (100x over-cap demand) —
+ *     persistent 100x premium, M*=14K, $30/block energy waste.
+ * R3: demand collapse ($1 -> $0.001, d20-40) — bids below cost idle
+ *     2,880 slots; backlog + recovery dynamics.
+ * R4: D=$100 -> $0.10 (premium compression, still 14x over marginal
+ *     cost) — mines straight through, U=100%.
+ * R6-*: R3 demand path x all-sustain / all-drain / all-threshold —
+ *     sustain grinds the backlog (U=100%, +49.6% richer miners),
+ *     drain recovers instantly at U=66.7%; symmetric races -> NORMS
+ *     decide the mix.
+ * R7a/R7b: 25y flat D=$1/$100 — treadmill eats margin (M* 140->4 /
+ *     14K->477), then the q=0 quantization floor (~15y) FREEZES
+ *     difficulty (~95x genesis): perpetual thin-margin mining, never
+ *     death-by-schedule. Premium stays 1x/100x (sticky demand).
  *
  * Pure simulation (seeded, reproducible). No chain, no sats.
  */
@@ -47,8 +55,8 @@ const ALL_THRESHOLD: SimPopulation = {
   threshold: 100000,
 };
 
-/** 99.9% token crash during days 20-40 of a 60-day run. */
-function tokenCrash(base: number): (slot: number) => number {
+/** 99.9% demand collapse during days 20-40 of a 60-day run. */
+function demandCrash(base: number): (slot: number) => number {
   return slot =>
     slot <= 20 * DAY || slot > 40 * DAY ? base : base * 0.001;
 }
@@ -56,72 +64,72 @@ function tokenCrash(base: number): (slot: number) => number {
 interface Scenario {
   name: string;
   slots: number;
-  rewardUsd: (slot: number) => number;
+  demandUsd: (slot: number) => number;
   xecUsd: (slot: number) => number;
   population: SimPopulation;
 }
 
 const SCENARIOS: Scenario[] = [
   {
-    name: 'R1 $1/blk, calm, thirds',
+    name: 'R1 D=$1, calm, thirds (anchored)',
     slots: 30 * DAY,
-    rewardUsd: () => 1,
+    demandUsd: () => 1,
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R2 $100/blk, calm, thirds',
+    name: 'R2 D=$100 sustained = 100x over-cap (premium regime)',
     slots: 30 * DAY,
-    rewardUsd: () => 100,
+    demandUsd: () => 100,
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R3 $1/blk, 99.9% crash d20-40, thirds',
+    name: 'R3 D=$1 -> $0.001 d20-40 (demand collapse)',
     slots: 60 * DAY,
-    rewardUsd: tokenCrash(1),
+    demandUsd: demandCrash(1),
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R4 $100/blk, 99.9% crash d20-40, thirds',
+    name: 'R4 D=$100 -> $0.10 d20-40 (premium compression)',
     slots: 60 * DAY,
-    rewardUsd: tokenCrash(100),
+    demandUsd: demandCrash(100),
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
     name: 'R6a R3-path, all sustain',
     slots: 60 * DAY,
-    rewardUsd: tokenCrash(1),
+    demandUsd: demandCrash(1),
     xecUsd: () => XEC_REAL,
     population: ALL_BACKFILL,
   },
   {
     name: 'R6b R3-path, all drain',
     slots: 60 * DAY,
-    rewardUsd: tokenCrash(1),
+    demandUsd: demandCrash(1),
     xecUsd: () => XEC_REAL,
     population: ALL_JUMP,
   },
   {
     name: 'R6c R3-path, all threshold',
     slots: 60 * DAY,
-    rewardUsd: tokenCrash(1),
+    demandUsd: demandCrash(1),
     xecUsd: () => XEC_REAL,
     population: ALL_THRESHOLD,
   },
   {
-    name: 'R7a 25y flat $1, thirds (treadmill)',
+    name: 'R7a 25y flat D=$1 (treadmill -> floor)',
     slots: 25 * YEAR,
-    rewardUsd: () => 1,
+    demandUsd: () => 1,
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
   {
-    name: 'R7b 25y flat $100, thirds (treadmill)',
+    name: 'R7b 25y flat D=$100 (treadmill -> floor, premium regime)',
     slots: 25 * YEAR,
-    rewardUsd: () => 100,
+    demandUsd: () => 100,
     xecUsd: () => XEC_REAL,
     population: THIRDS,
   },
@@ -139,7 +147,7 @@ async function main(): Promise<void> {
   for (const s of SCENARIOS) {
     const r: SimResult = runSim({
       slots: s.slots,
-      rewardUsd: s.rewardUsd,
+      demandUsd: s.demandUsd,
       xecUsd: s.xecUsd,
       population: s.population,
       seed,
@@ -154,6 +162,7 @@ async function main(): Promise<void> {
         `issuance=${fmt(r.issuance)}`,
         `lag%=${(r.lagShare * 100).toFixed(1)}`,
         `nrg$=${fmt(r.energyUsd, 0)}`,
+        `prem=${r.meanPremium.toFixed(2)}x/${r.maxPremium.toFixed(1)}x`,
         `profitB/J/T=${fmt(p.backfill, 0)}/${fmt(p.jump, 0)}/${fmt(p.threshold, 0)}`,
         `avgN=${r.avgEntrants.toFixed(1)}`,
         `idle=${fmt(r.idleSlots)}`,

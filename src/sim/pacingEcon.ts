@@ -12,11 +12,34 @@
  * ~2e8x today's 128-sha256 placeholder (~$1e-11) — TBD, now sharply
  * specified instead of vaguely "harder".
  *
- * Entry M* = (R−F)/(Wc+o) (rent dissipation). Viability floor ≈ Wc+o
- * ≈ $0.007 (MARGINAL single-miner cost — sequential degrades gracefully:
- * energy scales down with entry, unlike lottery's fixed overhead, so the
- * treadmill binds in ~20y at flat $1, not ~4y). Treadmill persists
- * (Wc grows 0.0815%/day; flat prices centralize then kill — R7 runs).
+ * Entry M* = (R-F)/(Wc+o) (rent dissipation). Viability floor is about
+ * Wc+o, roughly $0.007 (MARGINAL single-miner cost - sequential degrades
+ * gracefully since energy scales down with entry). Wc grows 0.0815%/day
+ * until the q=0 quantization floor (~15y, difficulty caps ~95x genesis),
+ * then freezes: flat $1 mines forever at M*=4 (R7 runs).
+ *
+ * Elastic-cash price formation (NOT Bitcoin lottery): the DESIGN sets
+ * difficulty so production costs ~$1/block (energy $0.2-0.3 at design
+ * scale + o ~= $263/yr/entrant infra/attention/margin + fee dust), and
+ * the market price FOLLOWS cost. Demand D ($/slot of buying pressure)
+ * is exogenous; the block trades at P=D and fills iff D covers cost
+ * (miners idle below, mine at ~cost within the cap). Premium P/P_design
+ * near 1 is the ANCHORED regime; sustained premium >> 1 is the
+ * ABOVE-CAP (Bitcoin-like) regime - persistent over-cap demand burns
+ * premium as entry-race energy (waste: $30/block chasing a $1-design
+ * block). The anchor is ASYMMETRIC: idle-threat floors price at cost
+ * from below, but only HEADROOM (cap above typical demand - the pace
+ * choice!) anchors it from above. A $100 block is a different DESIGN
+ * (100x harder), never the same block mooning.
+ *
+ * Calibration chain (design scale): Wc0=$0.0021/entrant/race,
+ * M*=140 entrants -> total energy $0.30/block, the design spec.
+ * Treadmill reframe (HYPOTHESIS, needs hardware data): if hardware
+ * $/hash improves ~35%/yr, the delta schedule eats efficiency gains
+ * to HOLD the $1 anchor (anti-deflation), with the quantization
+ * floor as the backstop era. Sticky-demand fixture here (D
+ * exogenous); adaptive demand (buyers tracking cost up the
+ * treadmill = 35%/yr anchor inflation) is deferred to v3.
  *
  * Strategies as stakeholder behavior: backfill = sustain-the-mine
  * (patient going-concern miners preserving future races); jump = drain
@@ -43,8 +66,10 @@ export interface SimPopulation {
 
 export interface SimParams {
   slots: number;
-  /** Block reward (100 tokens) in USD per slot. */
-  rewardUsd: (slot: number) => number;
+  /** Demand: buying pressure $/slot for the block's 100 tokens. */
+  demandUsd: (slot: number) => number;
+  /** Design price $/block the difficulty was calibrated for (default 1). */
+  designUsd?: number;
   /** XEC/USD per slot (fee channel — dust at real prices). */
   xecUsd: (slot: number) => number;
   population: SimPopulation;
@@ -79,6 +104,9 @@ export interface SimResult {
   idleSlots: number;
   recoverySlots: number;
   maxBacklog: number;
+  /** Mean trade-price/design over filled rounds (1.0 = anchored). */
+  meanPremium: number;
+  maxPremium: number;
 }
 
 export function mulberry32(seed: number): () => number {
@@ -165,6 +193,8 @@ export function runSim(p: SimParams): SimResult {
   let energyUsd = 0;
   let entrantsSum = 0;
   let roundCount = 0;
+  let premiumSum = 0;
+  let maxPremium = 0;
   const profit = zeroStrategies();
   const wins = zeroStrategies();
 
@@ -172,7 +202,8 @@ export function runSim(p: SimParams): SimResult {
     const latest = slot;
     const backlogStart = latest - tip;
     if (backlogStart > maxBacklog) maxBacklog = backlogStart;
-    const R = p.rewardUsd(slot);
+    const R = p.demandUsd(slot);
+    const design = p.designUsd ?? 1;
     const F = feeUsd(feeSats, p.xecUsd(slot));
     const wcSlot = energyPerEntrant(share, o, genesis, target);
     const mStarSlot =
@@ -204,6 +235,9 @@ export function runSim(p: SimParams): SimResult {
       wins[w]++;
       feesUsd += F;
       energyUsd += mStar * wc;
+      const premium = R / design;
+      premiumSum += premium;
+      if (premium > maxPremium) maxPremium = premium;
       profit[w] += R - F - wc;
       for (const s of ['backfill', 'jump', 'threshold'] as const) {
         profit[s] -= wc * (mStar * frac[s] - (s === w ? 1 : 0));
@@ -236,5 +270,7 @@ export function runSim(p: SimParams): SimResult {
     idleSlots,
     recoverySlots,
     maxBacklog,
+    meanPremium: roundCount > 0 ? premiumSum / roundCount : 0,
+    maxPremium,
   };
 }
