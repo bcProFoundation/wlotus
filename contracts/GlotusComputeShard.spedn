@@ -1,0 +1,136 @@
+// GlotusComputeShard — two-shard Ergon-δ COMPUTE shard (C), mint-only v1.
+//
+// Bakes (tipDay, tipTarget). Derives (newDay, newTarget) from the tx
+// locktime with a K=3 step cap, pins the full 4-output set
+// [OP_RETURN | miner P2PKH | C' P2SH | M' P2SH], and verifies its
+// successor C' byte-exact (prefix shell + body state + body shell).
+// Cross-consistency with M comes from identical output pins: any
+// (newDay, newTarget) ≠ C's derived values makes the shards disagree
+// on hashOutputs, so the tx cannot satisfy both.
+//
+// Sibling pin (this input is index 0, sibling M is index 1, plus the
+// sibling UTXO bytecode hash) is hand-spliced by TS: Spedn 5.0 cannot
+// emit 0xc0–0xcd. See src/covenant/twoShardScript.ts.
+// Canonical step (SUB form, explicit double-and-add — no OP_MUL):
+//   t ← t − floor(t·82 / 100000)
+
+contract GlotusComputeShard(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    [byte;4] genesisUnixLe,
+    [byte;4] daySecondsLe,
+    [byte;4] genesisTargetLe,
+    [byte;4] tipDayLe,
+    [byte;4] tipTargetLe,
+    [byte;32] bodyShellHash
+) {
+    challenge remint(
+        PubKey minerPk,
+        int newTarget,
+        [byte] preimage,
+        [byte] nextCRedeem,
+        [byte] nextMRedeem
+    ) {
+        int genesisUnix = bin2num(genesisUnixLe);
+        int daySeconds = bin2num(daySecondsLe);
+        int genesisTarget = bin2num(genesisTargetLe);
+        int tipDay = bin2num(tipDayLe);
+        int tipTarget = bin2num(tipTargetLe);
+        verify tipTarget <= genesisTarget;
+        verify genesisTarget <= 16777216;
+
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+        int newDay = (locktime - genesisUnix) / daySeconds;
+        int k = newDay - tipDay;
+        verify k >= 0;
+        verify k <= 3;
+
+        // K-bounded δ chain, always computed; the four verify-only
+        // branches below bind the witness newTarget to step k.
+        int t0 = tipTarget;
+        int s1a = t0 + t0;
+        int s1b = s1a + s1a;
+        int s1c = s1b + s1b;
+        int s1d = s1c + s1c;
+        int s1e = s1d + s1d;
+        int s1f = s1e + s1e;
+        int s1g = s1f + s1d + s1a;
+        int s1 = t0 - (s1g / 100000);
+        int s2a = s1 + s1;
+        int s2b = s2a + s2a;
+        int s2c = s2b + s2b;
+        int s2d = s2c + s2c;
+        int s2e = s2d + s2d;
+        int s2f = s2e + s2e;
+        int s2g = s2f + s2d + s2a;
+        int s2 = s1 - (s2g / 100000);
+        int s3a = s2 + s2;
+        int s3b = s3a + s3a;
+        int s3c = s3b + s3b;
+        int s3d = s3c + s3c;
+        int s3e = s3d + s3d;
+        int s3f = s3e + s3e;
+        int s3g = s3f + s3d + s3a;
+        int s3 = s2 - (s3g / 100000);
+        if (k == 0) {
+            verify newTarget == t0;
+        }
+        if (k == 1) {
+            verify newTarget == s1;
+        }
+        if (k == 2) {
+            verify newTarget == s2;
+        }
+        if (k == 3) {
+            verify newTarget == s3;
+        }
+
+        // Successor C': fixed 28B prefix (sibling hole = hash160(M'
+        // BODY — bodies are known before prefixes, so no hash cycle)
+        // + body (10B state + 33B shell push + shell-covered code).
+        ([byte] pfxC, [byte] bodyC) = nextCRedeem @ 28;
+        (_, [byte] sibBodyC) = nextMRedeem @ 28;
+        verify pfxC == (0xc0009d51c7a914 . hash160(sibBodyC) . 0x88);
+
+        ([byte] preS, [byte] restS) = bodyC @ 55;
+        ([byte] stateW, [byte] afterState) = restS @ 10;
+        ([byte] hashPushW, [byte] codeW) = afterState @ 33;
+        verify stateW == (0x04 . num2bin(newDay, 4) . 0x04 . num2bin(newTarget, 4));
+        verify hashPushW == (0x20 . bodyShellHash);
+        verify sha256(preS . codeW) == Sha256(bodyShellHash);
+
+        [byte] wldf =
+            0x574c4446 .
+            0x03 .
+            num2bin(newDay, 4) .
+            num2bin(newTarget, 4) .
+            num2bin(locktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x02;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wldf), 1) .
+            wldf .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextCRedeem) . 0x87;
+        [byte] out3 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextMRedeem) . 0x87;
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+        verify hash256(out0 . out1 . out2 . out3) == Sha256(hashOutputs);
+    }
+}

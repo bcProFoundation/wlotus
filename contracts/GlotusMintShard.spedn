@@ -1,0 +1,98 @@
+// GlotusMintShard — two-shard Ergon-δ MINT shard (M), mint-only v1.
+//
+// Bakes (tipDay, tipTarget) for head-uniformity with C (not read: M
+// derives nothing). Checks PoW against witness (newDay, newTarget),
+// pins the full 4-output set byte-identical to C, and verifies its
+// successor M' byte-exact. (newDay, newTarget) are bound to C's
+// derived values through identical output pins — any mismatch makes
+// the tx unsatisfiable. Sibling pin (index 1, sibling C at index 0)
+// hand-spliced by TS; see src/covenant/twoShardScript.ts.
+
+contract GlotusMintShard(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    [byte;4] genesisUnixLe,
+    [byte;4] daySecondsLe,
+    [byte;4] genesisTargetLe,
+    [byte;4] tipDayLe,
+    [byte;4] tipTargetLe,
+    [byte;32] bodyShellHash
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        int newDay,
+        int newTarget,
+        [byte] preimage,
+        [byte] nextCRedeem,
+        [byte] nextMRedeem
+    ) {
+        int genesisTarget = bin2num(genesisTargetLe);
+        int tipTarget = bin2num(tipTargetLe);
+        verify tipTarget <= genesisTarget;
+        verify genesisTarget <= 16777216;
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        ([byte] head, _) = solhash @ 4;
+        verify bin2num(head) >= 0;
+        verify bin2num(head) < newTarget;
+
+        // Locktime is read (not derived from): out0 must announce the
+        // same locktime C pins, or the output pins disagree.
+        (_, [byte] tail8) = preimage @ (size(preimage) - 8);
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+
+        // Successor M': fixed 28B prefix (sibling hole = hash160(C'
+        // BODY — bodies are known before prefixes, so no hash cycle)
+        // + body (10B state + 33B shell push + shell-covered code).
+        ([byte] pfxM, [byte] bodyM) = nextMRedeem @ 28;
+        (_, [byte] sibBodyM) = nextCRedeem @ 28;
+        verify pfxM == (0xc0519d00c7a914 . hash160(sibBodyM) . 0x88);
+
+        ([byte] preS, [byte] restS) = bodyM @ 55;
+        ([byte] stateW, [byte] afterState) = restS @ 10;
+        ([byte] hashPushW, [byte] codeW) = afterState @ 33;
+        verify stateW == (0x04 . num2bin(newDay, 4) . 0x04 . num2bin(newTarget, 4));
+        verify hashPushW == (0x20 . bodyShellHash);
+        verify sha256(preS . codeW) == Sha256(bodyShellHash);
+
+        [byte] wldf =
+            0x574c4446 .
+            0x03 .
+            num2bin(newDay, 4) .
+            num2bin(newTarget, 4) .
+            num2bin(locktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x02;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            num2bin(size(wldf), 1) .
+            wldf .
+            num2bin(size(mintSection), 1) .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . num2bin(size(opReturnScript), 1) . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextCRedeem) . 0x87;
+        [byte] out3 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextMRedeem) . 0x87;
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, _) = tail40 @ 32;
+        verify hash256(out0 . out1 . out2 . out3) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}
