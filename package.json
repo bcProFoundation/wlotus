@@ -34,6 +34,7 @@
     "sim-family-econ": "tsx scripts/sim-family-econ.ts",
     "sim-grand-econ": "tsx scripts/sim-grand-econ.ts",
     "sim-free-econ": "tsx scripts/sim-free-econ.ts",
+    "sim-deploy-econ": "tsx scripts/sim-deploy-econ.ts",
     "dryrun-twoshard-tx": "tsx scripts/dryrun-twoshard-tx.ts",
     "create-twoshard-token": "tsx scripts/create-twoshard-token.ts",
     "mine-twoshard-once": "tsx scripts/mine-twoshard-once.ts",
