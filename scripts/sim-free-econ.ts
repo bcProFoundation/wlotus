@@ -20,11 +20,11 @@
  *     (patience = flood duration; the well-posed cobweb).
  * C6: sustained 10x base surge 30d — thin rents, large stay grand
  *     (absolute-$ defense), stable segmentation (not homogenizing).
- * C7: 8y calm — anchor holds both tiers, inclusion preserved.
+ * C7: 18y calm — anchor holds both tiers, inclusion preserved.
  * C8: C7 rotation BANNED (capacity-sufficient genesis) — base
  *     concentrates (large-only, $1 holds: treadmill = concentration,
- *     not inflation) while grand DIES (~6y, Wc crosses large float:
- *     rotation = float relief; static-float caveat).
+ *     not inflation) while grand DIES (mid-teens at 12%/yr δ, Wc crosses
+ *     large float: rotation = float relief; static-float caveat).
  *
  * Pure simulation (deterministic, no RNG). No chain, no sats.
  */
@@ -140,15 +140,15 @@ const SCENARIOS: Scenario[] = [
     ...POPS,
   },
   {
-    name: 'C7 8y calm (anchor holds, inclusion kept)',
-    slots: 8 * YEAR,
+    name: 'C7 18y calm (anchor holds, inclusion kept)',
+    slots: 18 * YEAR,
     demandUsd: { base: flat(100), grand: flat(1000) },
     genesisBatons: GENESIS,
     ...POPS,
   },
   {
     name: 'C8 C7 rotation BANNED (base concentrates, grand dies)',
-    slots: 8 * YEAR,
+    slots: 18 * YEAR,
     demandUsd: { base: flat(100), grand: flat(1000) },
     genesisBatons: { base: 112, grand: 1 },
     allowFreshClones: false,

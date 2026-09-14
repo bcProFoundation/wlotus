@@ -3,7 +3,8 @@
  *
  * Designer spec (no peg machinery): ELOTUS and GLOTUS are INDEPENDENT
  * PoW monies. ELOTUS: low starting diff (59-bit), ~$0.25/block to
- * produce, lower rewards, daily delta adjustments. GLOTUS: 1000x
+ * produce, lower rewards, 12%/yr DIV-δ (v5 covenant: m − m//463784,
+ * one step per block). GLOTUS: 1000x
  * harder, ~$250/block, grand rewards. Price follows cost PER TIER
  * via elastic supply; the GLOTUS/ELOTUS ratio FLOATS (no par, no
  * spill, no gating — tiers compete freely). Energy share 25%
@@ -55,8 +56,8 @@
 import {
   energyPerEntrant,
   feeUsd,
-  microStep,
 } from './pacingEcon.js';
+import { microStepV5 } from '../covenant/singleShardDeltaMathV5.js';
 
 export type Tier5 = 'base' | 'grand';
 
@@ -405,7 +406,7 @@ export function runFreeSim(p: FreeParams): FreeResult {
           Math.round(tok.blocks / Math.max(1, tok.batons)),
         );
         for (let s = 0; s < steps && tok.blocks > 0; s++)
-          tok.target = microStep(tok.target);
+          tok.target = microStepV5(tok.target);
         tok.blocks = 0;
         tok.batons = 0;
       };

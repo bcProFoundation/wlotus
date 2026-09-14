@@ -117,9 +117,9 @@ describe('free-econ segmentation and treadmill', () => {
     expect(r.byTier.grand.avgSmallM).toBe(0);
   });
 
-  test('8y rotation ON: anchor holds, inclusion kept (C7)', () => {
+  test('18y rotation ON: anchor holds, inclusion kept (C7)', () => {
     const r = runFreeSim({
-      slots: 8 * 365 * DAY,
+      slots: 18 * 365 * DAY,
       demandUsd: { base: () => 100, grand: () => 1000 },
       genesisBatons: GENESIS,
       ...POPS,
@@ -129,9 +129,9 @@ describe('free-econ segmentation and treadmill', () => {
     expect(r.byTier.base.endSmallM).toBeGreaterThan(50);
   });
 
-  test('8y rotation OFF: prices flat, small priced out (C8)', () => {
+  test('18y rotation OFF: prices flat, small priced out (C8)', () => {
     const r = runFreeSim({
-      slots: 8 * 365 * DAY,
+      slots: 18 * 365 * DAY,
       demandUsd: { base: () => 100, grand: () => 1000 },
       genesisBatons: { base: 112, grand: 1 },
       allowFreshClones: false,
@@ -142,8 +142,8 @@ describe('free-econ segmentation and treadmill', () => {
     // ...while M thins and small miners exit base.
     expect(r.byTier.base.endSmallM).toBe(0);
     expect(r.byTier.base.avgEntrants).toBeLessThan(140);
-    // Grand DIES rotation-off: Wc crosses large float (~6y at spec
-    // delta), nobody can float $18 races — no market, no price.
+    // Grand DIES rotation-off: Wc crosses large float (mid-teens at 12%/yr
+    // delta), nobody can float the races — no market, no price.
     // Rotation = float relief (contrast C7 alive). Static-float
     // caveat: real floats grow with reinvestment (deferred).
     expect(r.byTier.grand.endBlocks).toBe(0);
