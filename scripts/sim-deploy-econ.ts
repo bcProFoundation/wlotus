@@ -8,30 +8,37 @@
  * D/design; v6 deploys races via profit-seeking deployers (clone vs
  * same-token baton, 28/token), staffs the bench with λ-lag, clears at
  * P = D/active (R-capped, pent-up patience), steps active races 1 δ
- * per block (dormant frozen). MC = $0.00667/entrant (+$0.00012 fee).
+ * per block (dormant frozen). LOTTERY PoW: MC = E+o+F = $0.2551/solo
+ * (solo burns the FULL $0.25 block energy - all-pay v6.0's $0.0067
+ * terminal was the sequential-puzzle error; the covenant grinds
+ * nonces = lottery). Smalls are pool-dependent (viable iff P>= $0.375).
  *
- * V1a: myopic slide - THE THEOREM ($1 -> MC+F in 9.4d, n -> D/MC,
- *     all-solo, dor=0, pinned flat). V1b: forward self-arrests $0.019
- *     (thin races staff fast - short W demands high flow). V1c: sticky
- *     identical (birth-activation bypasses fill order).
- * V2a: myopic + $5 fee - slides anyway, burns $2.6K (naive).
- * V2b/c: forward clone-walls $1.01/$0.51 (L=10) - pins quantize to
- *     $0.89/$0.45 (batons fill the open token past the wall: <=28
- *     token-overrun; marginal-baton correct). V2d: $0.50 adaptive
- *     pins $0.20 (W=2 marginal). THE $1 PIN = fee c with c/L ~ $1.
- * V3a/b: $1 fee, lam 0.9 vs 0.1 - blockade $0.91 vs pin $0.14 (W 1.0
- *     vs 14.4: PERVERSE - slow entry lengthens obscurity 14x).
- * V4a/b: myopic royalty 25%/90% - bypassed (both -> MC exactly;
- *     issuers collect $108K/$389K without pinning).
- * V5: 28-cap + $5/$0.05 - 8 full tokens, clone-wall pin $0.45.
- * V6: G=1 + Dx8/yr - P bottoms then RISES (growth outruns G).
- * V7: Wc0=$1 - $1-pin HOLDS 15d then treadmill-breach collapses to
- *     large-bench-bound $0.05 + idle (solo-pin REFUTED; trilemma).
- * V8: grand x1000 - $1000 -> $6.62 solo (scale-invariant).
- * V9a: uniform 45d - freeze $0.0331 FLAT (coordination failure pins
- *     ABOVE MC (thin-spread starvation); n -> 65K corpses).
- * V9b: H=0 - violent slide (idle 119, mean $0.20) but MC late (H =
- *     slide-smoothness + n-finiteness, not terminal selection).
+ * V1a: myopic slide - THE THEOREM ($1 -> $0.2551 in 0.2d, n*=392
+ *     large-only solos, G-overshoot crash-settles (idle 13, 1.3K
+ *     corpse-overhang), smalls excluded (endSmallM=0)). V1b: forward
+ *     + $1 fee self-arrests $0.4464 (8-token boundary). V1c: sticky
+ *     identical (order-robust).
+ * V2a: myopic + $5 clone fee - slides anyway, burns $288 (57
+ *     token-boundary walls; naive). V2b/c: $7.50/$3.75 walls (L=10)
+ *     pin $0.89/$0.60 (token-boundary quantized, 4/6 full tokens).
+ *     V2d: $1 adaptive pins $0.32 (11-token boundary, W=10).
+ *     THE $1 PIN = fee c with c/L ~ $0.745.
+ * V3a/b: $1 fee, lam 0.9 vs 0.1 - blockade $0.91 (W=1) vs pin $0.45
+ *     (W=10: PERVERSE - slow entry lengthens obscurity 10x).
+ * V4a/b: royalty 25%/90% - bypassed (E-floor churn-cycle $0.25, o
+ *     squeezed to zero (25%); H-held $0.2545 (90%); issuers extract
+ *     $107K/$389K without pinning).
+ * V5: 28-cap + $5/$0.05 - 5 full tokens, clone-wall pin $0.71.
+ * V6: G=1 + Dx8/yr - growth ABSORBED into chop around $0.255
+ *     (deployment-elastic; n* too small to outrun).
+ * V7: E0=$0.99 - NO pin (born-empty m0=0 + knife-edge band
+ *     ($0.995,$1.00) births-only -> breach-cycles; trilemma).
+ * V8: grand x1000 - permanent thin-chop (n*~=4, G-coarse,
+ *     mean $186 sub-MC thin-discount; scale breaks smoothness).
+ * V9a: uniform 45d - STARVATION-CYCLES ($0.007 <-> $0.45, idle 23%;
+ *     lottery's 38x-wider E-breach-band evacuates (no freeze)).
+ * V9b: H=0 - PERMANENT VIOLENCE (never settles; H NECESSARY for any
+ *     pin (absorbs G-overshoot; without: evacuate-cycles forever)).
  *
  * Pure simulation (deterministic, no RNG). No chain, no sats.
  */
@@ -59,22 +66,22 @@ const POPS = { smallMiners: 15000, largeMiners: 2000 };
 
 const SCENARIOS: Scenario[] = [
   { name: 'V1a myopic slide (theorem demo)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', ...POPS },
-  { name: 'V1b forward slide (adaptive W)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', ...POPS },
+  { name: 'V1b forward + $1 fee (arrest $0.45)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 1, batonCostUsd: 1, ...POPS },
   { name: 'V1c sticky entry (order-robust)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', entryMode: 'sticky', ...POPS },
-  { name: 'V2a myopic + $5 fee (naive burns)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', cloneCostUsd: 5, ...POPS },
-  { name: 'V2b clone-wall $1.01 (quantized $0.89)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 5, batonCostUsd: 5, obscurityWindow: 10, initialRaces: 56, deploysPerSlot: 2, ...POPS },
-  { name: 'V2c clone-wall $0.51 (quantized $0.45)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 2.5, batonCostUsd: 2.5, obscurityWindow: 10, initialRaces: 56, deploysPerSlot: 2, ...POPS },
-  { name: 'V2d uniform $0.50 fee adaptive (marginal pin?)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 0.5, batonCostUsd: 0.5, ...POPS },
-  { name: 'V3a fast entry λ=0.9 + $1 fee', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 1, batonCostUsd: 1, entryLag: 0.9, ...POPS },
-  { name: 'V3b slow entry λ=0.1 + $1 fee', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 1, batonCostUsd: 1, entryLag: 0.1, ...POPS },
-  { name: 'V4a myopic royalty 25% (bypass?)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', royaltyRate: 0.25, ...POPS },
-  { name: 'V4b myopic royalty 90% (absurd)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', royaltyRate: 0.9, ...POPS },
-  { name: 'V5 28-cap + $5 clone/$0.05 baton', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 5, batonCostUsd: 0.05, ...POPS },
-  { name: 'V6 G=1 + Dx8/yr 120d (growth wins?)', slots: 120 * DAY, demandUsd: slot => 100 * 8 ** (slot / YEAR), foresight: 'myopic-flow', deploysPerSlot: 1, ...POPS },
-  { name: 'V7 Wc0=$1 solo-pin (trilemma)', slots: 90 * DAY, demandUsd: flat(100), foresight: 'forward', energyShare: 0.99, opportunityUsd: 0.01, ...POPS },
-  { name: 'V8 grand scale (x1000 invariance)', slots: 60 * DAY, demandUsd: flat(1000), foresight: 'myopic-flow', scale: 1000, ...POPS },
-  { name: 'V9a uniform 45d (freeze stable?)', slots: 45 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', entryMode: 'uniform', ...POPS },
-  { name: 'V9b H=0 knife-edge (violent slide?)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', exitHysteresis: 0, ...POPS },
+  { name: 'V2a myopic + $5 clone fee (burns $288)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', cloneCostUsd: 5, ...POPS },
+  { name: 'V2b $7.50 wall (quantized $0.89)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 5, batonCostUsd: 2.5, obscurityWindow: 10, initialRaces: 50, deploysPerSlot: 2, ...POPS },
+  { name: 'V2c $3.75 wall (quantized $0.60)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 2.5, batonCostUsd: 1.25, obscurityWindow: 10, initialRaces: 50, deploysPerSlot: 2, ...POPS },
+  { name: 'V2d $1 adaptive (boundary $0.32)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 0.5, batonCostUsd: 0.5, ...POPS },
+  { name: 'V3a fast λ=0.9 + $1 (blockade $0.91)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 1, batonCostUsd: 1, entryLag: 0.9, ...POPS },
+  { name: 'V3b slow λ=0.1 + $1 (deep $0.45)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 1, batonCostUsd: 1, entryLag: 0.1, ...POPS },
+  { name: 'V4a royalty 25% (E-floor cycle)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', royaltyRate: 0.25, ...POPS },
+  { name: 'V4b royalty 90% (bypass $0.2545)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', royaltyRate: 0.9, ...POPS },
+  { name: 'V5 28-cap + $5/$0.05 (pin $0.71)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'forward', cloneCostUsd: 5, batonCostUsd: 0.05, ...POPS },
+  { name: 'V6 G=1 + Dx8/yr (absorbed)', slots: 120 * DAY, demandUsd: slot => 100 * 8 ** (slot / YEAR), foresight: 'myopic-flow', deploysPerSlot: 1, ...POPS },
+  { name: 'V7 E0=$1 (knife-edge cycle)', slots: 90 * DAY, demandUsd: flat(100), foresight: 'forward', blockEnergyUsd: 0.99, opportunityUsd: 0.01, ...POPS },
+  { name: 'V8 grand (thin-chop n*=4)', slots: 60 * DAY, demandUsd: flat(1000), foresight: 'myopic-flow', scale: 1000, ...POPS },
+  { name: 'V9a uniform 45d (starvation cycles)', slots: 45 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', entryMode: 'uniform', ...POPS },
+  { name: 'V9b H=0 (permanent violence)', slots: 30 * DAY, demandUsd: flat(100), foresight: 'myopic-flow', exitHysteresis: 0, ...POPS },
 ];
 
 function fmt(n: number, digits = 0): string {

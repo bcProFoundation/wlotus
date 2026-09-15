@@ -1,228 +1,293 @@
-/**
- * Baton-deployment game tests (ELOTUS v6) — fast, small-bench configs.
- *
- * Base MC = Wc0 + o = $0.006667/entrant (+$0.0001225 fee); solo-viable
- * P = MC + F = $0.006789. D=$10 runs slide n0=10 -> ~1,470 in ~150
- * slots (G=10) — full theorem dynamics in <1s each.
- */
 import { runDeploySim } from '../src/sim/deployEcon.js';
 
-const MC = 0.25 * 0.005 / 0.75 + 0.005; // $0.006667
-const FEE = (1750 / 100) * 0.000007; // $0.0001225
-const SOLO = MC + FEE; // $0.006789
-const POPS = { smallMiners: 1500, largeMiners: 500 }; // bench 2000
-const flat = (v: number) => () => v;
+const DAY = 144;
+const flat =
+  (v: number): ((slot: number) => number) =>
+  () =>
+    v;
+// Lottery solo cost: E0 + o + F = 0.25 + 0.005 + 1750*1e-8/… (fee dust).
+const SOLO = 0.25 + 0.005 + 0.0001225;
+const POPS = { smallMiners: 15000, largeMiners: 2000 };
 
-describe('theorem terminal (myopic, D=$10)', () => {
-  const r = runDeploySim({
-    slots: 400,
-    demandUsd: flat(10),
-    foresight: 'myopic-flow',
-    ...POPS,
+describe('theorem terminal (lottery: slide to solo-cost $0.2551)', () => {
+  it('pins P at E+o+F with large-only solos + corpse overhang', () => {
+    const r = runDeploySim({
+      slots: 30 * DAY,
+      demandUsd: flat(100),
+      foresight: 'myopic-flow',
+      ...POPS,
+    });
+    expect(r.priceEnd).toBeCloseTo(SOLO, 3);
+    expect(r.activeEnd).toBe(392); // n* = D/MC
+    expect(r.deployed).toBeGreaterThan(1500); // G-overshoot corpses
+    expect(r.deployed).toBeLessThan(2000);
+    expect(r.dormantEnd).toBeGreaterThan(1000);
+    expect(r.idleSlots).toBeGreaterThan(0); // crash-settle idles
+    expect(r.endSmallM).toBe(0); // smalls locked out below $0.375
+    expect(r.endLargeM).toBe(1); // large-only solos
+    expect(r.slideSlots).toBeLessThan(50); // 0.2d slide
+    // Flat pin: last-12-sample path constant at SOLO.
+    const tail = r.pricePath.filter((_, i) => i % 360 === 0).slice(-6);
+    for (const p of tail) expect(p).toBeCloseTo(SOLO, 3);
   });
-  it('slides to MC+F and pins (all-solo, no dormant)', () => {
-    expect(r.priceEnd).toBeCloseTo(SOLO, 4);
-    expect(r.minPrice).toBeCloseTo(SOLO, 4);
-    expect(r.endSmallM + r.endLargeM).toBeCloseTo(1, 1);
+});
+
+describe('coarse quantization chatters (G/n* ~ 1 never settles)', () => {
+  it('D=$10/G=10 chatters sub-MC instead of pinning', () => {
+    const r = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'myopic-flow',
+      ...POPS,
+    });
+    expect(r.meanPrice).toBeLessThan(SOLO); // chatter-discount
+    expect(r.idleSlots).toBeGreaterThan(0);
+    expect(r.dormantEnd).toBeGreaterThan(0);
+    expect(r.deployed).toBeGreaterThan(100);
+  });
+});
+
+describe('forward self-arrest ($1 fee, D=$10)', () => {
+  it('pins at $0.333 marginal (no boundary, large-only)', () => {
+    const r = runDeploySim({
+      slots: 600,
+      demandUsd: flat(10),
+      foresight: 'forward',
+      cloneCostUsd: 1,
+      batonCostUsd: 1,
+      ...POPS,
+    });
+    expect(r.priceEnd).toBeCloseTo(1 / 3, 2);
+    expect(r.deployed).toBeGreaterThanOrEqual(28);
+    expect(r.deployed).toBeLessThanOrEqual(32);
     expect(r.dormantEnd).toBe(0);
-    expect(r.idleSlots).toBe(0);
-  });
-  it('freezes n at D/MC (deployment stops, flow <= 0)', () => {
-    expect(r.deployed).toBeGreaterThan(1300);
-    expect(r.deployed).toBeLessThan(1650); // D/MC = 1500
-    expect(r.activeEnd).toBe(r.deployed);
-    // Pinned: last 100 slots within 1% of SOLO (G-batch quantization:
-    // profitable slots deploy all G=10 (0.7% of n*), then knife-edge
-    // stop — pins quantize to G-batches, like V2b/c token-overrun).
-    const tail = r.pricePath.slice(-100);
-    for (const p of tail) expect(Math.abs(p - SOLO) / SOLO).toBeLessThan(0.01);
-  });
-  it('never exceeds 28 batons per token', () => {
-    expect(r.maxBatons).toBeLessThanOrEqual(28);
-    expect(r.tokens).toBeGreaterThanOrEqual(Math.ceil(r.deployed / 28));
+    expect(r.endSmallM).toBe(0); // E/16 > small float: gated
+    expect(r.windowEnd).toBeGreaterThan(7);
+    expect(r.windowEnd).toBeLessThan(14);
   });
 });
 
-describe('bench-bound (shallow bench pins above MC)', () => {
-  const r = runDeploySim({
-    slots: 2000,
-    demandUsd: flat(100),
-    foresight: 'myopic-flow',
-    smallMiners: 500,
-    largeMiners: 100, // bench 600 < D/MC
-  });
-  it('holds P at D/bench (anchor survives while bench shallow)', () => {
-    expect(r.priceEnd).toBeCloseTo(100 / 600, 1); // $0.167
-    expect(r.activeEnd).toBeLessThanOrEqual(600);
-    expect(r.activeEnd).toBeGreaterThan(500);
-  });
-  it('keeps deploying (flow > 0 forever above MC)', () => {
-    expect(r.deployed).toBeGreaterThan(15000); // G-capped, never stops
-    expect(r.dormantEnd).toBeGreaterThan(14000); // swap corpses pile
-  });
-});
-
-describe('forward self-arrest (adaptive window)', () => {
-  const r = runDeploySim({
-    slots: 400,
-    demandUsd: flat(10),
-    foresight: 'forward',
-    ...POPS,
-  });
-  it('arrests ABOVE MC (short windows demand high flow)', () => {
-    expect(r.priceEnd).toBeGreaterThan(SOLO * 1.2);
-    expect(r.priceEnd).toBeLessThan(0.05); // but it did slide from $1
-    expect(r.deployed).toBeLessThan(1300); // stopped early
-    expect(r.windowEnd).toBeLessThan(6); // thin races staff fast
+describe('forward with default fee = myopic (self-arrest invisible)', () => {
+  it('matches the myopic chatter exactly (c/L negligible vs $0.255)', () => {
+    const a = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'myopic-flow',
+      ...POPS,
+    });
+    const b = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'forward',
+      ...POPS,
+    });
+    expect(b.deployed).toBe(a.deployed);
+    expect(b.priceEnd).toBeCloseTo(a.priceEnd, 6);
   });
 });
 
-describe('creation-fee pin (forward, fixed L=10)', () => {
-  const r = runDeploySim({
-    slots: 400,
-    demandUsd: flat(10),
-    foresight: 'forward',
-    cloneCostUsd: 5,
-    batonCostUsd: 5,
-    obscurityWindow: 10,
-    ...POPS,
-  });
-  it('pins at MC + c/L (marginal deployment)', () => {
-    expect(r.priceEnd).toBeCloseTo(SOLO + 0.5, 1); // $0.507
-    expect(r.deployed).toBeGreaterThan(10);
-    expect(r.deployed).toBeLessThan(40); // n* = D/0.51 = 20
-  });
-});
-
-describe('myopic ignores fees (capital destruction)', () => {
-  const r = runDeploySim({
-    slots: 400,
-    demandUsd: flat(10),
-    foresight: 'myopic-flow',
-    cloneCostUsd: 5,
-    batonCostUsd: 5,
-    ...POPS,
-  });
-  it('slides to MC anyway, burning fees', () => {
-    expect(r.priceEnd).toBeCloseTo(SOLO, 4);
-    expect(r.deployCostUsd).toBeGreaterThan(1000); // ~1470 x $5
+describe('creation-fee pin, fine-G (D=$10, $0.50 uniform, L=10)', () => {
+  it('pins at baton-marginal $0.303 (G=1 settles, no corpses)', () => {
+    const r = runDeploySim({
+      slots: 600,
+      demandUsd: flat(10),
+      foresight: 'forward',
+      cloneCostUsd: 0.5,
+      batonCostUsd: 0.5,
+      obscurityWindow: 10,
+      deploysPerSlot: 1,
+      ...POPS,
+    });
+    expect(r.priceEnd).toBeCloseTo(0.303, 2);
+    expect(r.deployed).toBeGreaterThanOrEqual(30);
+    expect(r.deployed).toBeLessThanOrEqual(36);
+    expect(r.dormantEnd).toBe(0);
+    expect(r.endSmallM).toBe(0);
   });
 });
 
-describe('royalty bypass (myopic + 25% royalty)', () => {
-  const r = runDeploySim({
-    slots: 400,
-    demandUsd: flat(10),
-    foresight: 'myopic-flow',
-    royaltyRate: 0.25,
-    ...POPS,
+describe('fee pin, full scale (V2d: $1 adaptive -> $0.3247 boundary)', () => {
+  it('pins at the 11-token boundary (forward, baton-marginal)', () => {
+    const r = runDeploySim({
+      slots: 30 * DAY,
+      demandUsd: flat(100),
+      foresight: 'forward',
+      cloneCostUsd: 0.5,
+      batonCostUsd: 0.5,
+      ...POPS,
+    });
+    expect(r.priceEnd).toBeCloseTo(0.3247, 3);
+    expect(r.deployed).toBeGreaterThanOrEqual(300);
+    expect(r.deployed).toBeLessThanOrEqual(320);
+    expect(r.dormantEnd).toBe(0);
   });
-  it('royalty does not pin (self-miners pay themselves)', () => {
-    expect(r.priceEnd).toBeCloseTo(SOLO, 4);
-    expect(r.issuerProfitUsd).toBeGreaterThan(0); // transfer happened
+});
+
+describe('myopic ignores fees (uniform $5, D=$10)', () => {
+  it('chatters identically to no-fee while burning $2.3K', () => {
+    const free = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'myopic-flow',
+      ...POPS,
+    });
+    const fee = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'myopic-flow',
+      cloneCostUsd: 5,
+      batonCostUsd: 5,
+      ...POPS,
+    });
+    expect(fee.priceEnd).toBeCloseTo(free.priceEnd, 6);
+    expect(fee.deployed).toBe(free.deployed);
+    expect(fee.deployCostUsd).toBeGreaterThan(2000);
+  });
+});
+
+describe('royalty bypass, full scale (V4b: 90% -> $0.2545)', () => {
+  it('H-holds at MC while the issuer extracts $389K', () => {
+    const r = runDeploySim({
+      slots: 30 * DAY,
+      demandUsd: flat(100),
+      foresight: 'myopic-flow',
+      royaltyRate: 0.9,
+      ...POPS,
+    });
+    expect(r.priceEnd).toBeCloseTo(0.2545, 2);
+    expect(r.issuerProfitUsd).toBeGreaterThan(300000);
+    expect(r.idleSlots).toBeLessThan(50);
+  });
+});
+
+describe('royalty chatter, coarse (25%, D=$10)', () => {
+  it('bypasses into sub-MC chatter (issuer still extracts)', () => {
+    const r = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'myopic-flow',
+      royaltyRate: 0.25,
+      ...POPS,
+    });
+    expect(r.meanPrice).toBeLessThan(SOLO);
+    expect(r.issuerProfitUsd).toBeGreaterThan(0);
+    expect(r.idleSlots).toBeGreaterThan(0);
+  });
+});
+
+describe('bench-bound swap-freeze (200 bodies, D=$100)', () => {
+  it('freezes early at $0.66 (path-dependent, NOT D/bench)', () => {
+    const r = runDeploySim({
+      slots: 600,
+      demandUsd: flat(100),
+      foresight: 'myopic-flow',
+      smallMiners: 150,
+      largeMiners: 50,
+    });
+    expect(r.priceEnd).toBeCloseTo(0.6623, 1);
+    expect(r.activeEnd).toBeGreaterThanOrEqual(140);
+    expect(r.activeEnd).toBeLessThanOrEqual(160);
+    // n runs away G-capped (swap-churn piles treadmill-drained corpses).
+    expect(r.deployed).toBeGreaterThan(5000);
+    expect(r.endSmallM).toBeGreaterThan(0); // gated-in but thin-stuck
+    expect(r.slideSlots).toBe(-1); // never nears MC
+  });
+});
+
+describe('dormant overhang (G=0: crash, idle, V-recovery)', () => {
+  it('idles through the crash and refills to M*=149 within 10 slots', () => {
+    const r = runDeploySim({
+      slots: 400,
+      demandUsd: s => (s <= 100 ? 10 : s <= 200 ? 0.01 : 10),
+      foresight: 'myopic-flow',
+      deploysPerSlot: 0,
+      patience: 0,
+      ...POPS,
+    });
+    expect(r.deployed).toBe(10);
+    expect(r.minPrice).toBeLessThan(0.01);
+    expect(r.idleSlots).toBeGreaterThan(80);
+    expect(r.activePath[209]).toBe(10); // refilled by slot 210
+    expect(r.activeEnd).toBe(10);
+    expect(r.priceEnd).toBeCloseTo(1, 6);
+    expect(r.endSmallM + r.endLargeM).toBeCloseTo(149, 0);
+  });
+});
+
+describe('no-deploy into nothing (D=0)', () => {
+  it('never deploys (flow deeply negative)', () => {
+    const r = runDeploySim({
+      slots: 100,
+      demandUsd: flat(0),
+      foresight: 'myopic-flow',
+      ...POPS,
+    });
+    expect(r.deployed).toBe(1);
+    expect(r.idleSlots).toBe(100);
+    expect(r.priceEnd).toBe(0);
+  });
+});
+
+describe('conservation + determinism', () => {
+  it('blocks/issuance consistent and runs bit-identical', () => {
+    const mk = () =>
+      runDeploySim({
+        slots: 400,
+        demandUsd: flat(10),
+        foresight: 'myopic-flow',
+        ...POPS,
+      });
+    const a = mk();
+    const b = mk();
+    expect(a.blocks).toBe(a.issuanceNative / 100);
+    expect(b.priceEnd).toBe(a.priceEnd);
+    expect(b.deployed).toBe(a.deployed);
+    expect(b.energyUsd).toBe(a.energyUsd);
   });
 });
 
 describe('stickiness (deployed never falls)', () => {
-  const r = runDeploySim({
-    slots: 400,
-    demandUsd: flat(10),
-    foresight: 'myopic-flow',
-    ...POPS,
-  });
-  it('deployedPath is monotone non-decreasing', () => {
+  it('deployedPath monotone non-decreasing through chatter', () => {
+    const r = runDeploySim({
+      slots: 400,
+      demandUsd: flat(10),
+      foresight: 'myopic-flow',
+      ...POPS,
+    });
     for (let i = 1; i < r.deployedPath.length; i++)
       expect(r.deployedPath[i]).toBeGreaterThanOrEqual(r.deployedPath[i - 1]);
   });
 });
 
-describe('dormant overhang (G=0 crash + recovery, no deployment)', () => {
-  const r = runDeploySim({
-    slots: 300,
-    demandUsd: slot => (slot <= 100 ? 10 : slot <= 200 ? 0.01 : 10),
-    foresight: 'myopic-flow',
-    deploysPerSlot: 0, // re-entry only
-    patience: 0, // no pent-up backstop (clean crash)
-    ...POPS,
-  });
-  it('crashes dormant then reactivates without deploying', () => {
-    expect(r.deployed).toBe(10); // n0 frozen (G=0)
-    const crash = r.activePath.slice(100, 200);
-    expect(Math.min(...crash)).toBeLessThan(5); // evacuated
-    expect(r.activeEnd).toBe(10); // full reactivation
-    expect(r.priceEnd).toBeCloseTo(1, 1); // P = D/n back at $1
-    // Fast: back to full active within 30 slots of demand return.
-    expect(r.activePath[229]).toBe(10);
-  });
-});
-
-describe('no-deploy into nothing (D=0)', () => {
-  const r = runDeploySim({
-    slots: 100,
-    demandUsd: flat(0),
-    foresight: 'myopic-flow',
-    ...POPS,
-  });
-  it('never deploys into zero demand', () => {
-    expect(r.deployed).toBe(1);
-    expect(r.idleSlots).toBe(100);
-  });
-});
-
-describe('conservation + determinism', () => {
-  const params = {
-    slots: 200,
-    demandUsd: flat(10),
-    foresight: 'myopic-flow' as const,
-    ...POPS,
-  };
-  it('blocks == sum(activePath), issuance == 100x', () => {
-    const r = runDeploySim(params);
-    const sumActive = r.activePath.reduce((a, b) => a + b, 0);
-    expect(r.blocks).toBe(sumActive);
-    expect(r.issuanceNative).toBe(r.blocks * 100);
-  });
-  it('two runs are bit-identical', () => {
-    const a = runDeploySim(params);
-    const b = runDeploySim(params);
-    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
-  });
-});
-
-describe('Wc0=$1 solo-pin (trilemma, D=$10 small)', () => {
-  const r = runDeploySim({
-    slots: 30 * 144,
-    demandUsd: flat(10),
-    foresight: 'forward',
-    energyShare: 0.99,
-    opportunityUsd: 0.01,
-    ...POPS,
-  });
-  it('holds $1 ~15d (H-stickiness), excludes smalls', () => {
-    const early = r.pricePath.slice(0, 2000);
-    const mean = early.reduce((a, b) => a + b, 0) / early.length;
-    expect(mean).toBeCloseTo(1, 1);
-    expect(r.endSmallM).toBe(0); // float-locked out
-  });
-  it('treadmill-breach collapses it (idle + corpses)', () => {
-    expect(r.idleSlots).toBeGreaterThan(0);
+describe('V7 small (E0=$0.99: blockade with breach-episodes)', () => {
+  it('re-forms the $1 blockade, excludes smalls, banks corpses', () => {
+    const r = runDeploySim({
+      slots: 600,
+      demandUsd: flat(10),
+      foresight: 'forward',
+      blockEnergyUsd: 0.99,
+      opportunityUsd: 0.01,
+      ...POPS,
+    });
+    expect(r.priceEnd).toBeCloseTo(1, 6);
+    expect(r.endSmallM).toBe(0);
+    expect(r.idleSlots).toBeGreaterThan(0); // breach-episodes happened
     expect(r.dormantEnd).toBeGreaterThan(r.activeEnd);
   });
 });
 
-describe('grand scale-invariance (x1000)', () => {
-  const r = runDeploySim({
-    slots: 60 * 144,
-    demandUsd: flat(1000),
-    foresight: 'myopic-flow',
-    scale: 1000,
-    smallMiners: 15000,
-    largeMiners: 2000,
-  });
-  it('slides $1000 -> MCx1000, solo', () => {
-    expect(r.priceEnd).toBeCloseTo(MC * 1000, 0); // $6.62-6.67
-    expect(r.endSmallM + r.endLargeM).toBeCloseTo(1, 1);
-    expect(r.deployed).toBeGreaterThan(100);
-    expect(r.deployed).toBeLessThan(200); // n* = 1000/6.67 = 150
+describe('grand thin-chop (V8 15d: n*~=4 never settles)', () => {
+  it('churns sub-MC (thin-discount, no full idle, corpse pile)', () => {
+    const r = runDeploySim({
+      slots: 15 * DAY,
+      demandUsd: flat(1000),
+      foresight: 'myopic-flow',
+      scale: 1000,
+      ...POPS,
+    });
+    expect(r.meanPrice).toBeLessThan(255); // thin-discount
+    expect(r.activeEnd).toBeLessThan(30);
+    expect(r.deployed).toBeGreaterThan(1000);
+    expect(r.idleSlots).toBe(0); // partial chop, overhang cushions
   });
 });

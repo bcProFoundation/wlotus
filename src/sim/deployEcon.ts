@@ -7,50 +7,61 @@
  * grand runs — v5 showed tiers are independent; the race-count question
  * lives inside each tier).
  *
- * Actors: (1) DEPLOYERS — miners who create batons (fresh clones at
- * Wc0, or same-token batons sharing a treadmilled target, 28/token)
- * and solo-mine the new race; (2) ENTRANTS — the miner bench (small
- * float-locked + large mobile, v5 semantics) allocating across
- * deployed races with reaction lag λ. Races are STICKY on-chain
- * capital (the covenant has no remove-baton path): deployed count
- * never falls, but races go DORMANT (staff < 1 body, no block, no
- * treadmill step) and form a shadow-capacity overhang that re-enters
- * without deployment lag.
+ * LOTTERY PoW (corrected from all-pay v6.0): the covenant's
+ * nonce-grinding is a lottery — each race costs E_block in expected
+ * electricity per solution, SPLIT among entrants (a solo miner burns
+ * the FULL E_block, not a per-entrant slice). E0 = $0.25/block at
+ * genesis is PRIMITIVE (design + hardware mapping); o = $0.005/unit
+ * is hardware opportunity per hashrate-unit. M* = (P-F-E)/o (149 at
+ * $1 — coincides with all-pay AT the coordinated state, which is why
+ * v5 looked right; off-equilibrium solo diverges: $0.255 vs $0.0067).
+ * Energy/block is E_block ALWAYS (25% of $1 at design, 98% at the
+ * $0.255 terminal — the treadmill cost-pushes the terminal upward).
+ * Small miners are POOL-DEPENDENT (they can float E/M* in fat races
+ * but never E solo); grand needs 25+ large units per viable race.
+ *
+ * Actors: (1) DEPLOYERS — capitalized operators who create batons
+ * (fresh clones at E0, or same-token batons, 28/token) and solo-mine
+ * the new race at full E0 (float-exempt: deployment is capital, unit
+ * float gates opex ENTRY only); (2) ENTRANTS — the miner bench
+ * (small pool-dependent + large mobile) allocating across deployed
+ * races with reaction lag λ. Races are STICKY on-chain capital (the
+ * covenant has no remove-baton path): deployed count never falls,
+ * but races go DORMANT (staff < 1 body, no block, no treadmill step)
+ * and form a shadow-capacity overhang that re-enters without
+ * deployment lag.
  *
  * Deploy rules: myopic-flow (deploy iff current solo flow > 0, fees
  * sunk-ignored), myopic-payback (deploy iff one slot repays the
  * creation fee), forward (deploy iff flow x ADAPTIVE obscurity window
  * > fee — the window is MEASURED (trailing mean birth-to-full-staff
- * slots), not assumed, so entry lag endogenously lengthens deployer
- * horizons). Forward deployers SELF-ARREST above MC (thin races staff
+ * slots)). Forward deployers SELF-ARREST above MC (thin races staff
  * fast — short windows demand high flow — a pin, not a slide).
- * Entry ALLOCATION selects the staffing equilibrium:
- * 'chasing' (thin-first, frictionless) completes the slide to MC;
- * 'sticky' (standing-races-first, pool stickiness) sustains a
- * supra-MC friction premium (concentrated-pool equilibrium — same
- * zero-profit, fewer fatter races); 'uniform' (uncoordinated spread)
- * fragments into permanent death once n exceeds the bench. Clearing, reservation cap R, patience/pent-up, fees,
- * all-pay-full energy, and per-block microStepV5 treadmill are v5
- * accounting (exact here: 1 active block = 1 δ step, dormant frozen).
+ * Entry ALLOCATION ('chasing' thin-first (default) vs 'sticky'
+ * standing-first) does NOT select the terminal (both slide to MC —
+ * birth-activation bypasses fill order); 'uniform' thin-spread
+ * freezes ABOVE MC (coordination failure pins via starvation).
+ * Clearing, reservation cap R, patience/pent-up, fees, and exact
+ * per-block microStepV5 treadmill are v5 accounting (dormant frozen).
  *
  * THEORY BOX (what this rig adjudicates): with fixed-$ demand, free
- * deployment, free entry/exit, and sticky races, MC-per-entrant is the
- * UNIQUE stable rest point — entry/exit mean-reverts P to MC from
- * below (idle threat), deployment ratchets n up whenever P > MC from
- * above (obscurity rent: race n+1 solo-pays P-MC > 0). The $1 design
- * price is UNSTABLE without help. Candidate pins, tested as
- * scenarios: (a) creation fees pin at MC + c/L (forward deployers
- * only — naive deployers sunk-ignore them); (b) issuer ROYALTIES do
- * NOT pin (self-mining deployers pay themselves — bypass); (c) high
- * Wc0 ($1/entrant) pins at $1 via a knife-edge SOLO equilibrium but
- * excludes small miners (float-locked) — the TRILEMMA: $1 anchor +
- * small inclusion + permissionless deployment, pick two. Entry lag is
- * PERVERSE: slow staffing lengthens obscurity, deepening the slide.
+ * deployment, free entry/exit, and sticky races, SOLO-COST MC =
+ * E_block + o + F is the UNIQUE stable rest point — entry/exit
+ * mean-reverts P to MC from below (idle threat), deployment ratchets
+ * n up whenever P > MC from above (obscurity rent: race n+1
+ * solo-pays P-MC > 0 at full E_block). The $1 design price is
+ * UNSTABLE without help (slide $1 -> $0.255, n -> D/MC = 392).
+ * Candidate pins, tested as scenarios: (a) creation fees pin at
+ * MC + c/L (forward deployers only — naive deployers sunk-ignore
+ * them; the $1 pin = c/L ~ $0.745); (b) issuer ROYALTIES do NOT pin
+ * (self-mining deployers pay themselves — bypass); (c) E0 ~ $1 pins
+ * NEAR $1 via a knife-edge SOLO equilibrium but excludes smalls
+ * (pool-dependent, no pools at M*=1 — double-bind) and the treadmill
+ * breaches it in weeks — the TRILEMMA: $1 anchor + small inclusion
+ * + permissionless deployment, pick two. Entry lag is PERVERSE:
+ * slow staffing lengthens obscurity, deepening fee-pins.
  */
-import {
-  energyPerEntrant,
-  feeUsd,
-} from './pacingEcon.js';
+import { feeUsd } from './pacingEcon.js';
 import { microStepV5 } from '../covenant/singleShardDeltaMathV5.js';
 
 /** Max mint batons per ALP token (eCash consensus, proven in WLotus). */
@@ -63,11 +74,13 @@ export interface DeployParams {
   demandUsd: (slot: number) => number;
   /** Buyer reference + R-cap base (NOT a capacity rule here). */
   designUsd?: number;
-  /** Tier scale: 1 base, 1000 grand (scales o, floats, MC). */
+  /** Tier scale: 1 base, 1000 grand (scales o, floats, E0, MC). */
   scale?: number;
   smallMiners?: number;
+  /** Max electricity $/unit/slot a small miner floats (default 0.01). */
   smallFloat?: number;
   largeMiners?: number;
+  /** Max electricity $/unit/slot a large miner floats (default 10). */
   largeFloat?: number;
   /** Staffing move per slot toward M* (default 0.5). */
   entryLag?: number;
@@ -91,19 +104,19 @@ export interface DeployParams {
   /** Starting races (default: ceil(D(1)/design), coordinated). */
   initialRaces?: number;
   /**
-   * Entry allocation: 'chasing' fills thin/new races first (frictionless
-   * $/miner-chasing — default, completes the slide to MC); 'sticky'
-   * fills standing races first (pool stickiness — sustains a
-   * supra-MC friction premium); 'uniform' spreads pro-rata
-   * (uncoordinated solo culture — fragments into permanent death once
-   * deployed n exceeds the bench).
+   * Entry allocation: 'chasing' fills thin/new races first (default);
+   * 'sticky' fills standing races first (same terminal — birth-
+   * activation bypasses fill order); 'uniform' thin-spreads
+   * (coordination failure — freezes ABOVE MC via starvation).
    */
   entryMode?: 'chasing' | 'sticky' | 'uniform';
   reserveMult?: number;
   patience?: number;
   feeSats?: number;
   xecUsd?: number;
-  energyShare?: number;
+  /** Expected electricity $ per race solution at genesis (default 0.25). */
+  blockEnergyUsd?: number;
+  /** Hardware opportunity $/unit/slot, excl. electricity (default 0.005). */
   opportunityUsd?: number;
   genesisTarget?: number;
 }
@@ -166,9 +179,11 @@ export function runDeploySim(p: DeployParams): DeployResult {
   const scale = p.scale ?? 1;
   const designTier = design * scale;
   const smallN = p.smallMiners ?? 15000;
-  const smallFloat = (p.smallFloat ?? 0.01) * scale;
+  // Floats do NOT scale: per-UNIT burn caps are hardware-defined (the
+  // same ASIC unit burns E/M whether the race is base or grand).
+  const smallFloat = p.smallFloat ?? 0.01;
   const largeN = p.largeMiners ?? 2000;
-  const largeFloat = (p.largeFloat ?? 10) * scale;
+  const largeFloat = p.largeFloat ?? 10;
   const lam = p.entryLag ?? 0.5;
   const G = p.deploysPerSlot ?? 10;
   const foresight: Foresight = p.foresight ?? 'forward';
@@ -177,16 +192,17 @@ export function runDeploySim(p: DeployParams): DeployResult {
   const royalty = p.royaltyRate ?? 0;
   const R = p.reserveMult ?? 3;
   const patience = p.patience ?? 0.9;
-  const share = p.energyShare ?? 0.25;
-  const o = (p.opportunityUsd ?? 0.005) * scale;
+  // o does NOT scale either (per-unit hardware opex, same unit); only
+  // the PUZZLE scales (E0 x1000 = 1000x more hashes for grand).
+  const o = p.opportunityUsd ?? 0.005;
   const genesis = p.genesisTarget ?? 2 ** 24;
   const F = feeUsd(p.feeSats ?? 1750, p.xecUsd ?? 0.000007);
   const H = p.exitHysteresis ?? o / 2;
 
-  const wcAt = (target: number): number =>
-    energyPerEntrant(share, o, genesis, target);
-  const wc0 = wcAt(genesis);
-  const mcEntrant = wc0 + o;
+  const E0 = (p.blockEnergyUsd ?? 0.25) * scale;
+  const eAt = (target: number): number => E0 * (genesis / target);
+  /** Solo-mining all-in cost (lottery: solo burns full E). */
+  const mcSolo = E0 + o + F;
 
   // Coordinated start: n0 races at M* (dissipated peace at ~design).
   const n0 = Math.max(
@@ -209,7 +225,8 @@ export function runDeploySim(p: DeployParams): DeployResult {
     return tokenBatons.length - 1;
   };
   const p0 = Math.min(p.demandUsd(1) / n0, R * designTier);
-  const m0 = Math.max(0, Math.floor(((1 - royalty) * p0 - F) / mcEntrant));
+  // Lottery M*: units enter while (P-F-E)/M >= o.
+  const m0 = Math.max(0, Math.floor(((1 - royalty) * p0 - F - E0) / o));
   // Pool-capped fill (races beyond the bench are born dormant —
   // deployed paper batons the bench cannot staff).
   let initSmallPool = smallN;
@@ -302,9 +319,10 @@ export function runDeploySim(p: DeployParams): DeployResult {
         : Math.min(deff, R * designTier);
 
     // ---- Deploy (up to G): baton if room, else clone. ----
-    // Both modes start at Wc0 (unmined batons are fresh); they differ
+    // Both modes start at E0 (unmined batons are fresh); they differ
     // only in creation fee — so batons fill first, then clones.
-    const flow0 = pEst - F - wc0 - o;
+    // Lottery solo flow: the deployer burns the FULL E0.
+    const flow0 = pEst - F - E0 - o;
     const wantOf = (c: number): number => {
       if (foresight === 'myopic-flow') return flow0 > 0 ? flow0 : -1;
       if (foresight === 'myopic-payback') return flow0 > c ? flow0 : -1;
@@ -320,7 +338,8 @@ export function runDeploySim(p: DeployParams): DeployResult {
         const r = races[i];
         const s = staffOf(r);
         if (s < 1) continue;
-        const pay = pEst / s - wcAt(r.target) - o;
+        // Lottery unit pay: revenue AND block energy split s ways.
+        const pay = (pEst - F - eAt(r.target)) / s - o;
         if (pay < worstPay) {
           worstPay = pay;
           worst = i;
@@ -336,14 +355,45 @@ export function runDeploySim(p: DeployParams): DeployResult {
       if (wantBaton < 0 && wantClone < 0) break;
       const fresh = wantClone > wantBaton;
       const cMode = fresh ? cClone + cBaton : cBaton;
-      // Deployer body: idle-large, else idle-small (float-gated),
-      // else redeploy from the worst-paid staffed race.
+      // Deployer body, LARGE-PRIORITY: idle-large, else redeploy a
+      // large body from the worst-paid race, else idle-small, else
+      // redeploy small. Operators prefer bodies that STICK (large
+      // units stay gated-in on thin races; small newborns gate-drain
+      // within 2 slots past the small-lock (P < E+F+25o) — wasted
+      // deployment). Deployers are capitalized operators
+      // (float-EXEMPT: burning full E0 solo is capital, and unit
+      // float gates opex ENTRY only — otherwise grand (E0=$250)
+      // could never deploy (no unit floats $250 solo)).
       let dS = 0;
       let dL = 0;
-      if (largeIdle >= 1 && wc0 <= largeFloat) {
+      const takeLargeFromWorst = (): boolean => {
+        while (worstIdx >= 0 && races[worstIdx].sLarge < 1) {
+          // Worst race has no large body — scan for a large donor.
+          let donor = -1;
+          let donorPay = Infinity;
+          for (let i = 0; i < races.length; i++) {
+            if (races[i].sLarge < 1) continue;
+            const s = staffOf(races[i]);
+            const pay = (pEst - F - eAt(races[i].target)) / s - o;
+            if (pay < donorPay) {
+              donorPay = pay;
+              donor = i;
+            }
+          }
+          if (donor < 0) return false;
+          worstIdx = donor;
+          break;
+        }
+        if (worstIdx < 0 || races[worstIdx].sLarge < 1) return false;
+        races[worstIdx].sLarge -= 1;
+        return true;
+      };
+      if (largeIdle >= 1) {
         dL = 1;
         largeIdle -= 1;
-      } else if (smallIdle >= 1 && wc0 <= smallFloat) {
+      } else if (takeLargeFromWorst()) {
+        dL = 1;
+      } else if (smallIdle >= 1) {
         dS = 1;
         smallIdle -= 1;
       } else {
@@ -351,10 +401,7 @@ export function runDeploySim(p: DeployParams): DeployResult {
           worstIdx = findWorst();
         if (worstIdx < 0) break;
         const worst = races[worstIdx];
-        if (worst.sLarge >= 1) {
-          worst.sLarge -= 1;
-          dL = 1;
-        } else if (worst.sSmall >= 1 && wc0 <= smallFloat) {
+        if (worst.sSmall >= 1) {
           worst.sSmall -= 1;
           dS = 1;
         } else break;
@@ -363,7 +410,7 @@ export function runDeploySim(p: DeployParams): DeployResult {
       tokenBatons[t]++;
       const birthM = Math.max(
         0,
-        Math.floor(((1 - royalty) * pEst - F) / mcEntrant),
+        Math.floor(((1 - royalty) * pEst - F - E0) / o),
       );
       races.push({
         target: genesis,
@@ -397,24 +444,28 @@ export function runDeploySim(p: DeployParams): DeployResult {
     const occupied: boolean[] = races.map(r => staffOf(r) >= 1);
     for (let i = 0; i < races.length; i++) {
       const r = races[i];
-      const wc = wcAt(r.target);
+      const eBlock = eAt(r.target);
       const mStar = Math.max(
         0,
-        Math.floor(((1 - royalty) * pExp - F) / (wc + o)),
+        Math.floor(((1 - royalty) * pExp - F - eBlock) / o),
       );
       // First-body floor: an occupied race with solo flow above -H
       // keeps 1 body (switching costs + issuer royalty washing).
       const stayFloor =
-        occupied[i] && pExp - F - wc - o > -H ? 1 : 0;
+        occupied[i] && pExp - F - eBlock - o > -H ? 1 : 0;
       const keepTarget = Math.max(mStar, stayFloor);
-      const sElig = wc <= smallFloat ? smallN : 0;
-      const lElig = wc <= largeFloat ? largeN : 0;
+      // Affordability gate: a class staffs this race only if its
+      // expected unit burn (E/keepTarget) fits its float. Smalls ride
+      // fat races (E/150 = $0.0017) but never solo ($0.25); grand
+      // needs keepTarget >= 25 for large entry ($250/25 = $10).
+      const sElig =
+        keepTarget > 0 && eBlock <= smallFloat * keepTarget ? smallN : 0;
+      const lElig =
+        keepTarget > 0 && eBlock <= largeFloat * keepTarget ? largeN : 0;
       const elig = sElig + lElig;
-      // Integer split (ROUND, not floor — floor assigns smalls 0 of
-      // every solo race and flickers; round gives smalls the solos
-      // (majority-first composition — WHO solos is indeterminate, all
-      // bodies cost the same) while overflow backstops larges in
-      // whenever the small pool binds).
+      // Integer split (ROUND, not floor — floor starves the minority
+      // pool at small keepTargets and flickers; round + overflow
+      // backstop keeps composition smooth across M*).
       const sT =
         elig > 0 ? Math.round((keepTarget * sElig) / elig) : 0;
       sTgt[i] = Math.min(sT, keepTarget);
@@ -461,8 +512,8 @@ export function runDeploySim(p: DeployParams): DeployResult {
     }
     // Entries admit whole bodies toward target, pool-capped in order.
     // (Uniform: instant thin spread — each wanted race gets
-    // floor(pool/nWanted); when nWanted > pool NOBODY reaches 1 body:
-    // the fragmentation trap, exact.)
+    // floor(pool/nWanted); when nWanted > pool the spread starves and
+    // only deployer-births sustain active (freeze ABOVE MC).)
     if (entryMode === 'uniform') {
       const nW = order.length;
       const qS = nW > 0 ? Math.floor(sPool / nW) : 0;
@@ -504,15 +555,15 @@ export function runDeploySim(p: DeployParams): DeployResult {
       }
     // Overflow: races still below keep-target pull from EITHER pool
     // with bodies (small-first backstop — bodies are fungible when
-    // float-eligible; without this, floor-splits exclude smalls from
-    // solo races and pin the system at 2MC instead of MC).
+    // the race's unit burn fits their float).
     if (entryMode !== 'uniform') {
       for (const i of order) {
         const r = races[i];
-        const wc = wcAt(r.target);
-        let gap = sTgt[i] + lTgt[i] - staffOf(r);
+        const eBlock = eAt(r.target);
+        const keepT = sTgt[i] + lTgt[i];
+        let gap = keepT - staffOf(r);
         if (gap <= 0) continue;
-        if (wc <= smallFloat && sPool > 0) {
+        if (eBlock <= smallFloat * keepT && sPool > 0) {
           wantAccS[i] += lam * gap;
           const adm = Math.min(gap, sPool, Math.floor(wantAccS[i]));
           r.sSmall += adm;
@@ -520,7 +571,7 @@ export function runDeploySim(p: DeployParams): DeployResult {
           wantAccS[i] -= adm;
           gap -= adm;
         }
-        if (gap > 0 && wc <= largeFloat && lPool > 0) {
+        if (gap > 0 && eBlock <= largeFloat * keepT && lPool > 0) {
           wantAccL[i] += lam * gap;
           const adm = Math.min(gap, lPool, Math.floor(wantAccL[i]));
           r.sLarge += adm;
@@ -567,14 +618,15 @@ export function runDeploySim(p: DeployParams): DeployResult {
     priceNum += pTrade;
     priceDen++;
     if (pTrade < minPrice) minPrice = pTrade;
-    if (slideSlots < 0 && pTrade <= 1.1 * mcEntrant) slideSlots = slot;
+    if (slideSlots < 0 && pTrade <= 1.1 * mcSolo) slideSlots = slot;
 
     let eSlot = 0;
     let msSlot = 0;
     let mlSlot = 0;
     for (const r of filled) {
-      const s = staffOf(r);
-      eSlot += s * wcAt(r.target);
+      // Lottery energy: E_block per active race (split among staff,
+      // NOT per-entrant — the race burns one solution's electricity).
+      eSlot += eAt(r.target);
       msSlot += r.sSmall;
       mlSlot += r.sLarge;
     }
