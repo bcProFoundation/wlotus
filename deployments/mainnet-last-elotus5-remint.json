@@ -1,0 +1,20 @@
+{
+  "tokenId": "791e6da2d015b9754990266a407b1a68801bc67bcb86a00dfb15f0d5762d112a",
+  "txid": "6cd4494814bbc5de4fb7d0a0a4d98d50c2460ae55a2f495518efe1c909ee0c1b",
+  "powAttempts": 42,
+  "nonceHex": "2a000000",
+  "derived": {
+    "tipDay": 1,
+    "m": 16777180,
+    "e": 4,
+    "newDay": 4,
+    "newM": 16777144,
+    "newE": 4,
+    "steps": 3,
+    "locktime": 1789391442
+  },
+  "locktime": 1789391442,
+  "nextPowAddress": "ecash:prgyfvghuhq75r45k2p0293vppkvq045nyxj03q5wu",
+  "minedAt": "2026-09-14T14:30:29.594Z",
+  "explorer": "https://explorer.e.cash/tx/6cd4494814bbc5de4fb7d0a0a4d98d50c2460ae55a2f495518efe1c909ee0c1b"
+}

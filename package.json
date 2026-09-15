@@ -18,6 +18,27 @@
     "mint-api": "tsx apps/mint-api/src/server.ts",
     "dana-index": "tsx apps/dana-index/src/server.ts",
     "new-wallet": "tsx scripts/new-wallet.ts",
+    "new-experiment-wallet": "tsx scripts/new-experiment-wallet.ts",
+    "measure-two-shard": "tsx scripts/measure-two-shard.ts",
+    "measure-single-shard": "tsx scripts/measure-single-shard.ts",
+    "measure-single-shard-v5": "tsx scripts/measure-single-shard-v5.ts",
+    "verify-singleshard-vm": "tsx scripts/verify-singleshard-vm.ts",
+    "verify-singleshard-vm-v5": "tsx scripts/verify-singleshard-vm-v5.ts",
+    "create-singleshard-token": "tsx scripts/create-singleshard-token.ts",
+    "create-singleshard-token-v5": "tsx scripts/create-singleshard-token-v5.ts",
+    "resume-singleshard-handoff": "tsx scripts/resume-singleshard-handoff.ts",
+    "resume-singleshard-handoff-v5": "tsx scripts/resume-singleshard-handoff-v5.ts",
+    "mine-singleshard-once": "tsx scripts/mine-singleshard-once.ts",
+    "mine-singleshard-once-v5": "tsx scripts/mine-singleshard-once-v5.ts",
+    "sim-pacing-econ": "tsx scripts/sim-pacing-econ.ts",
+    "sim-family-econ": "tsx scripts/sim-family-econ.ts",
+    "sim-grand-econ": "tsx scripts/sim-grand-econ.ts",
+    "sim-free-econ": "tsx scripts/sim-free-econ.ts",
+    "sim-deploy-econ": "tsx scripts/sim-deploy-econ.ts",
+    "dryrun-twoshard-tx": "tsx scripts/dryrun-twoshard-tx.ts",
+    "create-twoshard-token": "tsx scripts/create-twoshard-token.ts",
+    "mine-twoshard-once": "tsx scripts/mine-twoshard-once.ts",
+    "check-experiment-funding": "tsx scripts/check-experiment-funding.ts",
     "create-test-token": "tsx scripts/create-test-token.ts",
     "wait-create-test-token": "tsx scripts/wait-for-funding-and-create.ts",
     "mine-once": "tsx scripts/mine-once.ts",
@@ -48,7 +69,10 @@
     "sweep-temple-to-cold": "tsx scripts/sweep-temple-to-cold.ts",
     "create-temple-specials": "tsx scripts/create-temple-specials.ts",
     "build-icons": "python3 scripts/build-wlotus-icons.py",
-    "build-og": "python3 scripts/build-og-image.py"
+    "build-og": "python3 scripts/build-og-image.py",
+    "verify-twoshard-vm": "tsx scripts/verify-twoshard-vm.ts",
+    "resume-twoshard-handoffs": "tsx scripts/resume-twoshard-handoffs.ts",
+    "burn-dead-premine": "tsx scripts/burn-dead-premine.ts"
   },
   "engines": {
     "node": ">=24"
@@ -64,6 +88,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@bitauth/libauth": "^3.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.0",
     "@types/web-push": "^3.6.4",

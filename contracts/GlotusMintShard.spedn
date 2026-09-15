@@ -1,0 +1,101 @@
+// GlotusMintShard — two-shard Ergon-δ MINT shard (M), mint-only v1.
+//
+// Stateless-vs-derived M: M bakes the SAME (tipDay, tipTarget) state as C
+// and windows/caps its (newDay, newTarget) witness — it does NOT re-derive
+// the δ step (no room beside PoW in Spedn output). Checks PoW against the
+// witness, pins the full 4-output set byte-identical to C.
+//
+// NO sibling pin: eCash never activated native introspection (0xc0–0xcd —
+// BCH-only since May 2022; absent from every eCash upgrade through 2025,
+// and disabled in libauth's XEC VM), so no input can observe its siblings.
+// Cross-shard binding is (identical output pins) + (ALP ≥1-baton rule):
+// with C co-present the pins force (newDay, newTarget) == C's derived
+// values exactly; a lone-M mint is honest-adjacent (schedule-bound via the
+// day window, no target reset via monotonicity, no u32 overflow) and costs
+// full PoW. Known hole (documented, research-accepted): a lone-C mint
+// skips PoW (C cannot fit the PoW check beside the derivation) — still
+// schedule-bound with honest δ state. Successors unverified witness
+// (ergon-dogfood posture — see GlotusComputeShard.spedn).
+//
+// v1 DIET: length literals 0x11/0x32/0x47 (NOT 0x00 — bare zero compiles
+// to OP_0/empty; the ALP version byte uses num2bin(0, 1), the live ergon
+// form); single tail split. Full successor verification deferred to v2.
+
+contract GlotusMintShard(
+    [byte;32] tokenIdRev,
+    [byte;6] mintAtomsLe,
+    [byte;4] genesisUnixLe,
+    [byte;4] daySecondsLe,
+    [byte;4] tipDayLe,
+    [byte;4] tipTargetLe
+) {
+    challenge remint(
+        [byte;4] nonce,
+        Sig s,
+        DataSig ds,
+        PubKey minerPk,
+        int newDay,
+        int newTarget,
+        [byte] preimage,
+        [byte] nextCRedeem,
+        [byte] nextMRedeem
+    ) {
+        int tipDay = bin2num(tipDayLe);
+        int tipTarget = bin2num(tipTargetLe);
+        // Day window + target monotonicity (see header): lone-M mints
+        // stay honest-adjacent. genesisUnix/daySeconds ride along for a
+        // uniform 60B head with C (M never derives, so never reads them).
+        verify newDay >= tipDay;
+        verify newDay <= tipDay + 1;
+        verify newTarget <= tipTarget;
+
+        [byte] solhash = hash256(sha256(preimage) . nonce);
+        ([byte] head, _) = solhash @ 4;
+        verify bin2num(head) >= 0;
+        verify bin2num(head) < newTarget;
+
+        (_, [byte] tail40) = preimage @ (size(preimage) - 40);
+        ([byte] hashOutputs, [byte] tail8) = tail40 @ 32;
+        ([byte] locktimeBin, _) = tail8 @ 4;
+        int locktime = bin2num(locktimeBin);
+
+        [byte] wldf =
+            0x574c4446 .
+            0x03 .
+            num2bin(newDay, 4) .
+            num2bin(newTarget, 4) .
+            num2bin(locktime, 4);
+
+        [byte] mintSection =
+            0x534c5032 .
+            // WARNING: bare 0x00 compiles to OP_0 (EMPTY push), silently
+            // dropping the ALP version byte and bricking the outputs pin
+            // (genesis 1–3 postmortem). num2bin(0, 1) emits a real 0x00
+            // byte — the live ergon form. 0x01–0x04 are safe (OP_1..OP_4
+            // push their byte correctly); only zero is special.
+            num2bin(0, 1) .
+            0x04 . 0x4d494e54 .
+            tokenIdRev .
+            0x01 .
+            mintAtomsLe .
+            0x02;
+
+        [byte] opReturnScript =
+            0x6a50 .
+            0x11 .
+            wldf .
+            0x32 .
+            mintSection;
+
+        [byte] out0 = 0x0000000000000000 . 0x47 . opReturnScript;
+        [byte] out1 = 0x2202000000000000 . 0x19 . 0x76a914 . hash160(minerPk) . 0x88ac;
+        [byte] out2 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextCRedeem) . 0x87;
+        [byte] out3 = 0x2202000000000000 . 0x17 . 0xa914 . hash160(nextMRedeem) . 0x87;
+
+        verify hash256(out0 . out1 . out2 . out3) == Sha256(hashOutputs);
+
+        separator;
+        verify checkSig(s, minerPk);
+        verify checkDataSig(ds, sha256(preimage), minerPk);
+    }
+}
