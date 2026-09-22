@@ -57,10 +57,10 @@ fits in today’s 63-bit integers for the compact targets these covenants use
 
 `OP_MUL` remains disabled in Bitcoin ABC (`IsOpcodeDisabled` returns true for
 `0x95`). Emulating the multiply with double-and-add costs ~40 non-push opcodes
-per day-step. Live remint scripts already sit against the **201 non-push
-opcode** and **520-byte P2SH** ceilings, so the daily step cannot live in the
-mining script without `OP_MUL` (or a second covenant shard — measured in
-[glotus-ergon-multiinput-daa.md](./glotus-ergon-multiinput-daa.md)).
+per day-step (Spedn probe in this repo). Live remint scripts already sit
+against the **201 non-push opcode** and **520-byte P2SH** ceilings, so the
+daily step cannot live in the mining script without `OP_MUL` (or a second
+covenant shard that cross-pins compute + mint).
 
 With `OP_MUL`, one day-step is roughly five opcodes and fits beside PoW +
 successor checks. Horizontal scaling is preserved: difficulty is constant for
@@ -162,7 +162,7 @@ No multiply required for the era equality when `period` divides cleanly via
 | Workaround | Fate |
 |------------|------|
 | Double-and-add multiply in one script | ~40 ops/step; overflows 201-op budget beside PoW + next-P2SH |
-| Two-shard compute+mint (multi-input) | Feasible prototype ([glotus-ergon-multiinput-daa.md](./glotus-ergon-multiinput-daa.md)); still awkward UX and fee drag; `OP_MUL` collapses it into the normal mint |
+| Two-shard compute+mint (multi-input) | Feasible prototype (~40 ops/step on a compute shard); still awkward UX and fee drag; `OP_MUL` collapses it into the normal mint |
 | Oracle feeds “now” or era index | Destroys trustless Moore peg |
 | Require `locktime == tip + period` | Breaks horizontal racing inside an era; forces artificial spacing |
 | Move token to Bitcoin Cash | Loops/`OP_MUL` help **vertical** reward schedules; CashTokens have **one** minting capability — worse for horizontal lanes; MTP still missing |
@@ -175,8 +175,7 @@ No multiply required for the era equality when `period` divides cleanly via
    `OP_MUL`).
 2. **63-bit integers live** since Shibusawa (Nov 2025) — product range for
    `target × 82` is satisfied.
-3. **Daily δ without `OP_MUL`:** ~40 ops/step (Spedn probe,
-   [glotus-ergon-multiinput-daa.md](./glotus-ergon-multiinput-daa.md) §3).
+3. **Daily δ without `OP_MUL`:** ~40 ops/step (Spedn double-and-add probe).
 4. **Live WLotus** (`a41bf9d0…` on wlotus.org): felt covenant, `baseZeroBits=0`,
    108 atoms, 28 batons — era advancement is miner-optional under today’s
    rules ([CLOCK.md](../CLOCK.md)).
@@ -264,7 +263,6 @@ without migrating to Bitcoin Cash.
 - Live product clock: [docs/CLOCK.md](../CLOCK.md)
 - Economics: [docs/ECONOMICS.md](../ECONOMICS.md)
 - Ergon-style issuance feasibility: [ergon-style-issuance-on-ecash.md](./ergon-style-issuance-on-ecash.md)
-- Daily δ multi-input workaround: [glotus-ergon-multiinput-daa.md](./glotus-ergon-multiinput-daa.md)
 - eCash introspection codepoints: `src/covenant/opcodes.ts`
 - BCH precedent for `OP_MUL`: CHIP-2021-03 Bigger Script Integers
 - Shibusawa 63-bit integers: Bitcoin ABC D18469 / eCash Nov 2025 upgrade
