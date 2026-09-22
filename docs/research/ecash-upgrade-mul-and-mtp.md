@@ -1,4 +1,4 @@
-# CHIP draft: `OP_MUL` and Median-Time-Past introspection for eCash
+# eCash upgrade specification: `OP_MUL` and Median-Time-Past introspection
 
 **Status:** Draft for discussion with eCash / Bitcoin ABC developers  
 **Authors:** WLotus / GLotus covenant research (bcProFoundation/wlotus)  
@@ -113,7 +113,7 @@ tip fails.
 
 Reference: [CHIP-2021-03 Bigger Script Integers](https://documentation.cash/protocol/forks/chips/2022-05-bigger-script-integers) as activated on Bitcoin Cash — same opcode, adapted to eCash’s existing 63-bit limit (no BigInt required for this use case).
 
-**Out of scope for this CHIP:** unbounded BigInt, `OP_MULDIV`, loops.
+**Out of scope for this specification:** unbounded BigInt, `OP_MULDIV`, loops.
 
 ### 2. Median Time Past introspection
 
@@ -223,8 +223,8 @@ No multiply required for the era equality when `period` divides cleanly via
 - With `OP_MUL`, daily δ can sit in the mint script — Moore trend can be
   smooth without leaving horizontal scaling.
 - Neither opcode forces vertical “mint ∝ difficulty”; that remains an
-  application choice (and still needs reward arithmetic that this CHIP does
-  not require).
+  application choice (and still needs reward arithmetic that this specification
+  does not require).
 
 ---
 
