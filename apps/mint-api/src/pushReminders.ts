@@ -12,6 +12,11 @@ import {
   memorialOccursOnYmd,
   ymdInTimeZone,
 } from '../../../src/lib/memorialDay.js';
+import {
+  findCatalogEntryByName,
+  foldSpecialName,
+  templeSpecialCatalog,
+} from '../../../src/params/templeSpecialCatalog.js';
 
 const TXID_RE = /^[0-9a-f]{64}$/;
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -254,30 +259,41 @@ export function dueRemindersForSub(
   return out;
 }
 
-function copyForLocale(
+/** Events and ghosts are festivals. Ngày giỗ is only for a person. */
+export function reminderIsFestival(item: Pick<DueReminder, 'kind' | 'name'>): boolean {
+  if (item.kind === 'event') return true;
+  const named = findCatalogEntryByName(item.name);
+  if (named?.kind === 'event' || named?.kind === 'ghost') return true;
+  const key = foldSpecialName(item.name);
+  if (!key) return false;
+  return templeSpecialCatalog().some(
+    e =>
+      (e.kind === 'event' || e.kind === 'ghost') &&
+      (foldSpecialName(e.altarName) === key || foldSpecialName(e.note) === key),
+  );
+}
+
+export function copyForLocale(
   locale: string,
   item: DueReminder,
 ): { title: string; body: string } {
   const name = item.name;
+  const festival = reminderIsFestival(item);
   if (locale.startsWith('en')) {
     return {
       title: name,
-      body:
-        item.kind === 'event'
-          ? `Today is ${name}.`
-          : `Today is ${name}'s memorial day.`,
+      body: festival ? `Today is ${name}.` : `Today is ${name}'s memorial day.`,
     };
   }
   if (locale.startsWith('zh')) {
     return {
       title: name,
-      body: item.kind === 'event' ? `今天是${name}。` : `今天是${name}的忌日。`,
+      body: festival ? `今天是${name}。` : `今天是${name}的忌日。`,
     };
   }
   return {
     title: name,
-    body:
-      item.kind === 'event' ? `Hôm nay là ${name}.` : `Hôm nay là ngày giỗ của ${name}.`,
+    body: festival ? `Hôm nay là ${name}.` : `Hôm nay là ngày giỗ của ${name}.`,
   };
 }
 

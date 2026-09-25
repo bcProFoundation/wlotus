@@ -160,4 +160,52 @@ describe('remindAltarsFromOffers', () => {
     const hidden = remindAltarsFromOffers(offers, 'vi', new Set([ROOT]), NOW);
     expect(hidden).toEqual([]);
   });
+
+  it('marks catalog events and ghosts as festivals even when the note has no kind', () => {
+    const festival = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Tết Trung Thu',
+      deathDate: '2026-09-25',
+    });
+    const ghost = encodeAltarNote({
+      ...emptyAltarFields(),
+      name: 'Cô Hồn',
+      deathDate: '2026-08-27',
+    });
+    const offers: LocalOffer[] = [
+      {
+        remintTxid: ROOT,
+        burnTxid: ROOT,
+        note: festival,
+        at: SIX_MONTHS,
+      },
+      {
+        remintTxid: REMINT,
+        burnTxid: BURN,
+        note: '',
+        at: SIX_MONTHS,
+        own: true,
+        parentBurnTxid: ROOT,
+      },
+      {
+        remintTxid: OTHER,
+        burnTxid: OTHER,
+        note: ghost,
+        at: SIX_MONTHS,
+      },
+      {
+        remintTxid: VIEW,
+        burnTxid: INDEX_BURN,
+        note: '',
+        at: SIX_MONTHS,
+        own: true,
+        parentBurnTxid: OTHER,
+      },
+    ];
+    const reminders = remindAltarsFromOffers(offers, 'vi', undefined, NOW);
+    expect(reminders.map(r => ({ name: r.name, kind: r.kind }))).toEqual([
+      { name: 'Tết Trung Thu', kind: 'event' },
+      { name: 'Cô Hồn', kind: 'event' },
+    ]);
+  });
 });
