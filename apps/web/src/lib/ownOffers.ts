@@ -5,6 +5,11 @@
  */
 
 import {
+  findCatalogEntryByName,
+  foldSpecialName,
+  templeSpecialCatalog,
+} from '../../../../src/params/templeSpecialCatalog.js';
+import {
   altarIsEvent,
   mergeAltarFields,
   memorialDisplayName,
@@ -86,6 +91,18 @@ export function groupOfferedInPastYear(
   return group.burns.some(b => isOwnOffer(b) && ownOfferAgeOk(b, nowMs));
 }
 
+function festivalReminderName(name: string): boolean {
+  const named = findCatalogEntryByName(name);
+  if (named?.kind === 'event' || named?.kind === 'ghost') return true;
+  const key = foldSpecialName(name);
+  if (!key) return false;
+  return templeSpecialCatalog().some(
+    e =>
+      (e.kind === 'event' || e.kind === 'ghost') &&
+      (foldSpecialName(e.altarName) === key || foldSpecialName(e.note) === key),
+  );
+}
+
 export interface RemindAltar {
   txid: string;
   name: string;
@@ -126,7 +143,7 @@ export function remindAltarsFromOffers(
       txid,
       name,
       deathYmd,
-      kind: altarIsEvent(altar) ? 'event' : 'person',
+      kind: altarIsEvent(altar) || festivalReminderName(name) ? 'event' : 'person',
     });
   }
   return out.slice(0, 40);

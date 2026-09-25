@@ -1,4 +1,7 @@
-import { dueRemindersForSub } from '../apps/mint-api/src/pushReminders.js';
+import {
+  copyForLocale,
+  dueRemindersForSub,
+} from '../apps/mint-api/src/pushReminders.js';
 
 describe('dueRemindersForSub', () => {
   const altar = {
@@ -47,5 +50,27 @@ describe('dueRemindersForSub', () => {
         7,
       ),
     ).toEqual([]);
+  });
+});
+
+describe('festival reminder copy', () => {
+  const item = {
+    txid: 'b'.repeat(64),
+    ymd: '2026-09-25',
+  };
+
+  it('does not call Tết Trung Thu or a ghost a ngày giỗ', () => {
+    expect(
+      copyForLocale('vi', { ...item, name: 'Tết Trung Thu', kind: 'person' }).body,
+    ).toBe('Hôm nay là Tết Trung Thu.');
+    expect(
+      copyForLocale('vi', { ...item, name: 'Cô Hồn', kind: 'person' }).body,
+    ).toBe('Hôm nay là Cô Hồn.');
+  });
+
+  it('keeps ngày giỗ for a person', () => {
+    expect(
+      copyForLocale('vi', { ...item, name: 'Cao Lâm Quả', kind: 'person' }).body,
+    ).toBe('Hôm nay là ngày giỗ của Cao Lâm Quả.');
   });
 });
