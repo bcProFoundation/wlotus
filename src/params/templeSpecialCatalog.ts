@@ -936,10 +936,10 @@ export function templeSpecialCatalog(year = 2026): TempleSpecialCatalogEntry[] {
       story: {
         title: 'Đức Thánh Trần',
         body:
-          'Ngày 20 tháng Tám âm lịch là giỗ Hưng Đạo Vương Trần Quốc Tuấn. Dân gian thờ Ngài như Đức Thánh Trần — vị anh hùng thành thần, người ta cầu bình an hơn là kể chiến công.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện được che chở, nguyện cho nhà nhà được bình an.',
+          'Ngày 20 tháng Tám âm lịch là giỗ Hưng Đạo Vương Trần Quốc Tuấn. Dân gian thờ Ngài như Đức Thánh Trần — vị anh hùng thành thần, người ta thường dâng hương hoa tưởng nhớ công đức của Đức Thánh Trần và cầu bình an.\n\nMỗi bông sen dâng lên hôm nay cũng là một lời nguyện: nguyện được che chở, nguyện cho nhà nhà được bình an.',
         titleEn: 'Trần Hưng Đạo',
         bodyEn:
-          'The twentieth of the eighth lunar month is the memorial of Prince Trần Hưng Đạo. Folk tradition honours him as Đức Thánh Trần — a hero who became a guardian, asked for peace more than for victory.\n\nEach lotus offered today is also a prayer: for that refuge, and that every home may find peace.',
+          'The twentieth of the eighth lunar month is the memorial of Prince Trần Hưng Đạo. Folk tradition honours him as Đức Thánh Trần — a hero who became a guardian. People offer incense and flowers in remembrance of his merit, and pray for peace.\n\nEach lotus offered today is also a prayer: for that refuge, and that every home may find peace.',
       },
     },
     {
