@@ -23,10 +23,20 @@ import { assertMultiBaton, buildGenesisPlan } from './createGenesis.js';
 export interface BroadcastGenesisOptions {
   /** Override initial fungible mint atoms. */
   initialMintAtoms?: bigint;
-  /** Override baton count (must be ≥ 2). */
+  /** Override baton count (must be ≥ 2 unless allowSingleBaton). */
   powBatonCount?: number;
+  /**
+   * Allow powBatonCount = 1 (single-shard δ experiment only — the lone
+   * baton lives at the covenant P2SH; production needs N ≥ 2).
+   */
+  allowSingleBaton?: boolean;
   /** Dust sats per token/baton output. */
   dustSats?: bigint;
+  /**
+   * Fee headroom sats for the preflight balance check (default 5000).
+   * Real genesis fees are ~10 sats; thin experiment wallets may pass less.
+   */
+  feeHeadroomSats?: bigint;
   /** Token ticker. */
   ticker?: string;
   /** Token name. */
@@ -93,7 +103,11 @@ export function buildAlpGenesisAction(
     initialMintAtoms: opts.initialMintAtoms ?? TEST_INITIAL_MINT_ATOMS,
     powBatonCount: opts.powBatonCount ?? TEST_POW_BATON_COUNT,
   });
-  assertMultiBaton(plan);
+  if (opts.allowSingleBaton && plan.powBatonCount === 1) {
+    // Single-shard δ experiment: skip the N ≥ 2 production invariant.
+  } else {
+    assertMultiBaton(plan);
+  }
 
   const dustSats = opts.dustSats ?? DEFAULT_DUST_SATS;
   const mintScript = opts.initialMintScript ?? batonScript;
@@ -141,7 +155,8 @@ export async function broadcastAlpGenesis(
   const batons = opts.powBatonCount ?? TEST_POW_BATON_COUNT;
   const mintAtoms = opts.initialMintAtoms ?? TEST_INITIAL_MINT_ATOMS;
   const mintOutputs = (mintAtoms > 0n ? 1 : 0) + batons;
-  const minSatsNeeded = dustSats * BigInt(mintOutputs) + 5_000n; // fee headroom
+  const minSatsNeeded =
+    dustSats * BigInt(mintOutputs) + (opts.feeHeadroomSats ?? 5_000n);
 
   if (wallet.balanceSats < minSatsNeeded) {
     throw new Error(
