@@ -145,6 +145,13 @@ describe('temple special catalog', () => {
     expect(co?.story.body).toContain('nguyện cho nhà nhà được bình an');
   });
 
+  it('remembers Đức Thánh Trần by offering incense and flowers', () => {
+    const tran = templeSpecialCatalog(2026).find(e => e.id === 'tran-hung-dao');
+    expect(tran?.story.body).toContain(
+      'người ta thường dâng hương hoa tưởng nhớ công đức của Đức Thánh Trần và cầu bình an.',
+    );
+  });
+
   it('splits Hồ Chí Minh giỗ (lunar 21/7) from birthday (solar 19 May)', () => {
     const gio = templeSpecialCatalog(2026).find(e => e.id === 'ho-chi-minh');
     const bday = templeSpecialCatalog(2026).find(
