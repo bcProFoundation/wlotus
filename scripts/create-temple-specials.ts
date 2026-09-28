@@ -390,6 +390,7 @@ function buildAltarNote(spec: SpecialSpec): string {
     // special window uses after lunar→solar conversion.
     deathDate: deathDateForSpec(spec),
     birthPlace: spec.birthPlace ?? '',
+    kind: spec.kind === 'event' || spec.kind === 'ghost' ? 'event' : '',
   };
   // Root DANA v1 (no parent). Packed note ≤ 150 UTF-8 bytes (Vietnamese
   // letters are 2–3 bytes each). Leftover ALP SEND is retried off if the

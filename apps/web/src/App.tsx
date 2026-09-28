@@ -1781,6 +1781,7 @@ export default function App() {
   }
 
   function altarFromUnboundSpecial(sp: TempleSpecialProfileUi): AltarFields {
+    const festival = sp.kind === 'event' || sp.kind === 'ghost';
     return {
       ...emptyAltarFields(),
       name: (sp.name || '').trim(),
@@ -1788,6 +1789,7 @@ export default function App() {
       deathDate: (sp.effectiveEventDate || sp.eventDate || '').trim(),
       birthPlace: (sp.birthPlace || '').trim(),
       birthYear: (sp.birthDate || '').replace(/^-/, '').slice(0, 4),
+      kind: festival ? 'event' : '',
     };
   }
 
