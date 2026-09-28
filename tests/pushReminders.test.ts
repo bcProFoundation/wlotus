@@ -59,13 +59,16 @@ describe('festival reminder copy', () => {
     ymd: '2026-09-25',
   };
 
-  it('does not call Tết Trung Thu or a ghost a ngày giỗ', () => {
+  it('says ngày for a festival or a ghost, not ngày giỗ', () => {
     expect(
       copyForLocale('vi', { ...item, name: 'Tết Trung Thu', kind: 'person' }).body,
-    ).toBe('Hôm nay là Tết Trung Thu.');
+    ).toBe('Hôm nay là ngày Tết Trung Thu.');
+    expect(
+      copyForLocale('vi', { ...item, name: 'Vu Lan', kind: 'person' }).body,
+    ).toBe('Hôm nay là ngày Vu Lan.');
     expect(
       copyForLocale('vi', { ...item, name: 'Cô Hồn', kind: 'person' }).body,
-    ).toBe('Hôm nay là Cô Hồn.');
+    ).toBe('Hôm nay là ngày Cô Hồn.');
   });
 
   it('keeps ngày giỗ for a person', () => {

@@ -293,7 +293,7 @@ export function copyForLocale(
   }
   return {
     title: name,
-    body: festival ? `Hôm nay là ${name}.` : `Hôm nay là ngày giỗ của ${name}.`,
+    body: festival ? `Hôm nay là ngày ${name}.` : `Hôm nay là ngày giỗ của ${name}.`,
   };
 }
 
